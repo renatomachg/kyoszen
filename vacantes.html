@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="Vacantes disponibles — Kyoszen. Encuentra tu próxima oportunidad laboral en CDMX y Estado de México."/>
+<title>Vacantes — Kyoszen</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --blue:#0033FF;--blue-soft:#EAE0FB;--blue-mid:#9770FF;
+  --yellow:#F5C842;--yellow-soft:#fff3b0;
+  --green:#22c55e;--green-soft:#bbf7d0;
+  --purple:#9770FF;--purple-soft:#EAE0FB;
+  --orange:#f97316;--orange-soft:#ffedd5;
+  --text:#00033D;--muted:#6b7280;--border:#D8D3F0;
+  --bg:#F4F2FF;--white:#fff;--wa:#25D366;
+  --r:12px;--r2:20px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;color:var(--text);background:var(--bg);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+
+/* ── NAV ── */
+nav{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,.07);border-radius:999px;padding:8px 12px;height:62px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1rem;width:calc(100% - 48px);max-width:1100px;box-shadow:0 4px 24px rgba(0,0,0,.07);transition:box-shadow .3s,background .3s;}
+nav.scrolled{box-shadow:0 8px 32px rgba(0,0,0,.12);background:rgba(255,255,255,.99);}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+.nav-links{display:flex;gap:4px;justify-content:center;}
+.nav-links a{text-decoration:none;color:#555;font-size:13px;padding:7px 15px;border-radius:999px;font-weight:500;border:1.5px solid transparent;transition:.18s;white-space:nowrap;}
+.nav-links a:hover{border-color:#d0d3e8;color:var(--blue);background:var(--blue-soft);}
+.nav-links a.active{border-color:var(--blue);color:var(--blue);background:var(--blue-soft);}
+.nav-right{display:flex;align-items:center;gap:.5rem;flex-shrink:0;}
+.btn-wa{background:var(--wa);color:#fff;border:none;border-radius:999px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none;flex-shrink:0;transition:.15s;font-size:13px;font-weight:700;font-family:inherit;white-space:nowrap;}
+.btn-wa:hover{opacity:.9;}
+.btn-wa svg{width:16px;height:16px;flex-shrink:0;}
+.btn-wa .wa-label{display:inline;}
+@media(max-width:768px){
+  .btn-wa{border-radius:50%;padding:0;width:40px;height:40px;justify-content:center;}
+  .btn-wa .wa-label{display:none;}
+}
+.hbg{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:4px;}
+.hbg span{width:20px;height:2px;background:var(--text);border-radius:2px;display:block;}
+.mob{display:none;position:fixed;top:88px;left:20px;right:20px;background:rgba(255,255,255,.98);padding:1rem 1.25rem;flex-direction:column;z-index:99;border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.12);border:1px solid rgba(0,0,0,.06);gap:4px;backdrop-filter:blur(12px);}
+.mob.open{display:flex;}
+.mob a{padding:10px 14px;border-radius:10px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;}
+.mob a:hover{background:var(--blue-soft);color:var(--blue);}
+.mob-wa{background:var(--wa);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-top:.5rem;text-align:center;text-decoration:none;display:block;}
+
+/* ── BUTTONS ── */
+.btn-blue{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+.btn-blue:hover{background:#1316a8;}
+.btn-outline{background:var(--white);color:var(--blue);border:2px solid var(--blue);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;}
+.btn-outline:hover{background:var(--blue-soft);}
+
+/* ── PAGE HEADER ── */
+.page-header{padding:110px 5% 3rem;background:var(--white);border-bottom:1px solid var(--border);}
+.page-header-inner{max-width:1200px;margin:0 auto;}
+.breadcrumb{display:flex;align-items:center;gap:.4rem;font-size:12px;color:var(--muted);margin-bottom:1rem;}
+.breadcrumb a{color:var(--muted);text-decoration:none;}
+.breadcrumb a:hover{color:var(--blue);}
+.breadcrumb span{opacity:.4;}
+.page-header h1{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.5rem;}
+.page-header p{font-size:14px;color:var(--muted);line-height:1.7;}
+.search-bar{display:flex;gap:.5rem;max-width:560px;margin-top:1.5rem;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:5px 5px 5px 14px;align-items:center;}
+.search-bar input{flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit;}
+.search-bar input::placeholder{color:#bbb;}
+
+/* ── ACTIVE FILTERS ── */
+.active-filters{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:1rem;}
+.filter-chip{display:inline-flex;align-items:center;gap:5px;background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:4px 10px 4px 12px;font-size:11.5px;font-weight:600;}
+.filter-chip button{background:none;border:none;cursor:pointer;color:var(--blue);font-size:14px;line-height:1;padding:0;opacity:.6;}
+.filter-chip button:hover{opacity:1;}
+.clear-all{font-size:12px;color:var(--muted);text-decoration:none;cursor:pointer;background:none;border:none;font-family:inherit;padding:4px 8px;}
+.clear-all:hover{color:var(--blue);}
+
+/* ── LAYOUT ── */
+.page-body{max-width:1200px;margin:0 auto;padding:2.5rem 5% 5rem;display:grid;grid-template-columns:260px 1fr;gap:2rem;align-items:start;}
+@media(max-width:900px){.page-body{grid-template-columns:1fr;}}
+
+/* ── SIDEBAR FILTERS ── */
+.filters-sidebar{background:var(--white);border-radius:var(--r2);border:1.5px solid var(--border);padding:1.5rem;position:sticky;top:88px;}
+.filter-toggle-btn{display:none;width:100%;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;color:var(--text);cursor:pointer;text-align:left;padding:0;align-items:center;justify-content:space-between;}
+.filter-toggle-btn svg{width:18px;height:18px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s;}
+.filter-toggle-btn.open svg{transform:rotate(180deg);}
+.filters-body{display:block;}
+@media(max-width:900px){
+  .filters-sidebar{position:static;padding:1rem 1.25rem;}
+  .filter-toggle-btn{display:flex;}
+  .filter-header{margin-bottom:0;}
+  .filter-header h3{display:none;}
+  .filter-reset{display:none;}
+  .filters-body{display:none;margin-top:1rem;}
+  .filters-body.open{display:block;}
+}
+.filter-group{margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.filter-group:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.filter-group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.85rem;}
+.filter-options{display:flex;flex-direction:column;gap:.5rem;}
+.filter-opt{display:flex;align-items:center;gap:.6rem;cursor:pointer;}
+.filter-opt input[type=checkbox]{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;flex-shrink:0;}
+.filter-opt label{font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:space-between;flex:1;}
+.filter-opt label span{font-size:11px;color:var(--muted);background:var(--bg);border-radius:4px;padding:1px 6px;}
+.range-wrap{padding:.25rem 0;}
+.range-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:.5rem;}
+.range-val{font-size:12px;font-weight:700;color:var(--blue);}
+input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer;}
+
+/* ── RESULTS HEADER ── */
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;}
+.results-count{font-size:13.5px;color:var(--muted);}
+.results-count strong{color:var(--text);}
+.sort-select{font-size:13px;border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;background:var(--white);color:var(--text);font-family:inherit;cursor:pointer;outline:none;}
+.sort-select:focus{border-color:var(--blue);}
+
+/* ── JOB CARDS ── */
+.jobs-grid{display:grid;grid-template-columns:1fr;gap:1rem;}
+@media(min-width:640px){.jobs-grid{grid-template-columns:1fr 1fr;}}
+@media(min-width:1100px){.jobs-grid{grid-template-columns:1fr 1fr 1fr;}}
+
+.job-card{background:var(--white);border-radius:var(--r2);border:1.5px solid var(--border);padding:1.3rem 1.4rem;display:flex;flex-direction:column;gap:0;transition:.2s;text-decoration:none;color:var(--text);position:relative;}
+.job-card:hover{border-color:var(--blue-mid);box-shadow:0 6px 24px rgba(26,30,200,.09);transform:translateY(-2px);}
+.job-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;}
+.job-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:flex;align-items:center;gap:3px;}
+.job-cat svg{width:12px;height:12px;opacity:.5;flex-shrink:0;}
+.badge{border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;}
+.b-new{background:var(--green-soft);color:#15803d;}
+.b-urg{background:var(--yellow-soft);color:#b45309;}
+.b-av{background:var(--blue-soft);color:var(--blue);}
+.job-logo{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:1rem;}
+.job-logo svg{width:20px;height:20px;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.job-title{font-size:14.5px;font-weight:700;line-height:1.3;margin-bottom:.4rem;}
+.job-meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:.25rem;}
+.job-meta svg{width:11px;height:11px;flex-shrink:0;}
+.job-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin:.85rem 0;}
+.job-tag{font-size:11px;background:var(--bg);color:var(--muted);border-radius:6px;padding:3px 9px;font-weight:500;border:1px solid var(--border);}
+.job-footer{display:flex;align-items:center;justify-content:space-between;padding-top:.85rem;border-top:1px solid var(--border);margin-top:auto;}
+.job-salary{font-size:12px;font-weight:700;color:var(--text);}
+.job-apply{font-size:12px;font-weight:700;color:var(--blue);display:flex;align-items:center;gap:3px;transition:gap .15s;}
+.job-card:hover .job-apply{gap:6px;}
+
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:2.5rem;}
+.page-btn{width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;color:var(--text);transition:.15s;font-family:inherit;}
+.page-btn:hover{border-color:var(--blue);color:var(--blue);}
+.page-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.page-btn.arrow svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── NO RESULTS ── */
+.no-results{text-align:center;padding:3rem 1rem;color:var(--muted);}
+.no-results svg{width:48px;height:48px;stroke:var(--border);fill:none;stroke-width:1.4;margin-bottom:1rem;}
+.no-results h3{font-size:16px;font-weight:700;color:var(--text);margin-bottom:.4rem;}
+.no-results p{font-size:13px;line-height:1.6;}
+
+/* ── FOOTER ── */
+footer{background:#030812;color:#fff;padding:4rem 5% 2rem;}
+.f-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:2.5rem;padding-bottom:2.5rem;border-bottom:1px solid rgba(255,255,255,.07);}
+.f-brand .f-logo-name{color:#fff;font-size:18px;display:block;margin-bottom:.7rem;font-weight:900;letter-spacing:2px;}
+.f-brand p{font-size:12px;opacity:.4;line-height:1.7;max-width:230px;margin-bottom:1.25rem;}
+.f-soc{display:flex;gap:.5rem;}
+.f-soc a{width:34px;height:34px;background:rgba(255,255,255,.07);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;text-decoration:none;}
+.f-soc a:hover{background:var(--blue);}
+.f-col h5{font-size:12.5px;font-weight:800;margin-bottom:1rem;opacity:.85;}
+.f-col a{display:block;font-size:12px;opacity:.4;color:#fff;text-decoration:none;margin-bottom:8px;}
+.f-col a:hover{opacity:1;}
+.f-bot{max-width:1200px;margin:2rem auto 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.f-bot p{font-size:11px;opacity:.2;}
+@media(min-width:960px){.f-grid{grid-template-columns:1.7fr 1fr 1fr 1.5fr;}}
+@media(max-width:768px){
+  .hbg{display:flex;}
+  .nav-links{display:none;}
+  nav{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;position:relative;}
+  .hbg{order:-1;}
+  .logo{position:absolute;left:50%;transform:translateX(-50%);}
+  .nav-right{order:1;margin-left:auto;}
+  .btn-wa{border-radius:50%;padding:0;width:40px;height:40px;justify-content:center;}
+  .btn-wa .wa-label{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <a class="logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 225.53 64.41" height="38" style="display:block;">
+      <defs>
+        <style>.c1{fill:none}.c2{clip-path:url(#p1)}.c3{fill:url(#g1)}.c4{clip-path:url(#p2)}.c5{fill:url(#g2)}.c6{clip-path:url(#p3)}.c7{fill:url(#g3)}.c8{clip-path:url(#p4)}.c9{fill:url(#g4)}.c10{clip-path:url(#p5)}.c11{fill:url(#g5)}.c12{clip-path:url(#p6)}.c13{fill:url(#g6)}.c14{clip-path:url(#p7)}.c15{fill:url(#g7)}.c16{clip-path:url(#p8)}.c17{fill:url(#g8)}.c18{clip-path:url(#p9)}.c19{fill:url(#g9)}.c20{clip-path:url(#p10)}.c21{fill:url(#g10)}.c22{fill:#706f6f}.c23{fill:#153553}</style>
+        <clipPath id="p1" transform="translate(-79.54 -82.74)"><polygon class="c1" points="127.81 96.03 135.4 88.07 124.23 119.73 127.81 96.03"/></clipPath>
+        <linearGradient id="g1" x1="22.81" y1="226.78" x2="23.26" y2="226.78" gradientTransform="matrix(-47.76,0,0,47.76,1227.99,-10727.74)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2fb8e9"/><stop offset=".13" stop-color="#2fb1e2"/><stop offset=".33" stop-color="#2d9cce"/><stop offset=".56" stop-color="#2c7bad"/><stop offset=".83" stop-color="#294d80"/><stop offset="1" stop-color="#272b5e"/></linearGradient>
+        <clipPath id="p2" transform="translate(-79.54 -82.74)"><polygon class="c1" points="117.38 117.76 122.61 131.17 127.83 96.02 117.38 117.76"/></clipPath>
+        <linearGradient id="g2" x1="22.9" y1="226.58" x2="23.36" y2="226.58" gradientTransform="matrix(-43.08,0,0,43.08,1119.39,-9646.65)" xlink:href="#g1"/>
+        <clipPath id="p3" transform="translate(-79.54 -82.74)"><polygon class="c1" points="102.23 96.03 94.65 88.07 105.8 119.73 102.23 96.03"/></clipPath>
+        <linearGradient id="g3" x1="18.89" y1="229.66" x2="19.35" y2="229.66" gradientTransform="matrix(0,47.75,-47.75,0,11065.19,-807.09)" xlink:href="#g1"/>
+        <clipPath id="p4" transform="translate(-79.54 -82.74)"><polygon class="c1" points="112.66 117.76 107.44 131.17 102.21 96.02 112.66 117.76"/></clipPath>
+        <linearGradient id="g4" x1="18.57" y1="229.77" x2="19.02" y2="229.77" gradientTransform="translate(10007.46 -696.56) rotate(90) scale(43.09)" xlink:href="#g1"/>
+        <clipPath id="p5" transform="translate(-79.54 -82.74)"><polygon class="c1" points="110.53 128.32 118.85 132.8 119.98 143.5 110.53 128.32"/></clipPath>
+        <linearGradient id="g5" x1="19.83" y1="221.56" x2="20.28" y2="221.56" gradientTransform="matrix(0,23.34,23.34,0,-5056.93,-328.57)" xlink:href="#g1"/>
+        <clipPath id="p6" transform="translate(-79.54 -82.74)"><polygon class="c1" points="119.51 128.32 111.19 132.8 110.05 143.5 119.51 128.32"/></clipPath>
+        <linearGradient id="g6" x1="22.92" y1="223.87" x2="23.37" y2="223.87" gradientTransform="matrix(-25.75,0,0,25.75,706.51,-5628.33)" xlink:href="#g1"/>
+        <clipPath id="p7" transform="translate(-79.54 -82.74)"><polygon class="c1" points="117.39 117.76 112.65 117.76 107.43 131.16 122.61 131.16 117.39 117.76"/></clipPath>
+        <linearGradient id="g7" x1="19.61" y1="223.05" x2="20.07" y2="223.05" gradientTransform="matrix(0,31.78,31.78,0,-6973.38,-504.69)" xlink:href="#g1"/>
+        <clipPath id="p8" transform="translate(-79.54 -82.74)"><polygon class="c1" points="115.02 135.54 107.43 131.16 122.61 131.16 115.02 135.54"/></clipPath>
+        <linearGradient id="g8" x1="18.23" y1="219.68" x2="18.68" y2="219.68" gradientTransform="matrix(0,17.3,17.3,0,-3686.44,-186.53)" xlink:href="#g1"/>
+        <clipPath id="p9" transform="translate(-79.54 -82.74)"><path class="c1" d="M112.65,117.76l-5.22,13.4Z"/></clipPath>
+        <linearGradient id="g9" x1="11.28" y1="244.76" x2="11.74" y2="244.76" gradientTransform="matrix(0,6.42,-6.42,0,1681.25,50.83)" xlink:href="#g1"/>
+        <clipPath id="p10" transform="translate(-79.54 -82.74)"><polygon class="c1" points="113 117.76 117.28 117.76 115.02 123.29 113 117.76"/></clipPath>
+        <linearGradient id="g10" x1="27.74" y1="221.54" x2="28.2" y2="221.54" gradientTransform="matrix(-13.43,0,0,13.43,491.09,-2854.8)" xlink:href="#g1"/>
+      </defs>
+      <g class="c2"><rect class="c3" x="115.94" y="87.83" width="27.74" height="32.13" transform="translate(-115.86 14.25) rotate(-36.29)"/></g>
+      <g class="c4"><rect class="c5" x="107.99" y="96.33" width="29.24" height="34.52" transform="translate(-122.99 11.87) rotate(-36.29)"/></g>
+      <g class="c6"><rect class="c7" x="84.16" y="90.03" width="32.12" height="27.73" transform="translate(-122.38 40.44) rotate(-53.71)"/></g>
+      <g class="c8"><rect class="c9" x="90.17" y="98.98" width="34.52" height="29.23" transform="translate(-127.26 50.21) rotate(-53.71)"/></g>
+      <g class="c10"><rect class="c11" x="108.52" y="127.27" width="13.48" height="17.28" transform="translate(-114.24 -43.12) rotate(-17)"/></g>
+      <g class="c12"><rect class="c13" x="105.9" y="128.4" width="17.76" height="15.02" transform="translate(-136.64 99.05) rotate(-64.76)"/></g>
+      <g class="c14"><rect class="c15" x="105.26" y="115.11" width="19.52" height="18.7" transform="translate(-122.49 -19.65) rotate(-26.03)"/></g>
+      <g class="c16"><rect class="c17" x="107.51" y="127.29" width="15.03" height="12.12" transform="translate(-134.49 4.53) rotate(-34.05)"/></g>
+      <g class="c18"><rect class="c19" x="103.09" y="118.39" width="13.89" height="12.14" transform="translate(-134.95 56.74) rotate(-53.71)"/></g>
+      <g class="c20"><rect class="c21" x="111.72" y="117.39" width="6.84" height="6.27" transform="translate(-123.23 88.36) rotate(-63.97)"/></g>
+      <path class="c23" d="M169.16,97.74c-3.32,0-5,2.29-7.08,4.37l-8.74,8.75v-8.12c0-4.16-.83-5-3.74-5h-3.75v.84h.84c2.5,0,2.91,1.66,2.91,4.16v22.47h3.74V111.48l8.74,9.15c4,4.17,6.66,5,8.95,5a7.86,7.86,0,0,0,2.71-.42v-.79c-2.08-.25-4.83-2.24-7.07-4.62l-9.58-10,8.12-8.12a15.27,15.27,0,0,1,1.83-1.61c.54-.38,1.06-.87,1.55-.87.73,0,1.23.77,1.75,1.38a23.38,23.38,0,0,1,1.93,2.56l7.08,10.69v11.36h3.74V113.56l9.74-15.82H191l-8.7,14-6-9.37c-1.46-2.29-3.12-4.58-6.24-4.58Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M202.5,96.91c7.9,0,12.89,6.41,12.89,14.57s-5,14.57-12.89,14.57-12.91-6.41-12.91-14.57,5-14.57,12.91-14.57m0,1.67c-5.42,0-8.74,5-8.74,12.9s3.32,12.9,8.74,12.9,8.73-5,8.73-12.9-3.33-12.9-8.73-12.9" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M226.29,125.92c-4.54,0-9.49-2-9.49-5.08v-4.45h.74c.92,5.58,3.71,7.86,8.37,7.86,2.87,0,5.45-1.49,5.45-4.24,0-2.41-1.54-4-4.58-5.74l-5.12-3c-3.54-2.08-4.86-4.08-4.86-7.16,0-4.29,3.2-7.07,8.07-7.07,4.12,0,9,1.87,9,5v4.46h-.75c-.92-5.59-3.58-7.79-8.24-7.79-2.46,0-4.82,1.62-4.82,4.2,0,2.42,1.58,3.67,4.61,5.46l5.12,3c3.54,2.08,5.16,3.78,5.16,6.86,0,4.66-3.29,7.7-8.65,7.7" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M258.08,97.74l-17.69,25.81h17.55v1.66H235.19v-.83l17.27-25h-10c-3.33,0-5.2,1.45-5.2,4.78h-.83v-3.11c0-1.67.62-3.34,3.53-3.34Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M276.57,97.74c2.9,0,3.53,1.67,3.53,3.34v3.11h-.84c0-3.33-1.87-4.78-5.2-4.78h-7.74v10.82h11.24v1.67H266.32v11.65h7.29c3.74,0,5.83-1.25,7.07-4.58l.83.21-1.45,3.95a3.06,3.06,0,0,1-3.12,2.08H262.58V102.74c0-2.5-.42-4.16-2.92-4.16h-.83v-.84Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M284.44,102.74c0-2.5-.83-4.16-3.74-4.16h-.42v-.84H283a6.66,6.66,0,0,1,5.61,2.5l14.57,18.11V97.74h1.67v27.89H304l-17.89-22.27v21.85h-1.67Z" transform="translate(-79.54 -82.74)"/>
+    </svg>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="vacantes.html" class="active">Vacantes</a>
+    <a href="cursos.html">Cursos</a>
+    <a href="nosotros.html">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+  </div>
+  <div class="nav-right">
+    <a class="btn-wa" href="https://wa.me/525520876765" target="_blank" aria-label="Whatsapp">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      <span class="wa-label">Whatsapp</span>
+    </a>
+  </div>
+  <button class="hbg" onclick="document.getElementById('mob').classList.toggle('open')"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- MENÚ MÓVIL -->
+<div class="mob" id="mob">
+  <a href="index.html">Inicio</a>
+  <a href="servicios.html">Servicios</a>
+  <a href="vacantes.html" class="active">Vacantes</a>
+  <a href="cursos.html">Cursos</a>
+  <a href="nosotros.html">Nosotros</a>
+  <a href="contacto.html">Contacto</a>
+  <a class="mob-wa" href="https://wa.me/525520876765" target="_blank">Whatsapp</a>
+</div>
+
+<!-- SEARCH HEADER -->
+<div style="background:var(--text);padding:100px 5% 3rem;position:relative;overflow:hidden;">
+  <div style="position:absolute;width:400px;height:400px;background:rgba(255,255,255,.04);border-radius:50%;top:-150px;right:-80px;pointer-events:none;"></div>
+  <div style="position:absolute;width:200px;height:200px;background:rgba(0,51,255,.15);border-radius:50%;bottom:-60px;left:10%;pointer-events:none;"></div>
+  <div style="max-width:1200px;margin:0 auto;text-align:center;position:relative;z-index:1;">
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--yellow);margin-bottom:.5rem;display:flex;align-items:center;justify-content:center;gap:.4rem;"><span style="display:inline-block;width:14px;height:2px;background:var(--yellow);border-radius:1px;"></span>Oportunidades laborales</p>
+    <h1 style="font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.5rem;color:#fff;">Vacantes disponibles <span style="color:var(--yellow);">para ti hoy</span></h1>
+    <p style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:1.5rem;">Encuentra tu próxima oportunidad laboral en CDMX y Estado de México.</p>
+    <div class="search-bar" style="max-width:520px;margin:0 auto;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInput" placeholder="Buscar por puesto, empresa o palabra clave..." oninput="filterJobs()"/>
+      <button class="btn-blue" style="border-radius:7px;padding:8px 16px;font-size:13px;">Buscar</button>
+    </div>
+    <div class="active-filters" id="activeFilters" style="display:none;justify-content:center;margin-top:1rem;">
+      <span style="font-size:12px;color:var(--muted);font-weight:500;">Filtros activos:</span>
+      <div id="filterChips"></div>
+      <button class="clear-all" onclick="clearAll()">Limpiar todo</button>
+    </div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="page-body">
+
+  <!-- SIDEBAR -->
+  <aside class="filters-sidebar">
+    <div class="filter-header">
+      <h3>Filtros</h3>
+      <button class="filter-reset" onclick="clearAll()">Limpiar</button>
+    </div>
+    <button class="filter-toggle-btn" id="filterToggle" onclick="toggleFilters()">
+      <span>Filtros de búsqueda</span>
+      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="filters-body" id="filtersBody">
+
+    <!-- Ubicación -->
+    <div class="filter-group">
+      <div class="filter-group-title">Ubicación</div>
+      <div class="filter-options">
+        <label class="filter-opt"><input type="checkbox" name="ubicacion" value="CDMX" onchange="filterJobs()"/><label>CDMX <span>3</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="ubicacion" value="Estado de México" onchange="filterJobs()"/><label>Estado de México <span>2</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="ubicacion" value="Remoto" onchange="filterJobs()"/><label>Remoto <span>1</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="ubicacion" value="Híbrido" onchange="filterJobs()"/><label>Híbrido <span>2</span></label></label>
+      </div>
+    </div>
+
+    <!-- Categoría -->
+    <div class="filter-group">
+      <div class="filter-group-title">Categoría</div>
+      <div class="filter-options">
+        <label class="filter-opt"><input type="checkbox" name="categoria" value="Administrativo" onchange="filterJobs()"/><label>Administrativo <span>2</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="categoria" value="Ventas" onchange="filterJobs()"/><label>Ventas <span>2</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="categoria" value="Operaciones" onchange="filterJobs()"/><label>Operaciones <span>1</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="categoria" value="Atención al cliente" onchange="filterJobs()"/><label>Atención al cliente <span>1</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="categoria" value="RRHH" onchange="filterJobs()"/><label>RRHH <span>1</span></label></label>
+      </div>
+    </div>
+
+    <!-- Tipo de contratación -->
+    <div class="filter-group">
+      <div class="filter-group-title">Tipo de contratación</div>
+      <div class="filter-options">
+        <label class="filter-opt"><input type="checkbox" name="contrato" value="Tiempo completo" onchange="filterJobs()"/><label>Tiempo completo <span>5</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="contrato" value="Medio tiempo" onchange="filterJobs()"/><label>Medio tiempo <span>1</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="contrato" value="Por proyecto" onchange="filterJobs()"/><label>Por proyecto <span>1</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="contrato" value="Temporal" onchange="filterJobs()"/><label>Temporal <span>1</span></label></label>
+      </div>
+    </div>
+
+    <!-- Jornada laboral -->
+    <div class="filter-group">
+      <div class="filter-group-title">Jornada laboral</div>
+      <div class="filter-options">
+        <label class="filter-opt"><input type="checkbox" name="jornada" value="Matutina" onchange="filterJobs()"/><label>Matutina <span>4</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="jornada" value="Vespertina" onchange="filterJobs()"/><label>Vespertina <span>2</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="jornada" value="Nocturna" onchange="filterJobs()"/><label>Nocturna <span>1</span></label></label>
+        <label class="filter-opt"><input type="checkbox" name="jornada" value="Mixta" onchange="filterJobs()"/><label>Mixta <span>1</span></label></label>
+      </div>
+    </div>
+
+    <!-- Rango salarial -->
+    <div class="filter-group">
+      <div class="filter-group-title">Rango salarial mensual</div>
+      <div class="range-wrap">
+        <div class="range-labels">
+          <span>$5,000</span>
+          <span class="range-val" id="salaryVal">$25,000</span>
+        </div>
+        <input type="range" id="salaryRange" min="5000" max="50000" step="1000" value="25000" oninput="updateSalary(this.value);filterJobs()"/>
+        <div class="range-labels" style="margin-top:.3rem;"><span></span><span>hasta $50,000</span></div>
+      </div>
+    </div>
+
+    </div><!-- /filters-body -->
+  </aside>
+
+  <!-- RESULTS -->
+  <div>
+    <div class="results-header">
+      <p class="results-count"><strong id="resultsCount">8</strong> vacantes encontradas</p>
+      <select class="sort-select" onchange="filterJobs()">
+        <option value="reciente">Más recientes</option>
+        <option value="salario-desc">Mayor salario</option>
+        <option value="salario-asc">Menor salario</option>
+        <option value="az">A → Z</option>
+      </select>
+    </div>
+
+    <div class="jobs-grid" id="jobsGrid">
+      <!-- Cards generadas por JS -->
+    </div>
+
+    <div class="no-results" id="noResults" style="display:none;">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h3>Sin resultados</h3>
+      <p>No encontramos vacantes con esos filtros.<br/>Intenta con otras combinaciones.</p>
+    </div>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-grid">
+    <div class="f-brand">
+      <span class="f-logo-name">KYOSZEN</span>
+      <p>Estrategia en Capital Humano. Conectamos el talento correcto con las empresas que crecen.</p>
+      <div class="f-soc"><a href="#">f</a><a href="#">in</a><a href="#">tt</a></div>
+    </div>
+    <div class="f-col"><h5>Navegación</h5><a href="index.html">Inicio</a><a href="servicios.html">Servicios</a><a href="vacantes.html">Vacantes</a><a href="cursos.html">Cursos</a><a href="nosotros.html">Nosotros</a><a href="contacto.html">Contacto</a></div>
+    <div class="f-col"><h5>Servicios</h5><a href="servicios.html">Reclutamiento</a><a href="cursos.html">Capacitación</a><a href="servicios.html">Inducción</a><a href="servicios.html">Digitalización</a><a href="candidatos.html">Para Candidatos</a><a href="empresas.html">Para Empresas</a></div>
+    <div class="f-col"><h5>Contacto</h5>
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.85rem;"><div style="width:30px;height:30px;background:rgba(255,255,255,.07);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📞</div><span style="font-size:12px;opacity:.5;">55 2087 6765</span></div>
+      <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.85rem;"><div style="width:30px;height:30px;background:rgba(255,255,255,.07);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">✉️</div><span style="font-size:12px;opacity:.5;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="422a2d2e2302293b2d3138272c6c212d2f">[email&#160;protected]</a></span></div>
+      <div style="display:flex;align-items:center;gap:.7rem;"><div style="width:30px;height:30px;background:rgba(255,255,255,.07);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🕐</div><span style="font-size:12px;opacity:.5;">Lun–Vie 9am–6pm</span></div>
+    </div>
+  </div>
+  <div class="f-bot"><p>© 2026 Kyoszen · Todos los derechos reservados</p><p>Diseñado por Holadiseño!</p></div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+function toggleFilters(){
+  const btn=document.getElementById('filterToggle');
+  const body=document.getElementById('filtersBody');
+  btn.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+window.addEventListener('scroll',()=>{document.getElementById('mainNav').classList.toggle('scrolled',window.scrollY>20);});
+
+const JOBS = [
+  {id:1,titulo:'Auxiliar Administrativo',categoria:'Administrativo',ubicacion:'CDMX',contrato:'Tiempo completo',jornada:'Matutina',salario:12000,badge:'new',badgeLabel:'Nuevo',desc:'Apoyo en gestión documental, atención a clientes internos y manejo de agenda ejecutiva.',tags:['Office 365','Atención al cliente','Organización'],icon:'admin',color:'var(--blue-soft)',stroke:'var(--blue)'},
+  {id:2,titulo:'Operador de Almacén',categoria:'Operaciones',ubicacion:'Estado de México',contrato:'Tiempo completo',jornada:'Matutina',salario:10000,badge:'urg',badgeLabel:'Urgente',desc:'Control de inventarios, recepción y despacho de mercancía, manejo de montacargas.',tags:['Inventarios','Montacargas','Logística'],icon:'box',color:'var(--yellow-soft)',stroke:'#b45309'},
+  {id:3,titulo:'Ejecutivo de Ventas',categoria:'Ventas',ubicacion:'CDMX',contrato:'Tiempo completo',jornada:'Matutina',salario:18000,badge:'av',badgeLabel:'Disponible',desc:'Prospección, seguimiento y cierre de ventas B2B. Manejo de CRM y cumplimiento de metas.',tags:['Ventas B2B','CRM','Negociación'],icon:'ventas',color:'#fff3b0',stroke:'#b45309'},
+  {id:4,titulo:'Recepcionista',categoria:'Atención al cliente',ubicacion:'CDMX',contrato:'Medio tiempo',jornada:'Matutina',salario:8000,badge:'av',badgeLabel:'Disponible',desc:'Atención presencial y telefónica, coordinación de citas y gestión de correspondencia.',tags:['Atención al cliente','Multitareas','Comunicación'],icon:'tel',color:'var(--purple-soft)',stroke:'var(--purple)'},
+  {id:5,titulo:'Coordinador de RRHH',categoria:'RRHH',ubicacion:'CDMX',contrato:'Tiempo completo',jornada:'Matutina',salario:22000,badge:'new',badgeLabel:'Nuevo',desc:'Gestión de nómina, reclutamiento, capacitación y relaciones laborales en empresa en crecimiento.',tags:['Nómina','Reclutamiento','Relaciones laborales'],icon:'rrhh',color:'var(--green-soft)',stroke:'#15803d'},
+  {id:6,titulo:'Vendedor de Campo',categoria:'Ventas',ubicacion:'Estado de México',contrato:'Tiempo completo',jornada:'Matutina',salario:15000,badge:'urg',badgeLabel:'Urgente',desc:'Visitas a clientes, presentación de productos y seguimiento posventa en zona Edomex.',tags:['Ventas externas','Zona Edomex','Prospectos'],icon:'ventas',color:'#fff3b0',stroke:'#b45309'},
+  {id:7,titulo:'Auxiliar Contable',categoria:'Administrativo',ubicacion:'Híbrido',contrato:'Tiempo completo',jornada:'Matutina',salario:13000,badge:'av',badgeLabel:'Disponible',desc:'Registro de operaciones contables, conciliaciones bancarias y elaboración de reportes financieros.',tags:['Contabilidad','SAP','Excel avanzado'],icon:'admin',color:'var(--blue-soft)',stroke:'var(--blue)'},
+  {id:8,titulo:'Agente de Servicio al Cliente',categoria:'Atención al cliente',ubicacion:'Remoto',contrato:'Por proyecto',jornada:'Vespertina',salario:9500,badge:'av',badgeLabel:'Disponible',desc:'Atención a clientes vía chat, correo y teléfono. Resolución de incidencias y seguimiento de casos.',tags:['Zendesk','Servicio al cliente','Remoto'],icon:'tel',color:'var(--purple-soft)',stroke:'var(--purple)'},
+];
+
+const ICONS = {
+  admin:`<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+  box:`<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="7" width="21" height="14" rx="1.5"/><path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>`,
+  ventas:`<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+  tel:`<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+  rrhh:`<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+};
+
+let currentPage = 1;
+const PER_PAGE = 6;
+
+function getFilters(){
+  const checked = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i=>i.value);
+  return {
+    ubicacion: checked('ubicacion'),
+    categoria: checked('categoria'),
+    contrato:  checked('contrato'),
+    jornada:   checked('jornada'),
+    salario:   parseInt(document.getElementById('salaryRange').value),
+    search:    document.getElementById('searchInput').value.toLowerCase().trim(),
+  };
+}
+
+function filterJobs(){
+  const f = getFilters();
+  let jobs = JOBS.filter(j=>{
+    if(f.ubicacion.length && !f.ubicacion.includes(j.ubicacion)) return false;
+    if(f.categoria.length && !f.categoria.includes(j.categoria)) return false;
+    if(f.contrato.length  && !f.contrato.includes(j.contrato))   return false;
+    if(f.jornada.length   && !f.jornada.includes(j.jornada))     return false;
+    if(j.salario > f.salario) return false;
+    if(f.search && !j.titulo.toLowerCase().includes(f.search) && !j.categoria.toLowerCase().includes(f.search) && !j.desc.toLowerCase().includes(f.search)) return false;
+    return true;
+  });
+
+  const sort = document.querySelector('.sort-select').value;
+  if(sort==='salario-desc') jobs.sort((a,b)=>b.salario-a.salario);
+  else if(sort==='salario-asc') jobs.sort((a,b)=>a.salario-b.salario);
+  else if(sort==='az') jobs.sort((a,b)=>a.titulo.localeCompare(b.titulo));
+
+  currentPage = 1;
+  renderJobs(jobs);
+  renderPagination(jobs.length);
+  updateChips(f);
+  document.getElementById('resultsCount').textContent = jobs.length;
+}
+
+function renderJobs(jobs){
+  const grid = document.getElementById('jobsGrid');
+  const noRes = document.getElementById('noResults');
+  const start = (currentPage-1)*PER_PAGE;
+  const page = jobs.slice(start, start+PER_PAGE);
+  if(!page.length){grid.innerHTML='';noRes.style.display='block';return;}
+  noRes.style.display='none';
+  grid.innerHTML = page.map(j=>`
+    <a class="job-card" href="candidatos.html">
+      <div class="job-card-top">
+        <span class="job-cat">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6c0 3.75 4.5 8.5 4.5 8.5s4.5-4.75 4.5-8.5c0-2.49-2.01-4.5-4.5-4.5Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.5" stroke="currentColor" stroke-width="1.4"/></svg>
+          ${j.ubicacion.toUpperCase()}
+        </span>
+        <span class="badge b-${j.badge}">${j.badgeLabel}</span>
+      </div>
+      <div class="job-logo" style="background:${j.color};"><svg style="stroke:${j.stroke}" width="20" height="20">${ICONS[j.icon].match(/<svg[^>]*>([\s\S]*)<\/svg>/)[1]}</svg></div>
+      <div class="job-title">${j.titulo}</div>
+      <div class="job-meta">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M5 7h6M5 10h4" stroke-linecap="round"/></svg>
+        ${j.categoria} · ${j.contrato}
+      </div>
+      <div class="job-meta" style="margin-top:2px;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><polyline points="8 5 8 8 10.5 9.5" stroke-linecap="round"/></svg>
+        ${j.jornada}
+      </div>
+      <div class="job-tags">${j.tags.map(t=>`<span class="job-tag">${t}</span>`).join('')}</div>
+      <div class="job-footer">
+        <span class="job-salary">$${j.salario.toLocaleString()} / mes</span>
+        <span class="job-apply">Aplicar →</span>
+      </div>
+    </a>
+  `).join('');
+}
+
+function renderPagination(total){
+  const pages = Math.ceil(total/PER_PAGE);
+  const pg = document.getElementById('pagination');
+  if(pages<=1){pg.innerHTML='';return;}
+  let h = `<button class="page-btn arrow" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>`;
+  for(let i=1;i<=pages;i++) h+=`<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  h+=`<button class="page-btn arrow" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>`;
+  pg.innerHTML=h;
+}
+
+function goPage(p){
+  const f=getFilters();
+  let jobs=JOBS.filter(j=>{
+    if(f.ubicacion.length&&!f.ubicacion.includes(j.ubicacion))return false;
+    if(f.categoria.length&&!f.categoria.includes(j.categoria))return false;
+    if(f.contrato.length&&!f.contrato.includes(j.contrato))return false;
+    if(f.jornada.length&&!f.jornada.includes(j.jornada))return false;
+    if(j.salario>f.salario)return false;
+    if(f.search&&!j.titulo.toLowerCase().includes(f.search))return false;
+    return true;
+  });
+  const pages=Math.ceil(jobs.length/PER_PAGE);
+  if(p<1||p>pages)return;
+  currentPage=p;
+  renderJobs(jobs);
+  renderPagination(jobs.length);
+  window.scrollTo({top:300,behavior:'smooth'});
+}
+
+function updateSalary(v){
+  document.getElementById('salaryVal').textContent='$'+parseInt(v).toLocaleString();
+}
+
+function updateChips(f){
+  const chips=[];
+  f.ubicacion.forEach(v=>chips.push({label:`📍 ${v}`,key:'ubicacion',val:v}));
+  f.categoria.forEach(v=>chips.push({label:`🗂 ${v}`,key:'categoria',val:v}));
+  f.contrato.forEach(v=>chips.push({label:`📋 ${v}`,key:'contrato',val:v}));
+  f.jornada.forEach(v=>chips.push({label:`🕐 ${v}`,key:'jornada',val:v}));
+  if(f.salario<50000) chips.push({label:`💰 hasta $${f.salario.toLocaleString()}`,key:'salary',val:null});
+  if(f.search) chips.push({label:`🔍 "${f.search}"`,key:'search',val:null});
+  const wrap=document.getElementById('activeFilters');
+  const chipsEl=document.getElementById('filterChips');
+  if(!chips.length){wrap.style.display='none';return;}
+  wrap.style.display='flex';
+  chipsEl.innerHTML=chips.map(c=>`<span class="filter-chip">${c.label}<button onclick="removeChip('${c.key}','${c.val||''}')">×</button></span>`).join('');
+}
+
+function removeChip(key,val){
+  if(key==='salary'){document.getElementById('salaryRange').value=50000;updateSalary(50000);}
+  else if(key==='search'){document.getElementById('searchInput').value='';}
+  else{const cb=document.querySelector(`input[name="${key}"][value="${val}"]`);if(cb)cb.checked=false;}
+  filterJobs();
+}
+
+function clearAll(){
+  document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  document.getElementById('searchInput').value='';
+  document.getElementById('salaryRange').value=50000;
+  updateSalary(50000);
+  filterJobs();
+}
+
+filterJobs();
+</script>
+</body>
+</html>

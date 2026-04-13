@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="Nosotros — Kyoszen. Conoce al equipo detrás de la mejor consultora de capital humano en México."/>
+<title>Nosotros — Kyoszen</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html{overflow-x:hidden;}
+:root{
+  --blue:#0033FF;--blue-soft:#EAE0FB;--blue-mid:#9770FF;
+  --yellow:#F5C842;--yellow-soft:#fff3b0;
+  --green:#22c55e;--green-soft:#bbf7d0;
+  --purple:#9770FF;--purple-soft:#EAE0FB;
+  --orange:#f97316;--orange-soft:#ffedd5;
+  --text:#00033D;--muted:#6b7280;--border:#D8D3F0;
+  --bg:#F4F2FF;--white:#fff;--wa:#25D366;
+  --r:12px;--r2:20px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;color:var(--text);background:var(--white);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+
+/* ── NAV ── */
+nav{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,.07);border-radius:999px;padding:8px 12px;height:62px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1rem;width:calc(100% - 48px);max-width:1100px;box-shadow:0 4px 24px rgba(0,0,0,.07);transition:box-shadow .3s,background .3s;}
+nav.scrolled{box-shadow:0 8px 32px rgba(0,0,0,.12);background:rgba(255,255,255,.99);}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+.nav-links{display:flex;gap:4px;justify-content:center;}
+.nav-links a{text-decoration:none;color:#555;font-size:13px;padding:7px 15px;border-radius:999px;font-weight:500;border:1.5px solid transparent;transition:.18s;white-space:nowrap;}
+.nav-links a:hover{border-color:#d0d3e8;color:var(--blue);background:var(--blue-soft);}
+.nav-links a.active{border-color:var(--blue);color:var(--blue);background:var(--blue-soft);}
+.nav-right{display:flex;align-items:center;gap:.5rem;flex-shrink:0;}
+.btn-wa{background:var(--wa);color:#fff;border:none;border-radius:999px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none;flex-shrink:0;transition:.15s;font-size:13px;font-weight:700;font-family:inherit;white-space:nowrap;}
+.btn-wa:hover{opacity:.9;}
+.btn-wa svg{width:16px;height:16px;flex-shrink:0;}
+.btn-wa .wa-label{display:inline;}
+@media(max-width:768px){
+  .btn-wa{border-radius:50%;padding:0;width:40px;height:40px;justify-content:center;}
+  .btn-wa .wa-label{display:none;}
+}
+.hbg{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:4px;}
+.hbg span{width:20px;height:2px;background:var(--text);border-radius:2px;display:block;}
+.mob{display:none;position:fixed;top:88px;left:20px;right:20px;background:rgba(255,255,255,.98);padding:1rem 1.25rem;flex-direction:column;z-index:99;border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.12);border:1px solid rgba(0,0,0,.06);gap:4px;backdrop-filter:blur(12px);}
+.mob.open{display:flex;}
+.mob a{padding:10px 14px;border-radius:10px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;}
+.mob a:hover{background:var(--blue-soft);color:var(--blue);}
+.mob-wa{background:var(--wa);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-top:.5rem;text-align:center;text-decoration:none;display:block;}
+
+/* ── BUTTONS ── */
+.btn-blue{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+.btn-blue:hover{background:#1316a8;}
+.btn-outline{background:var(--white);color:var(--blue);border:2px solid var(--blue);border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;}
+.btn-outline:hover{background:var(--blue-soft);}
+
+/* ── HERO ── */
+.about-hero{background:var(--text);padding:110px 5% 4rem;position:relative;overflow:hidden;}
+.about-hero::before{content:'';position:absolute;width:200px;height:200px;background:rgba(255,255,255,.05);border-radius:50%;top:40px;right:8%;pointer-events:none;}
+.about-hero-inner{max-width:1200px;margin:0 auto;text-align:center;position:relative;z-index:1;}
+.about-hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1.05;margin-bottom:.85rem;}
+.about-hero p{font-size:15px;color:rgba(255,255,255,.6);line-height:1.75;max-width:540px;margin:0 auto;}
+/* decorative dots */
+.dot{position:absolute;border-radius:50%;background:#fff;opacity:.08;}
+
+/* ── PHOTO COLLAGE ── */
+.collage{max-width:1200px;margin:0 auto;padding:3rem 5% 0;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;}
+@media(max-width:700px){.collage{grid-template-columns:1fr 1fr;}}
+.collage-img{width:100%;height:200px;object-fit:cover;border-radius:var(--r2);display:block;}
+.collage-img:nth-child(2){margin-top:2rem;}
+.collage-img:nth-child(4){margin-top:-2rem;}
+@media(max-width:700px){.collage-img:nth-child(2),.collage-img:nth-child(4){margin-top:0;}}
+
+/* ── SECTIONS ── */
+.sec{padding:5rem 5%;}
+.sec-inner{max-width:1200px;margin:0 auto;}
+.sec-lbl{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:2px;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;}
+.sec-lbl::before{content:'';width:14px;height:2px;background:var(--yellow);border-radius:1px;}
+
+/* ── MISSION ── */
+.mission-grid{display:grid;grid-template-columns:1fr;gap:3rem;align-items:start;}
+@media(min-width:760px){.mission-grid{grid-template-columns:1fr 1fr;gap:4rem;}}
+.mission-grid h2{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-bottom:1.5rem;}
+.mission-col p{font-size:13.5px;color:var(--muted);line-height:1.85;}
+
+/* ── EMPOWER ── */
+.empower-grid{display:grid;grid-template-columns:1fr;gap:3rem;align-items:center;}
+@media(min-width:760px){.empower-grid{grid-template-columns:1fr 1fr;gap:3.5rem;}}
+.empower-img-wrap{position:relative;}
+.empower-img{width:100%;height:380px;object-fit:cover;border-radius:var(--r2);display:block;}
+.empower-quote{position:absolute;bottom:1.5rem;left:1.5rem;right:1.5rem;background:rgba(255,255,255,.95);border-radius:var(--r);padding:1rem 1.25rem;backdrop-filter:blur(8px);}
+.empower-quote p{font-size:13px;font-weight:600;color:var(--text);margin-bottom:.25rem;}
+.empower-quote span{font-size:11.5px;color:var(--muted);}
+.empower-content h2{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2;margin-bottom:1rem;}
+.empower-content p{font-size:13.5px;color:var(--muted);line-height:1.85;margin-bottom:1.25rem;}
+.empower-blockquote{background:var(--blue-soft);border-left:3px solid var(--blue);border-radius:0 var(--r) var(--r) 0;padding:1rem 1.25rem;margin-top:1.25rem;}
+.empower-blockquote p{font-size:13px;font-style:italic;color:var(--text);line-height:1.7;margin:0;}
+
+/* ── CTA GROW ── */
+.cta-grow{background:var(--text);padding:5rem 5%;text-align:center;position:relative;overflow:hidden;}
+.cta-grow::before{content:'';position:absolute;width:250px;height:250px;background:rgba(255,255,255,.15);border-radius:50%;top:-80px;left:-60px;pointer-events:none;}
+.cta-grow::after{content:'';position:absolute;width:180px;height:180px;background:rgba(255,255,255,.1);border-radius:50%;bottom:-50px;right:5%;pointer-events:none;}
+.cta-grow-inner{position:relative;z-index:1;max-width:700px;margin:0 auto;}
+.cta-grow h2{font-size:clamp(1.8rem,4vw,3rem);font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1.1;margin-bottom:.85rem;}
+.cta-grow p{font-size:14.5px;color:rgba(255,255,255,.6);line-height:1.75;margin-bottom:2rem;}
+.cta-grow-btns{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;}
+.btn-dark{background:var(--yellow);color:var(--text);border:none;border-radius:8px;padding:12px 28px;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
+.btn-dark:hover{background:#e6b800;}
+
+/* ── VALUES ── */
+.values-grid{display:grid;grid-template-columns:1fr;gap:1.5rem;margin-top:2.5rem;}
+@media(min-width:560px){.values-grid{grid-template-columns:1fr 1fr 1fr;}}
+.value-item{text-align:center;padding:1.5rem 1rem;}
+.value-ic{width:64px;height:64px;border-radius:50%;background:var(--blue-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+.value-ic svg{width:26px;height:26px;fill:none;stroke:var(--blue);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.value-item h4{font-size:15px;font-weight:700;margin-bottom:.4rem;}
+.value-item p{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* ── STATS ── */
+.stats-band{background:var(--bg);padding:4rem 5%;}
+.stats-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:2rem;text-align:center;}
+@media(min-width:760px){.stats-inner{grid-template-columns:repeat(4,1fr);}}
+.stat-n{font-size:2.8rem;font-weight:900;color:var(--blue);line-height:1;margin-bottom:.3rem;}
+.stat-l{font-size:13px;color:var(--muted);font-weight:600;}
+.stat-s{font-size:11px;color:#bbb;margin-top:2px;}
+
+/* ── TEAM ── */
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2.5rem;}
+@media(min-width:760px){.team-grid{grid-template-columns:repeat(4,1fr);}}
+.team-card{text-align:center;}
+.team-av{width:100%;height:220px;object-fit:cover;object-position:top;border-radius:var(--r2);display:block;margin-bottom:1rem;background:var(--bg);}
+.team-name{font-size:14px;font-weight:700;margin-bottom:2px;}
+.team-role{font-size:12.5px;color:var(--muted);}
+
+/* ── FOOTER ── */
+footer{background:#030812;color:#fff;padding:4rem 5% 2rem;}
+.f-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:2.5rem;padding-bottom:2.5rem;border-bottom:1px solid rgba(255,255,255,.07);}
+.f-brand .f-logo-name{color:#fff;font-size:18px;display:block;margin-bottom:.7rem;font-weight:900;letter-spacing:2px;}
+.f-brand p{font-size:12px;opacity:.4;line-height:1.7;max-width:230px;margin-bottom:1.25rem;}
+.f-soc{display:flex;gap:.5rem;}
+.f-soc a{width:34px;height:34px;background:rgba(255,255,255,.07);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;text-decoration:none;}
+.f-soc a:hover{background:var(--blue);}
+.f-col h5{font-size:12.5px;font-weight:800;margin-bottom:1rem;opacity:.85;}
+.f-col a{display:block;font-size:12px;opacity:.4;color:#fff;text-decoration:none;margin-bottom:8px;}
+.f-col a:hover{opacity:1;}
+.f-ct{display:flex;align-items:center;gap:.7rem;margin-bottom:.85rem;}
+.f-ic{width:30px;height:30px;background:rgba(255,255,255,.07);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.f-ct span{font-size:12px;opacity:.5;}
+.f-bot{max-width:1200px;margin:2rem auto 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.f-bot p{font-size:11px;opacity:.2;}
+@media(min-width:960px){.f-grid{grid-template-columns:1.7fr 1fr 1fr 1.5fr;}}
+@media(max-width:768px){.hbg{display:flex;}.nav-links{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <a class="logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 225.53 64.41" height="38" style="display:block;">
+      <defs>
+        <style>.c1{fill:none}.c2{clip-path:url(#p1)}.c3{fill:url(#g1)}.c4{clip-path:url(#p2)}.c5{fill:url(#g2)}.c6{clip-path:url(#p3)}.c7{fill:url(#g3)}.c8{clip-path:url(#p4)}.c9{fill:url(#g4)}.c10{clip-path:url(#p5)}.c11{fill:url(#g5)}.c12{clip-path:url(#p6)}.c13{fill:url(#g6)}.c14{clip-path:url(#p7)}.c15{fill:url(#g7)}.c16{clip-path:url(#p8)}.c17{fill:url(#g8)}.c18{clip-path:url(#p9)}.c19{fill:url(#g9)}.c20{clip-path:url(#p10)}.c21{fill:url(#g10)}.c22{fill:#706f6f}.c23{fill:#153553}</style>
+        <clipPath id="p1" transform="translate(-79.54 -82.74)"><polygon class="c1" points="127.81 96.03 135.4 88.07 124.23 119.73 127.81 96.03"/></clipPath>
+        <linearGradient id="g1" x1="22.81" y1="226.78" x2="23.26" y2="226.78" gradientTransform="matrix(-47.76,0,0,47.76,1227.99,-10727.74)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2fb8e9"/><stop offset=".13" stop-color="#2fb1e2"/><stop offset=".33" stop-color="#2d9cce"/><stop offset=".56" stop-color="#2c7bad"/><stop offset=".83" stop-color="#294d80"/><stop offset="1" stop-color="#272b5e"/></linearGradient>
+        <clipPath id="p2" transform="translate(-79.54 -82.74)"><polygon class="c1" points="117.38 117.76 122.61 131.17 127.83 96.02 117.38 117.76"/></clipPath>
+        <linearGradient id="g2" x1="22.9" y1="226.58" x2="23.36" y2="226.58" gradientTransform="matrix(-43.08,0,0,43.08,1119.39,-9646.65)" xlink:href="#g1"/>
+        <clipPath id="p3" transform="translate(-79.54 -82.74)"><polygon class="c1" points="102.23 96.03 94.65 88.07 105.8 119.73 102.23 96.03"/></clipPath>
+        <linearGradient id="g3" x1="18.89" y1="229.66" x2="19.35" y2="229.66" gradientTransform="matrix(0,47.75,-47.75,0,11065.19,-807.09)" xlink:href="#g1"/>
+        <clipPath id="p4" transform="translate(-79.54 -82.74)"><polygon class="c1" points="112.66 117.76 107.44 131.17 102.21 96.02 112.66 117.76"/></clipPath>
+        <linearGradient id="g4" x1="18.57" y1="229.77" x2="19.02" y2="229.77" gradientTransform="translate(10007.46 -696.56) rotate(90) scale(43.09)" xlink:href="#g1"/>
+        <clipPath id="p5" transform="translate(-79.54 -82.74)"><polygon class="c1" points="110.53 128.32 118.85 132.8 119.98 143.5 110.53 128.32"/></clipPath>
+        <linearGradient id="g5" x1="19.83" y1="221.56" x2="20.28" y2="221.56" gradientTransform="matrix(0,23.34,23.34,0,-5056.93,-328.57)" xlink:href="#g1"/>
+        <clipPath id="p6" transform="translate(-79.54 -82.74)"><polygon class="c1" points="119.51 128.32 111.19 132.8 110.05 143.5 119.51 128.32"/></clipPath>
+        <linearGradient id="g6" x1="22.92" y1="223.87" x2="23.37" y2="223.87" gradientTransform="matrix(-25.75,0,0,25.75,706.51,-5628.33)" xlink:href="#g1"/>
+        <clipPath id="p7" transform="translate(-79.54 -82.74)"><polygon class="c1" points="117.39 117.76 112.65 117.76 107.43 131.16 122.61 131.16 117.39 117.76"/></clipPath>
+        <linearGradient id="g7" x1="19.61" y1="223.05" x2="20.07" y2="223.05" gradientTransform="matrix(0,31.78,31.78,0,-6973.38,-504.69)" xlink:href="#g1"/>
+        <clipPath id="p8" transform="translate(-79.54 -82.74)"><polygon class="c1" points="115.02 135.54 107.43 131.16 122.61 131.16 115.02 135.54"/></clipPath>
+        <linearGradient id="g8" x1="18.23" y1="219.68" x2="18.68" y2="219.68" gradientTransform="matrix(0,17.3,17.3,0,-3686.44,-186.53)" xlink:href="#g1"/>
+        <clipPath id="p9" transform="translate(-79.54 -82.74)"><path class="c1" d="M112.65,117.76l-5.22,13.4Z"/></clipPath>
+        <linearGradient id="g9" x1="11.28" y1="244.76" x2="11.74" y2="244.76" gradientTransform="matrix(0,6.42,-6.42,0,1681.25,50.83)" xlink:href="#g1"/>
+        <clipPath id="p10" transform="translate(-79.54 -82.74)"><polygon class="c1" points="113 117.76 117.28 117.76 115.02 123.29 113 117.76"/></clipPath>
+        <linearGradient id="g10" x1="27.74" y1="221.54" x2="28.2" y2="221.54" gradientTransform="matrix(-13.43,0,0,13.43,491.09,-2854.8)" xlink:href="#g1"/>
+      </defs>
+      <g class="c2"><rect class="c3" x="115.94" y="87.83" width="27.74" height="32.13" transform="translate(-115.86 14.25) rotate(-36.29)"/></g>
+      <g class="c4"><rect class="c5" x="107.99" y="96.33" width="29.24" height="34.52" transform="translate(-122.99 11.87) rotate(-36.29)"/></g>
+      <g class="c6"><rect class="c7" x="84.16" y="90.03" width="32.12" height="27.73" transform="translate(-122.38 40.44) rotate(-53.71)"/></g>
+      <g class="c8"><rect class="c9" x="90.17" y="98.98" width="34.52" height="29.23" transform="translate(-127.26 50.21) rotate(-53.71)"/></g>
+      <g class="c10"><rect class="c11" x="108.52" y="127.27" width="13.48" height="17.28" transform="translate(-114.24 -43.12) rotate(-17)"/></g>
+      <g class="c12"><rect class="c13" x="105.9" y="128.4" width="17.76" height="15.02" transform="translate(-136.64 99.05) rotate(-64.76)"/></g>
+      <g class="c14"><rect class="c15" x="105.26" y="115.11" width="19.52" height="18.7" transform="translate(-122.49 -19.65) rotate(-26.03)"/></g>
+      <g class="c16"><rect class="c17" x="107.51" y="127.29" width="15.03" height="12.12" transform="translate(-134.49 4.53) rotate(-34.05)"/></g>
+      <g class="c18"><rect class="c19" x="103.09" y="118.39" width="13.89" height="12.14" transform="translate(-134.95 56.74) rotate(-53.71)"/></g>
+      <g class="c20"><rect class="c21" x="111.72" y="117.39" width="6.84" height="6.27" transform="translate(-123.23 88.36) rotate(-63.97)"/></g>
+      <path class="c23" d="M169.16,97.74c-3.32,0-5,2.29-7.08,4.37l-8.74,8.75v-8.12c0-4.16-.83-5-3.74-5h-3.75v.84h.84c2.5,0,2.91,1.66,2.91,4.16v22.47h3.74V111.48l8.74,9.15c4,4.17,6.66,5,8.95,5a7.86,7.86,0,0,0,2.71-.42v-.79c-2.08-.25-4.83-2.24-7.07-4.62l-9.58-10,8.12-8.12a15.27,15.27,0,0,1,1.83-1.61c.54-.38,1.06-.87,1.55-.87.73,0,1.23.77,1.75,1.38a23.38,23.38,0,0,1,1.93,2.56l7.08,10.69v11.36h3.74V113.56l9.74-15.82H191l-8.7,14-6-9.37c-1.46-2.29-3.12-4.58-6.24-4.58Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M202.5,96.91c7.9,0,12.89,6.41,12.89,14.57s-5,14.57-12.89,14.57-12.91-6.41-12.91-14.57,5-14.57,12.91-14.57m0,1.67c-5.42,0-8.74,5-8.74,12.9s3.32,12.9,8.74,12.9,8.73-5,8.73-12.9-3.33-12.9-8.73-12.9" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M226.29,125.92c-4.54,0-9.49-2-9.49-5.08v-4.45h.74c.92,5.58,3.71,7.86,8.37,7.86,2.87,0,5.45-1.49,5.45-4.24,0-2.41-1.54-4-4.58-5.74l-5.12-3c-3.54-2.08-4.86-4.08-4.86-7.16,0-4.29,3.2-7.07,8.07-7.07,4.12,0,9,1.87,9,5v4.46h-.75c-.92-5.59-3.58-7.79-8.24-7.79-2.46,0-4.82,1.62-4.82,4.2,0,2.42,1.58,3.67,4.61,5.46l5.12,3c3.54,2.08,5.16,3.78,5.16,6.86,0,4.66-3.29,7.7-8.65,7.7" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M258.08,97.74l-17.69,25.81h17.55v1.66H235.19v-.83l17.27-25h-10c-3.33,0-5.2,1.45-5.2,4.78h-.83v-3.11c0-1.67.62-3.34,3.53-3.34Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M276.57,97.74c2.9,0,3.53,1.67,3.53,3.34v3.11h-.84c0-3.33-1.87-4.78-5.2-4.78h-7.74v10.82h11.24v1.67H266.32v11.65h7.29c3.74,0,5.83-1.25,7.07-4.58l.83.21-1.45,3.95a3.06,3.06,0,0,1-3.12,2.08H262.58V102.74c0-2.5-.42-4.16-2.92-4.16h-.83v-.84Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M284.44,102.74c0-2.5-.83-4.16-3.74-4.16h-.42v-.84H283a6.66,6.66,0,0,1,5.61,2.5l14.57,18.11V97.74h1.67v27.89H304l-17.89-22.27v21.85h-1.67Z" transform="translate(-79.54 -82.74)"/>
+    </svg>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="vacantes.html">Vacantes</a>
+    <a href="cursos.html">Cursos</a>
+    <a href="nosotros.html" class="active">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+  </div>
+  <div class="nav-right">
+    <a class="btn-wa" href="https://wa.me/525520876765" target="_blank" aria-label="Whatsapp">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      <span class="wa-label">Whatsapp</span>
+    </a>
+  </div>
+  <button class="hbg" onclick="document.getElementById('mob').classList.toggle('open')"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- MENÚ MÓVIL -->
+<div class="mob" id="mob">
+  <a href="index.html">Inicio</a>
+  <a href="servicios.html">Servicios</a>
+  <a href="vacantes.html">Vacantes</a>
+  <a href="cursos.html">Cursos</a>
+  <a href="nosotros.html" class="active">Nosotros</a>
+  <a href="contacto.html">Contacto</a>
+  <a class="mob-wa" href="https://wa.me/525520876765" target="_blank">Whatsapp</a>
+</div>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <a class="logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 225.53 64.41" height="38" style="display:block;">
+      <defs>
+        <style>.c1{fill:none}.c2{clip-path:url(#p1)}.c3{fill:url(#g1)}.c4{clip-path:url(#p2)}.c5{fill:url(#g2)}.c6{clip-path:url(#p3)}.c7{fill:url(#g3)}.c8{clip-path:url(#p4)}.c9{fill:url(#g4)}.c10{clip-path:url(#p5)}.c11{fill:url(#g5)}.c12{clip-path:url(#p6)}.c13{fill:url(#g6)}.c14{clip-path:url(#p7)}.c15{fill:url(#g7)}.c16{clip-path:url(#p8)}.c17{fill:url(#g8)}.c18{clip-path:url(#p9)}.c19{fill:url(#g9)}.c20{clip-path:url(#p10)}.c21{fill:url(#g10)}.c22{fill:#706f6f}.c23{fill:#153553}</style>
+        <clipPath id="p1" transform="translate(-79.54 -82.74)"><polygon class="c1" points="127.81 96.03 135.4 88.07 124.23 119.73 127.81 96.03"/></clipPath>
+        <linearGradient id="g1" x1="22.81" y1="226.78" x2="23.26" y2="226.78" gradientTransform="matrix(-47.76,0,0,47.76,1227.99,-10727.74)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2fb8e9"/><stop offset=".13" stop-color="#2fb1e2"/><stop offset=".33" stop-color="#2d9cce"/><stop offset=".56" stop-color="#2c7bad"/><stop offset=".83" stop-color="#294d80"/><stop offset="1" stop-color="#272b5e"/></linearGradient>
+        <clipPath id="p2" transform="translate(-79.54 -82.74)"><polygon class="c1" points="117.38 117.76 122.61 131.17 127.83 96.02 117.38 117.76"/></clipPath>
+        <linearGradient id="g2" x1="22.9" y1="226.58" x2="23.36" y2="226.58" gradientTransform="matrix(-43.08,0,0,43.08,1119.39,-9646.65)" xlink:href="#g1"/>
+        <clipPath id="p3" transform="translate(-79.54 -82.74)"><polygon class="c1" points="102.23 96.03 94.65 88.07 105.8 119.73 102.23 96.03"/></clipPath>
+        <linearGradient id="g3" x1="18.89" y1="229.66" x2="19.35" y2="229.66" gradientTransform="matrix(0,47.75,-47.75,0,11065.19,-807.09)" xlink:href="#g1"/>
+        <clipPath id="p4" transform="translate(-79.54 -82.74)"><polygon class="c1" points="112.66 117.76 107.44 131.17 102.21 96.02 112.66 117.76"/></clipPath>
+        <linearGradient id="g4" x1="18.57" y1="229.77" x2="19.02" y2="229.77" gradientTransform="translate(10007.46 -696.56) rotate(90) scale(43.09)" xlink:href="#g1"/>
+        <clipPath id="p5" transform="translate(-79.54 -82.74)"><polygon class="c1" points="110.53 128.32 118.85 132.8 119.98 143.5 110.53 128.32"/></clipPath>
+        <linearGradient id="g5" x1="19.83" y1="221.56" x2="20.28" y2="221.56" gradientTransform="matrix(0,23.34,23.34,0,-5056.93,-328.57)" xlink:href="#g1"/>
+        <clipPath id="p6" transform="translate(-79.54 -82.74)"><polygon class="c1" points="119.51 128.32 111.19 132.8 110.05 143.5 119.51 128.32"/></clipPath>
+        <linearGradient id="g6" x1="22.92" y1="223.87" x2="23.37" y2="223.87" gradientTransform="matrix(-25.75,0,0,25.75,706.51,-5628.33)" xlink:href="#g1"/>
+        <clipPath id="p7" transform="translate(-79.54 -82.74)"><polygon class="c1" points="117.39 117.76 112.65 117.76 107.43 131.16 122.61 131.16 117.39 117.76"/></clipPath>
+        <linearGradient id="g7" x1="19.61" y1="223.05" x2="20.07" y2="223.05" gradientTransform="matrix(0,31.78,31.78,0,-6973.38,-504.69)" xlink:href="#g1"/>
+        <clipPath id="p8" transform="translate(-79.54 -82.74)"><polygon class="c1" points="115.02 135.54 107.43 131.16 122.61 131.16 115.02 135.54"/></clipPath>
+        <linearGradient id="g8" x1="18.23" y1="219.68" x2="18.68" y2="219.68" gradientTransform="matrix(0,17.3,17.3,0,-3686.44,-186.53)" xlink:href="#g1"/>
+        <clipPath id="p9" transform="translate(-79.54 -82.74)"><path class="c1" d="M112.65,117.76l-5.22,13.4Z"/></clipPath>
+        <linearGradient id="g9" x1="11.28" y1="244.76" x2="11.74" y2="244.76" gradientTransform="matrix(0,6.42,-6.42,0,1681.25,50.83)" xlink:href="#g1"/>
+        <clipPath id="p10" transform="translate(-79.54 -82.74)"><polygon class="c1" points="113 117.76 117.28 117.76 115.02 123.29 113 117.76"/></clipPath>
+        <linearGradient id="g10" x1="27.74" y1="221.54" x2="28.2" y2="221.54" gradientTransform="matrix(-13.43,0,0,13.43,491.09,-2854.8)" xlink:href="#g1"/>
+      </defs>
+      <g class="c2"><rect class="c3" x="115.94" y="87.83" width="27.74" height="32.13" transform="translate(-115.86 14.25) rotate(-36.29)"/></g>
+      <g class="c4"><rect class="c5" x="107.99" y="96.33" width="29.24" height="34.52" transform="translate(-122.99 11.87) rotate(-36.29)"/></g>
+      <g class="c6"><rect class="c7" x="84.16" y="90.03" width="32.12" height="27.73" transform="translate(-122.38 40.44) rotate(-53.71)"/></g>
+      <g class="c8"><rect class="c9" x="90.17" y="98.98" width="34.52" height="29.23" transform="translate(-127.26 50.21) rotate(-53.71)"/></g>
+      <g class="c10"><rect class="c11" x="108.52" y="127.27" width="13.48" height="17.28" transform="translate(-114.24 -43.12) rotate(-17)"/></g>
+      <g class="c12"><rect class="c13" x="105.9" y="128.4" width="17.76" height="15.02" transform="translate(-136.64 99.05) rotate(-64.76)"/></g>
+      <g class="c14"><rect class="c15" x="105.26" y="115.11" width="19.52" height="18.7" transform="translate(-122.49 -19.65) rotate(-26.03)"/></g>
+      <g class="c16"><rect class="c17" x="107.51" y="127.29" width="15.03" height="12.12" transform="translate(-134.49 4.53) rotate(-34.05)"/></g>
+      <g class="c18"><rect class="c19" x="103.09" y="118.39" width="13.89" height="12.14" transform="translate(-134.95 56.74) rotate(-53.71)"/></g>
+      <g class="c20"><rect class="c21" x="111.72" y="117.39" width="6.84" height="6.27" transform="translate(-123.23 88.36) rotate(-63.97)"/></g>
+      <path class="c23" d="M169.16,97.74c-3.32,0-5,2.29-7.08,4.37l-8.74,8.75v-8.12c0-4.16-.83-5-3.74-5h-3.75v.84h.84c2.5,0,2.91,1.66,2.91,4.16v22.47h3.74V111.48l8.74,9.15c4,4.17,6.66,5,8.95,5a7.86,7.86,0,0,0,2.71-.42v-.79c-2.08-.25-4.83-2.24-7.07-4.62l-9.58-10,8.12-8.12a15.27,15.27,0,0,1,1.83-1.61c.54-.38,1.06-.87,1.55-.87.73,0,1.23.77,1.75,1.38a23.38,23.38,0,0,1,1.93,2.56l7.08,10.69v11.36h3.74V113.56l9.74-15.82H191l-8.7,14-6-9.37c-1.46-2.29-3.12-4.58-6.24-4.58Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M202.5,96.91c7.9,0,12.89,6.41,12.89,14.57s-5,14.57-12.89,14.57-12.91-6.41-12.91-14.57,5-14.57,12.91-14.57m0,1.67c-5.42,0-8.74,5-8.74,12.9s3.32,12.9,8.74,12.9,8.73-5,8.73-12.9-3.33-12.9-8.73-12.9" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M226.29,125.92c-4.54,0-9.49-2-9.49-5.08v-4.45h.74c.92,5.58,3.71,7.86,8.37,7.86,2.87,0,5.45-1.49,5.45-4.24,0-2.41-1.54-4-4.58-5.74l-5.12-3c-3.54-2.08-4.86-4.08-4.86-7.16,0-4.29,3.2-7.07,8.07-7.07,4.12,0,9,1.87,9,5v4.46h-.75c-.92-5.59-3.58-7.79-8.24-7.79-2.46,0-4.82,1.62-4.82,4.2,0,2.42,1.58,3.67,4.61,5.46l5.12,3c3.54,2.08,5.16,3.78,5.16,6.86,0,4.66-3.29,7.7-8.65,7.7" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M258.08,97.74l-17.69,25.81h17.55v1.66H235.19v-.83l17.27-25h-10c-3.33,0-5.2,1.45-5.2,4.78h-.83v-3.11c0-1.67.62-3.34,3.53-3.34Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M276.57,97.74c2.9,0,3.53,1.67,3.53,3.34v3.11h-.84c0-3.33-1.87-4.78-5.2-4.78h-7.74v10.82h11.24v1.67H266.32v11.65h7.29c3.74,0,5.83-1.25,7.07-4.58l.83.21-1.45,3.95a3.06,3.06,0,0,1-3.12,2.08H262.58V102.74c0-2.5-.42-4.16-2.92-4.16h-.83v-.84Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M284.44,102.74c0-2.5-.83-4.16-3.74-4.16h-.42v-.84H283a6.66,6.66,0,0,1,5.61,2.5l14.57,18.11V97.74h1.67v27.89H304l-17.89-22.27v21.85h-1.67Z" transform="translate(-79.54 -82.74)"/>
+    </svg>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="vacantes.html">Vacantes</a>
+    <a href="cursos.html">Cursos</a>
+    <a href="nosotros.html" class="active">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+  </div>
+  <div class="nav-right">
+    <a class="btn-wa" href="https://wa.me/525520876765" target="_blank" aria-label="Whatsapp">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      <span class="wa-label">Whatsapp</span>
+    </a>
+  </div>
+  <button class="hbg" onclick="document.getElementById('mob').classList.toggle('open')"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- MENÚ MÓVIL -->
+<div class="mob" id="mob">
+  <a href="index.html">Inicio</a>
+  <a href="servicios.html">Servicios</a>
+  <a href="vacantes.html">Vacantes</a>
+  <a href="cursos.html">Cursos</a>
+  <a href="nosotros.html" class="active">Nosotros</a>
+  <a href="contacto.html">Contacto</a>
+  <a class="mob-wa" href="https://wa.me/525520876765" target="_blank">Whatsapp</a>
+</div>
+
+<!-- HERO -->
+<div class="about-hero">
+  <div class="about-hero-inner">
+    <div class="dot" style="width:10px;height:10px;top:20px;right:30%;"></div>
+    <div class="dot" style="width:6px;height:6px;top:60px;right:22%;"></div>
+    <div class="dot" style="width:8px;height:8px;top:30px;left:15%;"></div>
+    <h1>Sobre nosotros</h1>
+    <p>Somos una consultora especializada en capital humano para microempresas mexicanas. Conectamos talento con empresas que crecen, con rapidez, tecnología y trato humano.</p>
+  </div>
+</div>
+
+<!-- COLLAGE DE FOTOS -->
+<div class="collage">
+  <img class="collage-img" src="nosotros1.jpg" alt="Equipo Kyoszen"/>
+  <img class="collage-img" src="nosotros2.jpg" alt="Equipo Kyoszen"/>
+  <img class="collage-img" src="nosotros3.jpg" alt="Equipo Kyoszen"/>
+  <img class="collage-img" src="nosotros4.jpg" alt="Equipo Kyoszen"/>
+</div>
+
+<!-- MISIÓN -->
+<section class="sec" style="background:var(--white);">
+  <div class="sec-inner">
+    <div class="mission-grid">
+      <div>
+        <p class="sec-lbl">Nuestra misión</p>
+        <h2>Nos aseguramos de que tu idea y<br/>crecimiento se entreguen correctamente</h2>
+      </div>
+      <div class="mission-col">
+        <p style="margin-bottom:1.25rem;">Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnología, experiencia y un trato genuinamente humano para ofrecer resultados que duran.</p>
+        <p>Cada proceso que manejamos — desde el reclutamiento hasta la capacitación — está diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EMPOWER -->
+<section class="sec" style="background:var(--bg);padding-top:3rem;">
+  <div class="sec-inner">
+    <div class="empower-grid">
+      <!-- IMAGEN -->
+      <div class="empower-img-wrap">
+        <img class="empower-img" src="nosotros2.jpg" alt="Kyoszen impacto"/>
+        <div class="empower-quote">
+          <p>"Generando impacto, juntos"</p>
+          <span>Equipo Kyoszen</span>
+        </div>
+      </div>
+      <!-- TEXTO -->
+      <div class="empower-content">
+        <p class="sec-lbl">¿Por qué existimos?</p>
+        <h2>Empoderamos a los dueños de<br/>pequeñas empresas</h2>
+        <p>Entendemos los retos de crecer con recursos limitados. Por eso ofrecemos soluciones de capital humano accesibles, ágiles y con resultados medibles desde el primer día.</p>
+        <p>Nuestro equipo trabaja de cerca con cada cliente para entender su cultura, sus necesidades y sus metas — porque no hay dos empresas iguales.</p>
+        <div class="empower-blockquote">
+          <p>"Kyoszen cubrió nuestra vacante en menos de una semana con candidatos perfectamente alineados al perfil que necesitábamos. Un servicio que realmente entiende a las empresas mexicanas."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-band">
+  <div class="stats-inner">
+    <div><div class="stat-n">687+</div><div class="stat-l">Candidatos colocados</div><div class="stat-s">y contando</div></div>
+    <div><div class="stat-n">672+</div><div class="stat-l">Empresas atendidas</div><div class="stat-s">CDMX y Edomex</div></div>
+    <div><div class="stat-n">99%</div><div class="stat-l">Clientes satisfechos</div><div class="stat-s">tasa de recomendación</div></div>
+    <div><div class="stat-n">3+</div><div class="stat-l">Años de experiencia</div><div class="stat-s">en el mercado laboral</div></div>
+  </div>
+</div>
+
+<!-- VALUES -->
+<section class="sec" style="background:var(--white);">
+  <div class="sec-inner">
+    <div style="text-align:center;max-width:520px;margin:0 auto;">
+      <p class="sec-lbl" style="justify-content:center;">Nuestros valores</p>
+      <h2 style="font-size:clamp(1.4rem,2.5vw,2rem);font-weight:800;letter-spacing:-.02em;">Ayudamos a los negocios a crecer<br/>más rápido y más grandes</h2>
+      <p style="font-size:13.5px;color:var(--muted);margin-top:.75rem;line-height:1.7;">Los principios que guían cada proceso y cada decisión en Kyoszen.</p>
+    </div>
+    <div class="values-grid">
+      <div class="value-item">
+        <div class="value-ic">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h4>Equipo profesional</h4>
+        <p>Expertos en capital humano comprometidos con el éxito de cada cliente y candidato.</p>
+      </div>
+      <div class="value-item">
+        <div class="value-ic">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h4>Orientados a resultados</h4>
+        <p>Cada acción está enfocada en generar impacto real y medible para tu empresa.</p>
+      </div>
+      <div class="value-item">
+        <div class="value-ic">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h4>Garantía de éxito</h4>
+        <p>Respaldamos nuestros procesos con 99% de satisfacción y seguimiento post-colocación.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA GROW -->
+<div class="cta-grow">
+  <div class="cta-grow-inner">
+    <div style="font-size:1.5rem;margin-bottom:.5rem;">✦</div>
+    <h2>Ayudamos a los negocios a crecer<br/>más rápido y más grandes</h2>
+    <p>Ya sea que busques empleo o necesites contratar, estamos aquí para acompañarte. Te respondemos en menos de 24 horas hábiles.</p>
+    <div class="cta-grow-btns">
+      <a class="btn-dark" href="vacantes.html">Ver vacantes →</a>
+      <a class="btn-outline" href="contacto.html">Contratar personal</a>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-grid">
+    <div class="f-brand">
+      <span class="f-logo-name">KYOSZEN</span>
+      <p>Estrategia en Capital Humano. Conectamos el talento correcto con las empresas que crecen.</p>
+      <div class="f-soc"><a href="#">f</a><a href="#">in</a><a href="#">tt</a></div>
+    </div>
+    <div class="f-col"><h5>Navegación</h5><a href="index.html">Inicio</a><a href="servicios.html">Servicios</a><a href="vacantes.html">Vacantes</a><a href="cursos.html">Cursos</a><a href="nosotros.html">Nosotros</a><a href="contacto.html">Contacto</a></div>
+    <div class="f-col"><h5>Servicios</h5><a href="servicios.html">Reclutamiento</a><a href="cursos.html">Capacitación</a><a href="servicios.html">Inducción</a><a href="servicios.html">Digitalización</a><a href="candidatos.html">Para Candidatos</a><a href="empresas.html">Para Empresas</a></div>
+    <div class="f-col"><h5>Contacto</h5>
+      <div class="f-ct"><div class="f-ic">📞</div><span>55 2087 6765</span></div>
+      <div class="f-ct"><div class="f-ic">✉️</div><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6e0601020f2e0517011d140b00400d0103">[email&#160;protected]</a></span></div>
+      <div class="f-ct"><div class="f-ic">🕐</div><span>Lun–Vie 9am–6pm</span></div>
+    </div>
+  </div>
+  <div class="f-bot"><p>© 2026 Kyoszen · Todos los derechos reservados</p><p>Diseñado por Holadiseño!</p></div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-c

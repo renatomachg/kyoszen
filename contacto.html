@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="Contáctanos — Kyoszen. Escríbenos, llámanos o visítanos. Te respondemos en menos de 24 horas hábiles."/>
+<title>Contacto — Kyoszen</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html{overflow-x:hidden;}
+:root{
+  --blue:#0033FF;--blue-soft:#EAE0FB;--blue-mid:#9770FF;
+  --yellow:#F5C842;--yellow-soft:#fff3b0;
+  --green:#22c55e;--green-soft:#bbf7d0;
+  --purple:#9770FF;--purple-soft:#EAE0FB;
+  --orange:#f97316;--orange-soft:#ffedd5;
+  --text:#00033D;--muted:#6b7280;--border:#D8D3F0;
+  --bg:#F4F2FF;--white:#fff;--wa:#25D366;
+  --r:12px;--r2:20px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;color:var(--text);background:var(--white);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+
+/* ── NAV ── */
+nav{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,.07);border-radius:999px;padding:8px 12px;height:62px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1rem;width:calc(100% - 48px);max-width:1100px;box-shadow:0 4px 24px rgba(0,0,0,.07);transition:box-shadow .3s,background .3s;}
+nav.scrolled{box-shadow:0 8px 32px rgba(0,0,0,.12);background:rgba(255,255,255,.99);}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+.nav-links{display:flex;gap:4px;justify-content:center;}
+.nav-links a{text-decoration:none;color:#555;font-size:13px;padding:7px 15px;border-radius:999px;font-weight:500;border:1.5px solid transparent;transition:.18s;white-space:nowrap;}
+.nav-links a:hover{border-color:#d0d3e8;color:var(--blue);background:var(--blue-soft);}
+.nav-links a.active{border-color:var(--blue);color:var(--blue);background:var(--blue-soft);}
+.nav-right{display:flex;align-items:center;gap:.5rem;flex-shrink:0;}
+.btn-wa{background:var(--wa);color:#fff;border:none;border-radius:999px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:7px;text-decoration:none;flex-shrink:0;transition:.15s;font-size:13px;font-weight:700;font-family:inherit;white-space:nowrap;}
+.btn-wa:hover{opacity:.9;}
+.btn-wa svg{width:16px;height:16px;flex-shrink:0;}
+.btn-wa .wa-label{display:inline;}
+@media(max-width:768px){
+  .btn-wa{border-radius:50%;padding:0;width:40px;height:40px;justify-content:center;}
+  .btn-wa .wa-label{display:none;}
+}
+.hbg{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:4px;}
+.hbg span{width:20px;height:2px;background:var(--text);border-radius:2px;display:block;}
+.mob{display:none;position:fixed;top:88px;left:20px;right:20px;background:rgba(255,255,255,.98);padding:1rem 1.25rem;flex-direction:column;z-index:99;border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.12);border:1px solid rgba(0,0,0,.06);gap:4px;backdrop-filter:blur(12px);}
+.mob.open{display:flex;}
+.mob a{padding:10px 14px;border-radius:10px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;}
+.mob a:hover{background:var(--blue-soft);color:var(--blue);}
+.mob-wa{background:var(--wa);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-top:.5rem;text-align:center;text-decoration:none;display:block;}
+
+
+/* ── BUTTONS ── */
+.btn-blue{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+.btn-blue:hover{background:#0026cc;}
+
+/* ── HERO ── */
+.contact-hero{background:var(--text);padding:110px 5% 4rem;position:relative;overflow:hidden;}
+.contact-hero::before{content:'';position:absolute;width:400px;height:400px;background:rgba(255,255,255,.04);border-radius:50%;top:-150px;right:-80px;pointer-events:none;}
+.contact-hero::after{content:'';position:absolute;width:200px;height:200px;background:rgba(0,51,255,.15);border-radius:50%;bottom:-60px;left:10%;pointer-events:none;}
+.contact-hero-inner{max-width:1200px;margin:0 auto;position:relative;z-index:1;text-align:center;}
+.contact-hero-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--yellow);margin-bottom:.75rem;display:flex;align-items:center;justify-content:center;gap:.5rem;}
+.contact-hero-lbl::before{content:'';display:inline-block;width:20px;height:2px;background:var(--yellow);}
+.contact-hero h1{font-size:clamp(2rem,4.5vw,3.2rem);font-weight:800;color:#fff;line-height:1.08;letter-spacing:-.03em;margin-bottom:.75rem;}
+.contact-hero h1 em{font-style:normal;color:var(--yellow);}
+.contact-hero p{font-size:14.5px;color:rgba(255,255,255,.6);line-height:1.7;max-width:480px;margin:0 auto;}
+
+/* ── BODY ── */
+.contact-body{max-width:1200px;margin:0 auto;padding:0 5% 6rem;}
+.contact-grid{display:grid;grid-template-columns:1fr;gap:2rem;margin-top:-2.5rem;position:relative;z-index:2;}
+@media(min-width:900px){.contact-grid{grid-template-columns:1.2fr 1fr;gap:2.5rem;}}
+
+/* ── FORM ── */
+.form-card{background:var(--white);border-radius:var(--r2);padding:2.5rem 2rem;box-shadow:0 8px 40px rgba(0,0,0,.1);}
+.form-card h2{font-size:1.1rem;font-weight:700;margin-bottom:.3rem;}
+.form-card .form-sub{font-size:13px;color:var(--muted);margin-bottom:1.75rem;line-height:1.6;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+@media(max-width:560px){.form-row{grid-template-columns:1fr;}}
+.form-group{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1rem;}
+.form-group label{font-size:12px;font-weight:600;color:var(--text);}
+.form-group input,.form-group select,.form-group textarea{font-family:inherit;font-size:13.5px;color:var(--text);background:var(--bg);border:1.5px solid var(--border);border-radius:9px;padding:10px 14px;outline:none;transition:border-color .15s;width:100%;resize:none;}
+.form-group input::placeholder,.form-group textarea::placeholder{color:#bbb;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue);background:var(--white);}
+.form-group textarea{height:120px;line-height:1.6;}
+.form-check{display:flex;align-items:flex-start;gap:.6rem;margin:1rem 0 1.5rem;}
+.form-check input{width:15px;height:15px;accent-color:var(--blue);flex-shrink:0;margin-top:2px;}
+.form-check label{font-size:12px;color:var(--muted);line-height:1.5;}
+.form-check label a{color:var(--blue);text-decoration:none;}
+.btn-send{width:100%;background:var(--blue);color:#fff;border:none;border-radius:9px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-send:hover{background:#0026cc;}
+.btn-send svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.form-success{display:none;text-align:center;padding:2rem 1rem;}
+.form-success-ic{width:56px;height:56px;background:var(--green-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+.form-success-ic svg{width:24px;height:24px;stroke:#15803d;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.form-success h3{font-size:1.1rem;font-weight:700;margin-bottom:.4rem;}
+.form-success p{font-size:13.5px;color:var(--muted);line-height:1.6;}
+
+/* ── INFO ── */
+.info-side{display:flex;flex-direction:column;gap:1.5rem;padding-top:.5rem;}
+.info-title{font-size:clamp(1.5rem,2.5vw,2rem);font-weight:800;line-height:1.15;margin-bottom:.5rem;}
+.info-title em{font-style:normal;color:var(--blue);}
+.info-desc{font-size:13.5px;color:var(--muted);line-height:1.8;}
+.info-cards{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}
+.info-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:.9rem 1rem;display:flex;align-items:flex-start;gap:.7rem;transition:.15s;}
+.info-item:hover{border-color:var(--blue-mid);background:var(--white);}
+.info-ic{width:36px;height:36px;border-radius:9px;background:var(--blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.info-ic svg{width:16px;height:16px;stroke:var(--blue);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.info-item-title{font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.info-item-val{font-size:12px;color:var(--muted);line-height:1.4;}
+.social-wrap{display:flex;align-items:center;gap:.5rem;padding-top:.5rem;border-top:1px solid var(--border);}
+.social-lbl{font-size:12.5px;color:var(--muted);font-weight:600;margin-right:.25rem;}
+.soc-btn{width:36px;height:36px;border-radius:9px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;text-decoration:none;transition:.15s;}
+.soc-btn:hover{background:var(--blue);border-color:var(--blue);}
+.soc-btn:hover svg{stroke:#fff;}
+.soc-btn svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── FOOTER ── */
+footer{background:#030812;color:#fff;padding:4rem 5% 2rem;}
+.f-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:2.5rem;padding-bottom:2.5rem;border-bottom:1px solid rgba(255,255,255,.07);}
+.f-brand .f-logo-name{color:#fff;font-size:18px;display:block;margin-bottom:.7rem;font-weight:900;letter-spacing:2px;}
+.f-brand p{font-size:12px;opacity:.4;line-height:1.7;max-width:230px;margin-bottom:1.25rem;}
+.f-soc{display:flex;gap:.5rem;}
+.f-soc a{width:34px;height:34px;background:rgba(255,255,255,.07);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;text-decoration:none;}
+.f-soc a:hover{background:var(--blue);}
+.f-col h5{font-size:12.5px;font-weight:800;margin-bottom:1rem;opacity:.85;}
+.f-col a{display:block;font-size:12px;opacity:.4;color:#fff;text-decoration:none;margin-bottom:8px;}
+.f-col a:hover{opacity:1;}
+.f-ct{display:flex;align-items:center;gap:.7rem;margin-bottom:.85rem;}
+.f-ic{width:30px;height:30px;background:rgba(255,255,255,.07);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.f-ct span{font-size:12px;opacity:.5;}
+.f-bot{max-width:1200px;margin:2rem auto 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.f-bot p{font-size:11px;opacity:.2;}
+@media(min-width:960px){.f-grid{grid-template-columns:1.7fr 1fr 1fr 1.5fr;}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <a class="logo" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 225.53 64.41" height="38" style="display:block;">
+      <defs>
+        <style>.c1{fill:none}.c2{clip-path:url(#p1)}.c3{fill:url(#g1)}.c4{clip-path:url(#p2)}.c5{fill:url(#g2)}.c6{clip-path:url(#p3)}.c7{fill:url(#g3)}.c8{clip-path:url(#p4)}.c9{fill:url(#g4)}.c10{clip-path:url(#p5)}.c11{fill:url(#g5)}.c12{clip-path:url(#p6)}.c13{fill:url(#g6)}.c14{clip-path:url(#p7)}.c15{fill:url(#g7)}.c16{clip-path:url(#p8)}.c17{fill:url(#g8)}.c18{clip-path:url(#p9)}.c19{fill:url(#g9)}.c20{clip-path:url(#p10)}.c21{fill:url(#g10)}.c22{fill:#706f6f}.c23{fill:#153553}</style>
+        <clipPath id="p1" transform="translate(-79.54 -82.74)"><polygon class="c1" points="127.81 96.03 135.4 88.07 124.23 119.73 127.81 96.03"/></clipPath>
+        <linearGradient id="g1" x1="22.81" y1="226.78" x2="23.26" y2="226.78" gradientTransform="matrix(-47.76,0,0,47.76,1227.99,-10727.74)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2fb8e9"/><stop offset=".13" stop-color="#2fb1e2"/><stop offset=".33" stop-color="#2d9cce"/><stop offset=".56" stop-color="#2c7bad"/><stop offset=".83" stop-color="#294d80"/><stop offset="1" stop-color="#272b5e"/></linearGradient>
+        <clipPath id="p2" transform="translate(-79.54 -82.74)"><polygon class="c1" points="117.38 117.76 122.61 131.17 127.83 96.02 117.38 117.76"/></clipPath>
+        <linearGradient id="g2" x1="22.9" y1="226.58" x2="23.36" y2="226.58" gradientTransform="matrix(-43.08,0,0,43.08,1119.39,-9646.65)" xlink:href="#g1"/>
+        <clipPath id="p3" transform="translate(-79.54 -82.74)"><polygon class="c1" points="102.23 96.03 94.65 88.07 105.8 119.73 102.23 96.03"/></clipPath>
+        <linearGradient id="g3" x1="18.89" y1="229.66" x2="19.35" y2="229.66" gradientTransform="matrix(0,47.75,-47.75,0,11065.19,-807.09)" xlink:href="#g1"/>
+        <clipPath id="p4" transform="translate(-79.54 -82.74)"><polygon class="c1" points="112.66 117.76 107.44 131.17 102.21 96.02 112.66 117.76"/></clipPath>
+        <linearGradient id="g4" x1="18.57" y1="229.77" x2="19.02" y2="229.77" gradientTransform="translate(10007.46 -696.56) rotate(90) scale(43.09)" xlink:href="#g1"/>
+        <clipPath id="p5" transform="translate(-79.54 -82.74)"><polygon class="c1" points="110.53 128.32 118.85 132.8 119.98 143.5 110.53 128.32"/></clipPath>
+        <linearGradient id="g5" x1="19.83" y1="221.56" x2="20.28" y2="221.56" gradientTransform="matrix(0,23.34,23.34,0,-5056.93,-328.57)" xlink:href="#g1"/>
+        <clipPath id="p6" transform="translate(-79.54 -82.74)"><polygon class="c1" points="119.51 128.32 111.19 132.8 110.05 143.5 119.51 128.32"/></clipPath>
+        <linearGradient id="g6" x1="22.92" y1="223.87" x2="23.37" y2="223.87" gradientTransform="matrix(-25.75,0,0,25.75,706.51,-5628.33)" xlink:href="#g1"/>
+        <clipPath id="p7" transform="translate(-79.54 -82.74)"><polygon class="c1" points="117.39 117.76 112.65 117.76 107.43 131.16 122.61 131.16 117.39 117.76"/></clipPath>
+        <linearGradient id="g7" x1="19.61" y1="223.05" x2="20.07" y2="223.05" gradientTransform="matrix(0,31.78,31.78,0,-6973.38,-504.69)" xlink:href="#g1"/>
+        <clipPath id="p8" transform="translate(-79.54 -82.74)"><polygon class="c1" points="115.02 135.54 107.43 131.16 122.61 131.16 115.02 135.54"/></clipPath>
+        <linearGradient id="g8" x1="18.23" y1="219.68" x2="18.68" y2="219.68" gradientTransform="matrix(0,17.3,17.3,0,-3686.44,-186.53)" xlink:href="#g1"/>
+        <clipPath id="p9" transform="translate(-79.54 -82.74)"><path class="c1" d="M112.65,117.76l-5.22,13.4Z"/></clipPath>
+        <linearGradient id="g9" x1="11.28" y1="244.76" x2="11.74" y2="244.76" gradientTransform="matrix(0,6.42,-6.42,0,1681.25,50.83)" xlink:href="#g1"/>
+        <clipPath id="p10" transform="translate(-79.54 -82.74)"><polygon class="c1" points="113 117.76 117.28 117.76 115.02 123.29 113 117.76"/></clipPath>
+        <linearGradient id="g10" x1="27.74" y1="221.54" x2="28.2" y2="221.54" gradientTransform="matrix(-13.43,0,0,13.43,491.09,-2854.8)" xlink:href="#g1"/>
+      </defs>
+      <g class="c2"><rect class="c3" x="115.94" y="87.83" width="27.74" height="32.13" transform="translate(-115.86 14.25) rotate(-36.29)"/></g>
+      <g class="c4"><rect class="c5" x="107.99" y="96.33" width="29.24" height="34.52" transform="translate(-122.99 11.87) rotate(-36.29)"/></g>
+      <g class="c6"><rect class="c7" x="84.16" y="90.03" width="32.12" height="27.73" transform="translate(-122.38 40.44) rotate(-53.71)"/></g>
+      <g class="c8"><rect class="c9" x="90.17" y="98.98" width="34.52" height="29.23" transform="translate(-127.26 50.21) rotate(-53.71)"/></g>
+      <g class="c10"><rect class="c11" x="108.52" y="127.27" width="13.48" height="17.28" transform="translate(-114.24 -43.12) rotate(-17)"/></g>
+      <g class="c12"><rect class="c13" x="105.9" y="128.4" width="17.76" height="15.02" transform="translate(-136.64 99.05) rotate(-64.76)"/></g>
+      <g class="c14"><rect class="c15" x="105.26" y="115.11" width="19.52" height="18.7" transform="translate(-122.49 -19.65) rotate(-26.03)"/></g>
+      <g class="c16"><rect class="c17" x="107.51" y="127.29" width="15.03" height="12.12" transform="translate(-134.49 4.53) rotate(-34.05)"/></g>
+      <g class="c18"><rect class="c19" x="103.09" y="118.39" width="13.89" height="12.14" transform="translate(-134.95 56.74) rotate(-53.71)"/></g>
+      <g class="c20"><rect class="c21" x="111.72" y="117.39" width="6.84" height="6.27" transform="translate(-123.23 88.36) rotate(-63.97)"/></g>
+      <path class="c23" d="M169.16,97.74c-3.32,0-5,2.29-7.08,4.37l-8.74,8.75v-8.12c0-4.16-.83-5-3.74-5h-3.75v.84h.84c2.5,0,2.91,1.66,2.91,4.16v22.47h3.74V111.48l8.74,9.15c4,4.17,6.66,5,8.95,5a7.86,7.86,0,0,0,2.71-.42v-.79c-2.08-.25-4.83-2.24-7.07-4.62l-9.58-10,8.12-8.12a15.27,15.27,0,0,1,1.83-1.61c.54-.38,1.06-.87,1.55-.87.73,0,1.23.77,1.75,1.38a23.38,23.38,0,0,1,1.93,2.56l7.08,10.69v11.36h3.74V113.56l9.74-15.82H191l-8.7,14-6-9.37c-1.46-2.29-3.12-4.58-6.24-4.58Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M202.5,96.91c7.9,0,12.89,6.41,12.89,14.57s-5,14.57-12.89,14.57-12.91-6.41-12.91-14.57,5-14.57,12.91-14.57m0,1.67c-5.42,0-8.74,5-8.74,12.9s3.32,12.9,8.74,12.9,8.73-5,8.73-12.9-3.33-12.9-8.73-12.9" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M226.29,125.92c-4.54,0-9.49-2-9.49-5.08v-4.45h.74c.92,5.58,3.71,7.86,8.37,7.86,2.87,0,5.45-1.49,5.45-4.24,0-2.41-1.54-4-4.58-5.74l-5.12-3c-3.54-2.08-4.86-4.08-4.86-7.16,0-4.29,3.2-7.07,8.07-7.07,4.12,0,9,1.87,9,5v4.46h-.75c-.92-5.59-3.58-7.79-8.24-7.79-2.46,0-4.82,1.62-4.82,4.2,0,2.42,1.58,3.67,4.61,5.46l5.12,3c3.54,2.08,5.16,3.78,5.16,6.86,0,4.66-3.29,7.7-8.65,7.7" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M258.08,97.74l-17.69,25.81h17.55v1.66H235.19v-.83l17.27-25h-10c-3.33,0-5.2,1.45-5.2,4.78h-.83v-3.11c0-1.67.62-3.34,3.53-3.34Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M276.57,97.74c2.9,0,3.53,1.67,3.53,3.34v3.11h-.84c0-3.33-1.87-4.78-5.2-4.78h-7.74v10.82h11.24v1.67H266.32v11.65h7.29c3.74,0,5.83-1.25,7.07-4.58l.83.21-1.45,3.95a3.06,3.06,0,0,1-3.12,2.08H262.58V102.74c0-2.5-.42-4.16-2.92-4.16h-.83v-.84Z" transform="translate(-79.54 -82.74)"/>
+      <path class="c23" d="M284.44,102.74c0-2.5-.83-4.16-3.74-4.16h-.42v-.84H283a6.66,6.66,0,0,1,5.61,2.5l14.57,18.11V97.74h1.67v27.89H304l-17.89-22.27v21.85h-1.67Z" transform="translate(-79.54 -82.74)"/>
+    </svg>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="vacantes.html">Vacantes</a>
+    <a href="cursos.html">Cursos</a>
+    <a href="nosotros.html">Nosotros</a>
+    <a href="contacto.html" class="active">Contacto</a>
+  </div>
+  <div class="nav-right">
+    <a class="btn-wa" href="https://wa.me/525520876765" target="_blank" aria-label="Whatsapp">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      <span class="wa-label">Whatsapp</span>
+    </a>
+  </div>
+  <button class="hbg" onclick="document.getElementById('mob').classList.toggle('open')"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- MENÚ MÓVIL -->
+<div class="mob" id="mob">
+  <a href="index.html">Inicio</a>
+  <a href="servicios.html">Servicios</a>
+  <a href="vacantes.html">Vacantes</a>
+  <a href="cursos.html">Cursos</a>
+  <a href="nosotros.html">Nosotros</a>
+  <a href="contacto.html" class="active">Contacto</a>
+  <a class="mob-wa" href="https://wa.me/525520876765" target="_blank">Whatsapp</a>
+</div>
+
+<!-- HERO -->
+<div class="contact-hero">
+  <div class="contact-hero-inner">
+    <div class="contact-hero-lbl">Contáctanos</div>
+    <h1>No dudes en<br/><em>escribirnos</em></h1>
+    <p>Con más de 3 años en el mercado laboral mexicano, estamos listos para ayudarte sin costos adicionales ni compromisos.</p>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="contact-body">
+  <div class="contact-grid">
+
+    <!-- FORMULARIO -->
+    <div class="form-card">
+      <h2>Deja tu mensaje</h2>
+      <p class="form-sub">Te respondemos en menos de 24 horas hábiles.</p>
+      <div id="contactForm">
+        <div class="form-row">
+          <div class="form-group"><label>Nombre</label><input type="text" id="fname" placeholder="Tu nombre"/></div>
+          <div class="form-group"><label>Correo electrónico</label><input type="email" id="femail" placeholder="tu@correo.com"/></div>
+        </div>
+        <div class="form-group">
+          <label>Asunto</label>
+          <select id="fsubject">
+            <option value="" disabled selected>Selecciona un asunto</option>
+            <option>Quiero aplicar a una vacante</option>
+            <option>Necesito contratar personal</option>
+            <option>Información sobre cursos</option>
+            <option>Cotización de servicios</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Mensaje</label><textarea id="fmessage" placeholder="Escribe tu mensaje aquí..."></textarea></div>
+        <div class="form-check">
+          <input type="checkbox" id="fprivacy"/>
+          <label for="fprivacy">Acepto el <a href="#">aviso de privacidad</a> y el tratamiento de mis datos personales.</label>
+        </div>
+        <button class="btn-send" onclick="sendForm()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Enviar mensaje
+        </button>
+      </div>
+      <div class="form-success" id="formSuccess">
+        <div class="form-success-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <h3>¡Mensaje enviado!</h3>
+        <p>Gracias por contactarnos. Un asesor de Kyoszen te responderá en menos de 24 horas hábiles.</p>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="info-side">
+      <div>
+        <h2 class="info-title">No dudes en<br/><em>contactarnos</em></h2>
+        <p class="info-desc">Estamos disponibles para resolver tus dudas sobre vacantes, reclutamiento, cursos o cualquier servicio de capital humano.</p>
+      </div>
+      <div class="info-cards">
+        <div class="info-item">
+          <div class="info-ic"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div><div class="info-item-title">Oficina</div><div class="info-item-val">CDMX, México</div></div>
+        </div>
+        <div class="info-item">
+          <div class="info-ic"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+          <div><div class="info-item-title">Teléfono</div><div class="info-item-val">55 2087 6765</div></div>
+        </div>
+        <div class="info-item">
+          <div class="info-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div><div class="info-item-title">Horario</div><div class="info-item-val">Lun–Vie 9am–6pm</div></div>
+        </div>
+        <div class="info-item">
+          <div class="info-ic"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div><div class="info-item-title">Correo</div><div class="info-item-val">hola@kyoszen.com</div></div>
+        </div>
+      </div>
+      <div class="social-wrap">
+        <span class="social-lbl">Redes sociales:</span>
+        <a class="soc-btn" href="#" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        <a class="soc-btn" href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+        <a class="soc-btn" href="#" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+        <a class="soc-btn" href="https://wa.me/525520876765" target="_blank" aria-label="WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" stroke="none" fill="currentColor"/></svg></a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-grid">
+    <div class="f-brand">
+      <span class="f-logo-name">KYOSZEN</span>
+      <p>Estrategia en Capital Humano. Conectamos el talento correcto con las empresas que crecen.</p>
+      <div class="f-soc"><a href="#">f</a><a href="#">in</a><a href="#">tt</a></div>
+    </div>
+    <div class="f-col"><h5>Navegación</h5><a href="index.html">Inicio</a><a href="servicios.html">Servicios</a><a href="vacantes.html">Vacantes</a><a href="cursos.html">Cursos</a><a href="nosotros.html">Nosotros</a><a href="contacto.html">Contacto</a></div>
+    <div class="f-col"><h5>Servicios</h5><a href="servicios.html">Reclutamiento</a><a href="cursos.html">Capacitación</a><a href="servicios.html">Inducción</a><a href="servicios.html">Digitalización</a><a href="candidatos.html">Para Candidatos</a><a href="empresas.html">Para Empresas</a></div>
+    <div class="f-col"><h5>Contacto</h5>
+      <div class="f-ct"><div class="f-ic">📞</div><span>55 2087 6765</span></div>
+      <div class="f-ct"><div class="f-ic">✉️</div><span>hola@kyoszen.com</span></div>
+      <div class="f-ct"><div class="f-ic">🕐</div><span>Lun–Vie 9am–6pm</span></div>
+    </div>
+  </div>
+  <div class="f-bot"><p>© 2026 Kyoszen · Todos los derechos reservados</p><p>Diseñado por Holadiseño!</p></div>
+</footer>
+
+<script>
+window.addEventListener('scroll',()=>{document.getElementById('mainNav').classList.toggle('scrolled',window.scrollY>20);});
+function sendForm(){
+  const name=document.getElementById('fname').value.trim();
+  const email=document.getElementById('femail').value.trim();
+  const subject=document.getElementById('fsubject').value;
+  const message=document.getElementById('fmessage').value.trim();
+  const privacy=document.getElementById('fprivacy').checked;
+  if(!name||!email||!subject||!message){alert('Por favor completa todos los campos.');return;}
+  if(!privacy){alert('Debes aceptar el aviso de privacidad.');return;}
+  document.getElementById('contactForm').style.display='none';
+  document.getElementById('formSuccess').style.display='block';
+}
+</script>
+</body>
+</html>
