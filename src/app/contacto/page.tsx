@@ -1,0 +1,121 @@
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import AnimatedSection from "@/components/ui/AnimatedSection";
+
+const contactInfo = [
+  { icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>, title: "Oficina", value: "CDMX, Mexico" },
+  { icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>, title: "Telefono", value: "55 2087 6765" },
+  { icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>, title: "Horario", value: "Lun-Vie 9am-6pm" },
+  { icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>, title: "Correo", value: "hola@kyoszen.com" },
+];
+
+export default function ContactoPage() {
+  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "", privacy: false });
+
+  const handleSubmit = () => {
+    if (!form.name || !form.email || !form.subject || !form.message) {
+      alert("Por favor completa todos los campos.");
+      return;
+    }
+    if (!form.privacy) {
+      alert("Debes aceptar el aviso de privacidad.");
+      return;
+    }
+    setSubmitted(true);
+  };
+
+  return (
+    <>
+      {/* Hero */}
+      <section className="bg-navy pt-32 pb-16 px-[5%]">
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto text-center">
+          <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Contactanos</span>
+          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">No dudes en <em className="text-yellow">escribirnos</em></h1>
+          <p className="text-sm text-white/60 leading-relaxed">Con mas de 3 años en el mercado laboral mexicano, estamos listos para ayudarte sin costos adicionales ni compromisos.</p>
+        </motion.div>
+      </section>
+
+      {/* Contact body */}
+      <section className="py-16 px-[5%] bg-bg">
+        <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-10">
+          {/* Form */}
+          <AnimatedSection>
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-border">
+              {!submitted ? (
+                <>
+                  <h2 className="text-xl font-extrabold text-navy mb-1">Deja tu mensaje</h2>
+                  <p className="text-[13px] text-muted mb-6">Te respondemos en menos de 24 horas habiles.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-xs font-bold text-navy mb-1.5">Nombre</label>
+                      <input type="text" placeholder="Tu nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border-[1.5px] border-border rounded-[10px] py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-navy mb-1.5">Correo electronico</label>
+                      <input type="email" placeholder="tu@correo.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full border-[1.5px] border-border rounded-[10px] py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors" />
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-navy mb-1.5">Asunto</label>
+                    <select value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full border-[1.5px] border-border rounded-[10px] py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors bg-white">
+                      <option value="" disabled>Selecciona un asunto</option>
+                      <option>Quiero aplicar a una vacante</option>
+                      <option>Necesito contratar personal</option>
+                      <option>Informacion sobre cursos</option>
+                      <option>Cotizacion de servicios</option>
+                      <option>Otro</option>
+                    </select>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-navy mb-1.5">Mensaje</label>
+                    <textarea placeholder="Escribe tu mensaje aqui..." rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="w-full border-[1.5px] border-border rounded-[10px] py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors resize-none" />
+                  </div>
+                  <label className="flex items-start gap-2.5 mb-5 cursor-pointer">
+                    <input type="checkbox" checked={form.privacy} onChange={(e) => setForm({ ...form, privacy: e.target.checked })} className="mt-0.5" />
+                    <span className="text-xs text-muted">Acepto el aviso de privacidad y el tratamiento de mis datos personales.</span>
+                  </label>
+                  <button onClick={handleSubmit} className="bg-blue-btn text-white rounded-full py-3 px-7 text-[13px] font-bold cursor-pointer flex items-center gap-2 hover:bg-blue-dark transition-colors">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                    Enviar mensaje
+                  </button>
+                </>
+              ) : (
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 bg-green-soft rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#15803d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-navy mb-2">¡Mensaje enviado!</h3>
+                  <p className="text-[13px] text-muted">Gracias por contactarnos. Un asesor de Kyoszen te respondera en menos de 24 horas habiles.</p>
+                </div>
+              )}
+            </div>
+          </AnimatedSection>
+
+          {/* Info side */}
+          <AnimatedSection delay={0.2}>
+            <div className="flex flex-col gap-6">
+              <div>
+                <h2 className="text-xl font-extrabold text-navy mb-2">No dudes en <em className="text-blue">contactarnos</em></h2>
+                <p className="text-[13px] text-muted leading-relaxed">Estamos disponibles para resolver tus dudas sobre vacantes, reclutamiento, cursos o cualquier servicio de capital humano.</p>
+              </div>
+              <div className="flex flex-col gap-3">
+                {contactInfo.map((item) => (
+                  <div key={item.title} className="bg-white rounded-xl p-4 flex items-center gap-4 border border-border">
+                    <div className="w-10 h-10 rounded-xl bg-blue-soft flex items-center justify-center shrink-0">{item.icon}</div>
+                    <div>
+                      <div className="text-xs font-bold text-navy">{item.title}</div>
+                      <div className="text-[13px] text-muted">{item.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+    </>
+  );
+}

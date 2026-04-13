@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-blue: #0033FF;
+  --color-blue-soft: #EAE0FB;
+  --color-blue-mid: #9770FF;
+  --color-blue-dark: #042E7B;
+  --color-blue-btn: #004EE0;
+  --color-yellow: #F5C842;
+  --color-yellow-soft: #fff3b0;
+  --color-green: #22c55e;
+  --color-green-soft: #bbf7d0;
+  --color-purple: #9770FF;
+  --color-purple-soft: #EAE0FB;
+  --color-orange: #f97316;
+  --color-orange-soft: #ffedd5;
+  --color-navy: #00033D;
+  --color-muted: #6b7280;
+  --color-border: #D8D3F0;
+  --color-bg: #F8FAFC;
+  --color-wa: #25D366;
+  --color-footer: #030812;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { overflow-x: hidden; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-sans);
+  color: var(--color-navy);
+  background: var(--color-bg);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typewriter cursor */
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1 }
+  50% { opacity: 0 }
+}
+
+/* Hero animations */
+@keyframes heroSlideIn1 {
+  from { opacity: 0; transform: translateX(-40px) scale(.92) }
+  to { opacity: 1; transform: translateX(0) scale(1) }
+}
+@keyframes heroSlideIn2 {
+  from { opacity: 0; transform: translateY(40px) scale(.92) }
+  to { opacity: 1; transform: translateY(0) scale(1) }
+}
+@keyframes heroFadeDown {
+  from { opacity: 0; transform: translateY(-20px) }
+  to { opacity: 1; transform: translateY(0) }
+}
+
+/* Typing dots */
+@keyframes tdot {
+  0%, 60%, 100% { transform: translateY(0); opacity: .4 }
+  30% { transform: translateY(-6px); opacity: 1 }
+}
