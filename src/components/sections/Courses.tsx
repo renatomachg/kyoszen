@@ -33,8 +33,8 @@ const courses = [
 
 export default function Courses() {
   return (
-    <section className="py-20 px-[5%] bg-bg">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="py-20 sec-pad bg-bg">
+      <div className="sec-container">
         <AnimatedSection>
           <div className="flex justify-between items-end flex-wrap gap-4">
             <div>
@@ -69,7 +69,7 @@ export default function Courses() {
             >
               <Link
                 href="/cursos"
-                className="block bg-white rounded-[20px] border border-border p-6 pt-7 shadow-[0_4px_16px_rgba(0,0,0,.06)] no-underline text-navy transition-all duration-200 hover:shadow-[0_8px_28px_rgba(26,30,200,.1)] hover:-translate-y-[3px] h-full flex flex-col"
+                className="block bg-white rounded-3xl border border-border p-6 pt-7 shadow-md no-underline text-navy transition-all duration-200 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col"
               >
                 <div className={`w-[46px] h-[46px] rounded-xl flex items-center justify-center mb-5 shrink-0 ${course.bg}`}>
                   {course.icon}

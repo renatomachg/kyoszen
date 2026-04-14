@@ -5,13 +5,13 @@ import { motion } from "framer-motion";
 
 export default function CtaBand() {
   return (
-    <section className="bg-blue py-11 px-[5%]">
+    <section className="bg-blue py-11 sec-pad">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="max-w-[1200px] mx-auto flex items-center justify-between gap-6 flex-wrap"
+        className="sec-container flex items-center justify-between gap-6 flex-wrap"
       >
         <div className="flex items-center gap-6">
           <div className="text-[clamp(2rem,4vw,3rem)] font-black text-yellow leading-none">2.4M+</div>

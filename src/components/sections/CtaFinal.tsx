@@ -5,10 +5,10 @@ import AnimatedSection from "@/components/ui/AnimatedSection";
 
 export default function CtaFinal() {
   return (
-    <section className="py-20 px-[5%] bg-white">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="py-20 sec-pad bg-white">
+      <div className="sec-container">
         <AnimatedSection>
-          <div className="bg-blue-soft rounded-[20px] p-10 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative overflow-hidden">
+          <div className="bg-blue-soft rounded-3xl p-10 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative overflow-hidden">
             {/* Decorative */}
             <div className="absolute w-[220px] h-[220px] bg-blue-mid opacity-30 rounded-full -top-[90px] -right-[30px] pointer-events-none" />
             <div className="absolute w-[150px] h-[150px] bg-yellow opacity-[.12] rounded-full -bottom-[60px] left-[8%] pointer-events-none" />
@@ -40,7 +40,7 @@ export default function CtaFinal() {
               <img
                 src="https://picsum.photos/seed/kyo-cta/400/300"
                 alt=""
-                className="w-full max-w-[340px] h-[260px] object-cover object-top rounded-[20px] mx-auto block"
+                className="w-full max-w-[340px] h-[260px] object-cover object-top rounded-3xl mx-auto block"
               />
             </div>
           </div>

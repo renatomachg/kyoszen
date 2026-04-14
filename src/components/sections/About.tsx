@@ -7,8 +7,8 @@ import { motion } from "framer-motion";
 
 export default function About() {
   return (
-    <section className="bg-bg py-20 px-[5%]">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="bg-bg py-20 sec-pad">
+      <div className="sec-container">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
           {/* Left - Text */}
           <AnimatedSection>
@@ -56,7 +56,7 @@ export default function About() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.5, duration: 0.5 }}
-              className="absolute bottom-5 -left-4 bg-white rounded-xl py-2.5 px-3.5 shadow-[0_4px_20px_rgba(0,0,0,.1)] flex items-center gap-2.5 z-[2]"
+              className="absolute bottom-5 -left-4 bg-white rounded-xl py-2.5 px-3.5 shadow-lg flex items-center gap-2.5 z-[2]"
             >
               <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#E3F2FF] shrink-0">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#004EE0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
@@ -72,7 +72,7 @@ export default function About() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.6, duration: 0.5 }}
-              className="absolute top-5 -right-4 bg-white rounded-xl py-2.5 px-3.5 shadow-[0_4px_20px_rgba(0,0,0,.1)] flex items-center gap-2.5 z-[2]"
+              className="absolute top-5 -right-4 bg-white rounded-xl py-2.5 px-3.5 shadow-lg flex items-center gap-2.5 z-[2]"
             >
               <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-soft shrink-0">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></svg>

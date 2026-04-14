@@ -29,8 +29,8 @@ const posts = [
 
 export default function Blog() {
   return (
-    <section className="py-20 px-[5%] bg-bg">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="py-20 sec-pad bg-bg">
+      <div className="sec-container">
         <AnimatedSection>
           <div className="flex justify-between items-end flex-wrap gap-4 mb-7">
             <div>
@@ -57,7 +57,7 @@ export default function Blog() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="bg-white rounded-xl overflow-hidden border border-border transition-all duration-200 hover:shadow-[0_8px_28px_rgba(0,0,0,.07)] hover:-translate-y-[3px] cursor-pointer"
+              className="bg-white rounded-xl overflow-hidden border border-border transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
             >
               <img src={post.img} alt="" className="w-full h-[180px] object-cover" />
               <div className="p-5">

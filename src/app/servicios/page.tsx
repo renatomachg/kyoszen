@@ -49,7 +49,7 @@ export default function ServiciosPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-[5%] text-center">
+      <section className="bg-navy pt-32 pb-16 sec-pad text-center">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto">
           <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Servicios</span>
           <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Nuestros increibles servicios para tu empresa</h1>
@@ -58,8 +58,8 @@ export default function ServiciosPage() {
       </section>
 
       {/* Features grid */}
-      <section className="py-20 px-[5%] bg-white">
-        <div className="max-w-[1200px] mx-auto">
+      <section className="py-20 sec-pad bg-white">
+        <div className="sec-container">
           <AnimatedSection className="text-center mb-8">
             <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Lo que hacemos</p>
           </AnimatedSection>
@@ -77,8 +77,8 @@ export default function ServiciosPage() {
       </section>
 
       {/* Specialties */}
-      <section className="py-20 px-[5%] bg-bg">
-        <div className="max-w-[1200px] mx-auto text-center">
+      <section className="py-20 sec-pad bg-bg">
+        <div className="sec-container text-center">
           <AnimatedSection>
             <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Explora nuestras areas</p>
             <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark mb-3">Especialidades de reclutamiento</h2>
@@ -98,10 +98,10 @@ export default function ServiciosPage() {
 
       {/* Split sections */}
       {splitSections.map((sec, idx) => (
-        <section key={idx} className={`py-20 px-[5%] ${sec.reverse ? "bg-bg" : "bg-white"}`}>
-          <div className={`max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${sec.reverse ? "lg:[&>*:first-child]:order-2" : ""}`}>
+        <section key={idx} className={`py-20 sec-pad ${sec.reverse ? "bg-bg" : "bg-white"}`}>
+          <div className={`sec-container grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${sec.reverse ? "lg:[&>*:first-child]:order-2" : ""}`}>
             <AnimatedSection>
-              <div className="rounded-[20px] overflow-hidden relative">
+              <div className="rounded-3xl overflow-hidden relative">
                 <img src={sec.img} alt={sec.title} className="w-full h-[400px] object-cover" />
               </div>
             </AnimatedSection>
@@ -126,8 +126,8 @@ export default function ServiciosPage() {
       ))}
 
       {/* Reviews */}
-      <section className="py-20 px-[5%] bg-bg">
-        <div className="max-w-[1200px] mx-auto text-center">
+      <section className="py-20 sec-pad bg-bg">
+        <div className="sec-container text-center">
           <AnimatedSection className="mb-10">
             <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Testimonios</p>
             <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark">Revisa los testimonios recientes</h2>
@@ -151,7 +151,7 @@ export default function ServiciosPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-blue py-16 px-[5%] text-center">
+      <section className="bg-blue py-16 sec-pad text-center">
         <AnimatedSection className="max-w-[600px] mx-auto">
           <h2 className="text-[clamp(1.5rem,3vw,2.2rem)] font-black text-white mb-3">Contrata a nuestros mejores <em>talentos</em></h2>
           <p className="text-sm text-white/60 leading-relaxed mb-6">Ya sea que necesites cubrir una vacante urgente o capacitar a tu equipo, estamos listos para ayudarte hoy mismo.</p>

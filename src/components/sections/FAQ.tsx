@@ -35,7 +35,7 @@ export default function FAQ() {
   };
 
   return (
-    <section className="py-20 px-[5%] bg-white">
+    <section className="py-20 sec-pad bg-white">
       <div className="max-w-[960px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.6fr] gap-12 items-start">
           {/* Left */}

@@ -46,8 +46,8 @@ const services = [
 
 export default function Services() {
   return (
-    <section className="py-20 px-[5%] bg-white">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="py-20 sec-pad bg-white">
+      <div className="sec-container">
         <AnimatedSection className="text-center mb-10">
           <span className="inline-block bg-[#E3F2FF] text-blue-dark text-xs font-bold py-1.5 px-[18px] rounded-full tracking-wide">
             Nuestros servicios
@@ -71,7 +71,7 @@ export default function Services() {
             >
               <Link
                 href={svc.href}
-                className="block bg-white rounded-[14px] p-6 shadow-[0_2px_12px_rgba(0,0,0,.06)] no-underline text-navy transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_6px_24px_rgba(0,0,0,.1)]"
+                className="card block no-underline text-navy"
               >
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${svc.bg}`}>
                   {svc.icon}
@@ -86,7 +86,7 @@ export default function Services() {
         {/* Image + text */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           <AnimatedSection>
-            <div className="rounded-[20px] overflow-hidden">
+            <div className="rounded-3xl overflow-hidden">
               <Image
                 src="/images/about.png"
                 alt="Servicios Kyoszen"

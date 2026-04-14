@@ -24,8 +24,8 @@ const bullets = [
 
 export default function WhyUs() {
   return (
-    <section className="py-20 px-[5%] bg-bg">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="py-20 sec-pad bg-bg">
+      <div className="sec-container">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.1fr] gap-12 md:gap-16 items-center">
           {/* Left */}
           <AnimatedSection>
@@ -77,7 +77,7 @@ export default function WhyUs() {
               alt="Profesional Kyoszen"
               width={600}
               height={420}
-              className="w-full h-[420px] object-cover object-top rounded-[20px]"
+              className="w-full h-[420px] object-cover object-top rounded-3xl"
             />
           </AnimatedSection>
         </div>

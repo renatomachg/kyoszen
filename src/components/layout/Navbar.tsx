@@ -33,8 +33,8 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-white/96 backdrop-blur-[12px] border border-black/7 rounded-full px-3 py-2 h-[62px] grid grid-cols-[auto_1fr_auto] items-center gap-4 w-[calc(100%-48px)] max-w-[1100px] transition-all duration-300 ${
-          scrolled ? "shadow-[0_8px_32px_rgba(0,0,0,.12)] bg-white/99" : "shadow-[0_4px_24px_rgba(0,0,0,.07)]"
+        className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-white/96 backdrop-blur-[12px] border border-black/7 rounded-full px-3 py-2 h-[62px] grid grid-cols-[auto_1fr_auto] items-center gap-4 w-[calc(100%-48px)] max-w-6xl transition-all duration-300 ${
+          scrolled ? "shadow-xl bg-white/99" : "shadow-lg"
         }`}
       >
         {/* Mobile hamburger */}
@@ -87,12 +87,12 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="fixed top-[88px] left-5 right-5 bg-white/98 p-4 px-5 flex flex-col z-[99] rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,.12)] border border-black/6 gap-1 backdrop-blur-[12px] md:hidden">
+        <div className="fixed top-[88px] left-5 right-5 bg-white/98 p-4 px-5 flex flex-col z-[99] rounded-3xl shadow-xl border border-black/6 gap-1 backdrop-blur-[12px] md:hidden">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="py-[10px] px-[14px] rounded-[10px] text-navy no-underline text-sm font-medium hover:bg-blue-soft hover:text-blue"
+              className="py-[10px] px-[14px] rounded-xl text-navy no-underline text-sm font-medium hover:bg-blue-soft hover:text-blue"
               onClick={() => setMobileOpen(false)}
             >
               {link.label}
@@ -102,7 +102,7 @@ export default function Navbar() {
             href="https://wa.me/525520876765"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-wa text-white border-none rounded-[10px] py-[11px] text-sm font-bold cursor-pointer mt-2 text-center no-underline block"
+            className="bg-wa text-white border-none rounded-xl py-[11px] text-sm font-bold cursor-pointer mt-2 text-center no-underline block"
           >
             Whatsapp
           </a>

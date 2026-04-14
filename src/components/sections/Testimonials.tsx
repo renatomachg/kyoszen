@@ -26,8 +26,8 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section className="py-20 px-[5%] bg-bg">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="py-20 sec-pad bg-bg">
+      <div className="sec-container">
         <AnimatedSection className="text-center max-w-[500px] mx-auto">
           <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">
             Testimonios
@@ -47,7 +47,7 @@ export default function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="bg-white rounded-xl p-6 border border-border transition-all duration-200 hover:shadow-[0_6px_24px_rgba(0,0,0,.06)] hover:-translate-y-0.5"
+              className="bg-white rounded-xl p-6 border border-border transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
             >
               <div className="flex gap-0.5 mb-3">
                 {[...Array(5)].map((_, j) => (

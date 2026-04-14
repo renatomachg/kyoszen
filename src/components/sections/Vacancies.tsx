@@ -41,8 +41,8 @@ const vacancies = [
 
 export default function Vacancies() {
   return (
-    <section className="py-20 px-[5%] bg-white">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="py-20 sec-pad bg-white">
+      <div className="sec-container">
         <AnimatedSection>
           <div className="flex justify-between items-end flex-wrap gap-4 mb-7">
             <div>
@@ -72,7 +72,7 @@ export default function Vacancies() {
             >
               <Link
                 href="/vacantes"
-                className="block bg-white rounded-xl border-[1.5px] border-border p-5 no-underline text-navy transition-all duration-200 hover:border-blue-mid hover:shadow-[0_6px_24px_rgba(26,30,200,.1)] hover:-translate-y-0.5 group"
+                className="block bg-white rounded-xl border-[1.5px] border-border p-5 no-underline text-navy transition-all duration-200 hover:border-blue-mid hover:shadow-lg hover:-translate-y-0.5 group"
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10.5px] font-bold text-muted uppercase tracking-wide">{vac.category}</span>

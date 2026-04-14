@@ -36,8 +36,8 @@ const steps = [
 
 export default function Process() {
   return (
-    <section className="py-20 px-[5%] bg-white">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="py-20 sec-pad bg-white">
+      <div className="sec-container">
         <AnimatedSection className="text-center max-w-[520px] mx-auto">
           <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">
             Como trabajamos
@@ -57,7 +57,7 @@ export default function Process() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="bg-bg rounded-xl p-6 border-[1.5px] border-transparent transition-all duration-200 hover:border-blue-mid hover:bg-white hover:shadow-[0_4px_16px_rgba(26,30,200,.07)] relative overflow-hidden group"
+              className="bg-bg rounded-xl p-6 border-[1.5px] border-transparent transition-all duration-200 hover:border-blue-mid hover:bg-white hover:shadow-md relative overflow-hidden group"
             >
               <span className="absolute -top-2 right-2.5 text-[5rem] font-black text-blue opacity-5 leading-none">{step.num}</span>
               <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg mb-4 ${step.bg}`}>

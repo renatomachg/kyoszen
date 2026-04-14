@@ -30,7 +30,7 @@ export default function ContactoPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-[5%]">
+      <section className="bg-navy pt-32 pb-16 sec-pad">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto text-center">
           <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Contactanos</span>
           <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">No dudes en <em className="text-yellow">escribirnos</em></h1>
@@ -39,8 +39,8 @@ export default function ContactoPage() {
       </section>
 
       {/* Contact body */}
-      <section className="py-16 px-[5%] bg-bg">
-        <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-10">
+      <section className="py-16 sec-pad bg-bg">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-10">
           {/* Form */}
           <AnimatedSection>
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-border">
@@ -51,16 +51,16 @@ export default function ContactoPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="block text-xs font-bold text-navy mb-1.5">Nombre</label>
-                      <input type="text" placeholder="Tu nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border-[1.5px] border-border rounded-[10px] py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors" />
+                      <input type="text" placeholder="Tu nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border-[1.5px] border-border rounded-xl py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-navy mb-1.5">Correo electronico</label>
-                      <input type="email" placeholder="tu@correo.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full border-[1.5px] border-border rounded-[10px] py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors" />
+                      <input type="email" placeholder="tu@correo.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full border-[1.5px] border-border rounded-xl py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors" />
                     </div>
                   </div>
                   <div className="mb-4">
                     <label className="block text-xs font-bold text-navy mb-1.5">Asunto</label>
-                    <select value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full border-[1.5px] border-border rounded-[10px] py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors bg-white">
+                    <select value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full border-[1.5px] border-border rounded-xl py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors bg-white">
                       <option value="" disabled>Selecciona un asunto</option>
                       <option>Quiero aplicar a una vacante</option>
                       <option>Necesito contratar personal</option>
@@ -71,7 +71,7 @@ export default function ContactoPage() {
                   </div>
                   <div className="mb-4">
                     <label className="block text-xs font-bold text-navy mb-1.5">Mensaje</label>
-                    <textarea placeholder="Escribe tu mensaje aqui..." rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="w-full border-[1.5px] border-border rounded-[10px] py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors resize-none" />
+                    <textarea placeholder="Escribe tu mensaje aqui..." rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="w-full border-[1.5px] border-border rounded-xl py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors resize-none" />
                   </div>
                   <label className="flex items-start gap-2.5 mb-5 cursor-pointer">
                     <input type="checkbox" checked={form.privacy} onChange={(e) => setForm({ ...form, privacy: e.target.checked })} className="mt-0.5" />
