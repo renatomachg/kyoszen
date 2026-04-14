@@ -26,50 +26,97 @@ const faqData = {
 
 type TabKey = "empresa" | "candidato";
 
+function FaqCard({ faq, isOpen, onClick }: { faq: { q: string; a: string }; isOpen: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-left w-full rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden ${
+        isOpen ? "border-blue-mid bg-white shadow-md" : "border-border bg-white hover:border-blue-mid hover:shadow-sm"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-4 p-5">
+        <span className={`text-[13.5px] font-semibold leading-snug transition-colors ${isOpen ? "text-blue" : "text-navy"}`}>
+          {faq.q}
+        </span>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={isOpen ? "var(--color-blue)" : "var(--color-muted)"}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </div>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <p className="text-[13px] text-muted leading-relaxed px-5 pb-5">
+              {faq.a}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
+
 export default function FAQ() {
   const [activeTab, setActiveTab] = useState<TabKey>("empresa");
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const switchTab = (tab: TabKey) => {
     setActiveTab(tab);
-    setSelectedIndex(null);
+    setOpenIndex(null);
   };
 
   return (
-    <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <AnimatedSection className="text-center mb-10">
-          <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">
-            Preguntas frecuentes
-          </p>
-          <h2 className="text-[clamp(1.6rem,3vw,2.4rem)] font-black leading-[1.1] tracking-tight text-navy">
-            ¿Tienes dudas? Nosotros te ayudamos.
-          </h2>
+        <AnimatedSection>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+            <h2 className="text-[clamp(1.6rem,3vw,2.4rem)] font-black leading-[1.1] tracking-tight text-navy">
+              Preguntas frecuentes
+            </h2>
+            <Link href="/contacto" className="bg-blue-btn text-white rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark transition-colors w-fit shrink-0">
+              Contactanos →
+            </Link>
+          </div>
         </AnimatedSection>
 
         {/* Tabs */}
-        <div className="flex gap-3 justify-center mb-10">
+        <div className="flex gap-3 mb-8">
           <button
             onClick={() => switchTab("empresa")}
-            className={`py-3 px-6 rounded-xl text-[13px] font-bold border-2 transition-all cursor-pointer flex items-center gap-2 ${
+            className={`py-2.5 px-5 rounded-full text-[13px] font-bold border-2 transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === "empresa"
                 ? "bg-blue text-white border-blue"
                 : "bg-white text-navy border-border hover:border-blue-mid"
             }`}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
             Soy empresa
           </button>
           <button
             onClick={() => switchTab("candidato")}
-            className={`py-3 px-6 rounded-xl text-[13px] font-bold border-2 transition-all cursor-pointer flex items-center gap-2 ${
+            className={`py-2.5 px-5 rounded-full text-[13px] font-bold border-2 transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === "candidato"
                 ? "bg-blue text-white border-blue"
                 : "bg-white text-navy border-border hover:border-blue-mid"
             }`}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
             Soy candidato
           </button>
         </div>
@@ -82,71 +129,18 @@ export default function FAQ() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-              {faqData[activeTab].map((faq, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedIndex(selectedIndex === i ? null : i)}
-                  className={`text-left p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 ${
-                    selectedIndex === i
-                      ? "border-blue bg-blue-soft border-l-4"
-                      : "border-border bg-bg hover:border-blue-mid hover:bg-white"
-                  }`}
-                >
-                  <span className={`text-[13.5px] font-semibold leading-snug ${selectedIndex === i ? "text-blue-dark" : "text-navy"}`}>
-                    {faq.q}
-                  </span>
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={selectedIndex === i ? "var(--color-blue)" : "var(--color-muted)"}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={`shrink-0 transition-transform duration-200 ${selectedIndex === i ? "rotate-90" : ""}`}
-                  >
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                  </svg>
-                </button>
-              ))}
-            </div>
-
-            {/* Answer panel */}
-            <AnimatePresence>
-              {selectedIndex !== null && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -5, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="max-w-4xl mx-auto mt-6 overflow-hidden"
-                >
-                  <div className="bg-bg border border-border rounded-xl p-6 flex items-start gap-4">
-                    <div className="w-8 h-8 rounded-lg bg-blue flex items-center justify-center shrink-0 mt-0.5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-navy mb-1">{faqData[activeTab][selectedIndex].q}</p>
-                      <p className="text-[13.5px] text-muted leading-relaxed">{faqData[activeTab][selectedIndex].a}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {faqData[activeTab].map((faq, i) => (
+              <FaqCard
+                key={i}
+                faq={faq}
+                isOpen={openIndex === i}
+                onClick={() => setOpenIndex(openIndex === i ? null : i)}
+              />
+            ))}
           </motion.div>
         </AnimatePresence>
-
-        {/* CTA */}
-        <div className="text-center mt-10">
-          <p className="text-[13px] text-muted mb-3">¿No encontraste tu respuesta?</p>
-          <Link href="/contacto" className="bg-blue-btn text-white rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark transition-colors">
-            Contactar un asesor →
-          </Link>
-        </div>
       </div>
     </section>
   );
