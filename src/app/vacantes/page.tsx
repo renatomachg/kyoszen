@@ -3,18 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import AnimatedSection from "@/components/ui/AnimatedSection";
-
-const JOBS = [
-  { id: 1, titulo: "Auxiliar Administrativo", categoria: "Administrativo", ubicacion: "CDMX", contrato: "Tiempo completo", salario: 12000, badge: "Nuevo", badgeClass: "bg-green-soft text-[#15803d]", desc: "Apoyo en gestion documental, atencion a clientes internos y manejo de agenda ejecutiva.", tags: ["Office 365", "Atencion al cliente", "Organizacion"] },
-  { id: 2, titulo: "Operador de Almacen", categoria: "Operaciones", ubicacion: "Estado de Mexico", contrato: "Tiempo completo", salario: 10000, badge: "Urgente", badgeClass: "bg-yellow-soft text-[#b45309]", desc: "Control de inventarios, recepcion y despacho de mercancia, manejo de montacargas.", tags: ["Inventarios", "Montacargas", "Logistica"] },
-  { id: 3, titulo: "Ejecutivo de Ventas", categoria: "Ventas", ubicacion: "CDMX", contrato: "Tiempo completo", salario: 18000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Prospeccion, seguimiento y cierre de ventas B2B. Manejo de CRM y cumplimiento de metas.", tags: ["Ventas B2B", "CRM", "Negociacion"] },
-  { id: 4, titulo: "Recepcionista", categoria: "Atencion al cliente", ubicacion: "CDMX", contrato: "Medio tiempo", salario: 8000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Atencion presencial y telefonica, coordinacion de citas y gestion de correspondencia.", tags: ["Atencion al cliente", "Multitareas", "Comunicacion"] },
-  { id: 5, titulo: "Coordinador de RRHH", categoria: "RRHH", ubicacion: "CDMX", contrato: "Tiempo completo", salario: 22000, badge: "Nuevo", badgeClass: "bg-green-soft text-[#15803d]", desc: "Gestion de nomina, reclutamiento, capacitacion y relaciones laborales en empresa en crecimiento.", tags: ["Nomina", "Reclutamiento", "Relaciones laborales"] },
-  { id: 6, titulo: "Vendedor de Campo", categoria: "Ventas", ubicacion: "Estado de Mexico", contrato: "Tiempo completo", salario: 15000, badge: "Urgente", badgeClass: "bg-yellow-soft text-[#b45309]", desc: "Visitas a clientes, presentacion de productos y seguimiento posventa en zona Edomex.", tags: ["Ventas externas", "Zona Edomex", "Prospectos"] },
-  { id: 7, titulo: "Auxiliar Contable", categoria: "Administrativo", ubicacion: "Hibrido", contrato: "Tiempo completo", salario: 13000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Registro de operaciones contables, conciliaciones bancarias y elaboracion de reportes financieros.", tags: ["Contabilidad", "SAP", "Excel avanzado"] },
-  { id: 8, titulo: "Agente de Servicio al Cliente", categoria: "Atencion al cliente", ubicacion: "Remoto", contrato: "Por proyecto", salario: 9500, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Atencion a clientes via chat, correo y telefono. Resolucion de incidencias y seguimiento de casos.", tags: ["Zendesk", "Servicio al cliente", "Remoto"] },
-];
+import { JOBS } from "@/lib/jobs";
 
 const categories = ["Todos", "Administrativo", "Ventas", "Operaciones", "Atencion al cliente", "RRHH"];
 
@@ -24,7 +13,7 @@ export default function VacantesPage() {
 
   const filtered = useMemo(() => {
     return JOBS.filter((j) => {
-      const matchesSearch = !search || j.titulo.toLowerCase().includes(search.toLowerCase()) || j.desc.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = !search || j.titulo.toLowerCase().includes(search.toLowerCase()) || j.descripcion.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = activeCategory === "Todos" || j.categoria === activeCategory;
       return matchesSearch && matchesCategory;
     });
@@ -48,7 +37,6 @@ export default function VacantesPage() {
       {/* Filters + Results */}
       <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
         <div className="max-w-7xl mx-auto">
-          {/* Category tabs */}
           <div className="flex gap-2 flex-wrap mb-8">
             {categories.map((cat) => (
               <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-full text-[13px] font-semibold border transition-all cursor-pointer ${activeCategory === cat ? "bg-blue text-white border-blue" : "bg-white text-muted border-border hover:border-blue-mid"}`}>
@@ -59,28 +47,29 @@ export default function VacantesPage() {
 
           <p className="text-sm text-muted mb-4"><strong className="text-navy">{filtered.length}</strong> vacantes encontradas</p>
 
-          {/* Jobs grid */}
           {filtered.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map((job, i) => (
-                <motion.div key={job.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05, duration: 0.4 }}>
-                  <div className="bg-white rounded-xl border-[1.5px] border-border p-5 transition-all duration-200 hover:border-blue-mid hover:shadow-lg hover:-translate-y-0.5 group h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10.5px] font-bold text-muted uppercase tracking-wide">{job.ubicacion}</span>
-                      <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-bold ${job.badgeClass}`}>{job.badge}</span>
+                <motion.div key={job.slug} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05, duration: 0.4 }}>
+                  <Link href={`/vacantes/${job.slug}`} className="block no-underline text-navy">
+                    <div className="bg-white rounded-xl border-[1.5px] border-border p-5 transition-all duration-200 hover:border-blue-mid hover:shadow-lg hover:-translate-y-0.5 group h-full flex flex-col">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10.5px] font-bold text-muted uppercase tracking-wide">{job.ubicacion}</span>
+                        <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-bold ${job.badgeClass}`}>{job.badge}</span>
+                      </div>
+                      <h3 className="text-base font-extrabold text-navy mb-1.5">{job.titulo}</h3>
+                      <p className="text-xs text-muted leading-relaxed mb-3 flex-1 line-clamp-3">{job.descripcion}</p>
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {job.habilidades.slice(0, 3).map((t) => (
+                          <span key={t} className="bg-bg text-navy text-[10px] font-semibold px-2 py-0.5 rounded-md">{t}</span>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between pt-3 border-t border-border mt-auto">
+                        <span className="text-xs font-semibold text-muted">{job.contrato}</span>
+                        <span className="text-[11.5px] font-extrabold text-blue flex items-center gap-[3px] transition-all group-hover:gap-1.5">Ver detalle →</span>
+                      </div>
                     </div>
-                    <h3 className="text-base font-extrabold text-navy mb-1.5">{job.titulo}</h3>
-                    <p className="text-xs text-muted leading-relaxed mb-3 flex-1">{job.desc}</p>
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {job.tags.map((t) => (
-                        <span key={t} className="bg-bg text-navy text-[10px] font-semibold px-2 py-0.5 rounded-md">{t}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between pt-3 border-t border-border mt-auto">
-                      <span className="text-sm font-bold text-navy">${job.salario.toLocaleString()} / mes</span>
-                      <Link href="/contacto" className="text-[11.5px] font-extrabold text-blue no-underline flex items-center gap-[3px] transition-all group-hover:gap-1.5">Aplicar →</Link>
-                    </div>
-                  </div>
+                  </Link>
                 </motion.div>
               ))}
             </div>
