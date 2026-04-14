@@ -23,7 +23,6 @@
   --font-sans: 'DM Sans', system-ui, sans-serif;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
 html { overflow-x: hidden; scroll-behavior: smooth; }
 body {
   font-family: var(--font-sans);
@@ -31,31 +30,6 @@ body {
   background: var(--color-bg);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
-}
-
-/* Section container pattern */
-.sec-pad {
-  padding-left: 5%;
-  padding-right: 5%;
-}
-
-.sec-container {
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Card styling */
-.card {
-  background: #fff;
-  border-radius: 14px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06);
-  transition: all 0.2s;
-}
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 24px rgba(0,0,0,.1);
 }
 
 /* Typewriter cursor */
