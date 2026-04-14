@@ -97,83 +97,92 @@ export default function Hero() {
         </motion.div>
 
         {/* Right - Photo collage */}
-        <div className="relative flex justify-center items-end min-h-[420px] lg:min-h-[480px] py-8">
-          {/* Float card top right */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-            className="absolute top-8 right-0 bg-white rounded-xl py-3 px-4 shadow-[0_4px_20px_rgba(0,0,0,.1)] border border-border min-w-[120px] max-w-[160px] z-[2]"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-yellow-soft shrink-0">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
-              </div>
-              <div>
-                <div className="text-[17px] font-black text-navy leading-none">672+</div>
-                <div className="text-[10px] text-muted mt-0.5">Empresas</div>
-              </div>
-            </div>
-          </motion.div>
+        <div className="relative hidden lg:block">
+          <div className="relative w-full max-w-[440px] h-[480px] mx-auto">
+            {/* Photo 1 - small, top left */}
+            <motion.div
+              initial={{ opacity: 0, x: -40, scale: 0.92 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute w-[48%] h-[55%] top-[5%] left-0 z-[1] rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,.3)] border-[3px] border-white/[.12]"
+            >
+              <Image src="/images/Hero2.jpg" alt="Trabajo operativo Kyoszen" fill className="object-cover" sizes="250px" />
+            </motion.div>
 
-          {/* Photo collage */}
-          <div className="relative w-full max-w-[440px] h-[420px] lg:h-[480px] mx-auto">
+            {/* Photo 2 - large, bottom right */}
+            <motion.div
+              initial={{ opacity: 0, y: 40, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.55, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute w-[58%] h-[68%] bottom-0 right-0 z-[2] rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,.3)] border-[3px] border-white/[.12]"
+            >
+              <Image src="/images/Hero.jpg" alt="Equipo profesional Kyoszen" fill className="object-cover" sizes="300px" />
+            </motion.div>
+
             {/* Deco icon */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.7 }}
-              className="absolute -top-[18px] right-[28%] z-[3] w-14 h-14 bg-white/[.12] backdrop-blur-[8px] rounded-[14px] flex items-center justify-center border border-white/[.18]"
+              className="absolute top-0 right-[28%] z-[3] w-14 h-14 bg-white/[.12] backdrop-blur-[8px] rounded-[14px] flex items-center justify-center border border-white/[.18]"
             >
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
             </motion.div>
 
-            {/* Photo 1 */}
-            <div className="absolute w-[48%] h-[58%] top-0 left-0 z-[1] rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,.3)] border-[3px] border-white/[.12] animate-[heroSlideIn1_.9s_cubic-bezier(.22,1,.36,1)_both] [animation-delay:.3s]">
-              <Image src="/images/Hero2.jpg" alt="Trabajo operativo Kyoszen" fill className="object-cover" />
-            </div>
+            {/* Float card - Empresas (top right) */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+              className="absolute -top-2 -right-4 bg-white rounded-xl py-3 px-4 shadow-[0_4px_20px_rgba(0,0,0,.1)] border border-border z-[4]"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-yellow-soft shrink-0">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
+                </div>
+                <div>
+                  <div className="text-[17px] font-black text-navy leading-none">672+</div>
+                  <div className="text-[10px] text-muted mt-0.5">Empresas</div>
+                </div>
+              </div>
+            </motion.div>
 
-            {/* Photo 2 */}
-            <div className="absolute w-[58%] h-[72%] bottom-0 right-0 z-[2] rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,.3)] border-[3px] border-white/[.12] animate-[heroSlideIn2_.9s_cubic-bezier(.22,1,.36,1)_both] [animation-delay:.55s]">
-              <Image src="/images/Hero.jpg" alt="Equipo profesional Kyoszen" fill className="object-cover" />
-            </div>
+            {/* Float card - Colocados (bottom left) */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1, duration: 0.6 }}
+              className="absolute bottom-[15%] -left-6 bg-white rounded-xl py-3 px-4 shadow-[0_4px_20px_rgba(0,0,0,.1)] border border-border z-[4]"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-soft shrink-0">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
+                </div>
+                <div>
+                  <div className="text-[17px] font-black text-navy leading-none">687+</div>
+                  <div className="text-[10px] text-muted mt-0.5">Colocados</div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Float card - Respuesta (right middle) */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.2, duration: 0.6 }}
+              className="absolute bottom-[35%] -right-6 bg-white rounded-xl py-3 px-4 shadow-[0_4px_20px_rgba(0,0,0,.1)] border border-border z-[4]"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-soft shrink-0">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                </div>
+                <div>
+                  <div className="text-[17px] font-black text-navy leading-none">24h</div>
+                  <div className="text-[10px] text-muted mt-0.5">Respuesta</div>
+                </div>
+              </div>
+            </motion.div>
           </div>
-
-          {/* Float card bottom left */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1, duration: 0.6 }}
-            className="absolute bottom-10 left-0 bg-white rounded-xl py-3 px-4 shadow-[0_4px_20px_rgba(0,0,0,.1)] border border-border min-w-[120px] max-w-[160px] z-[2]"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-soft shrink-0">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
-              </div>
-              <div>
-                <div className="text-[17px] font-black text-navy leading-none">687+</div>
-                <div className="text-[10px] text-muted mt-0.5">Colocados</div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Float card right bottom */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1.2, duration: 0.6 }}
-            className="absolute bottom-[5.5rem] right-0 bg-white rounded-xl py-3 px-4 shadow-[0_4px_20px_rgba(0,0,0,.1)] border border-border min-w-[120px] max-w-[160px] z-[2] hidden lg:block"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-soft shrink-0">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-              </div>
-              <div>
-                <div className="text-[17px] font-black text-navy leading-none">24h</div>
-                <div className="text-[10px] text-muted mt-0.5">Respuesta</div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>
