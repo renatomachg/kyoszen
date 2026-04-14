@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="bg-footer text-white pt-16 pb-8 px-[5%]">
-      <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1.5fr] gap-10 pb-10 border-b border-white/7">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-[1.7fr_1fr_1fr_1.5fr] gap-10 pb-10 border-b border-white/7">
         {/* Brand */}
         <div>
           <span className="text-white text-lg block mb-3 font-black tracking-[2px]">KYOSZEN</span>

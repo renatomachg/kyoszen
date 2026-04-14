@@ -60,7 +60,7 @@ export default function Services() {
         </AnimatedSection>
 
         {/* 4 Service cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
           {services.map((svc, i) => (
             <motion.div
               key={svc.title}
@@ -84,7 +84,7 @@ export default function Services() {
         </div>
 
         {/* Image + text */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           <AnimatedSection>
             <div className="rounded-[20px] overflow-hidden">
               <Image

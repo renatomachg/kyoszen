@@ -44,7 +44,7 @@ export default function Hero() {
       <div className="absolute w-[500px] h-[500px] bg-white/[.04] rounded-full -top-[200px] -right-[100px] pointer-events-none z-0" />
       <div className="absolute w-[250px] h-[250px] bg-blue/[.12] rounded-full bottom-0 left-[5%] pointer-events-none z-0" />
 
-      <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-[1]">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-[1]">
         {/* Left */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
@@ -97,7 +97,7 @@ export default function Hero() {
         </motion.div>
 
         {/* Right - Photo collage */}
-        <div className="relative hidden lg:block">
+        <div className="relative hidden md:block">
           <div className="relative w-full max-w-[440px] h-[480px] mx-auto">
             {/* Photo 1 - small, top left */}
             <motion.div
