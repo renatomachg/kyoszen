@@ -36,8 +36,8 @@ const steps = [
 
 export default function Process() {
   return (
-    <section className="py-20 sec-pad bg-white">
-      <div className="sec-container">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+      <div className="max-w-7xl mx-auto">
         <AnimatedSection className="text-center max-w-[520px] mx-auto">
           <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">
             Como trabajamos

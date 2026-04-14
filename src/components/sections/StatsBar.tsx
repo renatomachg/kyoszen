@@ -51,7 +51,7 @@ export default function StatsBar() {
   }, []);
 
   return (
-    <section className="bg-[#64748B] py-12 sec-pad">
+    <section className="bg-[#64748B] py-12 px-5 md:px-10 xl:px-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

@@ -33,7 +33,7 @@ export default function VacantesPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 sec-pad">
+      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto text-center">
           <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Vacantes</span>
           <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Encuentra tu proximo empleo</h1>
@@ -46,8 +46,8 @@ export default function VacantesPage() {
       </section>
 
       {/* Filters + Results */}
-      <section className="py-16 sec-pad bg-bg">
-        <div className="sec-container">
+      <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
+        <div className="max-w-7xl mx-auto">
           {/* Category tabs */}
           <div className="flex gap-2 flex-wrap mb-8">
             {categories.map((cat) => (

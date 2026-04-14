@@ -22,7 +22,7 @@ export default function NosotrosPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 sec-pad text-center relative overflow-hidden">
+      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20 text-center relative overflow-hidden">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto relative z-[1]">
           <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Sobre nosotros</h1>
           <p className="text-sm text-white/60 leading-relaxed">Somos una consultora especializada en capital humano para microempresas mexicanas. Conectamos talento con empresas que crecen, con rapidez, tecnologia y trato humano.</p>
@@ -30,8 +30,8 @@ export default function NosotrosPage() {
       </section>
 
       {/* Photo collage */}
-      <section className="sec-pad py-10 bg-white">
-        <div className="sec-container grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="px-5 md:px-10 xl:px-20 py-10 bg-white">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((n) => (
             <motion.div key={n} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: n * 0.1, duration: 0.5 }} className="rounded-2xl overflow-hidden h-[220px] md:h-[280px]">
               <Image src={`/images/nosotros${n}.jpg`} alt="Equipo Kyoszen" width={400} height={300} className="w-full h-full object-cover" />
@@ -41,8 +41,8 @@ export default function NosotrosPage() {
       </section>
 
       {/* Mission */}
-      <section className="py-20 sec-pad bg-white">
-        <div className="sec-container grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
           <AnimatedSection>
             <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestra mision</p>
             <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy">Nos aseguramos de que tu idea y crecimiento se entreguen correctamente</h2>
@@ -55,8 +55,8 @@ export default function NosotrosPage() {
       </section>
 
       {/* Empower */}
-      <section className="py-16 sec-pad bg-bg">
-        <div className="sec-container grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <AnimatedSection>
             <div className="rounded-3xl overflow-hidden relative">
               <Image src="/images/nosotros2.jpg" alt="Kyoszen impacto" width={700} height={500} className="w-full h-[400px] object-cover" />
@@ -78,8 +78,8 @@ export default function NosotrosPage() {
       </section>
 
       {/* Stats */}
-      <section className="bg-navy py-16 sec-pad">
-        <div className="sec-container grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+      <section className="bg-navy py-16 px-5 md:px-10 xl:px-20">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
           {stats.map((s, i) => (
             <motion.div key={s.l} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}>
               <div className="text-[clamp(2rem,4vw,3rem)] font-black text-yellow leading-none mb-1">{s.n}</div>
@@ -91,8 +91,8 @@ export default function NosotrosPage() {
       </section>
 
       {/* Values */}
-      <section className="py-20 sec-pad bg-white">
-        <div className="sec-container">
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+        <div className="max-w-7xl mx-auto">
           <AnimatedSection className="text-center max-w-[520px] mx-auto mb-10">
             <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestros valores</p>
             <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>
@@ -110,7 +110,7 @@ export default function NosotrosPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-bg py-16 sec-pad">
+      <section className="bg-bg py-16 px-5 md:px-10 xl:px-20">
         <AnimatedSection className="max-w-[600px] mx-auto text-center">
           <div className="text-2xl mb-2">✦</div>
           <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy mb-4">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>

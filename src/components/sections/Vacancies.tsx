@@ -41,8 +41,8 @@ const vacancies = [
 
 export default function Vacancies() {
   return (
-    <section className="py-20 sec-pad bg-white">
-      <div className="sec-container">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+      <div className="max-w-7xl mx-auto">
         <AnimatedSection>
           <div className="flex justify-between items-end flex-wrap gap-4 mb-7">
             <div>

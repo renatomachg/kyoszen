@@ -7,8 +7,8 @@ import { motion } from "framer-motion";
 
 export default function About() {
   return (
-    <section className="bg-bg py-20 sec-pad">
-      <div className="sec-container">
+    <section className="bg-bg py-20 px-5 md:px-10 xl:px-20">
+      <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
           {/* Left - Text */}
           <AnimatedSection>

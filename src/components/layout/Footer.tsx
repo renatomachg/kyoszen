@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-footer text-white pt-16 pb-8 sec-pad">
-      <div className="sec-container grid grid-cols-2 md:grid-cols-[1.7fr_1fr_1fr_1.5fr] gap-10 pb-10 border-b border-white/7">
+    <footer className="bg-footer text-white pt-16 pb-8 px-5 md:px-10 xl:px-20">
+      <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-[1.7fr_1fr_1fr_1.5fr] gap-10 pb-10 border-b border-white/7">
         {/* Brand */}
         <div>
           <span className="text-white text-lg block mb-3 font-black tracking-[2px]">KYOSZEN</span>
@@ -87,7 +87,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="sec-container mt-8 flex justify-between flex-wrap gap-2">
+      <div className="max-w-7xl mx-auto mt-8 flex justify-between flex-wrap gap-2">
         <p className="text-[11px] opacity-20">&copy; 2026 Kyoszen · Todos los derechos reservados</p>
         <p className="text-[11px] opacity-20">Diseñado por Holadiseño!</p>
       </div>

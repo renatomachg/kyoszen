@@ -4,7 +4,7 @@ import AnimatedSection from "@/components/ui/AnimatedSection";
 
 export default function Newsletter() {
   return (
-    <section className="bg-bg py-10 sec-pad border-t border-border">
+    <section className="bg-bg py-10 px-5 md:px-10 xl:px-20 border-t border-border">
       <AnimatedSection className="max-w-[480px] mx-auto text-center">
         <h4 className="text-[1.1rem] font-extrabold mb-1.5">
           Mantente al dia con el mercado laboral

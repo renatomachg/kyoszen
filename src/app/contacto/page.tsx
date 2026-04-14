@@ -30,7 +30,7 @@ export default function ContactoPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 sec-pad">
+      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto text-center">
           <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Contactanos</span>
           <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">No dudes en <em className="text-yellow">escribirnos</em></h1>
@@ -39,7 +39,7 @@ export default function ContactoPage() {
       </section>
 
       {/* Contact body */}
-      <section className="py-16 sec-pad bg-bg">
+      <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-10">
           {/* Form */}
           <AnimatedSection>

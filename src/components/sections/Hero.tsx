@@ -39,12 +39,12 @@ export default function Hero() {
   }, [typed, isDeleting, wordIndex]);
 
   return (
-    <section className="bg-navy pt-32 pb-12 sec-pad overflow-hidden relative">
+    <section className="bg-navy pt-32 pb-12 px-5 md:px-10 xl:px-20 overflow-hidden relative">
       {/* Decorative circles */}
       <div className="absolute w-[500px] h-[500px] bg-white/[.04] rounded-full -top-[200px] -right-[100px] pointer-events-none z-0" />
       <div className="absolute w-[250px] h-[250px] bg-blue/[.12] rounded-full bottom-0 left-[5%] pointer-events-none z-0" />
 
-      <div className="sec-container grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-[1]">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-[1]">
         {/* Left */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}

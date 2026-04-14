@@ -5,8 +5,8 @@ import AnimatedSection from "@/components/ui/AnimatedSection";
 
 export default function CtaFinal() {
   return (
-    <section className="py-20 sec-pad bg-white">
-      <div className="sec-container">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+      <div className="max-w-7xl mx-auto">
         <AnimatedSection>
           <div className="bg-blue-soft rounded-3xl p-10 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative overflow-hidden">
             {/* Decorative */}

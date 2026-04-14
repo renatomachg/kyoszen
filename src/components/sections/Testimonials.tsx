@@ -26,8 +26,8 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section className="py-20 sec-pad bg-bg">
-      <div className="sec-container">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
+      <div className="max-w-7xl mx-auto">
         <AnimatedSection className="text-center max-w-[500px] mx-auto">
           <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">
             Testimonios

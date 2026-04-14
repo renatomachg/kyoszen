@@ -24,8 +24,8 @@ const bullets = [
 
 export default function WhyUs() {
   return (
-    <section className="py-20 sec-pad bg-bg">
-      <div className="sec-container">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
+      <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.1fr] gap-12 md:gap-16 items-center">
           {/* Left */}
           <AnimatedSection>

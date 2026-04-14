@@ -46,8 +46,8 @@ const services = [
 
 export default function Services() {
   return (
-    <section className="py-20 sec-pad bg-white">
-      <div className="sec-container">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+      <div className="max-w-7xl mx-auto">
         <AnimatedSection className="text-center mb-10">
           <span className="inline-block bg-[#E3F2FF] text-blue-dark text-xs font-bold py-1.5 px-[18px] rounded-full tracking-wide">
             Nuestros servicios
@@ -71,7 +71,7 @@ export default function Services() {
             >
               <Link
                 href={svc.href}
-                className="card block no-underline text-navy"
+                className="block bg-white rounded-2xl p-6 shadow-md no-underline text-navy transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${svc.bg}`}>
                   {svc.icon}

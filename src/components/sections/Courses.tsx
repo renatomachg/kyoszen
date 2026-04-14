@@ -33,8 +33,8 @@ const courses = [
 
 export default function Courses() {
   return (
-    <section className="py-20 sec-pad bg-bg">
-      <div className="sec-container">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
+      <div className="max-w-7xl mx-auto">
         <AnimatedSection>
           <div className="flex justify-between items-end flex-wrap gap-4">
             <div>
