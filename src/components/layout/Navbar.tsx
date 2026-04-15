@@ -76,10 +76,10 @@ export default function Navbar() {
             href="https://wa.me/525520876765"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-wa text-white border-none rounded-full cursor-pointer flex items-center gap-[7px] no-underline shrink-0 transition-opacity duration-150 text-[13px] font-bold hover:opacity-90 px-[18px] py-[10px] md:px-[18px] md:py-[10px] w-10 h-10 md:w-auto md:h-auto justify-center md:justify-start md:rounded-full"
+            className="bg-wa text-white border-none rounded-full cursor-pointer flex items-center gap-[7px] no-underline shrink-0 transition-opacity duration-150 text-[13px] font-bold hover:opacity-90 w-10 h-10 md:w-auto md:h-auto md:px-[18px] md:py-[10px] justify-center md:justify-start"
             aria-label="Whatsapp"
           >
-            <WhatsAppIcon />
+            <WhatsAppIcon size={20} />
             <span className="hidden md:inline">Whatsapp</span>
           </a>
         </div>
