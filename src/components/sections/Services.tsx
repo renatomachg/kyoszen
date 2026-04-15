@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { motion } from "framer-motion";
 
@@ -60,7 +59,7 @@ export default function Services() {
         </AnimatedSection>
 
         {/* 4 Service cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {services.map((svc, i) => (
             <motion.div
               key={svc.title}
@@ -82,38 +81,8 @@ export default function Services() {
             </motion.div>
           ))}
         </div>
-
-        {/* Image + text */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-          <AnimatedSection>
-            <div className="rounded-3xl overflow-hidden">
-              <Image
-                src="/images/about.png"
-                alt="Servicios Kyoszen"
-                width={700}
-                height={420}
-                className="w-full h-[320px] object-cover"
-              />
-            </div>
-          </AnimatedSection>
-          <AnimatedSection delay={0.2}>
-            <h3 className="text-[clamp(1.2rem,2.5vw,1.6rem)] font-extrabold text-navy leading-[1.2] mb-3">
-              Soluciones integrales para la gestion de tu talento humano.
-            </h3>
-            <p className="text-[13.5px] text-muted leading-relaxed mb-6">
-              Desde el reclutamiento y seleccion hasta la capacitacion y
-              digitalizacion de procesos. Acompañamiento personalizado para
-              microempresas en CDMX y Area Metropolitana.
-            </p>
-            <Link
-              href="/servicios"
-              className="bg-blue-btn text-white border-none rounded-full py-3 px-7 text-[13px] font-bold cursor-pointer transition-colors duration-150 no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark"
-            >
-              Conocer mas →
-            </Link>
-          </AnimatedSection>
-        </div>
       </div>
     </section>
   );
 }
+
