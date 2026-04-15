@@ -121,7 +121,7 @@ export default function NosotrosPage() {
                   transition={{ delay: i * 0.1, duration: 0.5 }}
                   className="flex items-start gap-4 bg-white rounded-2xl p-5 border border-border"
                 >
-                  <div className="shrink-0 w-12 h-12 rounded-xl bg-[#c4f74b] flex items-center justify-center text-navy font-black text-base shadow-sm">
+                  <div className="shrink-0 w-12 h-12 rounded-xl bg-yellow flex items-center justify-center text-navy font-black text-base shadow-sm">
                     {item.n}
                   </div>
                   <div className="flex-1 pt-1">
@@ -181,7 +181,7 @@ export default function NosotrosPage() {
                 <Link
                   href={card.href}
                   className={`group relative block rounded-3xl overflow-hidden h-[440px] no-underline transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
-                    card.highlight ? "bg-[#c4f74b]" : "bg-bg border border-border"
+                    card.highlight ? "bg-yellow" : "bg-bg border border-border"
                   }`}
                 >
                   {/* Arrow icon top-right */}
@@ -265,8 +265,8 @@ export default function NosotrosPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-7">
               <div>
-                <div className="w-10 h-10 rounded-lg bg-[#c4f74b] flex items-center justify-center mb-3">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-10 h-10 rounded-lg bg-blue-soft flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 3v18h18" />
                     <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
                   </svg>
@@ -277,8 +277,8 @@ export default function NosotrosPage() {
                 </p>
               </div>
               <div>
-                <div className="w-10 h-10 rounded-lg bg-[#c4f74b] flex items-center justify-center mb-3">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-10 h-10 rounded-lg bg-blue-soft flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="3" width="20" height="14" rx="2" />
                     <line x1="8" y1="21" x2="16" y2="21" />
                     <line x1="12" y1="17" x2="12" y2="21" />
@@ -314,7 +314,7 @@ export default function NosotrosPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.35, duration: 0.6 }}
-                className="absolute bottom-5 right-5 left-5 sm:left-auto sm:max-w-[340px] bg-[#c4f74b] rounded-2xl p-5 shadow-xl"
+                className="absolute bottom-5 right-5 left-5 sm:left-auto sm:max-w-[340px] bg-yellow rounded-2xl p-5 shadow-xl"
               >
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
@@ -331,6 +331,101 @@ export default function NosotrosPage() {
                   </div>
                 </div>
               </motion.div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* Our Process - mirrored layout */}
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+          {/* LEFT - Image with trust badge overlay */}
+          <AnimatedSection>
+            <div className="relative rounded-3xl overflow-hidden h-[460px] md:h-[560px]">
+              <Image
+                src="/images/nosotros2.jpg"
+                alt="Proceso Kyoszen"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 600px"
+              />
+              {/* Trust card - bottom left overlay */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.35, duration: 0.6 }}
+                className="absolute bottom-5 left-5 right-5 sm:right-auto sm:max-w-[300px] bg-navy rounded-2xl p-5 shadow-xl"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="w-10 h-10 rounded-full bg-yellow flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </span>
+                  <div>
+                    <div className="text-[22px] font-black text-white leading-none">24h</div>
+                    <div className="text-[10px] font-bold text-white/70 mt-1">tiempo de respuesta</div>
+                  </div>
+                </div>
+                <p className="text-[12px] text-white/85 leading-relaxed">
+                  Garantia de reposicion si el candidato no cumple en los primeros 30 dias.
+                </p>
+              </motion.div>
+            </div>
+          </AnimatedSection>
+
+          {/* RIGHT - Text column */}
+          <AnimatedSection delay={0.2}>
+            <span className="inline-block bg-white text-navy text-[11px] font-extrabold uppercase tracking-[1.5px] px-3 py-1.5 rounded-full border border-border mb-5">
+              Como trabajamos
+            </span>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1] mb-5">
+              Un proceso claro, transparente y con resultados
+            </h2>
+            <p className="text-[13.5px] text-muted leading-relaxed mb-7">
+              No paramos despues de contratar. Acompañamos cada etapa del
+              proceso con comunicacion directa, criterios claros y seguimiento
+              continuo para que tu empresa y el talento crezcan juntos.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-7">
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-yellow-soft flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                </div>
+                <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Candidatos verificados</h4>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Documentacion completa y perfil revisado antes de presentarlo a tu empresa.
+                </p>
+              </div>
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-blue-soft flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </div>
+                <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Acompañamiento total</h4>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Desde el primer contacto hasta la integracion del colaborador.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 flex-wrap">
+              <Link href="/servicios" className="bg-navy text-white rounded-full py-3 px-7 text-[13px] font-extrabold no-underline hover:bg-blue-dark transition-colors">
+                Ver servicios →
+              </Link>
+              <Link href="/contacto" className="bg-transparent text-navy border-2 border-navy/20 rounded-full py-3 px-7 text-[13px] font-extrabold no-underline hover:bg-navy/5 transition-colors">
+                Hablar con asesor
+              </Link>
             </div>
           </AnimatedSection>
         </div>
