@@ -15,9 +15,9 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <About />
       <Services />
       <StatsBar />
-      <About />
       <Vacancies />
       <Process />
       <WhyUs />
