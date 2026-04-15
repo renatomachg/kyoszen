@@ -46,7 +46,7 @@ export default function Process() {
           </div>
         </AnimatedSection>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
           {steps.map((step, i) => {
             const highlighted = i % 2 === 0;
             return (
@@ -56,7 +56,9 @@ export default function Process() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className={`rounded-2xl p-7 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between min-h-[260px] ${
+                className={`rounded-2xl p-8 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between min-h-[360px] ${
+                  !highlighted ? "lg:mt-16" : ""
+                } ${
                   highlighted
                     ? "bg-blue-dark text-white"
                     : "bg-white text-navy border border-border shadow-md"
