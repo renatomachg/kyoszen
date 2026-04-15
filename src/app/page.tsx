@@ -10,7 +10,6 @@ import FAQ from "@/components/sections/FAQ";
 import Blog from "@/components/sections/Blog";
 import Testimonials from "@/components/sections/Testimonials";
 import CtaFinal from "@/components/sections/CtaFinal";
-import Newsletter from "@/components/sections/Newsletter";
 
 export default function Home() {
   return (
@@ -27,7 +26,6 @@ export default function Home() {
       <Blog />
       <Testimonials />
       <CtaFinal />
-      <Newsletter />
     </>
   );
 }
