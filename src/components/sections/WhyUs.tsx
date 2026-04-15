@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 
@@ -97,13 +96,12 @@ export default function WhyUs() {
 
           {/* Right - Image */}
           <AnimatedSection delay={0.2}>
-            <div className="rounded-3xl overflow-hidden relative h-[420px] md:h-[480px] shadow-xl">
-              <Image
+            <div className="rounded-3xl overflow-hidden relative h-[420px] md:h-[480px] shadow-xl bg-white/5">
+              <img
                 src="/images/resultados.png"
                 alt="Equipo Kyoszen"
-                fill
-                className="object-cover object-top"
-                sizes="(max-width: 768px) 100vw, 600px"
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover object-top"
               />
             </div>
           </AnimatedSection>
