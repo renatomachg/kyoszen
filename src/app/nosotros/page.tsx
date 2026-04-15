@@ -246,6 +246,96 @@ export default function NosotrosPage() {
         </div>
       </section>
 
+      {/* Tailored Strategies */}
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+          {/* LEFT - Text column */}
+          <AnimatedSection>
+            <span className="inline-block bg-bg text-navy text-[11px] font-extrabold uppercase tracking-[1.5px] px-3 py-1.5 rounded-full border border-border mb-5">
+              Nuestros servicios
+            </span>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1] mb-5">
+              Estrategias a la medida para el maximo crecimiento de tu negocio
+            </h2>
+            <p className="text-[13.5px] text-muted leading-relaxed mb-7">
+              Diseñamos soluciones de capital humano adaptadas a la realidad de
+              cada empresa mexicana. Sin plantillas genericas: entendemos tu
+              contexto, tus metas y entregamos resultados medibles.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-7">
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-[#c4f74b] flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 3v18h18" />
+                    <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
+                  </svg>
+                </div>
+                <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Reclutamiento dirigido</h4>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Identificamos y presentamos candidatos verificados alineados a tu cultura y necesidades.
+                </p>
+              </div>
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-[#c4f74b] flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                </div>
+                <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Soluciones digitales</h4>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Procesos agiles con tecnologia, tableros de seguimiento y trato humano en cada etapa.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-[13px] text-muted leading-relaxed">
+              Mas de 3 años conectando talento con empresas mexicanas en
+              crecimiento. Combinamos tecnologia, experiencia y un trato
+              genuinamente humano.
+            </p>
+          </AnimatedSection>
+
+          {/* RIGHT - Image with stats overlay */}
+          <AnimatedSection delay={0.2}>
+            <div className="relative rounded-3xl overflow-hidden h-[460px] md:h-[560px]">
+              <Image
+                src="/images/nosotros1.jpg"
+                alt="Equipo Kyoszen trabajando"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 600px"
+              />
+              {/* Stats card - bottom right overlay */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.35, duration: 0.6 }}
+                className="absolute bottom-5 right-5 left-5 sm:left-auto sm:max-w-[340px] bg-[#c4f74b] rounded-2xl p-5 shadow-xl"
+              >
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">687+</div>
+                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Candidatos</div>
+                  </div>
+                  <div>
+                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">672+</div>
+                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Empresas</div>
+                  </div>
+                  <div>
+                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">99%</div>
+                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Satisfaccion</div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="bg-bg py-16 px-5 md:px-10 xl:px-20">
         <AnimatedSection className="max-w-[600px] mx-auto text-center">
