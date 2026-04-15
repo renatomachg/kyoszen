@@ -114,11 +114,11 @@ export default function NosotrosPage() {
       </section>
 
       {/* Values */}
-      <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-blue-btn">
         <div className="max-w-7xl mx-auto">
           <AnimatedSection className="text-center max-w-[520px] mx-auto mb-10">
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestros valores</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>
+            <p className="text-[11px] font-bold text-yellow uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestros valores</p>
+            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-white">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>
           </AnimatedSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
