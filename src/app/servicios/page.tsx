@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
+import PageHero from "@/components/ui/PageHero";
 
 const features = [
   { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: "Reclutamiento y Seleccion", desc: "Identificamos, evaluamos y presentamos candidatos verificados alineados a tu cultura y perfil en tiempo record.", link: "/vacantes", linkText: "Ver vacantes →" },
@@ -48,14 +49,12 @@ const reviews = [
 export default function ServiciosPage() {
   return (
     <>
-      {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20 text-center">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto">
-          <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Servicios</span>
-          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Nuestros increibles servicios para tu empresa</h1>
-          <p className="text-sm text-white/60 leading-relaxed">Cada servicio esta diseñado para resolver los retos reales de las microempresas mexicanas. Sin burocracia, sin costos ocultos.</p>
-        </motion.div>
-      </section>
+      <PageHero
+        image="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1800&auto=format&fit=crop&q=80"
+        chip="Servicios"
+        title="Nuestros increibles servicios para tu empresa"
+        description="Cada servicio esta diseñado para resolver los retos reales de las microempresas mexicanas. Sin burocracia, sin costos ocultos."
+      />
 
       {/* Features grid */}
       <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">

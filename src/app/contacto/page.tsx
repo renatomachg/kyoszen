@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
+import PageHero from "@/components/ui/PageHero";
 
 const contactInfo = [
   { icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>, title: "Oficina", value: "CDMX, Mexico" },
@@ -30,13 +31,16 @@ export default function ContactoPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto text-center">
-          <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Contactanos</span>
-          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">No dudes en <em className="text-yellow">escribirnos</em></h1>
-          <p className="text-sm text-white/60 leading-relaxed">Con mas de 3 años en el mercado laboral mexicano, estamos listos para ayudarte sin costos adicionales ni compromisos.</p>
-        </motion.div>
-      </section>
+      <PageHero
+        image="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1800&auto=format&fit=crop&q=80"
+        chip="Contactanos"
+        title={
+          <>
+            No dudes en <em className="text-yellow not-italic">escribirnos</em>
+          </>
+        }
+        description="Con mas de 3 años en el mercado laboral mexicano, estamos listos para ayudarte sin costos adicionales ni compromisos."
+      />
 
       {/* Contact body */}
       <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">

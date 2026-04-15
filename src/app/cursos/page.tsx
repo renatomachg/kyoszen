@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import DropdownPill from "@/components/ui/DropdownPill";
+import PageHero from "@/components/ui/PageHero";
 import { COURSES, MODALITY_LABELS, MODALITY_BADGE } from "@/lib/courses";
 
 // Same mapping used on the Home Courses section
@@ -49,14 +50,12 @@ export default function CursosPage() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto text-center">
-          <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Capacitacion</span>
-          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Nuestros cursos profesionales</h1>
-          <p className="text-sm text-white/60 leading-relaxed">Ofrecemos una amplia variedad de cursos para todos los niveles. Programas con constancias DC-3 en modalidades en vivo, online e hibridas.</p>
-        </motion.div>
-      </section>
+      <PageHero
+        image="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1800&auto=format&fit=crop&q=80"
+        chip="Capacitacion"
+        title="Nuestros cursos profesionales"
+        description="Ofrecemos una amplia variedad de cursos para todos los niveles. Programas con constancias DC-3 en modalidades en vivo, online e hibridas."
+      />
 
       {/* Courses */}
       <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">

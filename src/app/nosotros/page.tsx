@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
+import PageHero from "@/components/ui/PageHero";
 
 const values = [
   { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: "Equipo profesional", desc: "Expertos en capital humano comprometidos con el exito de cada cliente y candidato." },
@@ -22,12 +23,11 @@ export default function NosotrosPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20 text-center relative overflow-hidden">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto relative z-[1]">
-          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Sobre nosotros</h1>
-          <p className="text-sm text-white/60 leading-relaxed">Somos una consultora especializada en capital humano para microempresas mexicanas. Conectamos talento con empresas que crecen, con rapidez, tecnologia y trato humano.</p>
-        </motion.div>
-      </section>
+      <PageHero
+        image="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1800&auto=format&fit=crop&q=80"
+        title="Sobre nosotros"
+        description="Somos una consultora especializada en capital humano para microempresas mexicanas. Conectamos talento con empresas que crecen, con rapidez, tecnologia y trato humano."
+      />
 
       {/* Photo collage */}
       <section className="px-5 md:px-10 xl:px-20 py-10 bg-white">
