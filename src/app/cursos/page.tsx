@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
@@ -16,13 +16,14 @@ const categoryImage: Record<string, string> = {
   normatividad: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=600&auto=format&fit=crop&q=70",
 };
 
-const tabs = ["Todos", "RRHH", "Liderazgo", "Calidad", "Digital", "Ventas"];
+const tabs = ["Todos", "RRHH", "Liderazgo", "Calidad", "Digital", "Ventas", "Normatividad"];
 const tabMap: Record<string, string> = {
   RRHH: "rrhh",
   Liderazgo: "liderazgo",
   Calidad: "calidad",
   Digital: "digital",
   Ventas: "ventas",
+  Normatividad: "normatividad",
 };
 
 const modalityFilters = ["Todas", "En vivo", "Online", "Hibrido"];
@@ -31,6 +32,70 @@ const modalityMap: Record<string, string> = {
   "Online": "online",
   "Hibrido": "hibrido",
 };
+
+/* Breadcrumb dropdown pill */
+function DropdownPill({
+  label,
+  value,
+  options,
+  onChange,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+  highlight?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-bold transition-all cursor-pointer ${
+          highlight ? "bg-yellow text-navy" : "text-navy hover:bg-black/5"
+        }`}
+      >
+        <span className="text-muted font-semibold">{label}:</span>
+        <span>{value}</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${open ? "rotate-180" : ""}`}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 min-w-[170px] bg-white rounded-xl shadow-xl border border-border py-2 z-20">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => {
+                onChange(opt);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-4 py-1.5 text-[13px] transition-colors cursor-pointer ${
+                opt === value ? "font-extrabold text-navy bg-black/[0.04]" : "font-medium text-muted hover:bg-black/[0.03] hover:text-navy"
+              }`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CursosPage() {
   const [activeTab, setActiveTab] = useState("Todos");
@@ -63,35 +128,27 @@ export default function CursosPage() {
             <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark">Elige entre nuestros mejores cursos</h2>
           </AnimatedSection>
 
-          {/* Category tabs */}
-          <div className="flex gap-2 flex-wrap justify-center mb-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-full text-[13px] font-semibold border transition-all cursor-pointer ${
-                  activeTab === tab ? "bg-blue text-white border-blue" : "bg-white text-muted border-border hover:border-blue-mid"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Modality filter */}
-          <div className="flex gap-2 flex-wrap justify-center mb-8">
-            <span className="text-xs text-muted self-center font-semibold mr-1">Modalidad:</span>
-            {modalityFilters.map((m) => (
-              <button
-                key={m}
-                onClick={() => setActiveModality(m)}
-                className={`px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all cursor-pointer ${
-                  activeModality === m ? "bg-navy text-white" : "bg-white text-muted border border-border hover:border-blue-mid"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
+          {/* Breadcrumb-style filter pill */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-1 bg-white rounded-full border border-border shadow-sm px-2 py-1.5">
+              <span className="px-3 py-1.5 text-[13px] font-semibold text-muted">Cursos</span>
+              <span className="text-border">/</span>
+              <DropdownPill
+                label="Categoria"
+                value={activeTab}
+                options={tabs}
+                onChange={setActiveTab}
+                highlight={activeTab !== "Todos"}
+              />
+              <span className="text-border">/</span>
+              <DropdownPill
+                label="Modalidad"
+                value={activeModality}
+                options={modalityFilters}
+                onChange={setActiveModality}
+                highlight={activeModality !== "Todas"}
+              />
+            </div>
           </div>
 
           <p className="text-sm text-muted mb-4 text-center">
