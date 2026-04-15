@@ -25,7 +25,13 @@ const items = [
 
 export default function WhyUs() {
   return (
-    <section className="py-20 px-5 md:px-10 xl:px-20 bg-[#1883FF]">
+    <section
+      className="py-20 px-5 md:px-10 xl:px-20 relative overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(ellipse at 70% 20%, #4FB3FF 0%, #1883FF 35%, #0A4ECC 70%, #042E7B 100%)",
+      }}
+    >
       <div className="max-w-7xl mx-auto">
         {/* Header row */}
         <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-8 md:gap-12 items-end mb-10">
