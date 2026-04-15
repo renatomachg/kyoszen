@@ -21,8 +21,8 @@ export default function Home() {
       <Process />
       <Courses />
       <FAQ />
-      <Blog />
       <Testimonials />
+      <Blog />
       <CtaFinal />
     </>
   );
