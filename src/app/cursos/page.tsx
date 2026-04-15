@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import DropdownPill from "@/components/ui/DropdownPill";
@@ -37,8 +38,28 @@ const modalityMap: Record<string, string> = {
 
 
 export default function CursosPage() {
+  return (
+    <Suspense fallback={null}>
+      <CursosPageContent />
+    </Suspense>
+  );
+}
+
+function CursosPageContent() {
+  const params = useSearchParams();
   const [activeTab, setActiveTab] = useState("Todos");
   const [activeModality, setActiveModality] = useState("Todas");
+
+  // Deep-link via URL: ?categoria=Liderazgo&modalidad=online
+  useEffect(() => {
+    const cat = params.get("categoria");
+    const mod = params.get("modalidad");
+    if (cat && tabs.includes(cat)) setActiveTab(cat);
+    if (mod) {
+      const label = modalityFilters.find((m) => m.toLowerCase() === mod.toLowerCase());
+      if (label) setActiveModality(label);
+    }
+  }, [params]);
 
   const filtered = useMemo(() => {
     return COURSES.filter((c) => {

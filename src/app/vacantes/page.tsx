@@ -1,36 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import DropdownPill from "@/components/ui/DropdownPill";
 import PageHero from "@/components/ui/PageHero";
-
-type Job = {
-  id: number;
-  titulo: string;
-  empresa: string;
-  categoria: string;
-  ubicacion: string;
-  contrato: string;
-  jornada: string;
-  salario: number;
-  badge: string;
-  badgeClass: string;
-  desc: string;
-  tags: string[];
-};
-
-const JOBS: Job[] = [
-  { id: 1, titulo: "Auxiliar Administrativo", empresa: "Grupo Corpora", categoria: "Administrativo", ubicacion: "CDMX", contrato: "Tiempo completo", jornada: "Matutina", salario: 12000, badge: "Nuevo", badgeClass: "bg-green-soft text-[#15803d]", desc: "Apoyo en gestion documental, atencion a clientes internos y manejo de agenda ejecutiva.", tags: ["Office 365", "Atencion al cliente", "Organizacion"] },
-  { id: 2, titulo: "Operador de Almacen", empresa: "Logistica Norte", categoria: "Operaciones", ubicacion: "Estado de Mexico", contrato: "Tiempo completo", jornada: "Mixta", salario: 10000, badge: "Urgente", badgeClass: "bg-yellow-soft text-[#b45309]", desc: "Control de inventarios, recepcion y despacho de mercancia, manejo de montacargas.", tags: ["Inventarios", "Montacargas", "Logistica"] },
-  { id: 3, titulo: "Ejecutivo de Ventas", empresa: "Sigma Retail", categoria: "Ventas", ubicacion: "CDMX", contrato: "Tiempo completo", jornada: "Matutina", salario: 18000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Prospeccion, seguimiento y cierre de ventas B2B. Manejo de CRM y cumplimiento de metas.", tags: ["Ventas B2B", "CRM", "Negociacion"] },
-  { id: 4, titulo: "Recepcionista", empresa: "Clinica Vitalis", categoria: "Atencion al cliente", ubicacion: "CDMX", contrato: "Medio tiempo", jornada: "Vespertina", salario: 8000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Atencion presencial y telefonica, coordinacion de citas y gestion de correspondencia.", tags: ["Atencion al cliente", "Multitareas", "Comunicacion"] },
-  { id: 5, titulo: "Coordinador de RRHH", empresa: "Grupo Corpora", categoria: "RRHH", ubicacion: "CDMX", contrato: "Tiempo completo", jornada: "Matutina", salario: 22000, badge: "Nuevo", badgeClass: "bg-green-soft text-[#15803d]", desc: "Gestion de nomina, reclutamiento, capacitacion y relaciones laborales en empresa en crecimiento.", tags: ["Nomina", "Reclutamiento", "Relaciones laborales"] },
-  { id: 6, titulo: "Vendedor de Campo", empresa: "Sigma Retail", categoria: "Ventas", ubicacion: "Estado de Mexico", contrato: "Tiempo completo", jornada: "Flexible", salario: 15000, badge: "Urgente", badgeClass: "bg-yellow-soft text-[#b45309]", desc: "Visitas a clientes, presentacion de productos y seguimiento posventa en zona Edomex.", tags: ["Ventas externas", "Zona Edomex", "Prospectos"] },
-  { id: 7, titulo: "Auxiliar Contable", empresa: "Finanzas MX", categoria: "Administrativo", ubicacion: "Hibrido", contrato: "Tiempo completo", jornada: "Matutina", salario: 13000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Registro de operaciones contables, conciliaciones bancarias y elaboracion de reportes financieros.", tags: ["Contabilidad", "SAP", "Excel avanzado"] },
-  { id: 8, titulo: "Agente de Servicio al Cliente", empresa: "Contact Nova", categoria: "Atencion al cliente", ubicacion: "Remoto", contrato: "Por proyecto", jornada: "Flexible", salario: 9500, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Atencion a clientes via chat, correo y telefono. Resolucion de incidencias y seguimiento de casos.", tags: ["Zendesk", "Servicio al cliente", "Remoto"] },
-];
+import { JOBS } from "@/lib/jobs";
 
 const UBICACIONES = ["Todas", "CDMX", "Estado de Mexico", "Hibrido", "Remoto"];
 const MARCAS = ["Todas", "Grupo Corpora", "Logistica Norte", "Sigma Retail", "Clinica Vitalis", "Finanzas MX", "Contact Nova"];
@@ -54,12 +30,38 @@ function matchesSalario(salario: number, bucket: string): boolean {
 }
 
 export default function VacantesPage() {
+  return (
+    <Suspense fallback={null}>
+      <VacantesPageContent />
+    </Suspense>
+  );
+}
+
+function VacantesPageContent() {
+  const params = useSearchParams();
   const [search, setSearch] = useState("");
   const [ubicacion, setUbicacion] = useState("Todas");
   const [marca, setMarca] = useState("Todas");
   const [contrato, setContrato] = useState("Todos");
   const [jornada, setJornada] = useState("Todas");
   const [salario, setSalario] = useState("Todos");
+
+  // Initialize filters from URL (?ubicacion=CDMX&q=ventas etc)
+  // Allows Kyo and other pages to deep-link with pre-applied filters.
+  useEffect(() => {
+    const q = params.get("q");
+    const u = params.get("ubicacion");
+    const m = params.get("marca");
+    const c = params.get("contrato");
+    const j = params.get("jornada");
+    const s = params.get("salario");
+    if (q) setSearch(q);
+    if (u && UBICACIONES.includes(u)) setUbicacion(u);
+    if (m && MARCAS.includes(m)) setMarca(m);
+    if (c && CONTRATOS.includes(c)) setContrato(c);
+    if (j && JORNADAS.includes(j)) setJornada(j);
+    if (s && SALARIOS.includes(s)) setSalario(s);
+  }, [params]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
