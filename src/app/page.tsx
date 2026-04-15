@@ -1,6 +1,5 @@
 import Hero from "@/components/sections/Hero";
 import Services from "@/components/sections/Services";
-import StatsBar from "@/components/sections/StatsBar";
 import About from "@/components/sections/About";
 import Vacancies from "@/components/sections/Vacancies";
 import Process from "@/components/sections/Process";
@@ -17,7 +16,6 @@ export default function Home() {
       <Hero />
       <About />
       <Services />
-      <StatsBar />
       <Vacancies />
       <Process />
       <WhyUs />
