@@ -20,38 +20,12 @@ export default function NosotrosPage() {
       <PageHero
         image="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1800&auto=format&fit=crop&q=80"
         title="Sobre nosotros"
-        description="Somos una consultora especializada en capital humano para microempresas mexicanas. Conectamos talento con empresas que crecen, con rapidez, tecnologia y trato humano."
+        description="Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnologia, experiencia y un trato genuinamente humano para ofrecer resultados que duran. Cada proceso que manejamos — desde el reclutamiento hasta la capacitacion — esta diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios."
       />
 
-      {/* Photo collage */}
-      <section className="px-5 md:px-10 xl:px-20 py-10 bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((n) => (
-            <motion.div key={n} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: n * 0.1, duration: 0.5 }} className="rounded-2xl overflow-hidden h-[220px] md:h-[280px]">
-              <Image src={`/images/nosotros${n}.jpg`} alt="Equipo Kyoszen" width={400} height={300} className="w-full h-full object-cover" />
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* About + Stats */}
+      {/* Stats */}
       <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
         <div className="max-w-7xl mx-auto">
-          <AnimatedSection className="text-center max-w-[820px] mx-auto mb-14">
-            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy mb-5">
-              Sobre nosotros
-            </h2>
-            <p className="text-[14px] text-muted leading-relaxed">
-              Somos especialistas en capital humano enfocados en microempresas
-              mexicanas. Combinamos tecnologia, experiencia y un trato
-              genuinamente humano para ofrecer resultados que duran. Cada
-              proceso que manejamos — desde el reclutamiento hasta la
-              capacitacion — esta diseñado para que tu empresa cuente con el
-              talento correcto en el momento correcto, sin costos ocultos ni
-              compromisos innecesarios.
-            </p>
-          </AnimatedSection>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {stats.map((s, i) => (
               <motion.div
