@@ -58,25 +58,25 @@ export default function Process() {
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 className={`rounded-2xl p-7 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between min-h-[260px] ${
                   highlighted
-                    ? "bg-yellow text-navy"
+                    ? "bg-blue-dark text-white"
                     : "bg-white text-navy border border-border shadow-md"
                 }`}
               >
                 <div
                   className={`text-[clamp(2.5rem,4vw,3.5rem)] font-black leading-none tracking-tight ${
-                    highlighted ? "text-navy" : "text-navy"
+                    highlighted ? "text-yellow" : "text-navy"
                   }`}
                 >
                   {step.num}
                 </div>
 
                 <div className="text-right mt-6">
-                  <h4 className="text-lg font-extrabold leading-tight mb-2">
+                  <h4 className={`text-lg font-extrabold leading-tight mb-2 ${highlighted ? "text-white" : "text-navy"}`}>
                     {step.title}
                   </h4>
                   <p
                     className={`text-[13px] leading-relaxed ${
-                      highlighted ? "text-navy/75" : "text-muted"
+                      highlighted ? "text-white/75" : "text-muted"
                     }`}
                   >
                     {step.desc}
