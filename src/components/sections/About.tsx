@@ -5,13 +5,73 @@ import Image from "next/image";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { motion } from "framer-motion";
 
+const stats = [
+  { n: "687+", l: "Candidatos colocados", color: "text-blue" },
+  { n: "672+", l: "Empresas atendidas", color: "text-[#15803d]" },
+  { n: "99%", l: "Satisfaccion", color: "text-[#b45309]" },
+];
+
 export default function About() {
   return (
     <section className="bg-bg py-20 px-5 md:px-10 xl:px-20">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
-          {/* Left - Text */}
-          <AnimatedSection>
+          {/* Left - Image collage with stats */}
+          <AnimatedSection className="relative">
+            <div className="grid grid-cols-[1.2fr_.8fr] gap-3 h-[420px]">
+              <div className="rounded-2xl overflow-hidden">
+                <Image src="/images/about.png" alt="Equipo Kyoszen" width={600} height={500} className="w-full h-full object-cover" />
+              </div>
+              <div className="grid grid-rows-2 gap-3">
+                <div className="rounded-xl overflow-hidden">
+                  <Image src="/images/Hero.jpg" alt="Reunion de trabajo" width={300} height={200} className="w-full h-full object-cover" />
+                </div>
+                <div className="rounded-xl overflow-hidden">
+                  <Image src="/images/Hero2.jpg" alt="Trabajo operativo" width={300} height={200} className="w-full h-full object-cover" />
+                </div>
+              </div>
+            </div>
+
+            {/* Stats bar overlapping the image bottom-right */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="absolute -bottom-6 right-0 md:right-4 bg-navy rounded-2xl shadow-2xl p-5 md:p-6 grid grid-cols-3 gap-4 md:gap-8 z-[3] min-w-[280px] max-w-[92%]"
+            >
+              {stats.map((s) => (
+                <div key={s.l} className="text-center">
+                  <div className={`text-[clamp(1.25rem,2.5vw,1.75rem)] font-black leading-none mb-1 ${s.color === "text-blue" ? "text-yellow" : s.color === "text-[#15803d]" ? "text-yellow" : "text-yellow"}`}>
+                    {s.n}
+                  </div>
+                  <div className="text-[10px] md:text-[11px] text-white/70 font-semibold leading-tight">
+                    {s.l}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Small accent badge top-left */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              className="absolute top-4 -left-3 bg-white rounded-xl py-2 px-3 shadow-lg flex items-center gap-2 z-[2]"
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-green-soft shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></svg>
+              </div>
+              <div>
+                <div className="text-xs font-extrabold text-navy leading-none">+10 años</div>
+                <div className="text-[9px] text-muted mt-0.5">en el mercado</div>
+              </div>
+            </motion.div>
+          </AnimatedSection>
+
+          {/* Right - Text */}
+          <AnimatedSection delay={0.2}>
             <span className="inline-block bg-[#E3F2FF] text-blue-dark text-xs font-bold py-1.5 px-[18px] rounded-full tracking-wide">
               Sobre Kyoszen
             </span>
@@ -32,56 +92,6 @@ export default function About() {
                 Contactanos
               </Link>
             </div>
-          </AnimatedSection>
-
-          {/* Right - Image collage */}
-          <AnimatedSection delay={0.2} className="relative">
-            <div className="grid grid-cols-[1.2fr_.8fr] gap-3 h-[360px]">
-              <div className="rounded-2xl overflow-hidden">
-                <Image src="/images/about.png" alt="Equipo Kyoszen" width={600} height={400} className="w-full h-full object-cover" />
-              </div>
-              <div className="grid grid-rows-2 gap-3">
-                <div className="rounded-xl overflow-hidden">
-                  <Image src="/images/Hero.jpg" alt="Reunion de trabajo" width={300} height={200} className="w-full h-full object-cover" />
-                </div>
-                <div className="rounded-xl overflow-hidden">
-                  <Image src="/images/Hero2.jpg" alt="Trabajo operativo" width={300} height={200} className="w-full h-full object-cover" />
-                </div>
-              </div>
-            </div>
-
-            {/* Float cards */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="absolute bottom-5 -left-4 bg-white rounded-xl py-2.5 px-3.5 shadow-lg flex items-center gap-2.5 z-[2]"
-            >
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#E3F2FF] shrink-0">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#004EE0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-              </div>
-              <div>
-                <div className="text-[15px] font-extrabold text-[#0F172A] leading-none">687+</div>
-                <div className="text-[10px] text-[#64748B] mt-px">Colocados</div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              className="absolute top-5 -right-4 bg-white rounded-xl py-2.5 px-3.5 shadow-lg flex items-center gap-2.5 z-[2]"
-            >
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-soft shrink-0">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></svg>
-              </div>
-              <div>
-                <div className="text-[15px] font-extrabold text-[#0F172A] leading-none">99%</div>
-                <div className="text-[10px] text-[#64748B] mt-px">Satisfaccion</div>
-              </div>
-            </motion.div>
           </AnimatedSection>
         </div>
       </div>
