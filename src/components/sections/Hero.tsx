@@ -5,106 +5,22 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "
 import Image from "next/image";
 import Link from "next/link";
 
-type SlideCard = {
-  label: string;
-  value: number;
-  unit?: string;
-  target: number;
-  barColor: string;
-  bgColor: string;
-  textColor: string;
-  subtle: string;
-};
+type ChipColor = "green" | "yellow" | "blue";
 
 interface Slide {
   id: string;
   image: string;
-  chip: { label: string; color: "green" | "yellow" | "blue" };
-  cards: SlideCard[];
+  chip: { label: string; color: ChipColor };
+  graphic: "bars" | "ring" | "donut";
 }
 
 const slides: Slide[] = [
-  {
-    id: "vacantes",
-    image: "/images/Hero.jpg",
-    chip: { label: "Vacantes abiertas", color: "green" },
-    cards: [
-      {
-        label: "Candidatos colocados",
-        value: 687,
-        target: 800,
-        barColor: "bg-white/90",
-        bgColor: "#F97316",
-        textColor: "#ffffff",
-        subtle: "rgba(255,255,255,0.85)",
-      },
-      {
-        label: "Empresas atendidas",
-        value: 672,
-        target: 800,
-        barColor: "bg-white/90",
-        bgColor: "#9770FF",
-        textColor: "#ffffff",
-        subtle: "rgba(255,255,255,0.85)",
-      },
-    ],
-  },
-  {
-    id: "cursos",
-    image: "/images/nosotros1.jpg",
-    chip: { label: "Cursos activos", color: "yellow" },
-    cards: [
-      {
-        label: "Cursos disponibles",
-        value: 25,
-        target: 30,
-        barColor: "bg-white/90",
-        bgColor: "#0033FF",
-        textColor: "#ffffff",
-        subtle: "rgba(255,255,255,0.85)",
-      },
-      {
-        label: "Satisfaccion alumnos",
-        value: 98,
-        unit: "%",
-        target: 100,
-        barColor: "bg-white/90",
-        bgColor: "#15803D",
-        textColor: "#ffffff",
-        subtle: "rgba(255,255,255,0.85)",
-      },
-    ],
-  },
-  {
-    id: "candidatos",
-    image: "/images/nosotros2.jpg",
-    chip: { label: "Candidatos verificados", color: "blue" },
-    cards: [
-      {
-        label: "Tasa de colocacion",
-        value: 95,
-        unit: "%",
-        target: 100,
-        barColor: "bg-white/90",
-        bgColor: "#EF4444",
-        textColor: "#ffffff",
-        subtle: "rgba(255,255,255,0.85)",
-      },
-      {
-        label: "Retencion 6 meses",
-        value: 92,
-        unit: "%",
-        target: 100,
-        barColor: "bg-white/90",
-        bgColor: "#9770FF",
-        textColor: "#ffffff",
-        subtle: "rgba(255,255,255,0.85)",
-      },
-    ],
-  },
+  { id: "vacantes", image: "/images/Hero.jpg", chip: { label: "Vacantes abiertas", color: "green" }, graphic: "bars" },
+  { id: "cursos", image: "/images/nosotros1.jpg", chip: { label: "Cursos activos", color: "yellow" }, graphic: "ring" },
+  { id: "candidatos", image: "/images/nosotros2.jpg", chip: { label: "Candidatos verificados", color: "blue" }, graphic: "donut" },
 ];
 
-const chipColors: Record<string, string> = {
+const chipColors: Record<ChipColor, string> = {
   green: "bg-[#22C55E] text-white",
   yellow: "bg-yellow text-navy",
   blue: "bg-[#0033FF] text-white",
@@ -127,38 +43,235 @@ function CountUp({ to, duration = 1.6 }: { to: number; duration?: number }) {
   return <>{display}</>;
 }
 
-function AnimatedCard({ card, delay }: { card: SlideCard; delay: number }) {
-  const fillPct = Math.min(100, Math.round((card.value / card.target) * 100));
+/* ------------- GRAPHIC 1: Horizontal progress bars (Vacantes) ------------- */
+function BarsGraphic() {
+  const rows = [
+    { label: "Candidatos colocados", value: 687, target: 800, bg: "#F97316" },
+    { label: "Empresas atendidas", value: 672, target: 800, bg: "#9770FF" },
+  ];
+  return (
+    <div className="flex flex-col gap-2">
+      {rows.map((r, i) => {
+        const pct = Math.min(100, Math.round((r.value / r.target) * 100));
+        return (
+          <motion.div
+            key={r.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.25 + i * 0.12, duration: 0.5 }}
+            className="rounded-2xl px-3.5 py-2.5 shadow-xl w-[210px] sm:w-[230px]"
+            style={{ background: r.bg, color: "#fff" }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-[11px] font-bold leading-tight text-white/85">{r.label}</div>
+              <div className="text-[22px] font-black leading-none shrink-0">
+                <CountUp to={r.value} />
+              </div>
+            </div>
+            <div className="mt-2 h-[5px] w-full rounded-full overflow-hidden bg-white/25">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ delay: 0.45 + i * 0.12, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full bg-white/90 rounded-full"
+              />
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------- GRAPHIC 2: Ring progress + checklist (Cursos) ------------- */
+function RingGraphic() {
+  const pct = 98;
+  const size = 56;
+  const stroke = 6;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - pct / 100);
+
+  const items = ["Liderazgo", "Auditoria Interna", "SGC ISO 9001", "Desarrollo humano"];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.94, y: 12 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.96, y: -4 }}
-      transition={{ delay, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl px-4 py-3 sm:px-5 sm:py-4 shadow-xl w-full sm:min-w-[230px]"
-      style={{ background: card.bgColor, color: card.textColor }}
-    >
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-[12px] font-bold leading-tight" style={{ color: card.subtle }}>
-          {card.label}
+    <div className="flex flex-col gap-2">
+      {/* Ring card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ delay: 0.25, duration: 0.5 }}
+        className="rounded-2xl px-3.5 py-2.5 shadow-xl w-[210px] sm:w-[230px] bg-[#0033FF] text-white"
+      >
+        <div className="flex items-center gap-3">
+          <div className="relative shrink-0" style={{ width: size, height: size }}>
+            <svg width={size} height={size} className="-rotate-90">
+              <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.25)" strokeWidth={stroke} fill="none" />
+              <motion.circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="#fff"
+                strokeWidth={stroke}
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset: offset }}
+                transition={{ delay: 0.45, duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[13px] font-black">
+              <CountUp to={pct} />%
+            </div>
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold text-white/85 leading-tight">Satisfaccion alumnos</div>
+            <div className="text-[18px] font-black leading-tight mt-0.5">25 cursos</div>
+          </div>
         </div>
-        <div className="text-[28px] font-black leading-none shrink-0">
-          <CountUp to={card.value} />
-          {card.unit ?? ""}
-        </div>
-      </div>
-      {/* Progress bar */}
-      <div className="mt-3 h-[6px] w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.25)" }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${fillPct}%` }}
-          transition={{ delay: delay + 0.2, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          className="h-full bg-white/90 rounded-full"
-        />
-      </div>
-    </motion.div>
+      </motion.div>
+
+      {/* Checklist card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="rounded-2xl px-3.5 py-2.5 shadow-xl w-[210px] sm:w-[230px] bg-white text-navy"
+      >
+        <div className="text-[10px] font-extrabold uppercase tracking-wider text-muted mb-1.5">Categorias</div>
+        <ul className="flex flex-col gap-1">
+          {items.map((it, i) => (
+            <motion.li
+              key={it}
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 + i * 0.12, duration: 0.35 }}
+              className="flex items-center gap-1.5 text-[11px] font-semibold"
+            >
+              <span className="w-3.5 h-3.5 rounded-full bg-[#15803D] flex items-center justify-center shrink-0">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              {it}
+            </motion.li>
+          ))}
+        </ul>
+      </motion.div>
+    </div>
   );
+}
+
+/* ------------- GRAPHIC 3: Donut + mini bar chart (Candidatos) ------------- */
+function DonutGraphic() {
+  const segments = [
+    { label: "Colocados", value: 62, color: "#F97316" },
+    { label: "En proceso", value: 26, color: "#9770FF" },
+    { label: "Nuevos", value: 12, color: "#22C55E" },
+  ];
+  const size = 64;
+  const stroke = 9;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  let acc = 0;
+  const arcs = segments.map((s) => {
+    const len = (s.value / 100) * circumference;
+    const rot = (acc / 100) * 360;
+    acc += s.value;
+    return { ...s, len, rot };
+  });
+
+  const monthBars = [45, 62, 58, 74, 81, 95];
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Donut card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ delay: 0.25, duration: 0.5 }}
+        className="rounded-2xl px-3.5 py-2.5 shadow-xl w-[210px] sm:w-[230px] bg-white text-navy"
+      >
+        <div className="flex items-center gap-3">
+          <div className="relative shrink-0" style={{ width: size, height: size }}>
+            <svg width={size} height={size}>
+              {arcs.map((a, i) => (
+                <motion.circle
+                  key={i}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  stroke={a.color}
+                  strokeWidth={stroke}
+                  fill="none"
+                  strokeDasharray={`${a.len} ${circumference}`}
+                  strokeDashoffset={0}
+                  initial={{ opacity: 0, pathLength: 0 }}
+                  animate={{ opacity: 1, pathLength: 1 }}
+                  transition={{ delay: 0.4 + i * 0.2, duration: 0.8, ease: "easeOut" }}
+                  style={{ transform: `rotate(${a.rot - 90}deg)`, transformOrigin: "50% 50%" }}
+                />
+              ))}
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+              <span className="text-[14px] font-black">
+                <CountUp to={95} />%
+              </span>
+              <span className="text-[8px] font-bold text-muted mt-0.5">colocacion</span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 min-w-0">
+            {segments.map((s) => (
+              <div key={s.label} className="flex items-center gap-1.5 text-[10px] font-semibold">
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
+                <span className="text-navy/80">{s.label}</span>
+                <span className="ml-auto font-black">{s.value}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Bar chart card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="rounded-2xl px-3.5 py-2.5 shadow-xl w-[210px] sm:w-[230px] bg-[#9770FF] text-white"
+      >
+        <div className="flex items-center justify-between">
+          <div className="text-[11px] font-bold text-white/85 leading-tight">Retencion 6 meses</div>
+          <div className="text-[18px] font-black leading-none">
+            <CountUp to={92} />%
+          </div>
+        </div>
+        <div className="mt-2 flex items-end gap-1.5 h-[34px]">
+          {monthBars.map((h, i) => (
+            <motion.div
+              key={i}
+              initial={{ height: 0 }}
+              animate={{ height: `${h}%` }}
+              transition={{ delay: 0.55 + i * 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1 bg-white/90 rounded-sm"
+            />
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function SlideGraphic({ kind }: { kind: Slide["graphic"] }) {
+  if (kind === "bars") return <BarsGraphic />;
+  if (kind === "ring") return <RingGraphic />;
+  return <DonutGraphic />;
 }
 
 export default function Hero() {
@@ -275,11 +388,9 @@ export default function Hero() {
                   </span>
                 </motion.div>
 
-                {/* Animated stat cards - stacked bottom-left overlapping image */}
-                <div className="absolute -bottom-4 left-1 sm:-left-2 md:-left-4 z-[4] flex flex-col gap-2.5 w-[calc(100%-0.5rem)] sm:w-auto sm:max-w-[280px]">
-                  {slide.cards.map((card, i) => (
-                    <AnimatedCard key={`${slide.id}-${i}`} card={card} delay={0.3 + i * 0.15} />
-                  ))}
+                {/* Graphics - stacked bottom-left overlapping image */}
+                <div className="absolute -bottom-4 left-1 sm:-left-2 md:-left-4 z-[4]">
+                  <SlideGraphic kind={slide.graphic} />
                 </div>
               </motion.div>
             </AnimatePresence>
