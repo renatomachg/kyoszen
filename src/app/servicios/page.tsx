@@ -56,6 +56,86 @@ export default function ServiciosPage() {
         description="Cada servicio esta diseñado para resolver los retos reales de las microempresas mexicanas. Sin burocracia, sin costos ocultos."
       />
 
+      {/* Empowering intro */}
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+          {/* LEFT - Text */}
+          <AnimatedSection>
+            <span className="inline-block bg-blue-soft text-blue text-[11px] font-extrabold uppercase tracking-[1.5px] px-3 py-1.5 rounded-full mb-5">
+              Servicios
+            </span>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1] mb-5">
+              Empoderamos a tu empresa para alcanzar su{" "}
+              <span className="text-blue">maximo potencial</span> y un
+              crecimiento sostenido
+            </h2>
+            <p className="text-[13.5px] text-muted leading-relaxed mb-7">
+              En Kyoszen combinamos tecnologia, experiencia y trato humano para
+              entregar soluciones integrales de capital humano. Cada servicio
+              esta diseñado para que tu empresa crezca con el talento adecuado,
+              procesos claros y resultados medibles desde el primer dia.
+            </p>
+
+            <h4 className="text-[13px] font-extrabold text-navy mb-4 uppercase tracking-wider">
+              Areas clave donde nos enfocamos
+            </h4>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+              {[
+                "Reclutamiento verificado",
+                "Capacitacion DC-3",
+                "Onboarding y retencion",
+                "Manejo de clima laboral",
+                "Digitalizacion de RRHH",
+                "Cumplimiento normativo",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2.5 text-[13px] text-navy">
+                  <span className="w-5 h-5 rounded-full bg-yellow flex items-center justify-center shrink-0">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </AnimatedSection>
+
+          {/* RIGHT - Image with floating card */}
+          <AnimatedSection delay={0.2}>
+            <div className="relative rounded-3xl overflow-hidden h-[440px] md:h-[540px]">
+              <img
+                src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=1200&auto=format&fit=crop&q=80"
+                alt="Equipo Kyoszen"
+                className="w-full h-full object-cover"
+              />
+              {/* Floating guarantee card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.35, duration: 0.6 }}
+                className="absolute bottom-5 left-5 right-5 sm:right-auto sm:max-w-[300px] bg-white rounded-2xl p-5 shadow-xl border border-border"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="w-10 h-10 rounded-full bg-yellow flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                  </span>
+                  <div>
+                    <div className="text-[16px] font-black text-navy leading-none">Respuesta 24h</div>
+                    <div className="text-[10.5px] font-bold text-muted mt-1">cada solicitud</div>
+                  </div>
+                </div>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Garantia de reposicion y acompañamiento durante todo el proceso.
+                </p>
+              </motion.div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
       {/* Features grid */}
       <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
         <div className="max-w-7xl mx-auto">
