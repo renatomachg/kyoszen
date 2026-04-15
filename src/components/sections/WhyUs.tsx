@@ -25,15 +25,15 @@ const items = [
 
 export default function WhyUs() {
   return (
-    <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+    <section className="py-20 px-5 md:px-10 xl:px-20 bg-[#1883FF]">
       <div className="max-w-7xl mx-auto">
         {/* Header row */}
         <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-8 md:gap-12 items-end mb-10">
           <AnimatedSection>
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">
+            <p className="text-[11px] font-bold text-yellow uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">
               ¿Por que elegirnos?
             </p>
-            <h2 className="text-[clamp(1.8rem,3.5vw,2.8rem)] font-black leading-[1.08] tracking-tight text-navy">
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.8rem)] font-black leading-[1.08] tracking-tight text-white">
               Consigue las habilidades
               <br />
               que el mercado
@@ -42,7 +42,7 @@ export default function WhyUs() {
             </h2>
           </AnimatedSection>
           <AnimatedSection delay={0.15}>
-            <p className="text-[13.5px] text-muted leading-relaxed">
+            <p className="text-[13.5px] text-white/85 leading-relaxed">
               Mas de 10 años conectando talento con empresas mexicanas en
               crecimiento. Combinamos tecnologia, experiencia y un trato
               genuinamente humano para entregar resultados reales.
@@ -68,10 +68,10 @@ export default function WhyUs() {
                     {item.n}
                   </div>
                   <div className="flex-1 pt-1.5">
-                    <h4 className="text-base font-extrabold text-navy mb-1">
+                    <h4 className="text-base font-extrabold text-white mb-1">
                       {item.title}
                     </h4>
-                    <p className="text-[13px] text-muted leading-relaxed">
+                    <p className="text-[13px] text-white/80 leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
@@ -81,7 +81,7 @@ export default function WhyUs() {
               <div className="mt-3">
                 <Link
                   href="/servicios"
-                  className="bg-blue-btn text-white border-none rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark transition-colors"
+                  className="bg-yellow text-navy border-none rounded-full py-3 px-7 text-[13px] font-extrabold no-underline inline-flex items-center gap-1.5 hover:bg-[#e6b800] transition-colors"
                 >
                   Ver servicios →
                 </Link>
