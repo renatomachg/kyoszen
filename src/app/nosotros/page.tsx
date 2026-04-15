@@ -40,17 +40,42 @@ export default function NosotrosPage() {
         </div>
       </section>
 
-      {/* Mission */}
+      {/* About + Stats */}
       <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <AnimatedSection>
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestra mision</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy">Nos aseguramos de que tu idea y crecimiento se entreguen correctamente</h2>
+        <div className="max-w-7xl mx-auto">
+          <AnimatedSection className="text-center max-w-[820px] mx-auto mb-14">
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy mb-5">
+              Sobre nosotros
+            </h2>
+            <p className="text-[14px] text-muted leading-relaxed">
+              Somos especialistas en capital humano enfocados en microempresas
+              mexicanas. Combinamos tecnologia, experiencia y un trato
+              genuinamente humano para ofrecer resultados que duran. Cada
+              proceso que manejamos — desde el reclutamiento hasta la
+              capacitacion — esta diseñado para que tu empresa cuente con el
+              talento correcto en el momento correcto, sin costos ocultos ni
+              compromisos innecesarios.
+            </p>
           </AnimatedSection>
-          <AnimatedSection delay={0.2}>
-            <p className="text-[13.5px] text-muted leading-relaxed mb-5">Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnologia, experiencia y un trato genuinamente humano para ofrecer resultados que duran.</p>
-            <p className="text-[13.5px] text-muted leading-relaxed">Cada proceso que manejamos — desde el reclutamiento hasta la capacitacion — esta diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios.</p>
-          </AnimatedSection>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {stats.map((s, i) => (
+              <motion.div
+                key={s.l}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+              >
+                <div className="text-[clamp(2.5rem,5vw,4rem)] font-black text-navy leading-none mb-3 tracking-tight">
+                  {s.n}
+                </div>
+                <div className="text-[12px] text-muted font-medium">
+                  {s.l}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -74,19 +99,6 @@ export default function NosotrosPage() {
               <p className="text-[13px] text-navy leading-relaxed italic">&ldquo;Kyoszen cubrio nuestra vacante en menos de una semana con candidatos perfectamente alineados al perfil que necesitabamos. Un servicio que realmente entiende a las empresas mexicanas.&rdquo;</p>
             </div>
           </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="bg-navy py-16 px-5 md:px-10 xl:px-20">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-          {stats.map((s, i) => (
-            <motion.div key={s.l} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}>
-              <div className="text-[clamp(2rem,4vw,3rem)] font-black text-yellow leading-none mb-1">{s.n}</div>
-              <div className="text-sm font-bold text-white mb-0.5">{s.l}</div>
-              <div className="text-xs text-white/50">{s.s}</div>
-            </motion.div>
-          ))}
         </div>
       </section>
 
