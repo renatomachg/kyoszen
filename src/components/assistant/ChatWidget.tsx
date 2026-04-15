@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useChat, type ChatMessage } from "./useChat";
+import KyoLogo from "./KyoLogo";
 
 const SUGGESTED_QUESTIONS = [
   "¿Que cursos de liderazgo tienen?",
@@ -50,7 +51,7 @@ export default function ChatWidget() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Cerrar chat" : "Abrir chat"}
-        className="fixed bottom-5 right-5 z-[60] w-14 h-14 rounded-full bg-navy text-white shadow-2xl flex items-center justify-center hover:bg-blue-dark transition-all duration-200 hover:scale-105"
+        className="fixed bottom-5 right-5 z-[60] w-16 h-16 rounded-full bg-blue-btn text-white shadow-2xl flex items-center justify-center hover:bg-blue-dark transition-all duration-200 hover:scale-105"
       >
         <AnimatePresence mode="wait">
           {open ? (
@@ -73,23 +74,16 @@ export default function ChatWidget() {
               <line x1="6" y1="6" x2="18" y2="18" />
             </motion.svg>
           ) : (
-            <motion.svg
-              key="chat"
+            <motion.div
+              key="logo"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              transition={{ duration: 0.25 }}
+              className="flex items-center justify-center"
             >
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </motion.svg>
+              <KyoLogo size={34} />
+            </motion.div>
           )}
         </AnimatePresence>
       </button>
@@ -107,8 +101,8 @@ export default function ChatWidget() {
             {/* Header */}
             <div className="bg-navy text-white px-5 py-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-yellow flex items-center justify-center">
-                  <span className="text-navy font-black text-sm">K</span>
+                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
+                  <KyoLogo size={22} />
                 </div>
                 <div>
                   <div className="text-[14px] font-extrabold leading-none">Kyo</div>
@@ -186,8 +180,8 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
     <div className="py-4">
       <div className="bg-white rounded-2xl p-4 border border-border shadow-sm">
         <div className="flex items-start gap-2 mb-2">
-          <div className="w-7 h-7 rounded-full bg-yellow flex items-center justify-center shrink-0">
-            <span className="text-navy font-black text-[11px]">K</span>
+          <div className="w-7 h-7 rounded-full bg-bg flex items-center justify-center shrink-0 border border-border">
+            <KyoLogo size={18} />
           </div>
           <div>
             <div className="text-[12px] font-extrabold text-navy">Hola, soy Kyo 👋</div>
