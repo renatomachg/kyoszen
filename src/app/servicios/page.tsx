@@ -137,16 +137,16 @@ export default function ServiciosPage() {
       </section>
 
       {/* Features grid */}
-      <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-blue-btn">
         <div className="max-w-7xl mx-auto">
           <AnimatedSection className="text-center mb-8">
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Lo que hacemos</p>
+            <p className="text-[11px] font-bold text-yellow uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Lo que hacemos</p>
           </AnimatedSection>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((f, i) => (
-              <motion.div key={f.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="bg-bg rounded-2xl p-6 border border-border transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
+              <motion.div key={f.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="bg-[#F8FAFC] rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl hover:-translate-y-1">
                 <div className="w-12 h-12 rounded-xl bg-blue-soft flex items-center justify-center mb-4">{f.icon}</div>
-                <h4 className="text-sm font-extrabold mb-2">{f.title}</h4>
+                <h4 className="text-sm font-extrabold mb-2 text-navy">{f.title}</h4>
                 <p className="text-[12.5px] text-muted leading-relaxed mb-3">{f.desc}</p>
                 <Link href={f.link} className="text-xs font-bold text-blue no-underline hover:underline">{f.linkText}</Link>
               </motion.div>
