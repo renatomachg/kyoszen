@@ -13,14 +13,22 @@ export interface ChatMessage {
 const STORAGE_KEY = "kyoszen_chat_history_v1";
 const MAX_STORED = 30;
 
+const INITIAL_GREETING: ChatMessage = {
+  id: "greeting",
+  role: "assistant",
+  content: "¡Hola! 👋 Soy Kyo, tu asistente de Kyoszen.\n\n¿Como te llamas y en que te puedo ayudar?",
+  timestamp: 0,
+};
+
 function loadHistory(): ChatMessage[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return [INITIAL_GREETING];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
+    if (!raw) return [INITIAL_GREETING];
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    return parsed.length > 0 ? parsed : [INITIAL_GREETING];
   } catch {
-    return [];
+    return [INITIAL_GREETING];
   }
 }
 
@@ -114,7 +122,7 @@ export function useChat() {
   );
 
   const reset = useCallback(() => {
-    setMessages([]);
+    setMessages([INITIAL_GREETING]);
     setError(null);
     if (typeof window !== "undefined") {
       localStorage.removeItem(STORAGE_KEY);

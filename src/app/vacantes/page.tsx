@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import DropdownPill from "@/components/ui/DropdownPill";
 import PageHero from "@/components/ui/PageHero";
@@ -29,12 +30,38 @@ function matchesSalario(salario: number, bucket: string): boolean {
 }
 
 export default function VacantesPage() {
+  return (
+    <Suspense fallback={null}>
+      <VacantesPageContent />
+    </Suspense>
+  );
+}
+
+function VacantesPageContent() {
+  const params = useSearchParams();
   const [search, setSearch] = useState("");
   const [ubicacion, setUbicacion] = useState("Todas");
   const [marca, setMarca] = useState("Todas");
   const [contrato, setContrato] = useState("Todos");
   const [jornada, setJornada] = useState("Todas");
   const [salario, setSalario] = useState("Todos");
+
+  // Initialize filters from URL (?ubicacion=CDMX&q=ventas etc)
+  // Allows Kyo and other pages to deep-link with pre-applied filters.
+  useEffect(() => {
+    const q = params.get("q");
+    const u = params.get("ubicacion");
+    const m = params.get("marca");
+    const c = params.get("contrato");
+    const j = params.get("jornada");
+    const s = params.get("salario");
+    if (q) setSearch(q);
+    if (u && UBICACIONES.includes(u)) setUbicacion(u);
+    if (m && MARCAS.includes(m)) setMarca(m);
+    if (c && CONTRATOS.includes(c)) setContrato(c);
+    if (j && JORNADAS.includes(j)) setJornada(j);
+    if (s && SALARIOS.includes(s)) setSalario(s);
+  }, [params]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

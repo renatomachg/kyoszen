@@ -33,29 +33,59 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Floating button */}
-      <button
+      {/* Floating button - 3D gradient + idle animation + contrast disc */}
+      <motion.button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Cerrar chat" : "Abrir chat"}
-        className="fixed bottom-5 right-5 z-[60] w-16 h-16 rounded-full bg-blue-btn text-white shadow-2xl flex items-center justify-center hover:bg-blue-dark transition-all duration-200 hover:scale-105"
+        className="fixed bottom-5 right-5 z-[60] w-[68px] h-[68px] rounded-full flex items-center justify-center group"
+        style={{
+          background: "radial-gradient(circle at 30% 25%, #4989C8 0%, #0041C4 50%, #001A66 100%)",
+          boxShadow:
+            "0 10px 28px rgba(0, 65, 196, 0.45), 0 4px 12px rgba(0, 26, 102, 0.35), inset 0 1.5px 2px rgba(255,255,255,0.35), inset 0 -3px 6px rgba(0,0,0,0.25)",
+        }}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.95 }}
+        animate={
+          open
+            ? { rotate: 0 }
+            : {
+                rotate: [0, -8, 8, -4, 4, 0],
+                y: [0, -2, 0, -1, 0],
+              }
+        }
+        transition={{
+          rotate: { duration: 1.6, repeat: Infinity, repeatDelay: 5.4, ease: "easeInOut" },
+          y: { duration: 1.6, repeat: Infinity, repeatDelay: 5.4, ease: "easeInOut" },
+        }}
       >
+        {/* Subtle pulsing halo - attention grabber when closed */}
+        {!open && (
+          <motion.span
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{ background: "radial-gradient(circle, rgba(73,137,200,0.45) 0%, transparent 70%)" }}
+            animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut" }}
+          />
+        )}
+
         <AnimatePresence mode="wait">
           {open ? (
             <motion.svg
               key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              width="22"
-              height="22"
+              initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
+              animate={{ rotate: 0, opacity: 1, scale: 1 }}
+              exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.22 }}
+              width="26"
+              height="26"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="currentColor"
+              stroke="white"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              className="relative z-[1]"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -63,17 +93,21 @@ export default function ChatWidget() {
           ) : (
             <motion.div
               key="logo"
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="flex items-center justify-center"
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-[1] w-[50px] h-[50px] rounded-full bg-white flex items-center justify-center"
+              style={{
+                boxShadow:
+                  "inset 0 2px 3px rgba(255,255,255,0.9), inset 0 -2px 4px rgba(0,0,0,0.1), 0 2px 6px rgba(0,26,102,0.3)",
+              }}
             >
-              <KyoLogo size={34} />
+              <KyoLogo size={32} className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]" />
             </motion.div>
           )}
         </AnimatePresence>
-      </button>
+      </motion.button>
 
       {/* Chat panel */}
       <AnimatePresence>
