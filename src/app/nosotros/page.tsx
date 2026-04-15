@@ -80,25 +80,68 @@ export default function NosotrosPage() {
       </section>
 
       {/* Empower */}
-      <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <AnimatedSection>
-            <div className="rounded-3xl overflow-hidden relative">
-              <Image src="/images/nosotros2.jpg" alt="Kyoszen impacto" width={700} height={500} className="w-full h-[400px] object-cover" />
-              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
-                <p className="text-sm font-bold text-navy">&ldquo;Generando impacto, juntos&rdquo;</p>
-                <span className="text-xs text-muted">Equipo Kyoszen</span>
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
+        <div className="max-w-7xl mx-auto">
+          {/* Top row: title left, intro right */}
+          <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-8 md:gap-12 mb-10 md:mb-14 items-start">
+            <AnimatedSection>
+              <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">¿Por que existimos?</p>
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1]">
+                Empoderamos a los dueños
+                <br />
+                de pequeñas empresas
+              </h2>
+            </AnimatedSection>
+            <AnimatedSection delay={0.15}>
+              <p className="text-[13.5px] text-muted leading-relaxed md:pt-2">
+                Entendemos los retos de crecer con recursos limitados. Por eso
+                ofrecemos soluciones de capital humano accesibles, agiles y con
+                resultados medibles desde el primer dia.
+              </p>
+            </AnimatedSection>
+          </div>
+
+          {/* Bottom row: image left, numbered items right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <AnimatedSection>
+              <div className="rounded-3xl overflow-hidden relative">
+                <Image src="/images/nosotros2.jpg" alt="Kyoszen impacto" width={700} height={500} className="w-full h-[360px] md:h-[440px] object-cover" />
+                <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                  <p className="text-sm font-bold text-navy">&ldquo;Generando impacto, juntos&rdquo;</p>
+                  <span className="text-xs text-muted">Equipo Kyoszen</span>
+                </div>
               </div>
+            </AnimatedSection>
+
+            <div className="flex flex-col gap-5">
+              {[
+                { n: "01", title: "Procesos a la medida", desc: "Diseñamos estrategias de capital humano adaptadas al tamaño, cultura y etapa de tu empresa." },
+                { n: "02", title: "Equipo experimentado", desc: "Mas de 3 años colocando talento verificado en microempresas de CDMX y Estado de Mexico." },
+                { n: "03", title: "Enfoque humano", desc: "Cada candidato y cliente recibe trato genuinamente humano, con acompañamiento durante todo el proceso." },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.n}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="flex items-start gap-4 bg-white rounded-2xl p-5 border border-border"
+                >
+                  <div className="shrink-0 w-12 h-12 rounded-xl bg-[#c4f74b] flex items-center justify-center text-navy font-black text-base shadow-sm">
+                    {item.n}
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <h4 className="text-[15px] font-extrabold text-navy mb-1">
+                      {item.title}
+                    </h4>
+                    <p className="text-[12.5px] text-muted leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-          </AnimatedSection>
-          <AnimatedSection delay={0.2}>
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">¿Por que existimos?</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy mb-4">Empoderamos a los dueños de pequeñas empresas</h2>
-            <p className="text-[13.5px] text-muted leading-relaxed mb-4">Entendemos los retos de crecer con recursos limitados. Por eso ofrecemos soluciones de capital humano accesibles, agiles y con resultados medibles desde el primer dia.</p>
-            <div className="bg-white border-l-4 border-blue p-5 rounded-r-xl">
-              <p className="text-[13px] text-navy leading-relaxed italic">&ldquo;Kyoszen cubrio nuestra vacante en menos de una semana con candidatos perfectamente alineados al perfil que necesitabamos. Un servicio que realmente entiende a las empresas mexicanas.&rdquo;</p>
-            </div>
-          </AnimatedSection>
+          </div>
         </div>
       </section>
 
