@@ -3,7 +3,6 @@ import Services from "@/components/sections/Services";
 import StatsBar from "@/components/sections/StatsBar";
 import About from "@/components/sections/About";
 import Vacancies from "@/components/sections/Vacancies";
-import CtaBand from "@/components/sections/CtaBand";
 import Process from "@/components/sections/Process";
 import WhyUs from "@/components/sections/WhyUs";
 import Courses from "@/components/sections/Courses";
@@ -21,7 +20,6 @@ export default function Home() {
       <StatsBar />
       <About />
       <Vacancies />
-      <CtaBand />
       <Process />
       <WhyUs />
       <Courses />
