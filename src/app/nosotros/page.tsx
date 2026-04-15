@@ -6,12 +6,6 @@ import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import PageHero from "@/components/ui/PageHero";
 
-const values = [
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: "Equipo profesional", desc: "Expertos en capital humano comprometidos con el exito de cada cliente y candidato." },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>, title: "Orientados a resultados", desc: "Cada accion esta enfocada en generar impacto real y medible para tu empresa." },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>, title: "Garantia de exito", desc: "Respaldamos nuestros procesos con 99% de satisfaccion y seguimiento post-colocacion." },
-];
-
 const stats = [
   { n: "687+", l: "Candidatos colocados", s: "y contando" },
   { n: "672+", l: "Empresas atendidas", s: "CDMX y Edomex" },
@@ -152,12 +146,100 @@ export default function NosotrosPage() {
             <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestros valores</p>
             <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>
           </AnimatedSection>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {values.map((v, i) => (
-              <motion.div key={v.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="bg-bg rounded-2xl p-6 border border-border text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
-                <div className="w-12 h-12 rounded-xl bg-blue-soft flex items-center justify-center mx-auto mb-4">{v.icon}</div>
-                <h4 className="text-base font-extrabold mb-2">{v.title}</h4>
-                <p className="text-[12.5px] text-muted leading-relaxed">{v.desc}</p>
+            {[
+              {
+                tag: "Equipo",
+                title: "Profesionales especializados en capital humano",
+                image: "/images/nosotros1.jpg",
+                highlight: false,
+                href: "/servicios",
+              },
+              {
+                tag: "Reconocimiento",
+                title: "Mas de 687 colocaciones exitosas en mercado mexicano",
+                image: "/images/nosotros3.jpg",
+                highlight: true,
+                href: "/nosotros",
+              },
+              {
+                tag: "Reporte",
+                title: "2024 Reporte de satisfaccion y retencion del talento",
+                image: "/images/nosotros4.jpg",
+                highlight: false,
+                href: "/contacto",
+              },
+            ].map((card, i) => (
+              <motion.div
+                key={card.tag}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+              >
+                <Link
+                  href={card.href}
+                  className={`group relative block rounded-3xl overflow-hidden h-[440px] no-underline transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
+                    card.highlight ? "bg-[#c4f74b]" : "bg-bg border border-border"
+                  }`}
+                >
+                  {/* Arrow icon top-right */}
+                  <span
+                    className={`absolute top-5 right-5 z-[3] w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:-rotate-45 ${
+                      card.highlight ? "bg-navy text-white" : "bg-white text-navy border border-border"
+                    }`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="7" y1="17" x2="17" y2="7" />
+                      <polyline points="7 7 17 7 17 17" />
+                    </svg>
+                  </span>
+
+                  {card.highlight ? (
+                    // Highlighted card: large image on top (cutout), content at bottom
+                    <>
+                      <div className="absolute inset-x-0 top-0 h-[60%] overflow-hidden">
+                        <Image
+                          src={card.image}
+                          alt={card.title}
+                          width={500}
+                          height={400}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="absolute inset-x-0 bottom-0 p-6 z-[2]">
+                        <span className="inline-block text-[10px] font-extrabold uppercase tracking-[1.5px] text-navy/80 mb-2">
+                          {card.tag}
+                        </span>
+                        <h4 className="text-[16px] font-extrabold text-navy leading-tight">
+                          {card.title}
+                        </h4>
+                      </div>
+                    </>
+                  ) : (
+                    // Regular cards: label + title at top, image at bottom
+                    <>
+                      <div className="p-6 pr-16">
+                        <span className="inline-block text-[10px] font-extrabold uppercase tracking-[1.5px] text-muted mb-3 px-2.5 py-1 bg-white rounded-full border border-border">
+                          {card.tag}
+                        </span>
+                        <h4 className="text-[16px] font-extrabold text-navy leading-tight">
+                          {card.title}
+                        </h4>
+                      </div>
+                      <div className="absolute inset-x-5 bottom-5 h-[200px] rounded-2xl overflow-hidden">
+                        <Image
+                          src={card.image}
+                          alt={card.title}
+                          width={500}
+                          height={400}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    </>
+                  )}
+                </Link>
               </motion.div>
             ))}
           </div>
