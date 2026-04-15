@@ -50,28 +50,15 @@ export default function WhyUs() {
           </AnimatedSection>
         </div>
 
-        {/* Content row: image left, numbered items right */}
+        {/* Content row: numbered items left, image right */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-          {/* Left - Image */}
+          {/* Left - Numbered items */}
           <AnimatedSection>
-            <div className="rounded-3xl overflow-hidden relative h-[420px] md:h-[480px] shadow-xl">
-              <Image
-                src="/images/resultados.png"
-                alt="Equipo Kyoszen"
-                fill
-                className="object-cover object-top"
-                sizes="(max-width: 768px) 100vw, 600px"
-              />
-            </div>
-          </AnimatedSection>
-
-          {/* Right - Numbered items */}
-          <AnimatedSection delay={0.2}>
             <div className="flex flex-col gap-5">
               {items.map((item, i) => (
                 <motion.div
                   key={item.n}
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.5 }}
@@ -99,6 +86,19 @@ export default function WhyUs() {
                   Ver servicios →
                 </Link>
               </div>
+            </div>
+          </AnimatedSection>
+
+          {/* Right - Image */}
+          <AnimatedSection delay={0.2}>
+            <div className="rounded-3xl overflow-hidden relative h-[420px] md:h-[480px] shadow-xl">
+              <Image
+                src="/images/resultados.png"
+                alt="Equipo Kyoszen"
+                fill
+                className="object-cover object-top"
+                sizes="(max-width: 768px) 100vw, 600px"
+              />
             </div>
           </AnimatedSection>
         </div>
