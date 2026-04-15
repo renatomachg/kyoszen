@@ -124,7 +124,6 @@ export default function CursosPage() {
       <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
         <div className="max-w-7xl mx-auto">
           <AnimatedSection className="text-center mb-8">
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Capacitacion profesional</p>
             <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark">Elige entre nuestros mejores cursos</h2>
           </AnimatedSection>
 
