@@ -17,8 +17,8 @@ export default function Home() {
       <Services />
       <About />
       <Vacancies />
-      <Process />
       <WhyUs />
+      <Process />
       <Courses />
       <FAQ />
       <Blog />

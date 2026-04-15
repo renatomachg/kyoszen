@@ -7,7 +7,7 @@ const steps = [
   {
     num: "01",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0033FF" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="11" cy="11" r="8" />
         <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
@@ -18,7 +18,7 @@ const steps = [
   {
     num: "02",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0033FF" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <line x1="8" y1="6" x2="21" y2="6" />
         <line x1="8" y1="12" x2="21" y2="12" />
         <line x1="8" y1="18" x2="21" y2="18" />
@@ -33,7 +33,7 @@ const steps = [
   {
     num: "03",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0033FF" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="9 11 12 14 22 4" />
         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
       </svg>
@@ -44,7 +44,7 @@ const steps = [
   {
     num: "04",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0033FF" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
         <polyline points="22 4 12 14.01 9 11.01" />
       </svg>
@@ -79,10 +79,10 @@ export default function Process() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="relative bg-blue-soft rounded-2xl p-6 pt-7 border border-white/5 shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl"
+              className="relative bg-[#E3F2FF] rounded-2xl p-6 pt-7 border border-white/5 shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl"
             >
-              {/* Yellow circle with icon */}
-              <div className="absolute -top-5 right-5 w-12 h-12 rounded-full bg-yellow flex items-center justify-center shadow-md">
+              {/* Square icon like the service cards */}
+              <div className="absolute -top-4 right-5 w-11 h-11 rounded-xl bg-yellow flex items-center justify-center shadow-md">
                 {step.icon}
               </div>
 
