@@ -3,65 +3,171 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import AnimatedSection from "@/components/ui/AnimatedSection";
+import DropdownPill from "@/components/ui/DropdownPill";
+import PageHero from "@/components/ui/PageHero";
 
-const JOBS = [
-  { id: 1, titulo: "Auxiliar Administrativo", categoria: "Administrativo", ubicacion: "CDMX", contrato: "Tiempo completo", salario: 12000, badge: "Nuevo", badgeClass: "bg-green-soft text-[#15803d]", desc: "Apoyo en gestion documental, atencion a clientes internos y manejo de agenda ejecutiva.", tags: ["Office 365", "Atencion al cliente", "Organizacion"] },
-  { id: 2, titulo: "Operador de Almacen", categoria: "Operaciones", ubicacion: "Estado de Mexico", contrato: "Tiempo completo", salario: 10000, badge: "Urgente", badgeClass: "bg-yellow-soft text-[#b45309]", desc: "Control de inventarios, recepcion y despacho de mercancia, manejo de montacargas.", tags: ["Inventarios", "Montacargas", "Logistica"] },
-  { id: 3, titulo: "Ejecutivo de Ventas", categoria: "Ventas", ubicacion: "CDMX", contrato: "Tiempo completo", salario: 18000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Prospeccion, seguimiento y cierre de ventas B2B. Manejo de CRM y cumplimiento de metas.", tags: ["Ventas B2B", "CRM", "Negociacion"] },
-  { id: 4, titulo: "Recepcionista", categoria: "Atencion al cliente", ubicacion: "CDMX", contrato: "Medio tiempo", salario: 8000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Atencion presencial y telefonica, coordinacion de citas y gestion de correspondencia.", tags: ["Atencion al cliente", "Multitareas", "Comunicacion"] },
-  { id: 5, titulo: "Coordinador de RRHH", categoria: "RRHH", ubicacion: "CDMX", contrato: "Tiempo completo", salario: 22000, badge: "Nuevo", badgeClass: "bg-green-soft text-[#15803d]", desc: "Gestion de nomina, reclutamiento, capacitacion y relaciones laborales en empresa en crecimiento.", tags: ["Nomina", "Reclutamiento", "Relaciones laborales"] },
-  { id: 6, titulo: "Vendedor de Campo", categoria: "Ventas", ubicacion: "Estado de Mexico", contrato: "Tiempo completo", salario: 15000, badge: "Urgente", badgeClass: "bg-yellow-soft text-[#b45309]", desc: "Visitas a clientes, presentacion de productos y seguimiento posventa en zona Edomex.", tags: ["Ventas externas", "Zona Edomex", "Prospectos"] },
-  { id: 7, titulo: "Auxiliar Contable", categoria: "Administrativo", ubicacion: "Hibrido", contrato: "Tiempo completo", salario: 13000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Registro de operaciones contables, conciliaciones bancarias y elaboracion de reportes financieros.", tags: ["Contabilidad", "SAP", "Excel avanzado"] },
-  { id: 8, titulo: "Agente de Servicio al Cliente", categoria: "Atencion al cliente", ubicacion: "Remoto", contrato: "Por proyecto", salario: 9500, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Atencion a clientes via chat, correo y telefono. Resolucion de incidencias y seguimiento de casos.", tags: ["Zendesk", "Servicio al cliente", "Remoto"] },
+type Job = {
+  id: number;
+  titulo: string;
+  empresa: string;
+  categoria: string;
+  ubicacion: string;
+  contrato: string;
+  jornada: string;
+  salario: number;
+  badge: string;
+  badgeClass: string;
+  desc: string;
+  tags: string[];
+};
+
+const JOBS: Job[] = [
+  { id: 1, titulo: "Auxiliar Administrativo", empresa: "Grupo Corpora", categoria: "Administrativo", ubicacion: "CDMX", contrato: "Tiempo completo", jornada: "Matutina", salario: 12000, badge: "Nuevo", badgeClass: "bg-green-soft text-[#15803d]", desc: "Apoyo en gestion documental, atencion a clientes internos y manejo de agenda ejecutiva.", tags: ["Office 365", "Atencion al cliente", "Organizacion"] },
+  { id: 2, titulo: "Operador de Almacen", empresa: "Logistica Norte", categoria: "Operaciones", ubicacion: "Estado de Mexico", contrato: "Tiempo completo", jornada: "Mixta", salario: 10000, badge: "Urgente", badgeClass: "bg-yellow-soft text-[#b45309]", desc: "Control de inventarios, recepcion y despacho de mercancia, manejo de montacargas.", tags: ["Inventarios", "Montacargas", "Logistica"] },
+  { id: 3, titulo: "Ejecutivo de Ventas", empresa: "Sigma Retail", categoria: "Ventas", ubicacion: "CDMX", contrato: "Tiempo completo", jornada: "Matutina", salario: 18000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Prospeccion, seguimiento y cierre de ventas B2B. Manejo de CRM y cumplimiento de metas.", tags: ["Ventas B2B", "CRM", "Negociacion"] },
+  { id: 4, titulo: "Recepcionista", empresa: "Clinica Vitalis", categoria: "Atencion al cliente", ubicacion: "CDMX", contrato: "Medio tiempo", jornada: "Vespertina", salario: 8000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Atencion presencial y telefonica, coordinacion de citas y gestion de correspondencia.", tags: ["Atencion al cliente", "Multitareas", "Comunicacion"] },
+  { id: 5, titulo: "Coordinador de RRHH", empresa: "Grupo Corpora", categoria: "RRHH", ubicacion: "CDMX", contrato: "Tiempo completo", jornada: "Matutina", salario: 22000, badge: "Nuevo", badgeClass: "bg-green-soft text-[#15803d]", desc: "Gestion de nomina, reclutamiento, capacitacion y relaciones laborales en empresa en crecimiento.", tags: ["Nomina", "Reclutamiento", "Relaciones laborales"] },
+  { id: 6, titulo: "Vendedor de Campo", empresa: "Sigma Retail", categoria: "Ventas", ubicacion: "Estado de Mexico", contrato: "Tiempo completo", jornada: "Flexible", salario: 15000, badge: "Urgente", badgeClass: "bg-yellow-soft text-[#b45309]", desc: "Visitas a clientes, presentacion de productos y seguimiento posventa en zona Edomex.", tags: ["Ventas externas", "Zona Edomex", "Prospectos"] },
+  { id: 7, titulo: "Auxiliar Contable", empresa: "Finanzas MX", categoria: "Administrativo", ubicacion: "Hibrido", contrato: "Tiempo completo", jornada: "Matutina", salario: 13000, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Registro de operaciones contables, conciliaciones bancarias y elaboracion de reportes financieros.", tags: ["Contabilidad", "SAP", "Excel avanzado"] },
+  { id: 8, titulo: "Agente de Servicio al Cliente", empresa: "Contact Nova", categoria: "Atencion al cliente", ubicacion: "Remoto", contrato: "Por proyecto", jornada: "Flexible", salario: 9500, badge: "Disponible", badgeClass: "bg-blue-soft text-blue", desc: "Atencion a clientes via chat, correo y telefono. Resolucion de incidencias y seguimiento de casos.", tags: ["Zendesk", "Servicio al cliente", "Remoto"] },
 ];
 
-const categories = ["Todos", "Administrativo", "Ventas", "Operaciones", "Atencion al cliente", "RRHH"];
+const UBICACIONES = ["Todas", "CDMX", "Estado de Mexico", "Hibrido", "Remoto"];
+const MARCAS = ["Todas", "Grupo Corpora", "Logistica Norte", "Sigma Retail", "Clinica Vitalis", "Finanzas MX", "Contact Nova"];
+const CONTRATOS = ["Todos", "Tiempo completo", "Medio tiempo", "Por proyecto"];
+const JORNADAS = ["Todas", "Matutina", "Vespertina", "Mixta", "Flexible"];
+const SALARIOS = ["Todos", "Menos de $10k", "$10k - $15k", "$15k - $20k", "Mas de $20k"];
+
+function matchesSalario(salario: number, bucket: string): boolean {
+  switch (bucket) {
+    case "Menos de $10k":
+      return salario < 10000;
+    case "$10k - $15k":
+      return salario >= 10000 && salario < 15000;
+    case "$15k - $20k":
+      return salario >= 15000 && salario < 20000;
+    case "Mas de $20k":
+      return salario >= 20000;
+    default:
+      return true;
+  }
+}
 
 export default function VacantesPage() {
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("Todos");
+  const [ubicacion, setUbicacion] = useState("Todas");
+  const [marca, setMarca] = useState("Todas");
+  const [contrato, setContrato] = useState("Todos");
+  const [jornada, setJornada] = useState("Todas");
+  const [salario, setSalario] = useState("Todos");
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return JOBS.filter((j) => {
-      const matchesSearch = !search || j.titulo.toLowerCase().includes(search.toLowerCase()) || j.desc.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = activeCategory === "Todos" || j.categoria === activeCategory;
-      return matchesSearch && matchesCategory;
+      const matchesSearch =
+        !q ||
+        j.titulo.toLowerCase().includes(q) ||
+        j.desc.toLowerCase().includes(q) ||
+        j.empresa.toLowerCase().includes(q) ||
+        j.tags.some((t) => t.toLowerCase().includes(q));
+      const matchesUbicacion = ubicacion === "Todas" || j.ubicacion === ubicacion;
+      const matchesMarca = marca === "Todas" || j.empresa === marca;
+      const matchesContrato = contrato === "Todos" || j.contrato === contrato;
+      const matchesJornada = jornada === "Todas" || j.jornada === jornada;
+      const matchesSalarioRange = matchesSalario(j.salario, salario);
+      return matchesSearch && matchesUbicacion && matchesMarca && matchesContrato && matchesJornada && matchesSalarioRange;
     });
-  }, [search, activeCategory]);
+  }, [search, ubicacion, marca, contrato, jornada, salario]);
+
+  const clearAll = () => {
+    setSearch("");
+    setUbicacion("Todas");
+    setMarca("Todas");
+    setContrato("Todos");
+    setJornada("Todas");
+    setSalario("Todos");
+  };
+
+  const anyActive =
+    search.trim().length > 0 ||
+    ubicacion !== "Todas" ||
+    marca !== "Todas" ||
+    contrato !== "Todos" ||
+    jornada !== "Todas" ||
+    salario !== "Todos";
 
   return (
     <>
-      {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto text-center">
-          <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Vacantes</span>
-          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Encuentra tu proximo empleo</h1>
-          <p className="text-sm text-white/60 leading-relaxed mb-8">Vacantes verificadas en CDMX y Estado de Mexico. Aplicar es rapido y confidencial.</p>
-          <div className="flex gap-2 max-w-[460px] mx-auto bg-white/10 border-[1.5px] border-white/20 rounded-full py-[5px] pr-[5px] pl-5 items-center">
-            <input placeholder="Buscar vacante..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder:text-[#bbb] font-[inherit]" />
-            <button className="bg-blue-btn text-white rounded-full py-2.5 px-6 text-[13px] font-bold shrink-0">Buscar</button>
-          </div>
-        </motion.div>
-      </section>
+      <PageHero
+        image="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1800&auto=format&fit=crop&q=80"
+        chip="Vacantes"
+        title="Encuentra tu proximo empleo"
+        description="Vacantes verificadas en CDMX y Estado de Mexico. Aplicar es rapido y confidencial."
+      />
 
       {/* Filters + Results */}
       <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
         <div className="max-w-7xl mx-auto">
-          {/* Category tabs */}
-          <div className="flex gap-2 flex-wrap mb-8">
-            {categories.map((cat) => (
-              <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-full text-[13px] font-semibold border transition-all cursor-pointer ${activeCategory === cat ? "bg-blue text-white border-blue" : "bg-white text-muted border-border hover:border-blue-mid"}`}>
-                {cat}
-              </button>
-            ))}
+          {/* Keyword search */}
+          <div className="flex justify-center mb-4">
+            <div className="flex items-center gap-2 bg-white rounded-full border border-border shadow-sm pl-5 pr-1 py-1 w-full max-w-[560px]">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                placeholder="Palabra clave: puesto, empresa o habilidad"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-[13px] text-navy placeholder:text-muted py-2"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="text-muted hover:text-navy text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
           </div>
 
-          <p className="text-sm text-muted mb-4"><strong className="text-navy">{filtered.length}</strong> vacantes encontradas</p>
+          {/* Breadcrumb-style filter pill */}
+          <div className="flex justify-center mb-2">
+            <div className="inline-flex items-center gap-1 bg-white rounded-full border border-border shadow-sm px-2 py-1.5 flex-wrap max-w-full">
+              <span className="px-3 py-1.5 text-[13px] font-semibold text-muted">Vacantes</span>
+              <span className="text-border">/</span>
+              <DropdownPill label="Ubicacion" value={ubicacion} options={UBICACIONES} onChange={setUbicacion} highlight={ubicacion !== "Todas"} />
+              <span className="text-border">/</span>
+              <DropdownPill label="Marca" value={marca} options={MARCAS} onChange={setMarca} highlight={marca !== "Todas"} />
+              <span className="text-border">/</span>
+              <DropdownPill label="Contrato" value={contrato} options={CONTRATOS} onChange={setContrato} highlight={contrato !== "Todos"} />
+              <span className="text-border">/</span>
+              <DropdownPill label="Jornada" value={jornada} options={JORNADAS} onChange={setJornada} highlight={jornada !== "Todas"} />
+              <span className="text-border">/</span>
+              <DropdownPill label="Salario" value={salario} options={SALARIOS} onChange={setSalario} highlight={salario !== "Todos"} />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mb-6 mt-4">
+            <p className="text-sm text-muted">
+              <strong className="text-navy">{filtered.length}</strong> vacantes encontradas
+            </p>
+            {anyActive && (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="text-[12px] text-blue hover:text-blue-dark font-bold cursor-pointer"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
 
           {/* Jobs grid */}
           {filtered.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filtered.map((job, i) => (
                 <motion.div key={job.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05, duration: 0.4 }}>
                   <div className="bg-white rounded-xl border-[1.5px] border-border p-5 transition-all duration-200 hover:border-blue-mid hover:shadow-lg hover:-translate-y-0.5 group h-full flex flex-col">
@@ -69,12 +175,12 @@ export default function VacantesPage() {
                       <span className="text-[10.5px] font-bold text-muted uppercase tracking-wide">{job.ubicacion}</span>
                       <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-bold ${job.badgeClass}`}>{job.badge}</span>
                     </div>
-                    <h3 className="text-base font-extrabold text-navy mb-1.5">{job.titulo}</h3>
+                    <h3 className="text-base font-extrabold text-navy mb-1">{job.titulo}</h3>
+                    <p className="text-[11px] font-bold text-blue uppercase tracking-wide mb-2">{job.empresa}</p>
                     <p className="text-xs text-muted leading-relaxed mb-3 flex-1">{job.desc}</p>
                     <div className="flex flex-wrap gap-1.5 mb-3">
-                      {job.tags.map((t) => (
-                        <span key={t} className="bg-bg text-navy text-[10px] font-semibold px-2 py-0.5 rounded-md">{t}</span>
-                      ))}
+                      <span className="bg-bg text-navy text-[10px] font-semibold px-2 py-0.5 rounded-md">{job.contrato}</span>
+                      <span className="bg-bg text-navy text-[10px] font-semibold px-2 py-0.5 rounded-md">{job.jornada}</span>
                     </div>
                     <div className="flex items-center justify-between pt-3 border-t border-border mt-auto">
                       <span className="text-sm font-bold text-navy">${job.salario.toLocaleString()} / mes</span>

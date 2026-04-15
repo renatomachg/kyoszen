@@ -4,12 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-
-const values = [
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: "Equipo profesional", desc: "Expertos en capital humano comprometidos con el exito de cada cliente y candidato." },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>, title: "Orientados a resultados", desc: "Cada accion esta enfocada en generar impacto real y medible para tu empresa." },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>, title: "Garantia de exito", desc: "Respaldamos nuestros procesos con 99% de satisfaccion y seguimiento post-colocacion." },
-];
+import PageHero from "@/components/ui/PageHero";
 
 const stats = [
   { n: "687+", l: "Candidatos colocados", s: "y contando" },
@@ -22,90 +17,391 @@ export default function NosotrosPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20 text-center relative overflow-hidden">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto relative z-[1]">
-          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Sobre nosotros</h1>
-          <p className="text-sm text-white/60 leading-relaxed">Somos una consultora especializada en capital humano para microempresas mexicanas. Conectamos talento con empresas que crecen, con rapidez, tecnologia y trato humano.</p>
-        </motion.div>
-      </section>
+      <PageHero
+        image="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1800&auto=format&fit=crop&q=80"
+        title="Sobre nosotros"
+        description="Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnologia, experiencia y un trato genuinamente humano para ofrecer resultados que duran. Cada proceso que manejamos — desde el reclutamiento hasta la capacitacion — esta diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios."
+      />
 
-      {/* Photo collage */}
-      <section className="px-5 md:px-10 xl:px-20 py-10 bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((n) => (
-            <motion.div key={n} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: n * 0.1, duration: 0.5 }} className="rounded-2xl overflow-hidden h-[220px] md:h-[280px]">
-              <Image src={`/images/nosotros${n}.jpg`} alt="Equipo Kyoszen" width={400} height={300} className="w-full h-full object-cover" />
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Mission */}
+      {/* Stats */}
       <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <AnimatedSection>
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestra mision</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy">Nos aseguramos de que tu idea y crecimiento se entreguen correctamente</h2>
-          </AnimatedSection>
-          <AnimatedSection delay={0.2}>
-            <p className="text-[13.5px] text-muted leading-relaxed mb-5">Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnologia, experiencia y un trato genuinamente humano para ofrecer resultados que duran.</p>
-            <p className="text-[13.5px] text-muted leading-relaxed">Cada proceso que manejamos — desde el reclutamiento hasta la capacitacion — esta diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios.</p>
-          </AnimatedSection>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {stats.map((s, i) => (
+              <motion.div
+                key={s.l}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+              >
+                <div className="text-[clamp(2.5rem,5vw,4rem)] font-black text-navy leading-none mb-3 tracking-tight">
+                  {s.n}
+                </div>
+                <div className="text-[12px] text-muted font-medium">
+                  {s.l}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Empower */}
-      <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <AnimatedSection>
-            <div className="rounded-3xl overflow-hidden relative">
-              <Image src="/images/nosotros2.jpg" alt="Kyoszen impacto" width={700} height={500} className="w-full h-[400px] object-cover" />
-              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
-                <p className="text-sm font-bold text-navy">&ldquo;Generando impacto, juntos&rdquo;</p>
-                <span className="text-xs text-muted">Equipo Kyoszen</span>
-              </div>
-            </div>
-          </AnimatedSection>
-          <AnimatedSection delay={0.2}>
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">¿Por que existimos?</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy mb-4">Empoderamos a los dueños de pequeñas empresas</h2>
-            <p className="text-[13.5px] text-muted leading-relaxed mb-4">Entendemos los retos de crecer con recursos limitados. Por eso ofrecemos soluciones de capital humano accesibles, agiles y con resultados medibles desde el primer dia.</p>
-            <div className="bg-white border-l-4 border-blue p-5 rounded-r-xl">
-              <p className="text-[13px] text-navy leading-relaxed italic">&ldquo;Kyoszen cubrio nuestra vacante en menos de una semana con candidatos perfectamente alineados al perfil que necesitabamos. Un servicio que realmente entiende a las empresas mexicanas.&rdquo;</p>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
+        <div className="max-w-7xl mx-auto">
+          {/* Top row: title left, intro right */}
+          <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-8 md:gap-12 mb-10 md:mb-14 items-start">
+            <AnimatedSection>
+              <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">¿Por que existimos?</p>
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1]">
+                Empoderamos a los dueños
+                <br />
+                de pequeñas empresas
+              </h2>
+            </AnimatedSection>
+            <AnimatedSection delay={0.15}>
+              <p className="text-[13.5px] text-muted leading-relaxed md:pt-2">
+                Entendemos los retos de crecer con recursos limitados. Por eso
+                ofrecemos soluciones de capital humano accesibles, agiles y con
+                resultados medibles desde el primer dia.
+              </p>
+            </AnimatedSection>
+          </div>
 
-      {/* Stats */}
-      <section className="bg-navy py-16 px-5 md:px-10 xl:px-20">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-          {stats.map((s, i) => (
-            <motion.div key={s.l} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}>
-              <div className="text-[clamp(2rem,4vw,3rem)] font-black text-yellow leading-none mb-1">{s.n}</div>
-              <div className="text-sm font-bold text-white mb-0.5">{s.l}</div>
-              <div className="text-xs text-white/50">{s.s}</div>
-            </motion.div>
-          ))}
+          {/* Bottom row: image left, numbered items right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <AnimatedSection>
+              <div className="rounded-3xl overflow-hidden relative">
+                <Image src="/images/nosotros2.jpg" alt="Kyoszen impacto" width={700} height={500} className="w-full h-[360px] md:h-[440px] object-cover" />
+                <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                  <p className="text-sm font-bold text-navy">&ldquo;Generando impacto, juntos&rdquo;</p>
+                  <span className="text-xs text-muted">Equipo Kyoszen</span>
+                </div>
+              </div>
+            </AnimatedSection>
+
+            <div className="flex flex-col gap-5">
+              {[
+                { n: "01", title: "Procesos a la medida", desc: "Diseñamos estrategias de capital humano adaptadas al tamaño, cultura y etapa de tu empresa." },
+                { n: "02", title: "Equipo experimentado", desc: "Mas de 3 años colocando talento verificado en microempresas de CDMX y Estado de Mexico." },
+                { n: "03", title: "Enfoque humano", desc: "Cada candidato y cliente recibe trato genuinamente humano, con acompañamiento durante todo el proceso." },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.n}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="flex items-start gap-4 bg-white rounded-2xl p-5 border border-border"
+                >
+                  <div className="shrink-0 w-12 h-12 rounded-xl bg-yellow flex items-center justify-center text-navy font-black text-base shadow-sm">
+                    {item.n}
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <h4 className="text-[15px] font-extrabold text-navy mb-1">
+                      {item.title}
+                    </h4>
+                    <p className="text-[12.5px] text-muted leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Values */}
-      <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-blue-btn">
         <div className="max-w-7xl mx-auto">
           <AnimatedSection className="text-center max-w-[520px] mx-auto mb-10">
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestros valores</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>
+            <p className="text-[11px] font-bold text-yellow uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestros valores</p>
+            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-white">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>
           </AnimatedSection>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {values.map((v, i) => (
-              <motion.div key={v.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="bg-bg rounded-2xl p-6 border border-border text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
-                <div className="w-12 h-12 rounded-xl bg-blue-soft flex items-center justify-center mx-auto mb-4">{v.icon}</div>
-                <h4 className="text-base font-extrabold mb-2">{v.title}</h4>
-                <p className="text-[12.5px] text-muted leading-relaxed">{v.desc}</p>
+            {[
+              {
+                tag: "Equipo",
+                title: "Profesionales especializados en capital humano",
+                image: "/images/nosotros1.jpg",
+                highlight: false,
+                href: "/servicios",
+              },
+              {
+                tag: "Reconocimiento",
+                title: "Mas de 687 colocaciones exitosas en mercado mexicano",
+                image: "/images/nosotros3.jpg",
+                highlight: true,
+                href: "/nosotros",
+              },
+              {
+                tag: "Reporte",
+                title: "2024 Reporte de satisfaccion y retencion del talento",
+                image: "/images/nosotros4.jpg",
+                highlight: false,
+                href: "/contacto",
+              },
+            ].map((card, i) => (
+              <motion.div
+                key={card.tag}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+              >
+                <Link
+                  href={card.href}
+                  className={`group relative block rounded-3xl overflow-hidden h-[440px] no-underline transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
+                    card.highlight ? "bg-yellow" : "bg-bg border border-border"
+                  }`}
+                >
+                  {/* Arrow icon top-right */}
+                  <span
+                    className={`absolute top-5 right-5 z-[3] w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:-rotate-45 ${
+                      card.highlight ? "bg-navy text-white" : "bg-white text-navy border border-border"
+                    }`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="7" y1="17" x2="17" y2="7" />
+                      <polyline points="7 7 17 7 17 17" />
+                    </svg>
+                  </span>
+
+                  {card.highlight ? (
+                    // Highlighted card: large image on top (cutout), content at bottom
+                    <>
+                      <div className="absolute inset-x-0 top-0 h-[60%] overflow-hidden">
+                        <Image
+                          src={card.image}
+                          alt={card.title}
+                          width={500}
+                          height={400}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="absolute inset-x-0 bottom-0 p-6 z-[2]">
+                        <span className="inline-block text-[10px] font-extrabold uppercase tracking-[1.5px] text-navy/80 mb-2">
+                          {card.tag}
+                        </span>
+                        <h4 className="text-[16px] font-extrabold text-navy leading-tight">
+                          {card.title}
+                        </h4>
+                      </div>
+                    </>
+                  ) : (
+                    // Regular cards: label + title at top, image at bottom
+                    <>
+                      <div className="p-6 pr-16">
+                        <span className="inline-block text-[10px] font-extrabold uppercase tracking-[1.5px] text-muted mb-3 px-2.5 py-1 bg-white rounded-full border border-border">
+                          {card.tag}
+                        </span>
+                        <h4 className="text-[16px] font-extrabold text-navy leading-tight">
+                          {card.title}
+                        </h4>
+                      </div>
+                      <div className="absolute inset-x-5 bottom-5 h-[200px] rounded-2xl overflow-hidden">
+                        <Image
+                          src={card.image}
+                          alt={card.title}
+                          width={500}
+                          height={400}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    </>
+                  )}
+                </Link>
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Tailored Strategies */}
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+          {/* LEFT - Text column */}
+          <AnimatedSection>
+            <span className="inline-block bg-bg text-navy text-[11px] font-extrabold uppercase tracking-[1.5px] px-3 py-1.5 rounded-full border border-border mb-5">
+              Nuestros servicios
+            </span>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1] mb-5">
+              Estrategias a la medida para el maximo crecimiento de tu negocio
+            </h2>
+            <p className="text-[13.5px] text-muted leading-relaxed mb-7">
+              Diseñamos soluciones de capital humano adaptadas a la realidad de
+              cada empresa mexicana. Sin plantillas genericas: entendemos tu
+              contexto, tus metas y entregamos resultados medibles.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-7">
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-blue-soft flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 3v18h18" />
+                    <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
+                  </svg>
+                </div>
+                <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Reclutamiento dirigido</h4>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Identificamos y presentamos candidatos verificados alineados a tu cultura y necesidades.
+                </p>
+              </div>
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-blue-soft flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                </div>
+                <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Soluciones digitales</h4>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Procesos agiles con tecnologia, tableros de seguimiento y trato humano en cada etapa.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-[13px] text-muted leading-relaxed">
+              Mas de 3 años conectando talento con empresas mexicanas en
+              crecimiento. Combinamos tecnologia, experiencia y un trato
+              genuinamente humano.
+            </p>
+          </AnimatedSection>
+
+          {/* RIGHT - Image with stats overlay */}
+          <AnimatedSection delay={0.2}>
+            <div className="relative rounded-3xl overflow-hidden h-[460px] md:h-[560px]">
+              <Image
+                src="/images/nosotros1.jpg"
+                alt="Equipo Kyoszen trabajando"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 600px"
+              />
+              {/* Stats card - bottom right overlay */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.35, duration: 0.6 }}
+                className="absolute bottom-5 right-5 left-5 sm:left-auto sm:max-w-[340px] bg-yellow rounded-2xl p-5 shadow-xl"
+              >
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">687+</div>
+                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Candidatos</div>
+                  </div>
+                  <div>
+                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">672+</div>
+                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Empresas</div>
+                  </div>
+                  <div>
+                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">99%</div>
+                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Satisfaccion</div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* Our Process - mirrored layout */}
+      <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
+          {/* LEFT - Image with trust badge overlay */}
+          <AnimatedSection>
+            <div className="relative rounded-3xl overflow-hidden h-[460px] md:h-[560px]">
+              <Image
+                src="/images/nosotros2.jpg"
+                alt="Proceso Kyoszen"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 600px"
+              />
+              {/* Trust card - bottom left overlay */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.35, duration: 0.6 }}
+                className="absolute bottom-5 left-5 right-5 sm:right-auto sm:max-w-[300px] bg-navy rounded-2xl p-5 shadow-xl"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="w-10 h-10 rounded-full bg-yellow flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </span>
+                  <div>
+                    <div className="text-[22px] font-black text-white leading-none">24h</div>
+                    <div className="text-[10px] font-bold text-white/70 mt-1">tiempo de respuesta</div>
+                  </div>
+                </div>
+                <p className="text-[12px] text-white/85 leading-relaxed">
+                  Garantia de reposicion si el candidato no cumple en los primeros 30 dias.
+                </p>
+              </motion.div>
+            </div>
+          </AnimatedSection>
+
+          {/* RIGHT - Text column */}
+          <AnimatedSection delay={0.2}>
+            <span className="inline-block bg-white text-navy text-[11px] font-extrabold uppercase tracking-[1.5px] px-3 py-1.5 rounded-full border border-border mb-5">
+              Como trabajamos
+            </span>
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1] mb-5">
+              Un proceso claro, transparente y con resultados
+            </h2>
+            <p className="text-[13.5px] text-muted leading-relaxed mb-7">
+              No paramos despues de contratar. Acompañamos cada etapa del
+              proceso con comunicacion directa, criterios claros y seguimiento
+              continuo para que tu empresa y el talento crezcan juntos.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-7">
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-yellow-soft flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                </div>
+                <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Candidatos verificados</h4>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Documentacion completa y perfil revisado antes de presentarlo a tu empresa.
+                </p>
+              </div>
+              <div>
+                <div className="w-10 h-10 rounded-lg bg-blue-soft flex items-center justify-center mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </div>
+                <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Acompañamiento total</h4>
+                <p className="text-[12px] text-muted leading-relaxed">
+                  Desde el primer contacto hasta la integracion del colaborador.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 flex-wrap">
+              <Link href="/servicios" className="bg-navy text-white rounded-full py-3 px-7 text-[13px] font-extrabold no-underline hover:bg-blue-dark transition-colors">
+                Ver servicios →
+              </Link>
+              <Link href="/contacto" className="bg-transparent text-navy border-2 border-navy/20 rounded-full py-3 px-7 text-[13px] font-extrabold no-underline hover:bg-navy/5 transition-colors">
+                Hablar con asesor
+              </Link>
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 
