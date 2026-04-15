@@ -35,10 +35,29 @@ const trust = [
 
 export default function CtaFinal() {
   return (
-    <section className="py-24 px-5 md:px-10 xl:px-20 bg-[#1883FF]">
-      <AnimatedSection>
+    <section className="relative py-24 px-5 md:px-10 xl:px-20 overflow-hidden">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center z-0"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1800&auto=format&fit=crop&q=80')",
+        }}
+      />
+
+      {/* Gradient overlay fading into the footer dark color */}
+      <div
+        className="absolute inset-0 z-[1]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(4,46,123,0.72) 0%, rgba(4,46,123,0.9) 55%, rgba(3,8,18,0.98) 100%)",
+        }}
+      />
+
+      {/* Content */}
+      <AnimatedSection className="relative z-[2]">
         <div className="max-w-[820px] mx-auto text-center">
-          <h2 className="text-[clamp(2rem,4vw,3.2rem)] font-black leading-[1.05] tracking-tight text-white mb-5">
+          <h2 className="text-[clamp(2rem,4vw,3.2rem)] font-black leading-[1.05] tracking-tight text-white mb-5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
             ¿Listo para transformar
             <br />
             tu <span className="text-yellow">capital humano</span>?
