@@ -12,13 +12,6 @@ const features = [
   { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-purple)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>, title: "Digitalizacion de RRHH", desc: "Implementamos herramientas digitales para modernizar y automatizar los procesos de tu area de capital humano.", link: "/contacto", linkText: "Saber mas →" },
 ];
 
-const specialties = [
-  { title: "Administrativo", desc: "Asistentes, coordinadores y gerentes de area", count: "45+ perfiles" },
-  { title: "Ventas", desc: "Ejecutivos, representantes y directores comerciales", count: "38+ perfiles" },
-  { title: "Operaciones", desc: "Almacen, logistica, produccion y calidad", count: "52+ perfiles" },
-  { title: "RRHH", desc: "Especialistas y directores de capital humano", count: "29+ perfiles" },
-];
-
 const splitSections = [
   {
     label: "Reclutamiento",
@@ -149,26 +142,6 @@ export default function ServiciosPage() {
                 <h4 className="text-sm font-extrabold mb-2 text-navy">{f.title}</h4>
                 <p className="text-[12.5px] text-muted leading-relaxed mb-3">{f.desc}</p>
                 <Link href={f.link} className="text-xs font-bold text-blue no-underline hover:underline">{f.linkText}</Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Specialties */}
-      <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
-        <div className="max-w-7xl mx-auto text-center">
-          <AnimatedSection>
-            <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Explora nuestras areas</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark mb-3">Especialidades de reclutamiento</h2>
-            <p className="text-[13.5px] text-muted max-w-[500px] mx-auto mb-10">Cubrimos todas las areas clave para empresas en CDMX y Estado de Mexico con candidatos listos para integrarse.</p>
-          </AnimatedSection>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {specialties.map((s, i) => (
-              <motion.div key={s.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="bg-white rounded-2xl p-6 border border-border text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
-                <h4 className="text-base font-extrabold mb-1">{s.title}</h4>
-                <p className="text-xs text-muted mb-3">{s.desc}</p>
-                <span className="text-xs font-bold text-blue bg-blue-soft rounded-full px-3 py-1">{s.count}</span>
               </motion.div>
             ))}
           </div>
