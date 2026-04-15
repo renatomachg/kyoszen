@@ -96,9 +96,9 @@ export default function Hero() {
           </div>
         </motion.div>
 
-        {/* Right - Photo collage */}
-        <div className="relative hidden md:block">
-          <div className="relative w-full max-w-[440px] h-[480px] mx-auto">
+        {/* Right - Photo collage (visible en mobile + desktop) */}
+        <div className="relative mt-4 md:mt-0">
+          <div className="relative w-full max-w-[360px] sm:max-w-[400px] md:max-w-[440px] h-[380px] sm:h-[420px] md:h-[480px] mx-auto">
             {/* Photo 1 - small, top left */}
             <motion.div
               initial={{ opacity: 0, x: -40, scale: 0.92 }}
