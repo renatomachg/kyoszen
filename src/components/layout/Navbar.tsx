@@ -61,8 +61,8 @@ export default function Navbar() {
               href={link.href}
               className={`no-underline text-[13px] py-[7px] px-[15px] rounded-full font-medium border-[1.5px] transition-all duration-150 whitespace-nowrap ${
                 pathname === link.href
-                  ? "border-blue text-blue bg-blue-soft"
-                  : "border-transparent text-[#555] hover:border-[#d0d3e8] hover:text-blue hover:bg-blue-soft"
+                  ? "border-navy bg-navy text-[#F8FAFC]"
+                  : "border-transparent text-[#555] hover:border-blue hover:text-blue"
               }`}
             >
               {link.label}
