@@ -17,18 +17,32 @@ const splitSections = [
     label: "Reclutamiento",
     title: "Recopilamos reseñas de tus mejores candidatos",
     desc: "Nuestro proceso de seleccion incluye verificacion de documentos, evaluacion de competencias y presentacion de candidatos alineados a tu cultura empresarial.",
-    bullets: ["Candidatos con documentacion completa y verificada", "Presentacion en menos de 72 horas habiles", "Garantia de reposicion si el candidato no funciona"],
+    features: [
+      { title: "Documentacion verificada", desc: "Revisamos cada perfil antes de presentarlo." },
+      { title: "Entrega en 72 horas", desc: "Candidatos disponibles en tiempo record." },
+      { title: "Garantia de reposicion", desc: "Si no funciona, lo reemplazamos." },
+      { title: "Seguimiento activo", desc: "Acompañamos la integracion." },
+    ],
     cta: { text: "Solicitar reclutamiento →", href: "/contacto" },
-    img: "https://picsum.photos/seed/svc-rec/700/500",
+    phone: "55 2087 6765",
+    img1: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=900&auto=format&fit=crop&q=80",
+    img2: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&auto=format&fit=crop&q=80",
     reverse: false,
   },
   {
     label: "Capacitacion",
     title: "Contrata a nuestros mejores instructores calificados",
     desc: "Programas diseñados para el contexto laboral mexicano, con instructores especializados en RRHH, liderazgo, calidad y normatividad.",
-    bullets: ["Cursos presenciales, en linea o hibridos", "Constancias con validez oficial (DC-3)", "Programas a medida para tu empresa"],
+    features: [
+      { title: "Modalidad flexible", desc: "Presencial, online o hibrido." },
+      { title: "Constancia DC-3", desc: "Validez oficial STPS." },
+      { title: "Programas a medida", desc: "Adaptados a tu empresa." },
+      { title: "Instructores expertos", desc: "Con experiencia mexicana real." },
+    ],
     cta: { text: "Ver cursos →", href: "/cursos" },
-    img: "https://picsum.photos/seed/svc-cap/700/500",
+    phone: "55 2087 6765",
+    img1: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&auto=format&fit=crop&q=80",
+    img2: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=700&auto=format&fit=crop&q=80",
     reverse: true,
   },
 ];
@@ -151,27 +165,52 @@ export default function ServiciosPage() {
       {/* Split sections */}
       {splitSections.map((sec, idx) => (
         <section key={idx} className={`py-20 px-5 md:px-10 xl:px-20 ${sec.reverse ? "bg-bg" : "bg-white"}`}>
-          <div className={`max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${sec.reverse ? "lg:[&>*:first-child]:order-2" : ""}`}>
+          <div className={`max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-14 items-center ${sec.reverse ? "lg:[&>*:first-child]:order-2" : ""}`}>
+            {/* Images - overlapping pair */}
             <AnimatedSection>
-              <div className="rounded-3xl overflow-hidden relative">
-                <img src={sec.img} alt={sec.title} className="w-full h-[400px] object-cover" />
+              <div className="relative h-[440px] md:h-[520px]">
+                <div className="absolute top-0 left-0 w-[75%] h-[75%] rounded-3xl overflow-hidden shadow-xl">
+                  <img src={sec.img1} alt={sec.title} className="w-full h-full object-cover" />
+                </div>
+                <div className="absolute bottom-0 right-0 w-[55%] h-[55%] rounded-3xl overflow-hidden shadow-xl border-[5px] border-white">
+                  <img src={sec.img2} alt={sec.title} className="w-full h-full object-cover" />
+                </div>
               </div>
             </AnimatedSection>
+
+            {/* Text + features */}
             <AnimatedSection delay={0.2}>
               <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">{sec.label}</p>
-              <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy mb-4">{sec.title}</h2>
-              <p className="text-[13.5px] text-muted leading-relaxed mb-5">{sec.desc}</p>
-              <div className="flex flex-col gap-3 mb-6">
-                {sec.bullets.map((b) => (
-                  <div key={b} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-blue flex items-center justify-center shrink-0">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              <h2 className="text-[clamp(1.6rem,3vw,2.3rem)] font-black tracking-tight text-navy leading-[1.12] mb-4">{sec.title}</h2>
+              <p className="text-[13.5px] text-muted leading-relaxed mb-7">{sec.desc}</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 mb-8">
+                {sec.features.map((f) => (
+                  <div key={f.title} className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-yellow flex items-center justify-center shrink-0 mt-0.5">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </span>
+                    <div>
+                      <h5 className="text-[14px] font-extrabold text-navy mb-0.5">{f.title}</h5>
+                      <p className="text-[12px] text-muted leading-relaxed">{f.desc}</p>
                     </div>
-                    <span className="text-[13px] text-navy">{b}</span>
                   </div>
                 ))}
               </div>
-              <Link href={sec.cta.href} className="bg-blue-btn text-white rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center hover:bg-blue-dark transition-colors">{sec.cta.text}</Link>
+
+              <div className="flex items-center gap-5 flex-wrap">
+                <Link href={sec.cta.href} className="bg-blue-btn text-white rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center hover:bg-blue-dark transition-colors">
+                  {sec.cta.text}
+                </Link>
+                <a href={`tel:${sec.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 text-[13px] font-bold text-navy no-underline hover:text-blue">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                  +52 {sec.phone}
+                </a>
+              </div>
             </AnimatedSection>
           </div>
         </section>
