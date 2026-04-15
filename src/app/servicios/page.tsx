@@ -216,6 +216,52 @@ export default function ServiciosPage() {
         </section>
       ))}
 
+      {/* Commitment panel */}
+      <section className="py-16 px-5 md:px-10 xl:px-20 bg-white">
+        <AnimatedSection className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 rounded-3xl overflow-hidden shadow-xl">
+            {/* LEFT - Bright blue panel */}
+            <div className="bg-blue-btn p-8 md:p-12 flex flex-col justify-center">
+              <span className="inline-block bg-white/15 text-white text-[10px] font-extrabold uppercase tracking-[1.5px] px-3 py-1.5 rounded-full border border-white/25 backdrop-blur-[4px] mb-5 w-fit">
+                Sobre nosotros
+              </span>
+              <h3 className="text-[clamp(1.6rem,3vw,2.2rem)] font-black text-white leading-[1.1] mb-5">
+                Comprometidos con
+                <br />
+                el crecimiento de tu empresa
+              </h3>
+              <p className="text-[13.5px] text-white/85 leading-relaxed mb-6">
+                En Kyoszen combinamos tecnologia, experiencia real en el
+                mercado mexicano y un trato genuinamente humano. Nos esforzamos
+                por empoderar a las microempresas con capital humano verificado,
+                accesible y listo para integrarse desde el primer dia.
+              </p>
+              <Link
+                href="/nosotros"
+                className="inline-flex items-center gap-2 text-[13px] font-extrabold text-white no-underline hover:gap-3 transition-all w-fit"
+              >
+                Saber mas
+                <span className="w-8 h-8 rounded-full bg-yellow flex items-center justify-center">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </span>
+              </Link>
+            </div>
+
+            {/* RIGHT - Image */}
+            <div className="relative min-h-[280px] md:min-h-[380px]">
+              <img
+                src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=1200&auto=format&fit=crop&q=80"
+                alt="Equipo Kyoszen comprometido"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        </AnimatedSection>
+      </section>
+
       {/* Reviews */}
       <section className="py-20 px-5 md:px-10 xl:px-20 bg-bg">
         <div className="max-w-7xl mx-auto text-center">
