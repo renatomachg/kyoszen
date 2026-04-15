@@ -3,49 +3,78 @@
 import Link from "next/link";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 
+const trust = [
+  {
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+    label: "Respuesta en 24h",
+  },
+  {
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+    label: "687+ candidatos colocados",
+  },
+  {
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    ),
+    label: "Garantia de reposicion",
+  },
+];
+
 export default function CtaFinal() {
   return (
-    <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
-      <div className="max-w-7xl mx-auto">
-        <AnimatedSection>
-          <div className="bg-blue-soft rounded-3xl p-10 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative overflow-hidden">
-            {/* Decorative */}
-            <div className="absolute w-[220px] h-[220px] bg-blue-mid opacity-30 rounded-full -top-[90px] -right-[30px] pointer-events-none" />
-            <div className="absolute w-[150px] h-[150px] bg-yellow opacity-[.12] rounded-full -bottom-[60px] left-[8%] pointer-events-none" />
+    <section className="py-24 px-5 md:px-10 xl:px-20 bg-[#1883FF]">
+      <AnimatedSection>
+        <div className="max-w-[820px] mx-auto text-center">
+          <h2 className="text-[clamp(2rem,4vw,3.2rem)] font-black leading-[1.05] tracking-tight text-white mb-5">
+            ¿Listo para transformar
+            <br />
+            tu <span className="text-yellow">capital humano</span>?
+          </h2>
+          <p className="text-[14.5px] text-white/85 leading-relaxed max-w-[560px] mx-auto mb-8">
+            Ya sea que busques empleo o necesites contratar personal, nuestro
+            equipo esta listo para acompañarte en cada paso. Te respondemos en
+            menos de 24 horas habiles.
+          </p>
 
-            <div className="relative z-[1]">
-              <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">
-                ¿Listo para empezar?
-              </p>
-              <h2 className="text-[clamp(1.4rem,3vw,2rem)] font-black leading-[1.15] tracking-tight">
-                ¿Listo para dar
-                <br />
-                el <b className="text-blue">siguiente paso</b>?
-              </h2>
-              <p className="text-[13.5px] text-muted leading-relaxed max-w-[420px] my-3 mb-6">
-                Ya sea que busques empleo o necesites contratar, estamos aqui.
-                Te respondemos en menos de 24 horas habiles.
-              </p>
-              <div className="flex gap-2.5 flex-wrap">
-                <Link href="/vacantes" className="bg-blue-btn text-white border-none rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark transition-colors">
-                  Ver vacantes →
-                </Link>
-                <Link href="/contacto" className="bg-[#E3F2FF] text-blue-dark border-none rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center hover:bg-[#cce5ff] transition-colors">
-                  Contratar personal
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative z-[1]">
-              <img
-                src="https://picsum.photos/seed/kyo-cta/400/300"
-                alt=""
-                className="w-full max-w-[340px] h-[260px] object-cover object-top rounded-3xl mx-auto block"
-              />
-            </div>
+          <div className="flex gap-3 justify-center flex-wrap mb-10">
+            <Link
+              href="/contacto"
+              className="bg-yellow text-black rounded-full py-3.5 px-8 text-[14px] font-extrabold no-underline inline-flex items-center gap-2 hover:bg-[#e6b800] transition-colors shadow-lg"
+            >
+              Hablar con un asesor →
+            </Link>
+            <Link
+              href="/vacantes"
+              className="bg-transparent text-white border-2 border-white/50 rounded-full py-3.5 px-8 text-[14px] font-extrabold no-underline inline-flex items-center hover:bg-white/10 hover:border-white transition-colors"
+            >
+              Ver vacantes
+            </Link>
           </div>
-        </AnimatedSection>
-      </div>
+
+          {/* Trust badges row */}
+          <div className="flex gap-6 md:gap-10 justify-center items-center flex-wrap text-white/90">
+            {trust.map((t) => (
+              <div key={t.label} className="flex items-center gap-2 text-[12.5px] font-semibold">
+                <span className="text-yellow shrink-0">{t.icon}</span>
+                <span>{t.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </AnimatedSection>
     </section>
   );
 }
