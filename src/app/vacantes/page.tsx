@@ -97,12 +97,29 @@ export default function VacantesPage() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="bg-navy pt-32 pb-16 px-5 md:px-10 xl:px-20">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-[600px] mx-auto text-center">
-          <span className="inline-block bg-white/10 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/20 mb-4">Vacantes</span>
-          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4">Encuentra tu proximo empleo</h1>
-          <p className="text-sm text-white/60 leading-relaxed">Vacantes verificadas en CDMX y Estado de Mexico. Aplicar es rapido y confidencial.</p>
+      {/* Hero with background image + dark-to-light gradient */}
+      <section className="relative pt-32 pb-16 px-5 md:px-10 xl:px-20 overflow-hidden">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center z-0"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1800&auto=format&fit=crop&q=80')",
+          }}
+        />
+        {/* Dark to light gradient overlay */}
+        <div
+          className="absolute inset-0 z-[1]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(7,17,47,0.95) 0%, rgba(10,78,204,0.78) 60%, rgba(24,131,255,0.55) 100%)",
+          }}
+        />
+
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="relative z-[2] max-w-[600px] mx-auto text-center">
+          <span className="inline-block bg-white/15 text-white text-xs font-bold py-1.5 px-4 rounded-full border border-white/25 mb-4 backdrop-blur-[4px]">Vacantes</span>
+          <h1 className="text-[clamp(2rem,4vw,3rem)] font-black leading-[1.1] text-white mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">Encuentra tu proximo empleo</h1>
+          <p className="text-sm text-white/85 leading-relaxed">Vacantes verificadas en CDMX y Estado de Mexico. Aplicar es rapido y confidencial.</p>
         </motion.div>
       </section>
 
