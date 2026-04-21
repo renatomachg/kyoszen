@@ -49,7 +49,7 @@ function VacantesPageContent() {
   // Initialize filters from URL (?ubicacion=CDMX&q=ventas etc)
   // Allows Kyo and other pages to deep-link with pre-applied filters.
   useEffect(() => {
-    const q = params.get("q");
+    const q = params.get("q") || params.get("search");
     const u = params.get("ubicacion");
     const m = params.get("marca");
     const c = params.get("contrato");

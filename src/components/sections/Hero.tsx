@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const words = ["talento correcto", "equipo ideal", "personal indicado"];
 
 export default function Hero() {
+  const router = useRouter();
+  const [heroSearch, setHeroSearch] = useState("");
   const [typed, setTyped] = useState("");
   const [wordIndex, setWordIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -65,18 +68,26 @@ export default function Hero() {
           </p>
 
           {/* Search bar */}
-          <div className="flex gap-2 max-w-[460px] mb-8 bg-white/10 border-[1.5px] border-white/20 rounded-full py-[5px] pr-[5px] pl-5 items-center">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              router.push(heroSearch.trim() ? `/vacantes?search=${encodeURIComponent(heroSearch.trim())}` : "/vacantes");
+            }}
+            className="flex gap-2 max-w-[460px] mb-8 bg-white/10 border-[1.5px] border-white/20 rounded-full py-[5px] pr-[5px] pl-5 items-center"
+          >
             <input
               placeholder="¿Que puesto buscas?"
+              value={heroSearch}
+              onChange={(e) => setHeroSearch(e.target.value)}
               className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder:text-[#bbb] font-[inherit]"
             />
-            <Link
-              href="/vacantes"
-              className="bg-blue-btn text-white border-none rounded-full py-3 px-7 text-[13px] font-bold cursor-pointer transition-colors duration-150 no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark"
+            <button
+              type="submit"
+              className="bg-blue-btn text-white border-none rounded-full py-3 px-7 text-[13px] font-bold cursor-pointer transition-colors duration-150 inline-flex items-center gap-1.5 hover:bg-blue-dark"
             >
               Buscar →
-            </Link>
-          </div>
+            </button>
+          </form>
 
           {/* Trust */}
           <div className="flex items-center gap-3 flex-wrap">
