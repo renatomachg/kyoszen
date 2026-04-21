@@ -1,15 +1,17 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { motion } from "framer-motion";
 import { getJobById } from "@/lib/jobs";
 import WhatsAppIcon from "@/components/ui/WhatsAppIcon";
+import AplicarModal from "@/components/ui/AplicarModal";
 
 export default function VacanteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const job = getJobById(Number(id));
+  const [modalOpen, setModalOpen] = useState(false);
 
   if (!job) {
     notFound();
@@ -148,12 +150,13 @@ export default function VacanteDetailPage({ params }: { params: Promise<{ id: st
 
                   {/* CTA buttons */}
                   <div className="space-y-3">
-                    <Link
-                      href="/contacto"
-                      className="block w-full bg-navy text-white text-center rounded-full py-3.5 text-[14px] font-extrabold no-underline hover:bg-blue-dark transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => setModalOpen(true)}
+                      className="block w-full bg-navy text-white text-center rounded-full py-3.5 text-[14px] font-extrabold hover:bg-blue-dark transition-colors cursor-pointer"
                     >
                       Aplicar ahora
-                    </Link>
+                    </button>
                     <a
                       href="https://wa.me/525520876765"
                       target="_blank"
@@ -170,6 +173,12 @@ export default function VacanteDetailPage({ params }: { params: Promise<{ id: st
           </motion.div>
         </div>
       </section>
+
+      <AplicarModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        vacante={`${job.titulo} — ${job.empresa}`}
+      />
     </>
   );
 }

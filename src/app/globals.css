@@ -57,3 +57,22 @@ body {
   0%, 60%, 100% { transform: translateY(0); opacity: .4 }
   30% { transform: translateY(-6px); opacity: 1 }
 }
+
+/* Form inputs */
+.form-input {
+  width: 100%;
+  background: #F8FAFC;
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: var(--color-navy);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: var(--font-sans);
+}
+.form-input:focus {
+  border-color: var(--color-blue-btn);
+  box-shadow: 0 0 0 3px rgba(0, 78, 224, 0.1);
+}
+.form-input::placeholder { color: var(--color-muted); }
