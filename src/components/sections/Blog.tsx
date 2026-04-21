@@ -55,14 +55,14 @@ export default function Blog() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {posts.map((post, i) => (
-            <motion.article
+            <motion.div
               key={post.slug}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
             >
-              <Link
+              <a
                 href={`/blog/${post.slug}`}
                 className="block bg-white rounded-xl overflow-hidden border border-border transition-all duration-200 hover:shadow-xl hover:-translate-y-1 no-underline text-navy"
               >
@@ -78,8 +78,8 @@ export default function Blog() {
                     <span className="text-xs font-bold text-blue">Leer →</span>
                   </div>
                 </div>
-              </Link>
-            </motion.article>
+              </a>
+            </motion.div>
           ))}
         </div>
       </div>
