@@ -172,7 +172,7 @@ function VacantesPageContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filtered.map((job, i) => (
                 <motion.div key={job.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05, duration: 0.4 }}>
-                  <div className="bg-white rounded-xl border-[1.5px] border-border p-5 transition-all duration-200 hover:border-blue-mid hover:shadow-lg hover:-translate-y-0.5 group h-full flex flex-col">
+                  <Link href={`/vacantes/${job.id}`} className="bg-white rounded-xl border-[1.5px] border-border p-5 transition-all duration-200 hover:border-blue-mid hover:shadow-lg hover:-translate-y-0.5 group h-full flex flex-col no-underline">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-[10.5px] font-bold text-muted uppercase tracking-wide">{job.ubicacion}</span>
                       <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-bold ${job.badgeClass}`}>{job.badge}</span>
@@ -186,9 +186,9 @@ function VacantesPageContent() {
                     </div>
                     <div className="flex items-center justify-between pt-3 border-t border-border mt-auto">
                       <span className="text-sm font-bold text-navy">${job.salario.toLocaleString()} / mes</span>
-                      <Link href="/contacto" className="text-[11.5px] font-extrabold text-blue no-underline flex items-center gap-[3px] transition-all group-hover:gap-1.5">Aplicar →</Link>
+                      <span className="text-[11.5px] font-extrabold text-blue flex items-center gap-[3px] transition-all group-hover:gap-1.5">Ver detalle →</span>
                     </div>
-                  </div>
+                  </Link>
                 </motion.div>
               ))}
             </div>
