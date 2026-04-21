@@ -16,7 +16,7 @@ const MAX_STORED = 30;
 const INITIAL_GREETING: ChatMessage = {
   id: "greeting",
   role: "assistant",
-  content: "¡Hola! 👋 Soy Kyo, tu asistente de Kyoszen.\n\n¿Como te llamas y en que te puedo ayudar?",
+  content: "Hola, bienvenido a Kyoszen. Cuentame, ¿que tipo de trabajo estas buscando?",
   timestamp: 0,
 };
 
