@@ -18,14 +18,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
     }
 
+    const port = Number(process.env.SMTP_PORT) || 587;
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 465,
-      secure: (Number(process.env.SMTP_PORT) || 465) === 465,
+      port,
+      secure: port === 465,
+      requireTLS: port === 587,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      tls: { rejectUnauthorized: false },
     });
 
     const attachments: { filename: string; content: Buffer }[] = [];
