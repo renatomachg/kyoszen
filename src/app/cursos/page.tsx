@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -49,9 +49,11 @@ function CursosPageContent() {
   const params = useSearchParams();
   const [activeTab, setActiveTab] = useState("Todos");
   const [activeModality, setActiveModality] = useState("Todas");
+  const [prevParams, setPrevParams] = useState(params);
 
   // Deep-link via URL: ?categoria=Liderazgo&modalidad=online
-  useEffect(() => {
+  if (prevParams !== params) {
+    setPrevParams(params);
     const cat = params.get("categoria");
     const mod = params.get("modalidad");
     if (cat && tabs.includes(cat)) setActiveTab(cat);
@@ -59,7 +61,7 @@ function CursosPageContent() {
       const label = modalityFilters.find((m) => m.toLowerCase() === mod.toLowerCase());
       if (label) setActiveModality(label);
     }
-  }, [params]);
+  }
 
   const filtered = useMemo(() => {
     return COURSES.filter((c) => {

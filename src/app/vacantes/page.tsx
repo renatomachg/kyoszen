@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -45,10 +45,12 @@ function VacantesPageContent() {
   const [contrato, setContrato] = useState("Todos");
   const [jornada, setJornada] = useState("Todas");
   const [salario, setSalario] = useState("Todos");
+  const [prevParams, setPrevParams] = useState(params);
 
   // Initialize filters from URL (?ubicacion=CDMX&q=ventas etc)
   // Allows Kyo and other pages to deep-link with pre-applied filters.
-  useEffect(() => {
+  if (prevParams !== params) {
+    setPrevParams(params);
     const q = params.get("q") || params.get("search");
     const u = params.get("ubicacion");
     const m = params.get("marca");
@@ -61,7 +63,7 @@ function VacantesPageContent() {
     if (c && CONTRATOS.includes(c)) setContrato(c);
     if (j && JORNADAS.includes(j)) setJornada(j);
     if (s && SALARIOS.includes(s)) setSalario(s);
-  }, [params]);
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
