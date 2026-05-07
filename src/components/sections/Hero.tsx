@@ -25,9 +25,11 @@ export default function Hero() {
     }
 
     if (isDeleting && typed === "") {
-      setIsDeleting(false);
-      setWordIndex((prev) => (prev + 1) % words.length);
-      return;
+      const timeout = setTimeout(() => {
+        setIsDeleting(false);
+        setWordIndex((prev) => (prev + 1) % words.length);
+      }, 50);
+      return () => clearTimeout(timeout);
     }
 
     const timeout = setTimeout(() => {
