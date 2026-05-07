@@ -21,7 +21,7 @@ mejoras pendientes y tareas tecnicas. Se actualiza conforme se van resolviendo.
 
 ## 🟠 Alto — No funcionan o tienen riesgo en produccion
 
-- [ ] **[FORMULARIO] contacto/page.tsx** — El formulario de contacto NO envia nada. Solo muestra una alerta de exito falsa. Necesita un endpoint `/api/contacto` similar a `/api/aplicar`.
+- [x] **[FORMULARIO] contacto/page.tsx** — Formulario conectado a `/api/contacto`. Envia email via Nodemailer con estado de cargando y manejo de errores. ✅ 2026-05-07
 - [ ] **[SEGURIDAD] api/aplicar/route.ts** — El email de destino `rsalazar@kyoszen.com` esta escrito en el codigo. Si cambia el correo, hay que editar codigo y redesplegar. Moverlo a variable de entorno `CONTACT_EMAIL`.
 - [ ] **[SEGURIDAD] api/assistant/chat/route.ts** — El rate limiting usa un `Map` en memoria. Si Vercel escala a multiples instancias, el limite se pierde. En produccion real necesita Redis/Upstash.
 

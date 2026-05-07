@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import PageHero from "@/components/ui/PageHero";
 
@@ -14,18 +13,39 @@ const contactInfo = [
 
 export default function ContactoPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "", privacy: false });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name || !form.email || !form.subject || !form.message) {
-      alert("Por favor completa todos los campos.");
+      setError("Por favor completa todos los campos.");
       return;
     }
     if (!form.privacy) {
-      alert("Debes aceptar el aviso de privacidad.");
+      setError("Debes aceptar el aviso de privacidad.");
       return;
     }
-    setSubmitted(true);
+    setError("");
+    setSending(true);
+    try {
+      const res = await fetch("/api/contacto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: form.name,
+          correo: form.email,
+          asunto: form.subject,
+          mensaje: form.message,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setSubmitted(true);
+    } catch {
+      setError("Ocurrio un error al enviar el mensaje. Intentalo de nuevo o escribenos por WhatsApp.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -81,9 +101,12 @@ export default function ContactoPage() {
                     <input type="checkbox" checked={form.privacy} onChange={(e) => setForm({ ...form, privacy: e.target.checked })} className="mt-0.5" />
                     <span className="text-xs text-muted">Acepto el aviso de privacidad y el tratamiento de mis datos personales.</span>
                   </label>
-                  <button onClick={handleSubmit} className="bg-blue-btn text-white rounded-full py-3 px-7 text-[13px] font-bold cursor-pointer flex items-center gap-2 hover:bg-blue-dark transition-colors">
+                  {error && (
+                    <p className="text-xs text-red-600 mb-3">{error}</p>
+                  )}
+                  <button onClick={handleSubmit} disabled={sending} className="bg-blue-btn text-white rounded-full py-3 px-7 text-[13px] font-bold cursor-pointer flex items-center gap-2 hover:bg-blue-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                    Enviar mensaje
+                    {sending ? "Enviando..." : "Enviar mensaje"}
                   </button>
                 </>
               ) : (
