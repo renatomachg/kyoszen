@@ -1,23 +1,25 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-05-08 14:10 UTC
+**Fecha:** 2026-05-09 00:00 UTC
 
 | Pagina | URL | Estado |
 |--------|-----|--------|
-| Home | / | ❌ CAIDA (403) |
-| Vacantes | /vacantes | ❌ CAIDA (403) |
-| Cursos | /cursos | ❌ CAIDA (403) |
-| Nosotros | /nosotros | ❌ CAIDA (403) |
-| Contacto | /contacto | ❌ CAIDA (403) |
-| Servicios | /servicios | ❌ CAIDA (403) |
+| Home | / | ⚠️ NO VERIFICABLE |
+| Vacantes | /vacantes | ⚠️ NO VERIFICABLE |
+| Cursos | /cursos | ⚠️ NO VERIFICABLE |
+| Nosotros | /nosotros | ⚠️ NO VERIFICABLE |
+| Contacto | /contacto | ⚠️ NO VERIFICABLE |
+| Servicios | /servicios | ⚠️ NO VERIFICABLE |
 
-**Resumen:** 0/6 paginas operando correctamente.
+**Resumen:** 0/6 paginas verificadas — monitoreo bloqueado por restriccion del entorno de ejecucion.
 
-> ⚠️ ALERTA CRITICA: El sitio completo responde HTTP 403 en todas las rutas.
-> Razon reportada por Vercel: `x-deny-reason: host_not_allowed` — "Host not in allowlist".
-> El subdominio `kyoszen.vercel.app` esta siendo bloqueado por Vercel.
-> Posibles causas:
-> - El proyecto fue configurado con dominio personalizado y el subdominio `.vercel.app` fue deshabilitado en la configuracion del proyecto.
-> - Se activo la opcion "Deployment Protection" o "Password Protection" en Vercel.
-> - El equipo de Vercel aplico restricciones de acceso al proyecto.
+> ⚠️ ALERTA DE ENTORNO (no del sitio): Las solicitudes HTTP salientes desde el entorno
+> de ejecucion de Claude Code estan interceptadas por un proxy de inspeccion TLS interno
+> de Anthropic. Todas las URLs devuelven HTTP 403 con cuerpo `"Host not in allowlist"`
+> y certificado emitido por `O=Anthropic; CN=sandbox-egress-production TLS Inspection CA`.
 >
-> **Accion requerida:** Revisar configuracion del proyecto en vercel.com → Settings → Domains / Deployment Protection.
+> Esto NO indica una caida de kyoszen.vercel.app. El 403 proviene del proxy del sandbox,
+> no de Vercel.
+>
+> **Para monitoreo real:** ejecutar desde un entorno sin restricciones de egress —
+> VPS propio (76.13.111.112), GitHub Actions, cron local, o un servicio externo
+> como UptimeRobot / Better Uptime.
