@@ -1,23 +1,31 @@
 # Analisis UX y Kyo — Kyoszen
-**Fecha:** 2026-05-11
-**Cambios analizados:** No hubo cambios de codigo en los ultimos 2 dias (solo reportes automaticos). Auditoria de segunda pasada enfocada en hallazgos nuevos.
+**Fecha:** 2026-05-12
+**Cambios analizados:** No hubo cambios de codigo en las ultimas 48 horas (commits recientes son solo reportes automaticos). Tercera auditoria profunda: enfocada exclusivamente en hallazgos NO cubiertos en reportes anteriores (2026-05-10 y 2026-05-11).
 
 **Archivos revisados:**
 - `src/lib/assistant/system-prompt.ts`
 - `src/lib/assistant/tools.ts`
 - `src/lib/assistant/knowledge.ts`
 - `src/app/api/assistant/chat/route.ts`
+- `src/app/api/aplicar/route.ts`
+- `src/app/api/contacto/route.ts`
 - `src/components/assistant/ChatWidget.tsx`
 - `src/components/assistant/useChat.ts`
 - `src/components/sections/Hero.tsx`
 - `src/components/sections/Vacancies.tsx`
+- `src/components/ui/AplicarModal.tsx`
 - `src/app/vacantes/page.tsx`
+- `src/app/vacantes/[id]/page.tsx`
+- `src/lib/jobs.ts`
 
 ---
 
 ## Cambios Recientes Detectados
 
-No hubo cambios de codigo en las ultimas 48 horas. Los commits recientes son solo reportes automaticos (`ux-kyo`, `salud-sitio`). Este reporte es una segunda auditoria profunda que identifica problemas NO cubiertos en el reporte 2026-05-10.
+Sin cambios de codigo. Las sugerencias de los dos reportes previos siguen pendientes de implementacion:
+- `next/image` en Hero.tsx sin corregir (alta prioridad desde 2026-05-10)
+- `search_jobs` sin filtros `contrato`/`jornada` (alta prioridad desde 2026-05-11)
+- Vacancies.tsx con datos hardcodeados duplicados (alta prioridad desde 2026-05-10)
 
 ---
 
@@ -25,27 +33,41 @@ No hubo cambios de codigo en las ultimas 48 horas. Los commits recientes son sol
 
 ### Alta prioridad
 
-- **`next/image` en Hero sigue sin corregirse** (`src/components/sections/Hero.tsx`, lineas 122 y 132): las dos fotos del collage usan `<Image>` de next/image. El CLAUDE.md documenta que esto causo un bug visual en VPS (WhyUs fue el caso). Antes de migrar a VPS, cambiar ambas a `<img className="object-cover w-full h-full" />` y eliminar el import de `next/image`. Es el mismo cambio que ya se hizo en WhyUs.
+- **Seguridad XSS en el email de aplicaciones** (`src/app/api/aplicar/route.ts`, lineas 44-57): el HTML del correo se construye con interpolacion directa de datos del usuario (`${nombre}`, `${whatsapp}`, `${correo}`, etc.). Si alguien envia `<img src=x onerror=...>` en cualquier campo, ese codigo se inyecta en el cuerpo del email enviado a `rsalazar@kyoszen.com`. Correccion: crear una funcion `escapeHtml(s: string)` que reemplace `&`, `<`, `>`, `"`, `'` por sus entidades HTML, y aplicarla a todos los valores antes de interpolarlos en el template. Ejemplo:
+  ```ts
+  const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  ```
+  Luego usar `esc(nombre)`, `esc(correo)`, etc. en el HTML. Cambio de 10 lineas, cierra un vector de ataque real.
 
-- **No existe pagina de detalle `/vacantes/[id]`**: las tarjetas de la seccion Vacancies del home y del catalogo `/vacantes` no pueden hacer deep-link a una vacante especifica. El dato `id` existe en `src/lib/jobs.ts` pero no hay ruta `/vacantes/[id]/page.tsx`. Crear esta ruta permite que Kyo diga "haz clic aqui para ver los detalles de esta vacante" y que Google indexe cada vacante como URL propia. Impacto: SEO + conversion (el candidato llega al detalle sin tener que buscar de nuevo).
+- **Sin limite de tamaño en CV adjunto** (`src/app/api/aplicar/route.ts`, linea 35): el codigo hace `await cv.arrayBuffer()` sin verificar `cv.size` previamente. Un archivo de 100 MB consumiria toda la RAM disponible en el servidor. Agregar antes de la linea 35:
+  ```ts
+  if (cv && cv.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: "El CV no puede superar 5 MB" }, { status: 400 });
+  }
+  ```
+  En Vercel el limite de payload es 4.5 MB por defecto, pero en VPS no hay ese limite automatico.
 
-- **Vacancies.tsx sigue con datos hardcodeados duplicados** (`src/components/sections/Vacancies.tsx`, lineas 7-40, pendiente del reporte anterior): el componente define 4 vacantes propias en lugar de importar `JOBS`. Si el catalogo cambia, esta seccion muestra datos desactualizados. Solucion: `import { JOBS } from "@/lib/jobs"` y usar `JOBS.slice(0, 4)`. Las tarjetas tampoco muestran el salario, que es el primer criterio del candidato.
+- **Sin rate limiting en `/api/aplicar`** (`src/app/api/aplicar/route.ts`, linea 4): el endpoint de aplicacion no tiene ningun rate limit. El endpoint del chat si lo tiene (30 req/min por IP). Un atacante puede enviar miles de formularios y saturar el correo de `rsalazar@kyoszen.com`. Copiar el patron del `checkRateLimit` del route del asistente (o importarlo de un modulo compartido) y aplicarlo al inicio del handler de `/api/aplicar`. Limite razonable: 5 aplicaciones por IP por hora.
+
+- **Kyo no puede navegar a vacantes especificas aunque la ruta existe** (`src/lib/assistant/system-prompt.ts`, lineas 91-99 y `src/lib/assistant/tools.ts`, linea 63): la pagina `/vacantes/[id]` ya existe y funciona completamente (con modal de aplicacion, salario, requisitos, boton de WhatsApp). Sin embargo, el system prompt no incluye `/vacantes/[id]` como ruta de navegacion valida y la tool `navigate_to` no la documenta. Resultado: en el Paso 5, Kyo navega a `/vacantes?q=ventas` en lugar de `/vacantes/3` (la vacante exacta recomendada). El candidato llega al listado y tiene que buscar de nuevo la vacante que Kyo ya le recomendo. Solucion: agregar en el system prompt (`linea 99`) la linea:
+  - `/vacantes/<id>` para detalle de vacante especifica (ej: `/vacantes/3`)
+  Y agregar en la instruccion del Paso 5 (`linea 64`): "Usa `navigate_to` con la ruta `/vacantes/<id>` de la vacante mas compatible, no con el listado general." Impacto: el candidato llega directo al boton "Aplicar ahora" de la vacante recomendada — conversion directa.
 
 ### Media prioridad
 
-- **`navigate_to` dispara navegacion aunque el candidato ya este en esa pagina** (`src/components/assistant/useChat.ts`, linea 109): si el usuario esta en `/vacantes` y Kyo llama `navigate_to("/vacantes")`, el `router.push("/vacantes")` se ejecuta igual, reseteando todos los filtros que el candidato tenia activos. Agregar una guarda: `if (target.path !== window.location.pathname)` antes del `router.push`. Una linea de cambio, evita una regresion concreta.
-
-- **Tecla Esc no cierra el chat** (`src/components/assistant/ChatWidget.tsx`): cuando el widget esta abierto, la tecla Esc no lo cierra. Agregar un `useEffect` con `keydown` listener en el componente:
+- **Variables SMTP no validadas antes de intentar enviar** (`src/app/api/aplicar/route.ts`, linea 22): el transporter de nodemailer se crea aunque `SMTP_HOST`, `SMTP_USER` y `SMTP_PASS` sean `undefined`. La falla ocurre en `transporter.sendMail()` con un error generico que el frontend muestra como "Hubo un error al enviar." Agregar al inicio del handler (antes de parsear el form):
   ```ts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    if (open) document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open]);
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    return NextResponse.json({ error: "Servicio de correo no configurado" }, { status: 503 });
+  }
   ```
-  Impacto: accesibilidad basica y comportamiento esperado en modales.
+  Hace el fallo de configuracion explicito en lugar de oculto.
 
-- **`toLocaleString()` en system prompt sin locale explicito** (`src/lib/assistant/system-prompt.ts`, linea 120): `j.salario?.toLocaleString?.()` formatea el numero segun el locale del servidor Node.js, que en Vercel puede ser `en-US` y producir "12,000" en lugar de "12,000" (identico pero en VPS podria variar). Cambiar a `j.salario?.toLocaleString("es-MX")` para garantizar formato consistente de salario en el contexto del sistema prompt.
+- **Email de destino hardcodeado** (`src/app/api/aplicar/route.ts`, linea 41): `to: "rsalazar@kyoszen.com"` esta quemado en el codigo. Si el destinatario cambia requiere un deploy. Mover a variable de entorno: `to: process.env.APLICAR_TO_EMAIL ?? "rsalazar@kyoszen.com"`. Consistente con como deberian manejarse todos los datos de configuracion operacional.
+
+- **`/vacantes/[id]/page.tsx` es `use client` completa** (linea 1): toda la pagina de detalle de vacante es cliente porque usa `useState` para el modal. Esto impide que Next.js la renderice en servidor, eliminando el beneficio de SEO para cada vacante (las vacantes no tendran contenido indexable por Google). Solucion: separar el componente en dos. El page.tsx es server component que renderiza el contenido estatico; el modal se extrae a un `AplicarButton.tsx` client component minimo que solo maneja el `useState`. Impacto: cada vacante es indexable individualmente, mejora posicionamiento en busquedas como "auxiliar administrativo CDMX empleo".
+
+- **Hero usa imagenes externas de pravatar.cc** (`src/components/sections/Hero.tsx`, lineas 99-104): las 4 imagenes de "candidatos colocados" vienen de `https://i.pravatar.cc/56?img=1..4`. Si ese servicio falla, el bloque de confianza del Hero muestra 4 imagenes rotas. Reemplazar con 4 imagenes de placeholder locales en `/public/images/avatars/1.jpg..4.jpg` (pueden ser las mismas descargadas una vez). Adicionalmente, estas imagenes no tienen `alt` descriptivo lo que genera advertencias de accesibilidad.
 
 ---
 
@@ -53,45 +75,60 @@ No hubo cambios de codigo en las ultimas 48 horas. Los commits recientes son sol
 
 ### Mejoras al flujo de conversacion
 
-- **INITIAL_GREETING aparece tanto en el historial como en el system prompt** (`src/components/assistant/useChat.ts`, lineas 16-21 y `src/lib/assistant/system-prompt.ts`, lineas 21-23): el saludo inicial se guarda en localStorage como mensaje de asistente y se envia al API en cada request. Al mismo tiempo, el system prompt declara "Ya salude al usuario con: Bienvenido a Kyoszen...". Esto significa que Kyo ve el saludo dos veces en contexto. Puede generar un segundo saludo si el candidato escribe un mensaje ambiguo. Solucion: en `useChat.ts` filtrar el INITIAL_GREETING antes de enviarlo al API (`newMessages.filter(m => m.id !== "greeting")`), ya que el system prompt ya lo declara. Impacto: elimina la doble representacion del saludo en el contexto.
+- **Paso 5: Kyo recomienda pero no usa `get_job_details` antes de recomendar** (`src/lib/assistant/system-prompt.ts`, lineas 47-58): el system prompt instruye a Kyo a analizar las vacantes con las 4 respuestas del candidato y mostrar las 2-3 mas compatibles. Pero Kyo solo tiene el resumen del listado (titulo, empresa, salario, jornada). Si el candidato pregunta "¿por que me recomiendas esa?", Kyo no tiene los requisitos ni responsabilidades detalladas para justificarlo. Agregar en las instrucciones del Paso 5: "Usa `get_job_details` para la vacante que vayas a recomendar antes de explicar por que aplica al candidato." Esto mejora la calidad y especificidad del razonamiento de Kyo.
 
-- **Kyo no confirma al candidato que lo esta redirigiendo** (`src/components/assistant/useChat.ts`, linea 110-112): cuando Kyo llama `navigate_to`, el candidato ve el mensaje de texto y 700ms despues la pagina cambia sin aviso. Si el candidato estaba leyendo el mensaje, el cambio de pagina lo sorprende. Cambiar el delay de 700ms a 1500ms y agregar en el texto del asistente (system-prompt.ts) la instruccion: "Cuando uses navigate_to, finaliza tu mensaje con 'Te llevo a la pagina en un momento...'". Impacto: la navegacion deja de sentirse como un bug.
+- **Paso 6: Kyo manda al candidato a `/contacto` pero el boton "Aplicar ahora" esta en `/vacantes/[id]`** (`src/lib/assistant/system-prompt.ts`, linea 67): el flujo de cierre navega a `/contacto` (formulario general). Pero la pagina de detalle de vacante ya tiene un modal de aplicacion especifico (`AplicarModal`) con campo de CV adjunto y todos los datos de la vacante prellenados. Cambiar la instruccion del Paso 6 a: "Navega a `/vacantes/<id>` de la vacante elegida. El candidato encontrara el boton 'Aplicar ahora' directamente." Esto reduce un paso en el flujo de conversion.
 
-- **`search_jobs` no recibe `contrato` ni `jornada` como parametros** (`src/lib/assistant/tools.ts`, lineas 38-47, pendiente del reporte anterior): Kyo recoge disponibilidad en el Paso 4 pero no la aplica al buscar. Agregar `contrato` y `jornada` al schema del tool y al metodo `listJobs()` en `src/lib/assistant/knowledge.ts` (linea 138). Esto es el cambio con mayor impacto en precision del Paso 5.
+- **Kyo no maneja el caso de experiencia cero** (`src/lib/assistant/system-prompt.ts`, Paso 2): si el candidato responde "no tengo experiencia" o "es mi primer trabajo", no hay instruccion especifica. Kyo podria ignorar ese dato o quedar atascado buscando vacantes con `experiencia: 0`. Agregar en el Paso 2: "Si el candidato responde que no tiene experiencia, toma nota y en el Paso 5 filtra con `query: 'sin experiencia'` y busca vacantes con requisito 'Preparatoria terminada' o 'experiencia minima 6 meses'." Las vacantes id=1 (Auxiliar Administrativo) y id=4 (Recepcionista) son ideales para perfiles sin experiencia.
 
-- **Saludo de retorno identico al de primera vez** (`src/components/assistant/useChat.ts`, lineas 23-30, pendiente del reporte anterior): si el candidato ya converso y regresa, ve "Bienvenido a Kyoszen..." de nuevo. Detectar `messages.length > 1` al cargar historia y mostrar "Hola de nuevo. ¿Continuo ayudandote a encontrar vacantes?" Impacto: experiencia humana para candidatos recurrentes.
+- **Kyo no maneja el caso de busqueda amplia** (`src/lib/assistant/system-prompt.ts`, Paso 1): si el candidato responde "cualquier trabajo" o "lo que sea", el flujo se rompe porque Kyo no puede hacer una recomendacion util sin un tipo de puesto. Agregar manejo: "Si el candidato dice que acepta cualquier trabajo, pregunta: '¿Prefiere trabajo de oficina, operativo o atencion a clientes?' como refinamiento del Paso 1 antes de pasar al Paso 2."
 
 ### Nuevas tools o capacidades recomendadas
 
-- **Agregar prompt caching al endpoint del asistente** (`src/app/api/assistant/chat/route.ts`, lineas 88-94): el system prompt incluye en cada request el catalogo completo de cursos y vacantes. Esto puede ocupar 1000-2000 tokens que se cobran en cada mensaje. Agregar `cache_control: { type: "ephemeral" }` al bloque `system` usando la API beta de Anthropic:
+- **Documentar `/vacantes/<id>` en la tool `navigate_to`** (`src/lib/assistant/tools.ts`, linea 63): actualmente la descripcion del path solo menciona ejemplos como `/cursos`, `/vacantes`, `/contacto`. Agregar: "Para vacantes especificas usa `/vacantes/<id>` donde `<id>` es el numero de id del catalogo (ej: `/vacantes/3`)." No requiere cambio de logica, solo de documentacion. Si ademas se quiere prevenir que Kyo invente IDs inexistentes, agregar en `executeTool` una validacion:
   ```ts
-  system: [{ type: "text", text: buildSystemPrompt(), cache_control: { type: "ephemeral" } }],
-  betas: ["prompt-caching-2024-07-31"],
+  if (input.path?.startsWith("/vacantes/") && input.path !== "/vacantes/") {
+    const id = Number(input.path.split("/")[2]);
+    if (!knowledge.getJob(id)) return JSON.stringify({ error: "Vacante no encontrada" });
+  }
   ```
-  Con el catalogo estatico, el cache tendra una tasa de hit muy alta. Impacto: reduccion de costo de API de ~60-70% para conversaciones largas.
 
-- **Tool `open_whatsapp`** (pendiente del reporte anterior): para clientes empresa y temas fuera del flujo de candidatos, Kyo solo puede decir "visita WhatsApp" como texto plano. Una tool que devuelva el URL `https://wa.me/525520876765?text=Hola%2C+me+interesa...` permite que el widget muestre un boton clickeable. Impacto: conversion directa al canal de ventas empresariales.
+- **Agregar `salario_min` al tool `search_jobs`** (`src/lib/assistant/tools.ts`, lineas 38-47): el candidato puede mencionar expectativa salarial en cualquier momento de la conversacion ("busco algo de al menos $12,000") pero Kyo no puede filtrar por salario minimo. Agregar `salario_min: { type: "number", description: "Salario minimo mensual en pesos MXN" }` al schema y en `knowledge.ts` linea 138 agregar `.filter((j) => !filters?.salario_min || j.salario >= filters.salario_min)`. Dato que el candidato casi siempre tiene en mente y que cambiaria significativamente las recomendaciones.
 
 ### Problemas detectados
 
-- **`rateLimitMap` tiene fuga de memoria en VPS** (`src/app/api/assistant/chat/route.ts`, lineas 10-24): las entradas expiradas del mapa nunca se eliminan (solo se sobreescriben cuando el mismo IP llega de nuevo). En VPS con uptime largo y muchas IPs unicas, el mapa crece indefinidamente. Agregar limpieza periodica: cada N requests, iterar el mapa y borrar entradas con `resetAt < Date.now()`. En Vercel serverless el proceso se reinicia frecuentemente y no es un problema, pero en VPS (Fase 2 del deploy) si lo es.
+- **Kyo puede inventar rutas de vacantes inexistentes**: la instruccion "Solo usa rutas listadas abajo" en el system prompt (linea 83) lista rutas como `/vacantes?ubicacion=...` y `/cursos/<slug>` pero no `/vacantes/<id>`. Sin esa instruccion explicita, Kyo puede intentar navegar a `/vacantes/99` (id que no existe) si infiere el patron. La pagina de detalle maneja esto con `notFound()`, pero el candidato experimentaria una pagina de error 404. Solucion: listar explicitamente los IDs validos en el system prompt justo debajo del catalogo de vacantes, o agregar la validacion en `executeTool` descrita arriba.
 
-- **Rate limit en memoria no funciona en Vercel serverless** (`src/app/api/assistant/chat/route.ts`, lineas 10-24, pendiente del reporte anterior): el `rateLimitMap` vive en proceso. En Vercel cada invocacion puede ser una nueva instancia. El limite de 30 mensajes/minuto no se aplica en produccion. Cualquier usuario puede generar costos ilimitados de API. Solucion correcta: Upstash Redis (ya mencionado en el comentario del codigo). A corto plazo documentar el riesgo en CLAUDE.md.
+- **El fallback de aplicacion en AplicarModal no tiene timeout** (`src/components/ui/AplicarModal.tsx`, linea 40): el `fetch("/api/aplicar")` no tiene timeout. Si el servidor SMTP esta lento, el candidato ve el boton "Enviando..." indefinidamente. Agregar `AbortController` con timeout de 15 segundos:
+  ```ts
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  const res = await fetch("/api/aplicar", { method: "POST", body: fd, signal: controller.signal });
+  clearTimeout(timer);
+  ```
+  Y manejar `AbortError` como `status("error")`.
 
-- **Solo se ejecuta la primera navegacion del array** (`src/components/assistant/useChat.ts`, linea 109, pendiente del reporte anterior): cuando Claude llama `navigate_to` mas de una vez en un turno (search + navigate), solo se ejecuta `navigations[0]`. La ultima navegacion suele ser la mas relevante. Cambiar a `data.navigations[data.navigations.length - 1]`.
-
-- **Fallback de respuesta vacia es confuso** (`src/app/api/assistant/chat/route.ts`, linea 143, pendiente del reporte anterior): `finalText || "Entendido, ¿en que mas te puedo ayudar?"` aparece cuando Claude responde solo con tool calls y sin texto, justo en el Paso 5 de recomendacion. Cambiar a: `"Revise las vacantes en pantalla. ¿Alguna le interesa o prefiere que busque otras opciones?"`.
+- **Kyo puede proponer una vacante eliminada si el candidato regresa con historial guardado**: si el catalogo cambia (se quita una vacante) y el candidato regresa con historial en localStorage, Kyo puede ver en mensajes anteriores una referencia a `id=3` y navegar a `/vacantes/3` aunque esa vacante ya no exista. Mitigacion: agregar en el system prompt la aclaracion: "El catalogo que ves es el actual. No hagas referencia a vacantes de mensajes anteriores si el id no aparece en el catalogo que tienes arriba."
 
 ---
 
 ## Oportunidades de mejora general
 
-- **No hay pagina de error 404 personalizada**: si un candidato llega a una URL inexistente (por ejemplo, una URL de vacante que Kyo invento), Next.js muestra la pagina de error por defecto que no tiene el contexto de Kyoszen ni el chat de Kyo. Crear `src/app/not-found.tsx` con el layout del sitio, un mensaje "Esta pagina no existe" y el boton "Buscar vacantes →" que lleve a `/vacantes`. Coste: 30 minutos. Impacto: experiencia coherente ante errores.
+- **La seccion Vacancies del home linkea a `/vacantes` (listado) en lugar de a `/vacantes/[id]`** (`src/components/sections/Vacancies.tsx`, linea 73): ahora que la pagina de detalle existe, cada tarjeta de vacante del home deberia linkar a `/vacantes/${vac.id}`. Ademas el Vacancies del home no muestra el salario de cada vacante, que es el primer dato que el candidato quiere ver. Las tarjetas del listado `/vacantes` si muestran el salario; las del home no.
 
-- **El chat widget no tiene boton de WhatsApp como fallback** (`src/components/assistant/ChatWidget.tsx`): cuando el asistente falla (error 500, timeout) el candidato ve un mensaje de error pero no tiene a donde ir. Agregar un enlace `"Escribe al WhatsApp"` dentro del bloque de error (linea 149-152) que abra `https://wa.me/525520876765`. Impacto: candidatos que encuentran el asistente caido no abandonan el sitio.
+- **El flow de Kyo y el flujo de aplicacion manual estan desconectados**: si un candidato empieza con Kyo (que recoge nombre, puesto, experiencia, ubicacion), luego navega a `/vacantes/1` y hace clic en "Aplicar ahora", el AplicarModal le vuelve a pedir nombre, experiencia y ubicacion — datos que Kyo ya recogio. Una opcion liviana: guardar en `localStorage` los datos del candidato cuando Kyo los recoge (nombre, experiencia, ubicacion) y leerlos en AplicarModal al abrirse. Impacto: elimina friccion en la conversion final.
 
-- **Chips de respuesta rapida siguen sin implementarse** (`src/components/assistant/ChatWidget.tsx`, pendiente del reporte anterior): el candidato en mobile ve el saludo de Kyo y un campo de texto vacio. Agregar chips clicables bajo el input: tras el saludo mostrar ["Busco trabajo", "Info de cursos"]; tras el Paso 1 mostrar las 4 categorias de JOBS. Reduce la friccion de teclado en mobile a cero.
+- **No hay sitemap.xml con las rutas de vacantes**: ahora que `/vacantes/[id]` es una ruta dinamica, Google necesita un sitemap para descubrirlas. Sin sitemap, solo indexara las rutas que encuentre por enlaces internos. Crear `src/app/sitemap.ts`:
+  ```ts
+  import { JOBS } from "@/lib/jobs";
+  export default function sitemap() {
+    return [
+      { url: "https://kyoszen.com/", lastModified: new Date() },
+      { url: "https://kyoszen.com/vacantes", lastModified: new Date() },
+      ...JOBS.map(j => ({ url: `https://kyoszen.com/vacantes/${j.id}`, lastModified: new Date() }))
+    ];
+  }
+  ```
+  Impacto: SEO organico para cada vacante especifica, sin costo adicional.
 
-- **Conversion de Kyo a WhatsApp/contacto sin analytics** (`src/components/assistant/useChat.ts`, linea 109, pendiente del reporte anterior): cuando Kyo navega a `/contacto` o el candidato llega a ese punto del flujo, no hay ningun evento registrado. Agregar `window.gtag?.("event", "kyo_conversion", { destination: target.path })` antes del `router.push`. Dato clave para justificar la inversion en el asistente con el cliente.
-
-- **Accesibilidad del area de mensajes del chat** (`src/components/assistant/ChatWidget.tsx`, linea 143, pendiente del reporte anterior): el div de mensajes no tiene `role="log"` ni `aria-live="polite"`. Usuarios con lectores de pantalla no escuchan las respuestas nuevas de Kyo. Cambio de una linea con impacto real en accesibilidad.
+- **El endpoint `/api/contacto/route.ts` probablemente tiene el mismo XSS que `/api/aplicar`**: basado en el patron del route de aplicar (interpolacion directa de datos de usuario en HTML), es muy probable que el de contacto tenga el mismo problema. Revisar y aplicar la misma funcion `escapeHtml` si es el caso.
