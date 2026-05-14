@@ -1,6 +1,6 @@
 # Analisis UX y Kyo — Kyoszen
-**Fecha:** 2026-05-13
-**Cambios analizados:** Sin cambios de codigo en las ultimas 48 horas (commits: health check, GitHub Actions deploy workflow). Cuarta auditoria: enfocada exclusivamente en hallazgos no cubiertos en reportes anteriores (2026-05-10, 2026-05-11, 2026-05-12).
+**Fecha:** 2026-05-14
+**Cambios analizados:** Sin cambios de codigo desde el commit de ayer (health check 2026-05-14). Quinta auditoria — enfocada en hallazgos nuevos no cubiertos en las cuatro auditorias previas (2026-05-10 a 2026-05-13).
 
 **Archivos revisados:**
 - `src/lib/assistant/system-prompt.ts`
@@ -9,20 +9,23 @@
 - `src/app/api/assistant/chat/route.ts`
 - `src/components/assistant/ChatWidget.tsx`
 - `src/components/assistant/useChat.ts`
-- `src/components/sections/Hero.tsx`
 - `src/components/sections/Vacancies.tsx`
-- `src/app/vacantes/page.tsx`
 - `src/lib/jobs.ts`
+- `reports/ux-kyo.md` (reporte previo para evitar duplicar)
 
 ---
 
 ## Cambios Recientes Detectados
 
-Sin cambios de codigo. Se agrego el workflow de GitHub Actions para auto-deploy al VPS (`.github/workflows/deploy.yml`). Las sugerencias de alta prioridad de reportes previos siguen pendientes:
-- `next/image` en Hero.tsx sin corregir (reportado 2026-05-10)
-- Vacancies.tsx con datos hardcodeados (reportado 2026-05-10)
-- XSS en `/api/aplicar` (reportado 2026-05-12)
-- Kyo no navega a `/vacantes/<id>` directo (reportado 2026-05-12)
+Sin cambios de codigo en las ultimas 48 horas. Todas las sugerencias de alta prioridad de los reportes previos siguen sin implementar:
+- Anchor de historial (primeros 4 mensajes) para que Kyo no olvide el nombre (reportado 2026-05-13)
+- `search_jobs` sin filtros por `contrato`/`jornada` (reportado 2026-05-13)
+- `next/image` en Hero.tsx (reportado 2026-05-10)
+- Vacancies.tsx con datos hardcodeados desconectados del catalogo real (reportado 2026-05-10)
+- `navigate_to` sin validacion de rutas (reportado 2026-05-13)
+- Quick-reply chips en chat (reportado 2026-05-13)
+
+Los hallazgos de esta auditoria son **nuevos y no cubiertos** en los reportes previos.
 
 ---
 
@@ -30,52 +33,74 @@ Sin cambios de codigo. Se agrego el workflow de GitHub Actions para auto-deploy 
 
 ### Alta prioridad
 
-- **Kyo pierde el nombre y contexto del candidato en conversaciones largas** (`src/app/api/assistant/chat/route.ts`, linea 73): el API corta el historial a los ultimos 20 mensajes con `body.messages.slice(-20)`. En una conversacion tipica de 6 pasos, los mensajes 1-4 (nombre del candidato, tipo de trabajo buscado) se pierden cuando la conversacion llega al intercambio numero 10. A partir de ese punto, Kyo olvida el nombre y el puesto, y puede repetir preguntas ya respondidas o referirse al candidato de forma impersonal. Solucion: cambiar la estrategia de truncado para preservar siempre los primeros 4 mensajes (el saludo, el nombre del candidato, la confirmacion de Kyo, y el tipo de trabajo) y completar con los ultimos 16 del resto:
-  ```ts
-  const anchor = body.messages.slice(0, 4);
-  const tail = body.messages.slice(-16);
-  const history = [...anchor, ...tail];
+- **"Nueva conversacion" queda enterrado en el scroll** (`src/components/assistant/ChatWidget.tsx`, linea 154): el boton aparece dentro del contenedor scrollable, despues de todos los mensajes. Con 15+ mensajes en localStorage, el usuario llega al chat con historial y el boton esta completamente fuera de la pantalla visible — tiene que scrollear hasta el final para encontrarlo. Solucion: moverlo al header (junto al boton X de cerrar) donde siempre sea visible:
+  ```tsx
+  // En el header (linea 129), despues del boton de cerrar:
+  {messages.length > 2 && (
+    <button type="button" onClick={reset}
+      className="text-[10px] text-muted hover:text-navy font-medium mr-1">
+      Nueva sesion
+    </button>
+  )}
   ```
-  Si el historial tiene menos de 20 mensajes, esta logica es inocua (los mensajes se solapan o se dejan igual).
+  Y eliminar el bloque de lineas 153-164 del area de scroll. Impacto: el candidato que quiere empezar de nuevo no tiene que buscarlo.
 
-- **`search_jobs` no puede filtrar por `contrato` ni `jornada` aunque Paso 4 los recolecta** (`src/lib/assistant/tools.ts`, lineas 38-47 y `src/lib/assistant/knowledge.ts`, linea 138): el flujo de Kyo pregunta en Paso 4 si el candidato busca "Tiempo completo o Medio tiempo". Pero la tool `search_jobs` solo acepta `query`, `category` y `location`. No existe filtro por `contrato` ni `jornada`. Resultado: Kyo recoge ese dato pero no puede filtrarlo; puede recomendar una vacante de "Medio tiempo" a alguien que explicitamente dijo querer "Tiempo completo". Solucion en dos partes:
-  1. Agregar en `tools.ts` en el schema de `search_jobs`:
-     ```ts
-     contrato: { type: "string", description: "Filtra por tipo de contrato: 'Tiempo completo', 'Medio tiempo', 'Por proyecto'" },
-     jornada: { type: "string", description: "Filtra por jornada: 'Matutina', 'Vespertina', 'Mixta', 'Flexible'" },
-     ```
-  2. Agregar en `knowledge.ts` en `listJobs` (despues de linea 141):
-     ```ts
-     .filter((j) => !filters?.contrato || j.contrato.toLowerCase() === filters.contrato.toLowerCase())
-     .filter((j) => !filters?.jornada || j.jornada.toLowerCase() === filters.jornada.toLowerCase())
-     ```
-  Esto hace que la recoleccion del Paso 4 tenga impacto real en las recomendaciones del Paso 5.
+- **La navegacion automatica ocurre en silencio durante 700ms** (`src/components/assistant/useChat.ts`, linea 112): cuando Kyo llama a `navigate_to`, el frontend hace `setTimeout(() => router.push(target.path), 700)`. Durante esos 700ms el usuario no sabe que va a ser redirigido. Si hace clic en otro elemento del chat o en un enlace externo, el `router.push` se dispara de todas formas y lo redirige inesperadamente. Solucion en dos partes:
+  1. Antes del timeout, mostrar un indicador visual inline en el chat: agregar el campo `reason` de la navegacion como un mensaje de sistema con estilo diferenciado (fondo amarillo suave, italic).
+  2. Aumentar el delay a 1400ms para darle tiempo al usuario de leer el mensaje de Kyo antes de ser movido.
+  ```ts
+  if (data.navigations.length > 0) {
+    const target = data.navigations[0];
+    const navNote: ChatMessage = {
+      id: `nav-${Date.now()}`,
+      role: "assistant",
+      content: `Llevandote a ${target.reason ?? target.path}...`,
+      timestamp: Date.now(),
+    };
+    setMessages((prev) => [...prev, navNote]);
+    setTimeout(() => router.push(target.path), 1400);
+  }
+  ```
 
-- **Sistema de rate limiting se reinicia con cada restart del servidor** (`src/app/api/assistant/chat/route.ts`, linea 10): el `rateLimitMap` es una variable en memoria del proceso Node.js. En Vercel cada lambda coldstart crea una instancia nueva con el mapa vacio. En el VPS con PM2, cada `pm2 restart` lo reinicia. Un usuario puede hacer `pm2 restart` o esperar un coldstart para saltarse el limite. Para el VPS donde la estabilidad del proceso si es alta, el problema real es cuando hay un crash o deploy. El comentario del codigo ya dice "In production with multiple instances, replace with Upstash Redis." Agregar al menos un limite por session/IP por hora como segundo nivel: si la sesion lleva mas de 60 intercambios totales (localStorage cuenta 30 max), el widget deberia mostrar un mensaje de "Para continuar, contactanos por WhatsApp". Esto se implementa en `useChat.ts` revisando `messages.length > 28` antes de enviar y retornando un error local sin llamar al API.
+- **El teclado virtual de mobile colapsa el panel del chat** (`src/components/assistant/ChatWidget.tsx`, linea 120): `h-[min(60vh,560px)]` usa `vh` que NO se reduce cuando el teclado virtual se abre en Android (el viewport en Android no cambia con el teclado en navegadores modernos, excepto en iOS Safari que si lo hace). En iOS Safari con el teclado abierto, el chat panel puede quedar con menos de 200px de altura, haciendo el area de mensajes inutilizable. Cambio de una clase:
+  ```tsx
+  // Antes:
+  className="...h-[min(60vh,560px)]..."
+  // Despues:
+  className="...h-[min(60svh,560px)]..."
+  ```
+  `svh` (small viewport height) es el valor del viewport cuando el browser chrome es maximo — en iOS Safari esto ya descuenta la barra de botones. Soporte: todos los navegadores modernos desde 2023. Sin cambio de logica.
 
 ### Media prioridad
 
-- **El chat no tiene `role="dialog"` ni focus trap para accesibilidad** (`src/components/assistant/ChatWidget.tsx`, linea 115): el panel del chat se abre y cierra visualmente, pero no usa `role="dialog"`, `aria-modal="true"` ni `aria-labelledby`. Un usuario de lector de pantalla no sabe que hay un dialogo modal activo, y el foco no queda atrapado dentro del panel (puede tabular hacia elementos debajo). Correccion minima: agregar a la `motion.div` del chat panel (linea 115):
-  ```tsx
-  role="dialog"
-  aria-modal="true"
-  aria-label="Chat con Kyo, asistente de Kyoszen"
-  ```
-  Y agregar `tabIndex={-1}` con ref para hacer focus al panel al abrirse (en lugar de hacer focus solo al input en linea 22).
-
-- **Input del chat sin `enterKeyHint` para mobile** (`src/components/assistant/ChatWidget.tsx`, linea 174): el `<input>` de texto no tiene `enterKeyHint="send"`. En teclados virtuales de iOS y Android, esto cambia el label del boton de Enter a "Enviar" o el icono de avion de papel, que es una senal visual clara para el candidato. Cambio de una linea:
-  ```tsx
-  enterKeyHint="send"
-  ```
-  Impacto: mejora la experiencia mobile sin ninguna logica adicional.
-
-- **Historial de chat en localStorage nunca expira** (`src/components/assistant/useChat.ts`, linea 14): `STORAGE_KEY = "kyoszen_chat_history_v1"` guarda hasta 30 mensajes sin ninguna fecha de expiracion. Si un candidato vuelve al sitio 3 semanas despues, vera su conversacion anterior truncada a la mitad, sin contexto de por que estaba en ese punto. Kyo continuara desde donde quedaron pero las vacantes pueden haber cambiado. Agregar al guardar en `saveHistory`:
+- **Salary formatting puede cambiar con el locale del servidor** (`src/lib/assistant/system-prompt.ts`, linea 120): `j.salario?.toLocaleString?.()` usa el locale del proceso Node.js del servidor. En el VPS de Boston con locale `en_US`, `12000` se formatea como `"12,000"`. Si el servidor tiene locale europeo, seria `"12.000"`. Ademas, el optional chaining en `toLocaleString?.()` es innecesario ya que `j.salario` es `number`. Fix en una linea:
   ```ts
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ saved_at: Date.now(), messages: messages.slice(-MAX_STORED) }));
+  // Antes:
+  $${j.salario?.toLocaleString?.() ?? j.salario}/mes
+  // Despues:
+  $${j.salario.toLocaleString('es-MX')}/mes
   ```
-  Y en `loadHistory`: si `Date.now() - saved_at > 7 * 24 * 60 * 60 * 1000` (7 dias), devolver `[INITIAL_GREETING]` e ignorar el historial viejo. Evita que candidatos retomen conversaciones obsoletas.
+  `'es-MX'` formatea `12000` como `"12,000"` consistentemente en cualquier servidor.
 
-- **El boton flotante de Kyo se superpone con la barra de navegacion de iPhone** (`src/components/assistant/ChatWidget.tsx`, linea 41): `bottom-5` equivale a 20px. En iPhones con barra de gesto (Home Indicator), la zona segura inferior puede consumir hasta 34px. El boton puede quedar parcialmente debajo del indicador de inicio. Cambiar a `bottom-[max(20px,env(safe-area-inset-bottom,20px))]` o mas simplemente usar `pb-safe` si Tailwind tiene configurado el plugin `tailwindcss-safe-area`. Alternativa sencilla: cambiar `bottom-5` a `bottom-8` (32px) para dar margen suficiente en todos los dispositivos.
+- **`listCourses` y `listJobs` tienen logica de filtrado de categoria inconsistente** (`src/lib/assistant/knowledge.ts`, lineas 120 y 140): `listCourses` acepta el filtro si `c.categoria === filters.category` (comparacion exacta) O si `c.categoriaLabel.toLowerCase() === filters.category.toLowerCase()` (case-insensitive). `listJobs` solo hace `j.categoria.toLowerCase() === filters.category.toLowerCase()`. Esta asimetria significa que si Kyo pasa `"Administrativo"` como categoria en `search_jobs`, falla si hay cualquier diferencia de mayusculas, mientras que el mismo error en `search_courses` podria pasar gracias al double-check. Estandarizar a lowercase en ambos:
+  ```ts
+  // En listCourses (linea 120):
+  .filter((c) => !filters?.category || c.categoriaLabel.toLowerCase() === filters.category.toLowerCase())
+  // (eliminar la comparacion exacta c.categoria === filters.category)
+  ```
+
+- **Respuesta fallback cuando Claude no genera texto** (`src/app/api/assistant/chat/route.ts`, linea 144): si en alguna iteracion Claude solo emite `tool_use` sin ningun `TextBlock` (ej. llama a `navigate_to` sin texto previo), `finalText` queda vacio y el API devuelve `"Entendido, ¿en que mas te puedo ayudar?"`. Esta frase no tiene contexto y confunde al candidato que acaba de dar su nombre. El problema real es que la variable `finalText` se sobreescribe en cada iteracion (linea 99: `finalText = textBlocks...`), por lo que si la ultima iteracion es un tool_use sin texto, se pierde el texto de iteraciones anteriores. Fix: acumular texto en lugar de sobreescribir:
+  ```ts
+  // Antes (linea 99):
+  if (textBlocks.length > 0) {
+    finalText = textBlocks.map((b) => b.text).join("\n");
+  }
+  // Despues:
+  if (textBlocks.length > 0) {
+    finalText = (finalText ? finalText + "\n" : "") + textBlocks.map((b) => b.text).join("\n");
+  }
+  ```
+  Esto preserva el texto de la iteracion anterior si la siguiente solo produce tool calls.
 
 ---
 
@@ -83,98 +108,79 @@ Sin cambios de codigo. Se agrego el workflow de GitHub Actions para auto-deploy 
 
 ### Mejoras al flujo de conversacion
 
-- **Kyo no tiene instruccion para cuando el usuario da toda la informacion en un solo mensaje** (`src/lib/assistant/system-prompt.ts`, lineas 28-67): el flujo de 6 pasos asume que el candidato responde una pregunta a la vez. Pero es comun que un candidato escriba: "Hola, me llamo Maria, busco trabajo de recepcionista, tengo 2 años de experiencia, vivo en CDMX y quiero tiempo completo." En ese caso, el sistema prompt instruye a Kyo a preguntar "que tipo de trabajo busca" (Paso 1) aunque ya lo sabe. Esto genera friccion y hace el asistente parecer torpe. Agregar al inicio del flujo (despues de linea 29):
+- **Conflicto de instrucciones en el caso "no hay vacante compatible"** (`src/lib/assistant/system-prompt.ts`, lineas 60-64): el bloque del Paso 5 primero dice que cuando no hay vacante, Kyo navegue a `/contacto` (linea 62: "Y navega a \`/contacto\`"). Pero inmediatamente despues, linea 64, hay una instruccion general: "Usa \`navigate_to\` con \`/vacantes\` y los filtros que mejor correspondan al perfil." Esta segunda instruccion no tiene un "Si hay vacantes compatibles:" que la delimite — parece que aplica siempre, incluyendo el caso de "no hay vacante". El modelo puede ejecutar ambas navegaciones en secuencia: `/contacto` primero, luego `/vacantes`. Correccion: agregar el condicional explicitamente:
   ```
-  EXCEPCION: Si el usuario proporciona voluntariamente informacion de varios pasos en un solo mensaje
-  (puesto, experiencia, ubicacion, disponibilidad), acepta toda esa informacion y avanza directamente
-  al Paso 5 sin hacer preguntas ya respondidas. Agradece y confirma: "Perfecto, [nombre]. Entiendo
-  que busca [puesto], con [X] años de experiencia, en [ubicacion] y a [jornada]. Permita que busque
-  vacantes para su perfil."
+  Si HAY vacantes compatibles:
+  Usa `navigate_to` con `/vacantes` y los filtros que mejor correspondan al perfil.
+
+  Si NO hay vacantes compatibles:
+  "Por el momento no tenemos una vacante exacta para su perfil..."
+  Y navega a `/contacto`.
   ```
 
-- **Kyo no sabe en que pagina esta el usuario cuando abre el chat** (`src/components/assistant/useChat.ts`, linea 81-87 y `src/app/api/assistant/chat/route.ts`): cuando el chat se abre, Kyo inicia siempre con el saludo generico y el flujo de candidato, sin importar si el usuario esta en `/cursos`, `/servicios` o `/vacantes`. Si alguien esta en `/cursos` y abre Kyo, casi seguro quiere informacion de cursos, no buscar trabajo. Solucion: pasar la pagina actual como contexto en el request:
-  - En `useChat.ts` linea 83 agregar al body: `current_page: window.location.pathname`
-  - En `route.ts` linea 61 extraer ese campo del body
-  - En `system-prompt.ts` agregar un bloque: "Pagina actual del usuario: [path]. Si esta en /cursos, el usuario probablemente quiere informacion de cursos. Si esta en /vacantes, ya esta buscando trabajo. Ajusta tu saludo."
-  Impacto: Kyo parece mas inteligente y contextual, reduce preguntas innecesarias.
+- **Kyo no puede incluir el link de WhatsApp como clickeable en el chat** (`src/components/assistant/ChatWidget.tsx`, linea 227): el `MessageBubble` usa `whitespace-pre-wrap` y renderiza el contenido como texto plano. Cuando Kyo sugiere "contactanos por WhatsApp", escribe texto; el link `https://wa.me/525520876765` nunca es clickeable. El candidato tiene que copiar el numero manualmente. Dos opciones:
+  1. (Simple) Agregar en `system-prompt.ts` la instruccion: "Cuando menciones WhatsApp, escribe el numero como '55 2087 6765' sin la URL — el sitio tiene un boton de WhatsApp siempre visible."
+  2. (Completo) Hacer que `MessageBubble` detecte URLs y las renderice como `<a>` tags. Esto requiere un parser de texto simple (`urlRegex`). El beneficio es que cualquier URL que Kyo genere (slugs de cursos, etc.) tambien se volveria clickeable.
 
-- **Paso 5: el formato de recomendacion no incluye el salario** (`src/lib/assistant/system-prompt.ts`, linea 51-56): el formato definido para la recomendacion es `[Nombre del puesto] — [Empresa] — [Por que le aplica]`. No incluye el salario, que es el primer dato que un candidato quiere saber. Si Kyo dice "Auxiliar Administrativo — Grupo Corpora — se ajusta a su experiencia" sin mencionar que paga $12,000/mes, el candidato tiene que ir a la pagina de la vacante para saberlo. Agregar al formato del Paso 5:
+- **Paso 1 genera respuestas demasiado abiertas que Kyo no puede mapear** (`src/lib/assistant/system-prompt.ts`, linea 31): "¿Que tipo de trabajo busca?" es una pregunta completamente abierta. Un candidato puede responder "algo de oficina", "algo en ventas aunque sea de medio tiempo", o "cualquier cosa en RRHH, llevo 5 años". Kyo tiene que interpretar estas respuestas y mapearlas a categorias (`Administrativo`, `Ventas`, `Operaciones`, `Atencion al cliente`, `RRHH`) para que `search_jobs` filtre correctamente. Sin guia, el modelo puede mapear incorrectamente o no filtrar por categoria en absoluto. Agregar una instruccion de mapeo al system prompt despues de la descripcion del Paso 1:
   ```
-  1. [Nombre del puesto] — [Empresa] — $[salario]/mes — [Por que le aplica]
+  Mapa de categorias: si el candidato menciona "ventas", "vendedor", "comercial" → categoria=Ventas.
+  "admin", "oficina", "secretaria", "asistente" → Administrativo.
+  "almacen", "logistica", "operador", "produccion" → Operaciones.
+  "atencion al cliente", "recepcion", "call center" → Atencion al cliente.
+  "recursos humanos", "RRHH", "nomina", "reclutamiento" → RRHH.
+  Si no encaja en ninguna, usa query libre en search_jobs.
   ```
-  El salario esta en el catalogo de vacantes que Kyo ya tiene en el system prompt.
 
 ### Nuevas tools o capacidades recomendadas
 
-- **Implementar prompt caching de Anthropic en el system prompt** (`src/app/api/assistant/chat/route.ts`, linea 88-94): el system prompt con todas las vacantes y cursos ocupa aproximadamente 2,000 tokens. Se reconstruye y envia completo en CADA llamada a la API. Implementar `cache_control: { type: "ephemeral" }` en el bloque del system prompt reduciria el costo de tokens en ~90% para ese bloque (solo se cobra al crear el cache, no al reutilizarlo). Con `claude-haiku-4-5-20251001`, el ahorro es de ~0.25 USD por cada 1,000 mensajes. Para implementarlo, cambiar la llamada en linea 88 de:
-  ```ts
-  system: buildSystemPrompt(),
+- **Agregar quick-action de WhatsApp en el footer del chat** (`src/components/assistant/ChatWidget.tsx`, linea 168): en lugar de que Kyo intente dar el link (que no renderiza clickeable), agregar un boton fijo "Hablar con asesor" en el footer del chat que siempre este visible. Esto crea una ruta de escape clara para candidatos frustrados o con preguntas complejas sin depender de que Kyo lo mencione:
+  ```tsx
+  // En el footer, debajo del form (linea 191):
+  <div className="px-4 pb-3 flex justify-center">
+    <a href="https://wa.me/525520876765?text=Hola,%20me%20comunico%20desde%20el%20chat%20de%20Kyo"
+      target="_blank" rel="noopener noreferrer"
+      className="text-[11px] text-[--color-wa] font-semibold flex items-center gap-1 hover:underline">
+      Hablar con un asesor
+    </a>
+  </div>
   ```
-  a:
-  ```ts
-  system: [{ type: "text", text: buildSystemPrompt(), cache_control: { type: "ephemeral" } }],
-  ```
-  El SDK de Anthropic ya soporta este formato. No hay cambio de comportamiento, solo ahorro de costo.
-
-- **Agregar tool `save_candidate_data` para prellenar AplicarModal** (`src/lib/assistant/tools.ts`): cuando Kyo recolecta nombre, puesto y ubicacion en los pasos 0-3, esos datos se quedan atrapados en el historial del chat pero no estan disponibles para el formulario de aplicacion. Si el candidato hace clic en "Aplicar ahora" en la vacante, tiene que volver a escribir su nombre. Agregar una tool que guarde los datos del candidato en `localStorage`:
-  ```ts
-  {
-    name: "save_candidate_profile",
-    description: "Guarda el perfil del candidato en el navegador para prellenar el formulario de aplicacion.",
-    input_schema: {
-      type: "object",
-      properties: {
-        nombre: { type: "string" },
-        puesto_buscado: { type: "string" },
-        ubicacion: { type: "string" },
-      },
-      required: ["nombre"],
-    },
-  }
-  ```
-  En `executeTool`, devolver un JSON especial que `useChat.ts` detecte y guarde en `localStorage` bajo la clave `kyoszen_candidate_profile`. `AplicarModal.tsx` lee esa clave al abrirse para prellenar los campos. Reduce el punto de friccion mayor en la conversion.
+  El mensaje pre-llenado en el link indica al asesor que viene del chat de Kyo, mejorando el handoff.
 
 ### Problemas detectados
 
-- **`INITIAL_GREETING` tiene `timestamp: 0` como valor sentinel** (`src/components/assistant/useChat.ts`, linea 17): el timestamp `0` es el 1 enero 1970 (Unix epoch). Si en el futuro se agrega logica que agrupe mensajes por fecha, muestre "hace X tiempo" o filtre sesiones por antiguedad, este valor causara que el saludo inicial aparezca como "hace 56 años" o pase silenciosamente los filtros de fecha. Cambiar a `timestamp: Date.now()` en la constante, o mejor aun, hacer `INITIAL_GREETING` una funcion que cree el mensaje con timestamp actual:
-  ```ts
-  function createGreeting(): ChatMessage {
-    return { id: "greeting", role: "assistant", content: "...", timestamp: Date.now() };
-  }
-  ```
-  Y reemplazar todos los usos de `INITIAL_GREETING` con `createGreeting()`.
+- **El `search_jobs` de `knowledge.ts` no devuelve el salario en `JobSummary.desc`** (`src/lib/assistant/knowledge.ts`, linea 148): cuando Kyo llama a `search_jobs`, recibe el campo `desc` (descripcion corta) pero no el campo `salario` directamente en el resumen. El salario SI esta en el system prompt completo (linea 120), pero si Kyo hace `search_jobs` para buscar vacantes filtradas, el resultado JSON tiene `salario` en el mapa de `JobSummary` (linea 148 lo incluye). Esto esta bien. Sin embargo, el `desc` que recibe Kyo en `search_jobs` no menciona el salario, y Kyo podria citarlo desde el system prompt (que puede estar desactualizado si las vacantes cambian via Supabase en el futuro). Agregar `salario` explicitamente al resultado de `search_jobs` en el map (ya esta en `JobSummary` interface, linea 39, pero confirmar que `executeTool` lo devuelve — si lo hace, es un no-issue).
 
-- **El flujo asume que el candidato ya leyo el saludo automatico, pero este puede no haberse mostrado** (`src/lib/assistant/system-prompt.ts`, linea 21-23): el system prompt dice "Ya salude al usuario con: 'Bienvenido a Kyoszen...'". Pero si el usuario borra el localStorage o entra desde un navegador diferente, o si hay un error en `loadHistory`, el mensaje de saludo podria no estar. Kyo asume que ya pidio el nombre pero el candidato no lo vio. Resultado: Kyo espera el nombre pero el candidato pregunta algo completamente diferente. Agregar una instruccion: "Si el primer mensaje del usuario NO es su nombre sino una pregunta directa, adapta y responde la pregunta; luego pide el nombre de forma natural al final: '¿Me permite saber su nombre para ayudarle mejor?'"
+- **El campo `contrato` en `Vacancies.tsx` no coincide exactamente con el valor en `JOBS`** (`src/components/sections/Vacancies.tsx`, linea 14 vs `src/lib/jobs.ts`, linea 26): la seccion del home muestra `type: "Tiempo completo"` y `type: "Medio tiempo"`, que casualmente coinciden con los valores de `JOBS`. Pero si alguien agrega una vacante con `contrato: "Por proyecto"` (como la vacante id=8 de Contact Nova), el componente Vacancies del home nunca lo mostraria porque los datos son hardcodeados. Cuando se resuelva el pendiente de conectar `Vacancies.tsx` con `JOBS` (ya reportado), este campo se resolvera automaticamente — solo recordarlo al hacer ese cambio.
 
-- **`navigate_to` acepta cualquier path sin validacion en `executeTool`** (`src/app/api/assistant/chat/route.ts`, linea 108-113): si Claude (por alucinar) genera `path: "/admin"` o `path: "https://otro-sitio.com"`, `navigate_to` ejecuta el `router.push` en el frontend sin ninguna validacion. Agregar validacion en `executeTool` antes de confirmar la navegacion:
+- **`loadHistory` en `useChat.ts` no valida que el parsed JSON sea un array** (`src/components/assistant/useChat.ts`, linea 28): `JSON.parse(raw) as ChatMessage[]` hace un cast sin verificar. Si localStorage contiene un objeto en lugar de un array (por ejemplo, del formato futuro con `saved_at` sugerido en el reporte del 2026-05-13), `parsed.length` sera `undefined` y la condicion `parsed.length > 0` retornara false, devolviendo `[INITIAL_GREETING]`. Esto es un comportamiento correcto accidentalmente, pero dejarlo sin un check explicito es fragil. Agregar validacion:
   ```ts
-  const ALLOWED_PATHS = ["/", "/servicios", "/cursos", "/vacantes", "/nosotros", "/contacto"];
-  const isValid = ALLOWED_PATHS.some(p => (input.path as string).startsWith(p));
-  if (!isValid) return JSON.stringify({ error: "Ruta no permitida", path: input.path });
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed) || parsed.length === 0) return [INITIAL_GREETING];
+  return parsed as ChatMessage[];
   ```
-  En `useChat.ts`, el frontend ya solo actua sobre el primer elemento de `navigations`, pero la validacion del lado del servidor es mas robusta.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **Agregar quick-reply chips para primeros usuarios del chat** (`src/components/assistant/ChatWidget.tsx`): el primer mensaje del candidato es el mayor punto de abandono — no saben que escribir. Mostrar 2-3 botones de respuesta rapida debajo del historial cuando solo hay el mensaje de saludo (1 mensaje total):
-  ```tsx
-  {messages.length === 1 && !isLoading && (
-    <div className="flex flex-wrap gap-2 px-5 pb-2">
-      {["Busco empleo", "Tengo una empresa", "Ver cursos"].map((chip) => (
-        <button key={chip} onClick={() => sendMessage(chip)}
-          className="text-[12px] bg-blue-soft text-blue-dark rounded-full px-3 py-1.5 border border-blue/20 hover:bg-blue hover:text-white transition-colors">
-          {chip}
-        </button>
-      ))}
-    </div>
-  )}
+- **Kyo no puede distinguir entre un candidato y una empresa que llega al chat** (`src/lib/assistant/system-prompt.ts`, linea 69-73): el flujo de 6 pasos asume que todo el que abre el chat es un candidato buscando trabajo. El system prompt trata el caso "empresa" como una excepcion ("Si pregunta por cursos o es una empresa: Responde..."), pero no hay forma de detectar proactivamente si el usuario es empresa. Los quick-reply chips sugeridos en el reporte anterior ("Busco empleo" / "Tengo una empresa") son la forma mas eficiente de resolver esto. Complementar con una instruccion al inicio del flujo: "Si en el Paso 0 o el Paso 1 el usuario menciona 'quiero contratar', 'tengo una empresa', 'busco candidatos', sal del flujo de candidato inmediatamente y navega a /contacto."
+
+- **El endpoint `/api/assistant/chat` no tiene timeout para llamadas al API de Anthropic** (`src/app/api/assistant/chat/route.ts`, linea 87): si la llamada a Anthropic tarda mas de 10 segundos (timeout por defecto del SDK), el servidor Next.js mantiene la conexion abierta. En Vercel, las funciones serverless tienen un limite de 10s en el plan Hobby. En el VPS con PM2, no hay limite pero el usuario vera el "..." de typing indefinidamente. Agregar un AbortController con timeout de 20s:
+  ```ts
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const response = await client.messages.create({...}, { signal: controller.signal });
+    clearTimeout(timeoutId);
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return NextResponse.json({ error: "El asistente tardo demasiado. Intenta de nuevo." }, { status: 504 });
+    }
+    throw err;
+  }
   ```
-  Impacto: elimina la pantalla en blanco del candidato que no sabe que escribir, canaliza correctamente entre candidatos y empresas desde el primer click.
 
-- **La seccion Vacancies del home muestra 4 vacantes hardcodeadas que no coinciden con las del catalogo real** (`src/components/sections/Vacancies.tsx`, lineas 7-40): las tarjetas del home muestran titulos y categorias iguales a los del catalogo (`JOBS`), pero no tienen los mismos datos (empresa, salario, ID). El link de cada tarjeta apunta a `/vacantes` (listado general) en lugar de a `/vacantes/${id}`. Esto no es solo un problema de duplicacion de datos (ya reportado); es que el candidato que hace clic en "Auxiliar Administrativo" del home espera ir a esa vacante especifica pero aterriza en el listado de todas las vacantes. Reemplazar el array `vacancies` local con los primeros 4 de `JOBS` importados directamente y cambiar el href a `/vacantes/${vac.id}`. Cambio de ~10 lineas que elimina datos duplicados Y mejora la conversion.
+- **El chat no tiene estado persistente entre paginas** (`src/components/assistant/useChat.ts`): cuando el candidato navega (por ejemplo, Kyo lo lleva a `/vacantes`), el componente `ChatWidget` se remonta en la nueva pagina. Si Next.js hace un full page navigation (no client-side), `useChat` lee de localStorage correctamente y la conversacion se restaura. Pero si hay un error de hidratacion o un `layout.tsx` que no incluya `ChatWidget` en todas las rutas, la conversacion se interrumpe. Verificar que `ChatWidget` esta en el layout raiz y no en paginas individuales — si esta en `layout.tsx`, esto ya esta correcto. Si esta en `page.tsx` de algun nivel, el candidato pierde el contexto al navegar.
 
-- **No hay indicador visual de en que paso del flujo esta el candidato** (`src/components/assistant/ChatWidget.tsx`): el chat tiene 6 pasos (nombre, puesto, experiencia, ubicacion, disponibilidad, recomendacion) pero el candidato no tiene forma de saber cuanto falta. Un simple indicador de progreso (5 puntos lineales con el activo resaltado) en el header del chat, que Kyo actualice a traves de un campo en la respuesta del API, daria al candidato sensacion de avance. Alternativa mas simple sin cambios al backend: mostrar un texto estatico en el header: "Paso [N] de 5" que el frontend infiera por la cantidad de pares pregunta/respuesta en el historial.
-
-- **No hay forma de que el candidato corrija informacion ya dada** (`src/lib/assistant/system-prompt.ts`): si en el Paso 2 el candidato dice "2 años de experiencia" y en el Paso 3 quiere corregir a "4 años", no hay instruccion para Kyo sobre como manejar correcciones. Kyo podria confundirse o continuar con el dato incorrecto. Agregar al final de las Reglas Criticas (linea 84): "Si el usuario dice 'en realidad', 'me equivoque', 'quiero cambiar' o algo similar, acepta la correccion, actualiza el dato mentalmente y confirma: '[Nombre], entendido, tomo nota del cambio.'"
+- **Oportunidad de A/B test: saludo con nombre vs sin nombre** (`src/lib/assistant/system-prompt.ts`, linea 22): el saludo actual pide el nombre desde el primer mensaje. Esto genera friccion para candidatos que solo quieren ver vacantes rapido. Una alternativa es que Kyo muestre las 3 vacantes mas recientes como "preview" antes de pedir el nombre: "Tenemos 8 vacantes activas hoy. ¿Le cuento las que mas se ajustan a su perfil?" Si el candidato dice si, entonces pide el nombre. Esto reduce el tiempo hasta la primera informacion de valor de ~6 intercambios a ~2, y solo pide datos personales cuando hay intencion confirmada. Implementarlo seria un cambio de 3 lineas en el system prompt (solo el Paso 0 y el Paso 1).
