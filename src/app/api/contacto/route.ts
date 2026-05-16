@@ -1,5 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// Cache email destinations from Supabase (60s TTL)
+let _contactEmail: string | null = null;
+let _coursesEmail: string | null = null;
+let _emailCacheExpiry = 0;
+
+async function getDestinationEmails() {
+  if (Date.now() < _emailCacheExpiry) {
+    return { contactEmail: _contactEmail, coursesEmail: _coursesEmail };
+  }
+  try {
+    const { data } = await supabaseAdmin
+      .from("site_config")
+      .select("key, value")
+      .in("key", ["contact_email", "courses_email"]);
+    if (data?.length) {
+      const map = Object.fromEntries(data.map((r) => [r.key, r.value]));
+      _contactEmail = map.contact_email ?? null;
+      _coursesEmail = map.courses_email ?? null;
+      _emailCacheExpiry = Date.now() + 60_000;
+    }
+  } catch { /* fallback to env vars */ }
+  return { contactEmail: _contactEmail, coursesEmail: _coursesEmail };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,9 +52,13 @@ export async function POST(req: NextRequest) {
       tls: { rejectUnauthorized: false },
     });
 
+    const { contactEmail, coursesEmail } = await getDestinationEmails();
+
     await transporter.sendMail({
       from: `"Kyoszen Web" <${process.env.SMTP_USER}>`,
-      to: process.env.CONTACT_EMAIL ?? "renatomachg@gmail.com",
+      to: asunto.startsWith("Informes:")
+        ? (coursesEmail ?? process.env.COURSES_EMAIL ?? "info@kyoszen.com")
+        : (contactEmail ?? process.env.CONTACT_EMAIL ?? "rsalazar@kyoszen.com.mx"),
       replyTo: correo,
       subject: `Contacto web: ${asunto} — ${nombre}`,
       html: `
@@ -37,6 +71,8 @@ export async function POST(req: NextRequest) {
         </table>
       `,
     });
+
+    await supabaseAdmin.from("contactos").insert({ nombre, correo, asunto, mensaje });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

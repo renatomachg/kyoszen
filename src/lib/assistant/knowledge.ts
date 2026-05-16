@@ -24,7 +24,7 @@ export interface CourseSummary {
   modalidad: string;
   horas: number;
   nivel: string;
-  descripcionCorta: string;
+  descripcionCorta?: string;
 }
 
 export interface JobSummary {
@@ -63,7 +63,7 @@ const SITE_PAGES: SitePage[] = [
   { path: "/cursos", title: "Cursos", purpose: "Catalogo de cursos profesionales", summary: "15 cursos con filtros por categoria (RRHH, Liderazgo, Calidad, Digital, Ventas, Normatividad) y modalidad (En vivo, Online, Hibrido)." },
   { path: "/vacantes", title: "Vacantes", purpose: "Bolsa de trabajo", summary: "Vacantes activas con filtros de ubicacion, empresa, contrato, jornada y salario." },
   { path: "/nosotros", title: "Nosotros", purpose: "Informacion sobre la empresa", summary: "Historia, mision, valores, equipo y proceso de trabajo de Kyoszen." },
-  { path: "/contacto", title: "Contacto", purpose: "Formulario de contacto y datos de oficina", summary: "Formulario directo, telefono (55 2087 6765), horario Lun-Vie 9am-6pm, WhatsApp." },
+  { path: "/contacto", title: "Contacto", purpose: "Formulario de contacto y datos de oficina", summary: "Formulario directo, telefono (56 4004 5414), horario Lun-Vie 9am-6pm, WhatsApp." },
 ];
 
 const COMPANY = {
@@ -79,8 +79,8 @@ const COMPANY = {
     "Años en el mercado": "3+",
   },
   contact: {
-    telefono: "55 2087 6765",
-    whatsapp: "https://wa.me/525520876765",
+    telefono: "56 4004 5414",
+    whatsapp: "https://wa.link/5zv0ba",
     horario: "Lunes a Viernes 9am-6pm",
     ubicacion: "CDMX, Mexico",
   },
@@ -119,7 +119,7 @@ export class StaticKnowledgeProvider implements KnowledgeProvider {
     return COURSES
       .filter((c) => !filters?.category || c.categoria === filters.category || c.categoriaLabel.toLowerCase() === filters.category.toLowerCase())
       .filter((c) => !filters?.modality || c.modalidad === filters.modality)
-      .filter((c) => !filters?.query || matchesQuery(c.titulo + " " + c.descripcionCorta + " " + c.aprenderas.join(" "), filters.query))
+      .filter((c) => !filters?.query || matchesQuery(c.titulo + " " + (c.descripcionCorta ?? "") + " " + (c.aprenderas ?? []).join(" "), filters.query))
       .map((c) => ({
         slug: c.slug,
         titulo: c.titulo,

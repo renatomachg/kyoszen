@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
 interface PageHeroProps {
-  image: string;
+  image?: string;
   chip?: string;
   title: ReactNode;
   description: string;
   children?: ReactNode;
 }
 
-export default function PageHero({ image, chip, title, description, children }: PageHeroProps) {
+export default function PageHero({ image = "", chip, title, description, children }: PageHeroProps) {
   return (
     <section className="relative pt-32 pb-16 px-5 md:px-10 xl:px-20 overflow-hidden">
       {/* Background image */}

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import ChatWidget from "@/components/assistant/ChatWidget";
+import PublicShell from "@/components/layout/PublicShell";
 
 export const metadata: Metadata = {
   title: "Kyoszen — Estrategia en Capital Humano",
@@ -23,10 +21,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <ChatWidget />
+        <PublicShell>{children}</PublicShell>
       </body>
     </html>
   );

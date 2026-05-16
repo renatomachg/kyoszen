@@ -3,17 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-import { COURSES, MODALITY_LABELS, MODALITY_BADGE } from "@/lib/courses";
-
-// Placeholder images per category until the client provides real ones
-const categoryImage: Record<string, string> = {
-  calidad: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&auto=format&fit=crop&q=70",
-  liderazgo: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&auto=format&fit=crop&q=70",
-  rrhh: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600&auto=format&fit=crop&q=70",
-  digital: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=600&auto=format&fit=crop&q=70",
-  ventas: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&auto=format&fit=crop&q=70",
-  normatividad: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=600&auto=format&fit=crop&q=70",
-};
+import { COURSES, CATEGORIES, MODALITY_LABELS, MODALITY_BADGE } from "@/lib/courses";
 
 export default function Courses() {
   const featured = COURSES.slice(0, 4);
@@ -53,7 +43,7 @@ export default function Courses() {
         {/* Grid of cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {featured.map((course, i) => {
-            const img = categoryImage[course.categoria] ?? categoryImage.rrhh;
+            const img = CATEGORIES.find(c => c.id === course.categoria)?.image ?? CATEGORIES[0].image;
             return (
               <motion.div
                 key={course.slug}
@@ -63,7 +53,7 @@ export default function Courses() {
                 transition={{ duration: 0.5, delay: i * 0.1 }}
               >
                 <Link
-                  href={`/cursos/${course.slug}`}
+                  href="/cursos"
                   className="block bg-white rounded-2xl overflow-hidden no-underline text-navy transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl h-full flex flex-col group shadow-md"
                 >
                   {/* Image area */}
@@ -73,7 +63,6 @@ export default function Courses() {
                       alt={course.titulo}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    {/* Badges top */}
                     <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
                       <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${MODALITY_BADGE[course.modalidad]}`}>
                         {MODALITY_LABELS[course.modalidad]}
@@ -97,8 +86,6 @@ export default function Courses() {
                     <p className="text-[12px] text-muted leading-relaxed mb-4 line-clamp-2 flex-1">
                       {course.descripcionCorta}
                     </p>
-
-                    {/* Bottom row */}
                     <div className="flex items-center justify-between pt-3 border-t border-border">
                       <div className="flex items-center gap-3 text-[11px] text-muted">
                         <span className="flex items-center gap-1">
@@ -111,7 +98,7 @@ export default function Courses() {
                         </span>
                       </div>
                       <span className="text-[11.5px] font-extrabold text-blue flex items-center gap-1 transition-all group-hover:gap-1.5">
-                        Ver curso →
+                        Ver mas →
                       </span>
                     </div>
                   </div>

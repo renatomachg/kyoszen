@@ -1,12 +1,28 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import DropdownPill from "@/components/ui/DropdownPill";
 import PageHero from "@/components/ui/PageHero";
-import { JOBS } from "@/lib/jobs";
+import { supabase } from "@/lib/supabase";
+
+interface Vacante {
+  id: number;
+  titulo: string;
+  empresa: string;
+  categoria: string;
+  ubicacion: string;
+  contrato: string;
+  jornada: string;
+  salario: number;
+  badge: string;
+  badge_class: string;
+  descripcion: string;
+  tags: string[];
+  activa: boolean;
+}
 
 const UBICACIONES = ["Todas", "CDMX", "Estado de Mexico", "Hibrido", "Remoto"];
 const MARCAS = ["Todas", "Grupo Corpora", "Logistica Norte", "Sigma Retail", "Clinica Vitalis", "Finanzas MX", "Contact Nova"];
@@ -39,13 +55,19 @@ export default function VacantesPage() {
 
 function VacantesPageContent() {
   const params = useSearchParams();
-  const [search, setSearch] = useState("");
-  const [ubicacion, setUbicacion] = useState("Todas");
-  const [marca, setMarca] = useState("Todas");
-  const [contrato, setContrato] = useState("Todos");
-  const [jornada, setJornada] = useState("Todas");
-  const [salario, setSalario] = useState("Todos");
+  const [jobs, setJobs] = useState<Vacante[]>([]);
+  const [search, setSearch] = useState(() => params.get("q") || params.get("search") || "");
+  const [ubicacion, setUbicacion] = useState(() => { const u = params.get("ubicacion"); return u && UBICACIONES.includes(u) ? u : "Todas"; });
+  const [marca, setMarca] = useState(() => { const m = params.get("marca"); return m && MARCAS.includes(m) ? m : "Todas"; });
+  const [contrato, setContrato] = useState(() => { const c = params.get("contrato"); return c && CONTRATOS.includes(c) ? c : "Todos"; });
+  const [jornada, setJornada] = useState(() => { const j = params.get("jornada"); return j && JORNADAS.includes(j) ? j : "Todas"; });
+  const [salario, setSalario] = useState(() => { const s = params.get("salario"); return s && SALARIOS.includes(s) ? s : "Todos"; });
   const [prevParams, setPrevParams] = useState(params);
+
+  useEffect(() => {
+    supabase.from("vacantes").select("id,titulo,empresa,categoria,ubicacion,contrato,jornada,salario,badge,badge_class,descripcion,tags,activa")
+      .eq("activa", true).order("id").then(({ data }) => setJobs((data as Vacante[]) ?? []));
+  }, []);
 
   // Initialize filters from URL (?ubicacion=CDMX&q=ventas etc)
   // Allows Kyo and other pages to deep-link with pre-applied filters.
@@ -67,11 +89,11 @@ function VacantesPageContent() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return JOBS.filter((j) => {
+    return jobs.filter((j) => {
       const matchesSearch =
         !q ||
         j.titulo.toLowerCase().includes(q) ||
-        j.desc.toLowerCase().includes(q) ||
+        j.descripcion.toLowerCase().includes(q) ||
         j.empresa.toLowerCase().includes(q) ||
         j.tags.some((t) => t.toLowerCase().includes(q));
       const matchesUbicacion = ubicacion === "Todas" || j.ubicacion === ubicacion;
@@ -81,7 +103,7 @@ function VacantesPageContent() {
       const matchesSalarioRange = matchesSalario(j.salario, salario);
       return matchesSearch && matchesUbicacion && matchesMarca && matchesContrato && matchesJornada && matchesSalarioRange;
     });
-  }, [search, ubicacion, marca, contrato, jornada, salario]);
+  }, [jobs, search, ubicacion, marca, contrato, jornada, salario]);
 
   const clearAll = () => {
     setSearch("");
@@ -177,11 +199,11 @@ function VacantesPageContent() {
                   <Link href={`/vacantes/${job.id}`} className="bg-white rounded-xl border-[1.5px] border-border p-5 transition-all duration-200 hover:border-blue-mid hover:shadow-lg hover:-translate-y-0.5 group h-full flex flex-col no-underline">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-[10.5px] font-bold text-muted uppercase tracking-wide">{job.ubicacion}</span>
-                      <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-bold ${job.badgeClass}`}>{job.badge}</span>
+                      <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-bold ${job.badge_class}`}>{job.badge}</span>
                     </div>
                     <h3 className="text-base font-extrabold text-navy mb-1">{job.titulo}</h3>
                     <p className="text-[11px] font-bold text-blue uppercase tracking-wide mb-2">{job.empresa}</p>
-                    <p className="text-xs text-muted leading-relaxed mb-3 flex-1">{job.desc}</p>
+                    <p className="text-xs text-muted leading-relaxed mb-3 flex-1">{job.descripcion}</p>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       <span className="bg-bg text-navy text-[10px] font-semibold px-2 py-0.5 rounded-md">{job.contrato}</span>
                       <span className="bg-bg text-navy text-[10px] font-semibold px-2 py-0.5 rounded-md">{job.jornada}</span>

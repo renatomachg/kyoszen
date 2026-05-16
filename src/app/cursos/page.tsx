@@ -1,75 +1,307 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import AnimatedSection from "@/components/ui/AnimatedSection";
-import DropdownPill from "@/components/ui/DropdownPill";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import PageHero from "@/components/ui/PageHero";
-import { COURSES, MODALITY_LABELS, MODALITY_BADGE } from "@/lib/courses";
-
-// Same mapping used on the Home Courses section
-const categoryImage: Record<string, string> = {
-  calidad: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&auto=format&fit=crop&q=70",
-  liderazgo: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&auto=format&fit=crop&q=70",
-  rrhh: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600&auto=format&fit=crop&q=70",
-  digital: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=600&auto=format&fit=crop&q=70",
-  ventas: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&auto=format&fit=crop&q=70",
-  normatividad: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=600&auto=format&fit=crop&q=70",
-};
-
-const tabs = ["Todos", "RRHH", "Liderazgo", "Calidad", "Digital", "Ventas", "Normatividad"];
-const tabMap: Record<string, string> = {
-  RRHH: "rrhh",
-  Liderazgo: "liderazgo",
-  Calidad: "calidad",
-  Digital: "digital",
-  Ventas: "ventas",
-  Normatividad: "normatividad",
-};
-
-const modalityFilters = ["Todas", "En vivo", "Online", "Hibrido"];
-const modalityMap: Record<string, string> = {
-  "En vivo": "en-vivo",
-  "Online": "online",
-  "Hibrido": "hibrido",
-};
+import AnimatedSection from "@/components/ui/AnimatedSection";
+import { CATEGORIES, COURSES, type CourseCategory, type Course } from "@/lib/courses";
+import { supabase } from "@/lib/supabase";
 
 
-export default function CursosPage() {
-  return (
-    <Suspense fallback={null}>
-      <CursosPageContent />
-    </Suspense>
-  );
-}
+// ─── Modal de solicitud de informes ─────────────────────────────────────────
 
-function CursosPageContent() {
-  const params = useSearchParams();
-  const [activeTab, setActiveTab] = useState("Todos");
-  const [activeModality, setActiveModality] = useState("Todas");
-  const [prevParams, setPrevParams] = useState(params);
+function CourseModal({ course, onClose }: { course: Course; onClose: () => void }) {
+  const [form, setForm] = useState({ nombre: "", empresa: "", correo: "", telefono: "", mensaje: "" });
+  const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
 
-  // Deep-link via URL: ?categoria=Liderazgo&modalidad=online
-  if (prevParams !== params) {
-    setPrevParams(params);
-    const cat = params.get("categoria");
-    const mod = params.get("modalidad");
-    if (cat && tabs.includes(cat)) setActiveTab(cat);
-    if (mod) {
-      const label = modalityFilters.find((m) => m.toLowerCase() === mod.toLowerCase());
-      if (label) setActiveModality(label);
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/contacto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: form.nombre,
+          correo: form.correo,
+          asunto: `Informes: ${course.titulo}`,
+          mensaje: `Empresa: ${form.empresa || "No especificada"}\nTelefono: ${form.telefono}\n\n${form.mensaje || "Solicita informes sobre el curso."}`,
+        }),
+      });
+      setStatus(res.ok ? "ok" : "error");
+    } catch {
+      setStatus("error");
     }
   }
 
-  const filtered = useMemo(() => {
-    return COURSES.filter((c) => {
-      const categoryMatch = activeTab === "Todos" || c.categoria === tabMap[activeTab];
-      const modalityMatch = activeModality === "Todas" || c.modalidad === modalityMap[activeModality];
-      return categoryMatch && modalityMatch;
-    });
-  }, [activeTab, activeModality]);
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Panel */}
+      <motion.div
+        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+        initial={{ scale: 0.92, y: 24 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, y: 24 }}
+        transition={{ type: "spring", stiffness: 320, damping: 28 }}
+      >
+        {/* Header */}
+        <div className="bg-[var(--color-navy)] px-7 pt-7 pb-6">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-5 text-white/50 hover:text-white text-2xl leading-none transition-colors"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-white/50 mb-1">{course.categoriaLabel}</p>
+          <h2 className="text-white font-extrabold text-[18px] leading-tight pr-6">{course.titulo}</h2>
+          <p className="text-white/60 text-[12.5px] mt-1.5">Solicita informes y un asesor se pondra en contacto contigo.</p>
+        </div>
+
+        {/* Body */}
+        <div className="px-7 py-6">
+          {status === "ok" ? (
+            <div className="text-center py-6">
+              <div className="text-4xl mb-3">✓</div>
+              <p className="font-extrabold text-[var(--color-navy)] text-lg mb-1">Solicitud enviada</p>
+              <p className="text-sm text-[var(--color-muted)]">Nos pondremos en contacto contigo pronto.</p>
+              <button onClick={onClose} className="mt-5 bg-[var(--color-blue)] text-white rounded-full py-2.5 px-7 text-sm font-bold">Cerrar</button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Nombre *</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Tu nombre completo"
+                    className="w-full rounded-xl border border-[var(--color-border)] px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-blue)] transition-colors"
+                    value={form.nombre}
+                    onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Empresa</label>
+                  <input
+                    type="text"
+                    placeholder="Nombre de tu empresa"
+                    className="w-full rounded-xl border border-[var(--color-border)] px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-blue)] transition-colors"
+                    value={form.empresa}
+                    onChange={e => setForm(f => ({ ...f, empresa: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Correo *</label>
+                  <input
+                    required
+                    type="email"
+                    placeholder="correo@empresa.com"
+                    className="w-full rounded-xl border border-[var(--color-border)] px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-blue)] transition-colors"
+                    value={form.correo}
+                    onChange={e => setForm(f => ({ ...f, correo: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Telefono *</label>
+                  <input
+                    required
+                    type="tel"
+                    placeholder="55 0000 0000"
+                    className="w-full rounded-xl border border-[var(--color-border)] px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-blue)] transition-colors"
+                    value={form.telefono}
+                    onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Curso de interes</label>
+                <input
+                  readOnly
+                  className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3.5 py-2.5 text-sm text-[var(--color-muted)]"
+                  value={course.titulo}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Comentarios</label>
+                <textarea
+                  rows={3}
+                  placeholder="Cuantas personas, fechas preferidas, dudas..."
+                  className="w-full rounded-xl border border-[var(--color-border)] px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-blue)] transition-colors resize-none"
+                  value={form.mensaje}
+                  onChange={e => setForm(f => ({ ...f, mensaje: e.target.value }))}
+                />
+              </div>
+              {status === "error" && (
+                <p className="text-red-600 text-xs">Ocurrio un error. Intentalo de nuevo o escríbenos por WhatsApp.</p>
+              )}
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="w-full bg-[var(--color-blue)] hover:bg-[var(--color-blue-dark)] text-white font-extrabold rounded-full py-3 text-sm transition-colors disabled:opacity-60"
+              >
+                {status === "loading" ? "Enviando..." : "Solicitar informes →"}
+              </button>
+            </form>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Fila de curso (lista sin imagen) ───────────────────────────────────────
+
+function CourseRow({ course, index, onSelect }: { course: Course; index: number; onSelect: (c: Course) => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, delay: index * 0.03 }}
+      className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--color-bg)] transition-colors cursor-default"
+    >
+      {/* Número */}
+      <span className="text-[11px] font-black text-[var(--color-blue)] opacity-40 w-5 shrink-0 select-none text-right tabular-nums">
+        {String(index + 1).padStart(2, "0")}
+      </span>
+
+      {/* Contenido */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-[13.5px] font-extrabold text-[var(--color-navy)] leading-snug">
+            {course.titulo}
+          </h3>
+          {course.badge && (
+            <span className="bg-[var(--color-yellow)] text-black text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0">
+              {course.badge}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="text-[11px] text-[var(--color-muted)]">{course.horas}h</span>
+          <span className="text-[var(--color-border)]">·</span>
+          <span className="text-[11px] text-[var(--color-muted)]">{course.nivel}</span>
+          <span className="text-[var(--color-border)]">·</span>
+          <span className="text-[11px] text-[var(--color-muted)]">{course.modalidad}</span>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={() => onSelect(course)}
+        className="shrink-0 text-[11.5px] font-extrabold text-[var(--color-blue)] border border-[var(--color-blue)]/25 rounded-full px-4 py-1.5 hover:bg-[var(--color-blue)] hover:text-white hover:border-[var(--color-blue)] transition-all whitespace-nowrap"
+      >
+        Pedir informes
+      </button>
+    </motion.div>
+  );
+}
+
+// ─── Tarjeta de categoría ────────────────────────────────────────────────────
+
+function CategoryCard({
+  category,
+  count,
+  active,
+  onClick,
+}: {
+  category: CourseCategory;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      onClick={onClick}
+      className={`relative overflow-hidden rounded-2xl text-left group transition-all duration-200 ${
+        active ? "ring-4 ring-[var(--color-blue)] ring-offset-2 shadow-2xl" : "shadow-md hover:shadow-xl hover:-translate-y-1"
+      }`}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div className="h-[200px] relative">
+        <img src={category.image} alt={category.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+        {count > 0 && (
+          <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-[var(--color-navy)] text-[10px] font-extrabold px-2.5 py-1 rounded-full">
+            {count} {count === 1 ? "curso" : "cursos"}
+          </span>
+        )}
+        {active && (
+          <span className="absolute top-3 left-3 bg-[var(--color-blue)] text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+            Seleccionada
+          </span>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="text-white font-extrabold text-[15px] leading-tight">{category.label}</h3>
+          <p className="text-white/70 text-[11.5px] mt-0.5 line-clamp-1">{category.description}</p>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+// ─── Página principal ────────────────────────────────────────────────────────
+
+export default function CursosPage() {
+  const [selectedCategory, setSelectedCategory] = useState<CourseCategory | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [allCourses, setAllCourses] = useState<Course[]>(COURSES);
+  const coursesRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  // Cargar cursos desde Supabase; si hay datos los usa, si no usa el catalogo local
+  useEffect(() => {
+    supabase.from("cursos").select("slug,titulo,categoria,categoria_label,modalidad,nivel,horas,descripcion_corta,badge,activo")
+      .eq("activo", true).order("categoria").order("titulo")
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setAllCourses(data.map((c: Record<string, unknown>) => ({
+            slug: c.slug as string,
+            titulo: c.titulo as string,
+            categoria: c.categoria as string,
+            categoriaLabel: c.categoria_label as string,
+            modalidad: c.modalidad as string,
+            nivel: c.nivel as string,
+            horas: c.horas as number,
+            descripcionCorta: c.descripcion_corta as string | undefined,
+            badge: c.badge as string | undefined,
+          } as Course)));
+        }
+      });
+  }, []);
+
+  const coursesInCategory = selectedCategory
+    ? allCourses.filter(c => c.categoria === selectedCategory.id)
+    : [];
+
+  function handleCategoryClick(cat: CourseCategory) {
+    const coursesForCat = allCourses.filter(c => c.categoria === cat.id);
+    if (coursesForCat.length === 0) return;
+
+    if (selectedCategory?.id === cat.id) {
+      setSelectedCategory(null);
+      return;
+    }
+    setSelectedCategory(cat);
+    setTimeout(() => {
+      coursesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 370);
+  }
 
   return (
     <>
@@ -77,131 +309,106 @@ function CursosPageContent() {
         image="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1800&auto=format&fit=crop&q=80"
         chip="Capacitacion"
         title="Nuestros cursos profesionales"
-        description="Ofrecemos una amplia variedad de cursos para todos los niveles. Programas con constancias DC-3 en modalidades en vivo, online e hibridas."
+        description="Selecciona un area de interes para explorar los cursos disponibles. Todos con constancia DC-3."
       />
 
-      {/* Courses */}
-      <section className="py-16 px-5 md:px-10 xl:px-20 bg-bg">
-        <div className="max-w-7xl mx-auto">
-          <AnimatedSection className="text-center mb-8">
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-blue-dark">Elige entre nuestros mejores cursos</h2>
+      <section className="py-16 px-5 md:px-10 xl:px-20 bg-[var(--color-bg)]">
+        <div ref={sectionRef} className="max-w-7xl mx-auto">
+
+          {/* Instruccion */}
+          <AnimatedSection className="text-center mb-10">
+            <h2 className="text-[clamp(1.3rem,2.5vw,1.9rem)] font-extrabold tracking-tight text-[var(--color-navy)] mb-2">
+              Elige un area de capacitacion
+            </h2>
+            <p className="text-sm text-[var(--color-muted)]">Da clic en cualquier categoria para ver los cursos disponibles</p>
           </AnimatedSection>
 
-          {/* Breadcrumb-style filter pill */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-1 bg-white rounded-full border border-border shadow-sm px-2 py-1.5">
-              <span className="px-3 py-1.5 text-[13px] font-semibold text-muted">Cursos</span>
-              <span className="text-border">/</span>
-              <DropdownPill
-                label="Categoria"
-                value={activeTab}
-                options={tabs}
-                onChange={setActiveTab}
-                highlight={activeTab !== "Todos"}
-              />
-              <span className="text-border">/</span>
-              <DropdownPill
-                label="Modalidad"
-                value={activeModality}
-                options={modalityFilters}
-                onChange={setActiveModality}
-                highlight={activeModality !== "Todas"}
-              />
-            </div>
+          {/* Grid de categorias */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+            {CATEGORIES.map(cat => {
+              const count = allCourses.filter(c => c.categoria === cat.id).length;
+              return (
+                <CategoryCard
+                  key={cat.id}
+                  category={cat}
+                  count={count}
+                  active={selectedCategory?.id === cat.id}
+                  onClick={() => handleCategoryClick(cat)}
+                />
+              );
+            })}
           </div>
 
-          <p className="text-sm text-muted mb-4 text-center">
-            <strong className="text-navy">{filtered.length}</strong> cursos encontrados
-          </p>
-
-          {/* Grid */}
-          {filtered.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {filtered.map((course, i) => {
-                const img = categoryImage[course.categoria] ?? categoryImage.rrhh;
-                return (
-                  <motion.div key={course.slug} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.4 }}>
-                    <Link
-                      href={`/cursos/${course.slug}`}
-                      className="block bg-white rounded-2xl overflow-hidden no-underline text-navy transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl h-full flex flex-col group shadow-md"
+          {/* Grid de cursos de la categoría seleccionada */}
+          <AnimatePresence>
+            {selectedCategory && (
+              <motion.div
+                key={selectedCategory.id}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.35 }}
+                className="overflow-hidden"
+              >
+                <div ref={coursesRef} style={{ scrollMarginTop: "90px" }} className="mt-6 bg-white rounded-3xl p-6 md:p-8 shadow-lg border border-[var(--color-border)]">
+                  {/* Header de sección */}
+                  <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--color-blue)] mb-0.5">Cursos disponibles</p>
+                      <h3 className="text-[20px] font-extrabold text-[var(--color-navy)]">{selectedCategory.label}</h3>
+                    </div>
+                    <button
+                      onClick={() => setSelectedCategory(null)}
+                      className="text-sm font-bold text-[var(--color-muted)] hover:text-[var(--color-navy)] flex items-center gap-1.5 transition-colors"
                     >
-                      {/* Image area */}
-                      <div className="relative h-[180px] overflow-hidden">
-                        <img
-                          src={img}
-                          alt={course.titulo}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
-                          <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${MODALITY_BADGE[course.modalidad]}`}>
-                            {MODALITY_LABELS[course.modalidad]}
-                          </span>
-                        </div>
-                        {course.badge && (
-                          <span className="absolute top-3 right-3 bg-yellow text-black text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
-                            {course.badge}
-                          </span>
-                        )}
-                      </div>
+                      ← Ver todas las areas
+                    </button>
+                  </div>
 
-                      {/* Content */}
-                      <div className="p-5 flex-1 flex flex-col">
-                        <span className="text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">
-                          {course.categoriaLabel}
-                        </span>
-                        <h3 className="text-[15px] font-extrabold leading-tight text-navy mb-2">
-                          {course.titulo}
-                        </h3>
-                        <p className="text-[12px] text-muted leading-relaxed mb-4 line-clamp-2 flex-1">
-                          {course.descripcionCorta}
-                        </p>
+                  {coursesInCategory.length === 0 ? (
+                    <p className="text-sm text-[var(--color-muted)] py-8 text-center">
+                      Proximamente — estamos preparando los cursos de esta area.
+                    </p>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 divide-y divide-[var(--color-border)] sm:divide-y-0">
+                      {coursesInCategory.map((course, i) => (
+                        <CourseRow key={course.slug} course={course} index={i} onSelect={setSelectedCourse} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                        {/* Bottom row */}
-                        <div className="flex items-center justify-between pt-3 border-t border-border">
-                          <div className="flex items-center gap-3 text-[11px] text-muted">
-                            <span className="flex items-center gap-1">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                              {course.horas}h
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                              {course.modulos}
-                            </span>
-                          </div>
-                          <span className="text-[11.5px] font-extrabold text-blue flex items-center gap-1 transition-all group-hover:gap-1.5">
-                            Ver curso →
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <h3 className="text-lg font-bold text-navy mb-2">Sin resultados</h3>
-              <p className="text-sm text-muted">No hay cursos con esos filtros. Intenta otra combinacion.</p>
-            </div>
-          )}
-
-          {/* CTA */}
-          <AnimatedSection className="mt-16">
-            <div className="bg-blue rounded-3xl p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+          {/* CTA bottom */}
+          <AnimatedSection className="mt-14">
+            <div className="bg-[var(--color-blue)] rounded-3xl p-10 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
               <div>
                 <h2 className="text-[clamp(1.3rem,2.5vw,1.8rem)] font-black text-white leading-tight">
-                  ¿No encuentras el curso que <em>necesitas</em>?
+                  ¿No encuentras el curso que necesitas?
                 </h2>
                 <p className="text-sm text-white/60 mt-2">Cuentanos que habilidades quieres desarrollar y diseñamos un programa a la medida.</p>
               </div>
               <div className="flex gap-3 flex-wrap shrink-0">
-                <Link href="/contacto" className="bg-yellow text-black rounded-full py-3 px-7 text-[13.5px] font-extrabold no-underline hover:bg-[#e6b800] transition-colors">Solicitar programa →</Link>
-                <Link href="/contacto" className="bg-transparent text-white border-2 border-white/30 rounded-full py-3 px-7 text-[13px] font-bold no-underline hover:bg-white/10 transition-colors">Hablar con asesor</Link>
+                <a href="/contacto" className="bg-[var(--color-yellow)] text-black rounded-full py-3 px-7 text-[13.5px] font-extrabold no-underline hover:bg-[#e6b800] transition-colors">
+                  Solicitar programa →
+                </a>
+                <a href="/contacto" className="bg-transparent text-white border-2 border-white/30 rounded-full py-3 px-7 text-[13px] font-bold no-underline hover:bg-white/10 transition-colors">
+                  Hablar con asesor
+                </a>
               </div>
             </div>
           </AnimatedSection>
         </div>
       </section>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {selectedCourse && (
+          <CourseModal course={selectedCourse} onClose={() => setSelectedCourse(null)} />
+        )}
+      </AnimatePresence>
     </>
   );
 }
