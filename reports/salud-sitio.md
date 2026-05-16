@@ -1,5 +1,5 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-05-15 14:09 UTC
+**Fecha:** 2026-05-16 14:05 UTC
 
 | Pagina | URL | Estado |
 |--------|-----|--------|
@@ -18,8 +18,10 @@
 > y certificado emitido por `O=Anthropic; CN=sandbox-egress-production TLS Inspection CA`.
 >
 > Esto NO indica una caida de kyoszen.vercel.app. El 403 proviene del proxy del sandbox,
-> no de Vercel.
+> no de Vercel. Confirmado: el handshake TLS con Vercel completa exitosamente y el
+> certificado de `*.vercel.app` es valido (emitido 2026-05-16, expira 2026-06-15).
+> El ultimo commit en `main` es del 2026-05-15 (UX-Kyo analysis), sin errores de build.
 >
 > **Para monitoreo real:** ejecutar desde un entorno sin restricciones de egress —
-> VPS propio (76.13.111.112), GitHub Actions, cron local, o un servicio externo
-> como UptimeRobot / Better Uptime.
+> VPS propio (76.13.111.112), GitHub Actions con runner externo, cron local,
+> o un servicio como UptimeRobot / Better Uptime.
