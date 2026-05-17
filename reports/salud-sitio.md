@@ -1,27 +1,30 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-05-16 14:05 UTC
+**Fecha:** 2026-05-17 00:00 UTC
 
-| Pagina | URL | Estado |
-|--------|-----|--------|
-| Home | / | ⚠️ NO VERIFICABLE |
-| Vacantes | /vacantes | ⚠️ NO VERIFICABLE |
-| Cursos | /cursos | ⚠️ NO VERIFICABLE |
-| Nosotros | /nosotros | ⚠️ NO VERIFICABLE |
-| Contacto | /contacto | ⚠️ NO VERIFICABLE |
-| Servicios | /servicios | ⚠️ NO VERIFICABLE |
+| Pagina | URL | Codigo HTTP | Estado |
+|--------|-----|-------------|--------|
+| Home | / | 403 | ⚠️ No verificable |
+| Vacantes | /vacantes | 403 | ⚠️ No verificable |
+| Cursos | /cursos | 403 | ⚠️ No verificable |
+| Nosotros | /nosotros | 403 | ⚠️ No verificable |
+| Contacto | /contacto | 403 | ⚠️ No verificable |
+| Servicios | /servicios | 403 | ⚠️ No verificable |
 
-**Resumen:** 0/6 paginas verificadas — monitoreo bloqueado por restriccion del entorno de ejecucion.
+**Resumen:** 0/6 paginas verificadas correctamente.
 
-> ⚠️ ALERTA DE ENTORNO (no del sitio): Las solicitudes HTTP salientes desde el entorno
-> de ejecucion de Claude Code estan interceptadas por un proxy de inspeccion TLS interno
-> de Anthropic. Todas las URLs devuelven HTTP 403 con cuerpo `"Host not in allowlist"`
-> y certificado emitido por `O=Anthropic; CN=sandbox-egress-production TLS Inspection CA`.
+---
+
+> ⚠️ ALERTA TECNICA: Todas las URLs devolvieron HTTP 403, pero **esto NO es una caida del sitio en Vercel**.
 >
-> Esto NO indica una caida de kyoszen.vercel.app. El 403 proviene del proxy del sandbox,
-> no de Vercel. Confirmado: el handshake TLS con Vercel completa exitosamente y el
-> certificado de `*.vercel.app` es valido (emitido 2026-05-16, expira 2026-06-15).
-> El ultimo commit en `main` es del 2026-05-15 (UX-Kyo analysis), sin errores de build.
+> **Causa:** El entorno de ejecucion remoto (Claude Code en la nube) usa un proxy con inspeccion TLS
+> (`O=Anthropic; CN=sandbox-egress-production TLS Inspection CA`) que bloquea peticiones salientes
+> a dominios externos como `kyoszen.vercel.app`. El codigo 403 lo emite el proxy del sandbox,
+> no el servidor de Vercel.
 >
-> **Para monitoreo real:** ejecutar desde un entorno sin restricciones de egress —
+> El handshake TLS con Vercel completo exitosamente y el certificado de `*.vercel.app` es valido
+> (emitido 2026-05-17, expira 2026-06-16), lo que confirma que el sitio esta alcanzable
+> desde internet — solo el egress de este sandbox esta restringido.
+>
+> **Accion recomendada:** Ejecutar el monitoreo desde un entorno con acceso directo a internet:
 > VPS propio (76.13.111.112), GitHub Actions con runner externo, cron local,
 > o un servicio como UptimeRobot / Better Uptime.
