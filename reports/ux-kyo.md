@@ -1,6 +1,6 @@
 # Analisis UX y Kyo — Kyoszen
-**Fecha:** 2026-05-17
-**Cambios analizados:** Sin cambios de codigo en los ultimos 2 dias (solo reportes automaticos). Auditoria de tercera pasada: todas las sugerencias son NUEVAS (no cubiertas en reportes del 2026-05-15 ni 2026-05-16).
+**Fecha:** 2026-05-18
+**Cambios analizados:** Sin cambios de codigo en los ultimos 2 dias (solo reportes automaticos). Auditoria de cuarta pasada — todas las sugerencias son NUEVAS, no cubiertas en reportes anteriores (2026-05-15 a 2026-05-17).
 
 **Archivos revisados:**
 - `src/lib/assistant/system-prompt.ts`
@@ -12,18 +12,18 @@
 - `src/components/sections/Vacancies.tsx`
 - `src/components/sections/Hero.tsx`
 - `src/components/sections/FAQ.tsx`
-- `src/components/sections/Process.tsx`
-- `src/components/ui/AplicarModal.tsx`
 - `src/components/layout/Navbar.tsx`
+- `src/components/ui/AplicarModal.tsx`
 - `src/app/vacantes/page.tsx`
 - `src/app/vacantes/[id]/page.tsx`
+- `src/app/contacto/page.tsx`
 - `src/lib/jobs.ts`
 
 ---
 
 ## Cambios Recientes Detectados
 
-Sin cambios de codigo. Los ultimos 5 commits son reportes automaticos (`salud-sitio.md`, `ux-kyo.md`). Esta es una auditoria de tercera pasada con observaciones nuevas no cubiertas en los reportes del 2026-05-15 y 2026-05-16.
+Sin cambios de codigo. Los ultimos commits son reportes automaticos. Esta auditoria identifica observaciones nuevas no cubiertas en sesiones previas.
 
 ---
 
@@ -31,58 +31,80 @@ Sin cambios de codigo. Los ultimos 5 commits son reportes automaticos (`salud-si
 
 ### Alta prioridad
 
-- **[CRITICO — Pagina de vacante detalle sin SEO ni Open Graph]** `src/app/vacantes/[id]/page.tsx` linea 1: el archivo tiene `"use client"` al inicio, lo que impide usar `generateMetadata()` de Next.js. Cuando alguien comparte un link como `/vacantes/3` por WhatsApp o LinkedIn, el preview muestra el titulo del sitio generico ("Kyoszen") sin mencionar el puesto ni la empresa. En Google, el canonical de cada vacante tampoco tiene `<title>` dinamico. Solucion: separar en un Server Component wrapper que llame `generateMetadata` y exporte el layout, mas un Client Component hijo para la interactividad del modal. El Server Component queda en `page.tsx`, el Cliente en `VacanteDetailClient.tsx`. Impacto directo en conversion de candidatos que llegan por redes sociales.
+- **[CRITICO — Formulario de contacto no tiene elemento `<form>` — Enter no envia]** `src/app/contacto/page.tsx` linea 107: el boton de envio usa `onClick={handleSubmit}` pero no hay un `<form onSubmit>` wrapeando los campos. Consecuencias directas: (1) presionar Enter dentro de cualquier campo no envia el formulario, lo cual es comportamiento esperado en cualquier form; (2) los navegadores no ofrecen autofill porque no reconocen el bloque como un formulario HTML; (3) gestores de contrasenas como 1Password tampoco lo detectan. Correccion: envolver los campos en `<form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>` y cambiar el boton a `type="submit"`. Tambien agregar `autocomplete="name"` al campo nombre, `autocomplete="email"` al correo.
 
-- **[AplicarModal sin focus trap ni atributos ARIA de dialogo]** `src/components/ui/AplicarModal.tsx` linea 82: el `<motion.div>` del modal no tiene `role="dialog"`, `aria-modal="true"` ni `aria-labelledby`. Cuando el usuario abre el modal con teclado, el foco puede escaparse al contenido detras del backdrop y el lector de pantalla no anuncia que se abrio un dialogo. Agregar:
+- **[Seccion Vacancies del Home usa datos hardcodeados independientes de jobs.ts]** `src/components/sections/Vacancies.tsx` lineas 7-40: el componente define su propio array local `const vacancies = [...]` con 4 vacantes ficticias en lugar de importar de `src/lib/jobs.ts`. Si se actualiza el catalogo real en `jobs.ts`, el Home seguira mostrando las mismas 4 vacantes estáticas. La seccion pierde credibilidad si un candidato ve en el Home "Auxiliar Administrativo" y llega a `/vacantes` con datos distintos. Correccion:
   ```tsx
-  <motion.div
-    role="dialog"
-    aria-modal="true"
-    aria-label="Aplicar a vacante"
+  import { JOBS } from "@/lib/jobs";
+  // reemplazar el array local por:
+  const vacancies = JOBS.slice(0, 4);
+  ```
+  Ajustar el renderizado para usar `job.titulo`, `job.ubicacion`, `job.contrato`, `job.badge`, `job.badgeClass`. Una sola linea de cambio elimina el riesgo de desfase de datos.
+
+- **[ChatWidget permanece abierto despues de que Kyo navega — experiencia confusa en mobile]** `src/components/assistant/useChat.ts` linea 109-113: cuando Kyo llama `navigate_to`, el hook hace `router.push(target.path)` pero el ChatWidget queda visible flotando sobre la nueva pagina. En desktop esto es tolerable, pero en mobile el widget ocupa `86vw` y tapa el contenido de la pagina a la que Kyo acaba de llevar al usuario. Solucion en `ChatWidget.tsx`: exponer una prop `onNavigate` o usar un callback en el hook para cerrar el panel:
+  ```tsx
+  // En useChat.ts, aceptar un callback opcional:
+  export function useChat(onNavigate?: (path: string) => void) {
     ...
-  >
+    if (data.navigations.length > 0) {
+      const target = data.navigations[0];
+      setTimeout(() => {
+        router.push(target.path);
+        onNavigate?.(target.path);
+      }, 2000);
+    }
+  }
+  // En ChatWidget.tsx:
+  const { messages, sendMessage, ... } = useChat(() => setOpen(false));
   ```
-  Adicionalmente, agregar un `useEffect` que haga focus al primer campo del form cuando `open === true`:
-  ```tsx
-  useEffect(() => {
-    if (open) formRef.current?.querySelector<HTMLElement>("input, select")?.focus();
-  }, [open]);
-  ```
+  El chat se cierra suavemente antes de que el usuario vea la nueva pagina. En mobile esto es critico para la conversion.
 
-- **[Mobile — sidebar CTA de vacante invisible hasta el final del scroll]** `src/app/vacantes/[id]/page.tsx` linea 132: el sidebar (`sticky top-28`) solo funciona en desktop (`lg:grid-cols-[1.6fr_1fr]`). En mobile el grid es `grid-cols-1`, la columna derecha aparece DESPUES de toda la descripcion y requisitos — el candidato tiene que bajar ~3 pantallas para ver el boton "Aplicar ahora". Agregar un banner sticky en el bottom para mobile:
+- **[WhatsApp en detalle de vacante no lleva mensaje pre-llenado]** `src/app/vacantes/[id]/page.tsx` linea 161: el link es `https://wa.me/525520876765` sin parametro `text`. El candidato llega a WhatsApp con un chat vacio y tiene que escribir desde cero cual vacante le interesa. Tasa de abandono alta. Cambiar a:
   ```tsx
-  {/* Mobile sticky CTA — solo visible en mobile */}
-  <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border px-5 py-3 flex gap-3">
-    <button onClick={() => setModalOpen(true)}
-      className="flex-1 bg-navy text-white rounded-full py-3 text-sm font-extrabold">
-      Aplicar ahora
-    </button>
-    <a href={`https://wa.me/525520876765?text=...`}
-      className="flex-1 bg-wa text-white rounded-full py-3 text-sm font-extrabold text-center no-underline">
-      WhatsApp
-    </a>
-  </div>
+  href={`https://wa.me/525520876765?text=${encodeURIComponent(`Hola, me interesa la vacante de ${job.titulo} en ${job.empresa}. Me podrian dar mas informacion?`)}`}
   ```
-  El padding-bottom del section principal debe compensar: `pb-24 lg:pb-12`.
+  Costo: 0 lineas de logica. Impacto: el candidato ya sabe que escribir y el equipo de Kyoszen recibe el contexto inmediatamente.
 
 ### Media prioridad
 
-- **[FAQ inconsiste con AplicarModal sobre documentacion requerida]** `src/components/sections/FAQ.tsx` linea 18: la FAQ "¿Que documentos necesito?" responde "Acta de nacimiento, comprobante de domicilio (max 3 meses), ID oficial, CURP, numero de seguridad social y constancia de situacion fiscal." Sin embargo, `AplicarModal.tsx` solo tiene un campo `documentacion` de SI/NO que pregunta si ya los tiene. Un candidato lee el FAQ, reune sus documentos, abre el modal, y ve que no se los piden. Inconsistente. Solucion: actualizar la respuesta del FAQ en `FAQ.tsx` a: "Cuando te llamemos te pediremos: Acta de nacimiento, comprobante de domicilio, ID oficial, CURP, NSS y constancia fiscal. En tu solicitud inicial no los necesitas — solo aplicar es suficiente." Esto reduce la friccion psicologica de candidatos que creen que deben tener todo antes de aplicar.
-
-- **[Process section esta orientada 100% a empresas, invisible para candidatos]** `src/components/sections/Process.tsx` linea 6-26: los 4 pasos ("Identificamos el perfil", "Busqueda dirigida", etc.) son el proceso de Kyoszen hacia la empresa, no el del candidato. Un candidato que llega al Home leyendo los pasos no sabe si esto es relevante para el. El Hero ya mezcla audiencias (tiene buscador de vacantes pero el H1 dice "Transforma tu empresa"). Agregar al final de la seccion Process un CTA secundario minimo:
+- **[FAQ accordion puede truncar respuestas largas con max-h:200px fija]** `src/components/sections/FAQ.tsx` linea 83: la animacion usa `max-h-[200px]` como valor fijo. Si alguna respuesta supera 200px de altura (aprox. 6 lineas de texto a 13.5px), el contenido queda cortado sin scroll. Actualmente las respuestas son cortas, pero cuando el cliente actualice el copy con respuestas mas detalladas se volvera un bug silencioso. Cambiar a `max-h-[600px]` o mejor aun, usar Framer Motion `AnimatePresence` con `height: "auto"` para que la animacion se adapte al contenido real:
   ```tsx
-  <div className="text-center mt-8">
-    <p className="text-sm text-muted mb-3">¿Eres candidato buscando empleo?</p>
-    <Link href="/vacantes" className="text-blue font-bold text-sm hover:underline">
-      Ver vacantes disponibles →
-    </Link>
-  </div>
+  <motion.div
+    initial={{ height: 0, opacity: 0 }}
+    animate={{ height: "auto", opacity: 1 }}
+    exit={{ height: 0, opacity: 0 }}
+    transition={{ duration: 0.25 }}
+    className="overflow-hidden"
+  >
   ```
-  No requiere redisenar la seccion. Solo clarifica la audiencia dual del sitio.
 
-- **["Publicado hoy" hardcodeado en todas las cards de la seccion Vacancies]** `src/components/sections/Vacancies.tsx` linea 92: el texto "Publicado hoy" aparece en las 4 cards aunque los datos de `jobs.ts` no tienen campo `publishedAt`. Si este componente se deja activo por semanas, las 4 vacantes siempre diran "Publicado hoy" — es falso y puede generar desconfianza. Solucion a corto plazo: cambiar el texto a "Vigente" que es siempre verdadero. A largo plazo: agregar campo `publishedAt: string` al tipo `Job` en `src/lib/jobs.ts` y mostrarlo formateado con `Intl.RelativeTimeFormat`.
+- **[Hero usa imagenes de pravatar.cc — dependencia externa no confiable]** `src/components/sections/Hero.tsx` lineas 97-104: los avatares del bloque de prueba social (`+687 candidatos colocados`) se cargan de `https://i.pravatar.cc/56?img=1` a `img=4`. pravatar.cc es un servicio de terceros gratuito sin SLA. Si cae, el bloque de credibilidad del Hero aparece con 4 cuadros rotos justo debajo del H1. Reemplazar con 4 imagenes de placeholder locales guardadas en `/public/images/avatar-1.jpg` etc. (cualquier foto de stock en dominio publico funciona). Cero dependencias externas para la primera vista del sitio.
 
-- **[Navbar mobile — menu no tiene animacion de apertura/cierre]** `src/components/layout/Navbar.tsx` linea 92: el menu mobile usa `{mobileOpen && (...)}` sin `AnimatePresence`. Aparece y desaparece instantaneamente — el resto del sitio usa Framer Motion con animaciones suaves. Wrappear con `AnimatePresence` y agregar `motion.div` con `initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}`. Consistencia visual con el resto del sitio.
+- **[Boton "Nueva conversacion" demasiado sutil — candidatos no lo descubren al final del flujo]** `src/components/assistant/ChatWidget.tsx` lineas 153-164: el boton aparece despues de 2+ mensajes como texto de 11px color muted. Cuando Kyo completa el flujo de 6 pasos y navega a `/contacto`, el candidato cierra el chat o queda con una conversacion finalizada sin un prompt claro de reinicio. Cambiar a un estado de "conversacion completada" mas visible. Al detectar que el ultimo mensaje del asistente contiene "/contacto" (o via una flag en el hook), mostrar un mensaje de cierre con boton prominente:
+  ```tsx
+  {messages.length > 6 && !isLoading && (
+    <div className="bg-blue-soft rounded-xl p-3 text-center mt-2">
+      <p className="text-[12px] text-navy font-medium mb-2">¿Necesitas mas ayuda?</p>
+      <button onClick={reset}
+        className="bg-navy text-white text-[12px] font-bold rounded-full px-4 py-1.5">
+        Nueva consulta
+      </button>
+    </div>
+  )}
+  ```
+
+- **[Salario siempre muestra "MXN bruto" — puede desmotivar candidatos operativos]** `src/app/vacantes/[id]/page.tsx` linea 139: el texto "MXN bruto" esta hardcodeado pero los datos en `jobs.ts` no tienen campo `esNeto: boolean`. Para la vacante de Recepcionista ($8,000/mes), un candidato que lee "bruto" calcula que su quincena neta sera aprox $3,200 despues de IMSS/ISR y puede desistir. Para vacantes operativas en Mexico es comun ofrecer salario neto. Soluciones: (a) eliminar el texto "bruto" del UI y dejarlo sin especificar (mas neutro), o (b) agregar campo `tipSalario: "bruto" | "neto"` al tipo `Job` en `jobs.ts` y mostrarlo dinamicamente. La opcion (a) es un cambio de 2 caracteres con impacto inmediato.
+
+- **[Hamburger button sin aria-expanded — falla basica de accesibilidad]** `src/components/layout/Navbar.tsx` linea 43: el boton de menu mobile no tiene `aria-expanded={mobileOpen}`. Los lectores de pantalla no saben si el menu esta abierto o cerrado. Cambio minimal:
+  ```tsx
+  <button
+    aria-expanded={mobileOpen}
+    aria-controls="mobile-nav-menu"
+    aria-label={mobileOpen ? "Cerrar menu" : "Abrir menu"}
+    ...
+  >
+  ```
+  Y agregar `id="mobile-nav-menu"` al div del menu mobile (linea 92).
 
 ---
 
@@ -90,129 +112,114 @@ Sin cambios de codigo. Los ultimos 5 commits son reportes automaticos (`salud-si
 
 ### Mejoras al flujo de conversacion
 
-- **[Kyo no detecta que el usuario ya eligio una vacante especifica antes de abrir el chat]** Si un candidato esta leyendo `/vacantes/3` (Ejecutivo de Ventas, Sigma Retail) y abre el ChatWidget, Kyo empieza desde cero: "¿Que tipo de trabajo busca?" — cuando la respuesta es evidente. Esto ya fue sugerido en el reporte anterior como idea, aqui se especifica la implementacion completa:
-  1. En `ChatWidget.tsx`, al abrir el chat (cuando `setOpen(true)`), leer `window.location.pathname`.
-  2. Si coincide con `/vacantes/\d+`, extraer el id: `const jobId = Number(pathname.split("/").pop())`.
-  3. Inyectar un mensaje de sistema inicial extra en el primer POST: `system_context: { viewing_job_id: jobId }`.
-  4. En `route.ts`, si `system_context.viewing_job_id` existe, anteponer al conversation: `{ role: "user", content: "[CONTEXTO: El usuario esta viendo la vacante id=${jobId}]" }` como primer mensaje antes del historial.
-  5. En `system-prompt.ts` agregar: "Si recibes un mensaje de CONTEXTO indicando que el usuario ya esta en una vacante, omite el Paso 1 y comienza directamente en Paso 2 mencionando esa vacante."
-
-- **[Kyo no valida que la respuesta al Paso 0 sea un nombre real]** `src/lib/assistant/system-prompt.ts` Paso 0 — NOMBRE: si el usuario escribe "hola", "si", "nada" o "123", Kyo puede interpretar eso como un nombre y llamarle "Hola" o "Si" durante toda la conversacion. Agregar instruccion especifica:
+- **[Kyo no tiene rama para "ya aplique antes" — candidatos recurrentes quedan sin respuesta]** `src/lib/assistant/system-prompt.ts` — no hay instruccion para cuando un candidato dice "ya mande mis datos la semana pasada" o "¿saben algo de mi solicitud?" (esto es diferente al "check_application_status" ya sugerido). El candidato recurrente no quiere pasar por el flujo de 6 pasos de nuevo. Agregar seccion en el system-prompt:
   ```
-  ## Paso 0 — NOMBRE (manejo de casos especiales)
-  Si la respuesta parece una saludo, confirmacion o no es un nombre (ej. "hola", "bien", "nada", "anonimo", numeros solos):
-  - Responde: "Con gusto. ¿Me podria decir su nombre para orientarle mejor?"
-  - Si insiste en no dar nombre: usa "amigo" o "usted" y avanza al Paso 1. Nunca insistas mas de una vez.
+  ## Candidatos recurrentes
+  Si el usuario menciona que ya aplico o ya envio sus datos previamente:
+  - NO reinicies el flujo de 6 pasos.
+  - Responde: "[Nombre], para dar seguimiento a tu proceso te recomiendo contactar directamente
+    a nuestro equipo: WhatsApp 55 2087 6765, disponibles Lun-Vie 9am-6pm. Ellos tienen acceso
+    a tu expediente."
+  - Navega a /contacto si quiere otras opciones de contacto.
   ```
 
-- **[Delay de navegacion de 700ms es insuficiente — el usuario no alcanza a leer el mensaje]** `src/components/assistant/useChat.ts` linea 110: `setTimeout(() => router.push(target.path), 700)`. Una respuesta tipica de Kyo (2-3 lineas) tarda entre 1.5 y 3 segundos en aparecer desde que el usuario envia. Cuando finalmente aparece la respuesta, 700ms despues ya se esta navegando — el usuario lee la primera mitad del mensaje y la pantalla cambia. Aumentar el delay a 2000ms para dar tiempo real de lectura:
+- **[Kyo no establece expectativa de tiempo en el Paso 6 — candidato queda en el limbo]** `src/lib/assistant/system-prompt.ts` linea 67: el Paso 6 solo dice "Invitalo a llenar el formulario de aplicacion. Navega a /contacto si acepta." No hay instruccion de mencionar cuanto tiempo tarda Kyoszen en responder. El candidato aplica y no sabe si lo llamaran en 2 horas o 2 semanas. Agregar al Paso 6:
+  ```
+  ## Paso 6 — CIERRE
+  Antes de navegar a /contacto, menciona explicitamente:
+  "Una vez que envie sus datos, nuestro equipo le contactara en menos de 24 horas habiles.
+  ¿Listo para proceder?"
+  Solo entonces navega a /contacto.
+  ```
+  El dato "24 horas" ya esta en el knowledge base (COMPANY.stats). Usarlo en el cierre reduce la ansiedad del candidato.
+
+- **[Kyo puede perder el contexto del nombre si el candidato reanuda una conversacion anterior]** `src/components/assistant/useChat.ts` linea 13: el historial se persiste en localStorage con clave `kyoszen_chat_history_v1`. Si un candidato regresa 2 dias despues con una conversacion activa que ya paso el Paso 0 (dio su nombre), Kyo ve todo el historial. Pero el saludo inicial (`INITIAL_GREETING`) tiene `timestamp: 0` y el saludo de reapertura del chat siempre es el mismo "Bienvenido a Kyoszen...". Hay una inconsistencia: si el historial tiene 10 mensajes y el candidato ya dio su nombre, el mensaje inicial de bienvenida aparece al top del chat como si fuera una conversacion nueva. Solucion en `useChat.ts`:
   ```typescript
-  setTimeout(() => router.push(target.path), 2000);
-  ```
-
-- **[Kyo no entiende jerga coloquial mexicana — reduce accesibilidad para candidatos de nivel operativo]** `src/lib/assistant/system-prompt.ts` — no hay ninguna instruccion sobre lenguaje regional. Un candidato operativo puede escribir "busco chamba de almacen", "traigo 2 años de jale", "quiero lana de minimo 10". Si Kyo responde formalmente sin entender "chamba" como trabajo o "lana" como salario, puede pedir aclaracion innecesaria o malinterpretar. Agregar en la seccion de Personalidad del system-prompt:
-  ```
-  - Entiende coloquialismos mexicanos: "chamba/jale/trabajo" son sinonimos, "lana/dinero/salario" son sinonimos,
-    "ahorita" = pronto, "por el momento" = disponible ahora. Nunca corrijas al usuario. Responde siempre en tono profesional.
+  // Al cargar historial, si hay mas de 1 mensaje (conversacion activa),
+  // reemplazar el greeting fijo con uno de retorno:
+  const RETURN_GREETING: ChatMessage = {
+    id: "greeting",
+    role: "assistant",
+    content: "Hola de nuevo. ¿En que mas puedo orientarle?",
+    timestamp: 0,
+  };
+  function loadHistory(): ChatMessage[] {
+    const parsed = ...; // logica actual
+    if (parsed.length > 3) {
+      // conversacion activa — no repetir el saludo de nombre
+      return [RETURN_GREETING, ...parsed.slice(1)];
+    }
+    return parsed;
+  }
   ```
 
 ### Nuevas tools o capacidades recomendadas
 
-- **[Agregar tool: check_application_status — para candidatos que regresan]** Un candidato que aplico hace 3 dias puede regresar al sitio y preguntarle a Kyo "¿ya supe algo de mi solicitud?" Actualmente Kyo no tiene forma de manejar esto — diria "Siempre usa tools antes de inventar datos" pero no hay tool para verificar. Sin integracion Supabase real, la respuesta correcta es redirigir al WhatsApp. Agregar instruccion en el system-prompt:
-  ```
-  ## Seguimiento de solicitudes
-  Si el usuario pregunta por el estado de su aplicacion previa, responde:
-  "Para seguimiento personalizado, contacta directamente a nuestro equipo por WhatsApp: 55 2087 6765 (Lun-Vie 9am-6pm).
-  Ellos tienen acceso a tu expediente."
-  Navega a /contacto si quiere mas opciones.
-  ```
-  Cuando Supabase este integrado, esta tool puede convertirse en una llamada real.
-
-- **[Agregar soporte para enviar el perfil del candidato por WhatsApp al terminar el flujo]** Actualmente el Paso 6 lleva al formulario de `/contacto`. Alternativa de menor friccion: al final del flujo Kyo podria generar un mensaje pre-llenado para WhatsApp que incluya el resumen del perfil del candidato (nombre, puesto, experiencia, ubicacion, jornada). Implementacion en `tools.ts` con una nueva tool `generate_whatsapp_message`:
+- **[Agregar filtro `min_salary` a search_jobs — candidatos dicen "busco de minimo X"]** `src/lib/assistant/tools.ts` linea 39-46: `search_jobs` puede filtrar por `category` y `location` pero no por salario minimo. Cuando un candidato dice "busco de minimo $12,000", Kyo tiene que buscar todas las vacantes y filtrar mentalmente. Agregar parametro al schema:
   ```typescript
-  {
-    name: "generate_whatsapp_message",
-    description: "Genera un link de WhatsApp con el perfil del candidato pre-llenado para enviar al equipo de Kyoszen.",
-    input_schema: {
-      type: "object",
-      properties: {
-        nombre: { type: "string" },
-        puesto: { type: "string" },
-        experiencia: { type: "string" },
-        ubicacion: { type: "string" },
-        jornada: { type: "string" },
-        vacante_id: { type: "number", description: "ID de la vacante de interes (opcional)" }
-      },
-      required: ["nombre", "puesto"]
-    }
+  min_salary: {
+    type: "number",
+    description: "Salario minimo mensual requerido por el candidato en pesos MXN"
   }
   ```
-  En `executeTool` genera el link: `https://wa.me/525520876765?text=Hola%2C+me+llamo+${nombre}...`
-  El frontend detecta una URL en la respuesta y la renderiza como boton clickable.
+  En `executeTool` (linea 97 de `tools.ts`), agregar al filtro:
+  ```typescript
+  const results = knowledge.listJobs(input as { ... });
+  const filtered = input.min_salary
+    ? results.filter(j => j.salario >= (input.min_salary as number))
+    : results;
+  return JSON.stringify({ count: filtered.length, jobs: filtered });
+  ```
+  Y en `knowledge.ts` linea 138, agregar el filtro en `listJobs`. Cambio de ~10 lineas total.
 
 ### Problemas detectados
 
-- **[BUG — Kyo puede incluir URLs crudas de wa.me en su respuesta — no son clickables en el ChatWidget]** `src/lib/assistant/knowledge.ts` linea 83: el campo `whatsapp` en COMPANY es `"https://wa.me/525520876765"`. Este dato llega al system-prompt en la seccion de Contacto. Si el usuario pregunta "¿como me comunico?" y Kyo incluye la URL en su respuesta, el ChatWidget la renderiza como texto plano (no como `<a>` — los mensajes usan `whitespace-pre-wrap` en `ChatWidget.tsx` linea 227 sin parseo de markdown). El usuario ve la URL pero no puede hacer clic. Dos correcciones necesarias:
-  1. En `src/lib/assistant/knowledge.ts` linea 83, cambiar `whatsapp` a solo el numero: `whatsapp: "55 2087 6765"`.
-  2. En `system-prompt.ts` linea 110, actualizar el texto que usa esa variable para no generar la URL completa.
-  3. Opcional a futuro: agregar un parser de URLs en `MessageBubble` de `ChatWidget.tsx` que convierta `https://wa.me/...` en un `<a target="_blank">` clickable.
-
-- **[BUG — Rate limit por IP falla en entornos con NAT compartido — tipico en Mexico]** `src/app/api/assistant/chat/route.ts` lineas 10-23: el rate limit es 30 msg/min por IP. En Mexico es comun que hogares y oficinas compartan una IP publica via NAT (Telmex, Izzi, redes moviles de Telcel/Movistar con CGNAT). Si 3 candidatos de la misma empresa abren Kyo simultaneamente, el 3ro recibe "Demasiados mensajes, intenta de nuevo en un minuto" aunque no haya enviado nada. Dos mejoras:
-  1. Aumentar `RATE_LIMIT` de `30` a `60` en linea 11 — candidatos reales raramente mandan mas de 10 mensajes seguidos.
-  2. Agregar throttle en el cliente para evitar spam accidental: en `useChat.ts`, deshabilitar `sendMessage` por 800ms despues de cada envio con un ref de timestamp:
+- **[BUG — MAX_TOOL_ITERATIONS = 5 puede terminar el loop sin mensaje visible para el usuario]** `src/app/api/assistant/chat/route.ts` lineas 87 y 143: si las 5 iteraciones del tool-use loop terminan todas con `stop_reason === "tool_use"`, el loop rompe con `finalText = ""`. El fallback en linea 143 devuelve `"Entendido, ¿en que mas te puedo ayudar?"` — un mensaje completamente generico que no explica lo que paso. En la practica, 5 iteraciones son suficientes para el flujo actual, pero si Kyo llama `search_jobs` + `get_job_details` + `navigate_to` + otra tool en un solo mensaje, puede llegar al limite. Dos correcciones:
+  1. Aumentar `MAX_TOOL_ITERATIONS` de `5` a `8` — el costo es minimo ya que la mayoria de conversaciones usan 1-2 iteraciones.
+  2. Mejorar el fallback: si `finalText` esta vacio al terminar el loop, hacer un ultimo request a Claude sin tools para que genere un resumen de lo que proceso:
   ```typescript
-  const lastSentAt = useRef(0);
-  // en sendMessage:
-  if (Date.now() - lastSentAt.current < 800) return;
-  lastSentAt.current = Date.now();
+  if (!finalText && iter >= MAX_TOOL_ITERATIONS - 1) {
+    // solicitar resumen sin tools
+    const summary = await client.messages.create({
+      model: MODEL, max_tokens: 200, system: buildSystemPrompt(),
+      messages: [...conversation, { role: "user", content: "Resume en 2 lineas lo que encontraste." }]
+    });
+    finalText = summary.content.filter(b => b.type === "text").map(b => b.text).join("");
+  }
   ```
 
-- **[BUG — buildSystemPrompt() manda todo el catalogo de cursos y vacantes en cada request — costo innecesario]** `src/app/api/assistant/chat/route.ts` linea 92: `buildSystemPrompt()` incluye todas las vacantes y cursos en el system prompt. Con 8 vacantes y 15 cursos el token count es ~1200 tokens solo para el system. Cuando el catalogo crezca a 50+ vacantes el costo por mensaje puede duplicarse. La solucion de memoizacion ya fue sugerida en el reporte del 2026-05-16. Adicionalmente, considerar usar **prompt caching** de la API de Anthropic: el system prompt con datos estaticos es el candidato ideal para `cache_control: { type: "ephemeral" }`. Implementacion en `route.ts`:
-  ```typescript
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
-    system: [{ type: "text", text: buildSystemPrompt(), cache_control: { type: "ephemeral" } }],
-    tools: TOOLS,
-    messages: conversation,
-  });
+- **[BUG — ChatWidget sin aria-live — lectores de pantalla no anuncian respuestas de Kyo]** `src/components/assistant/ChatWidget.tsx` linea 143: el contenedor de mensajes `<div ref={scrollRef} className="flex-1 overflow-y-auto...">` no tiene `aria-live="polite"`. Cuando Kyo responde, los usuarios de lectores de pantalla (NVDA, VoiceOver) no reciben ninguna notificacion del nuevo mensaje. Para un asistente de empleo, ignorar accesibilidad puede excluir candidatos con discapacidad visual. Cambio de una linea:
+  ```tsx
+  <div
+    ref={scrollRef}
+    aria-live="polite"
+    aria-label="Conversacion con Kyo"
+    className="flex-1 overflow-y-auto px-5 pb-3 space-y-4"
+  >
   ```
-  El cache de Anthropic dura 5 minutos y reduce el costo del system prompt en ~90% para conversaciones consecutivas. Requiere modelo `claude-haiku-4-5-20251001` o superior — ya es el modelo actual.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **[Agregar Schema.org FAQPage para SEO de preguntas frecuentes]** `src/components/sections/FAQ.tsx` — el componente tiene 5 FAQs pero no incluye structured data. Google puede mostrar estas preguntas como "rich snippets" en los resultados de busqueda (el acordeon aparece directamente en Google). Agregar al final del componente, antes del cierre del `<section>`:
+- **[Filtros de vacantes no muestran conteo por opcion — usuarios filtran a ciegas]** `src/app/vacantes/page.tsx` lineas 145-153: los `DropdownPill` muestran solo el nombre de la opcion sin indicar cuantos resultados hay. Si un usuario selecciona "Remoto" y hay solo 1 vacante (o ninguna), lo sabe solo despues de aplicar el filtro. Mejora: calcular counts antes de renderizar:
+  ```typescript
+  const countByUbicacion = useMemo(() =>
+    Object.fromEntries(UBICACIONES.map(u => [u, u === "Todas" ? JOBS.length : JOBS.filter(j => j.ubicacion === u).length])),
+  []);
+  ```
+  Pasar como prop a `DropdownPill` para mostrar "(2)" junto a cada opcion. Cero dependencias nuevas — datos disponibles en `jobs.ts`.
+
+- **[Pagina de cursos usa imagenes de Unsplash en cada card — carga lenta en mobile]** `src/app/cursos/page.tsx` lineas 14-20: el `categoryImage` usa URLs de Unsplash con `w=600`. En mobile 4G en Mexico (promedio 15 Mbps), cargar 8-12 imagenes de 600px en el grid de cursos agrega ~2-3s al LCP. Opciones: (a) descargar las 6 imagenes de categoria a `/public/images/cursos/` y servir de forma estatica — cero latencia de CDN externo; (b) agregar `loading="lazy"` a las imagenes que estan fuera del fold inicial; (c) reducir la resolucion de Unsplash de `w=600` a `w=400` para las cards (tamano real en mobile es ~200px). La opcion (c) es cambio de 1 linea y reduce el peso ~40%.
+
+- **[Contacto page muestra correo hola@kyoszen.com como texto plano — no es clickable]** `src/app/contacto/page.tsx` linea 11: el correo `hola@kyoszen.com` aparece en la tarjeta de informacion como texto. En mobile, los usuarios esperan poder tapear el correo para abrir su cliente de email. Cambiar el `<div>` del value a `<a href="mailto:hola@kyoszen.com">`:
   ```tsx
-  <script
-    type="application/ld+json"
-    dangerouslySetInnerHTML={{ __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": faqs.map(f => ({
-        "@type": "Question",
-        "name": f.q,
-        "acceptedAnswer": { "@type": "Answer", "text": f.a }
-      }))
-    }) }}
-  />
+  { title: "Correo", value: "hola@kyoszen.com", href: "mailto:hola@kyoszen.com" }
   ```
-  Impacto: mejora visibilidad organica para busquedas como "cuanto tiempo tarda una consultora en cubrir vacante" o "que documentos necesito para aplicar a empleo CDMX".
-
-- **[Vacante detalle — agregar seccion "Vacantes similares" al final]** `src/app/vacantes/[id]/page.tsx` — al llegar al final de la descripcion de una vacante, el usuario no tiene una razon para quedarse si esa vacante no le convence. Agregar una seccion simple al final con 2-3 vacantes de la misma categoria:
-  ```typescript
-  const similares = JOBS.filter(j => j.categoria === job.categoria && j.id !== job.id).slice(0, 3);
+  Y en el renderizado:
+  ```tsx
+  {item.href
+    ? <a href={item.href} className="text-[13px] text-blue hover:underline">{item.value}</a>
+    : <div className="text-[13px] text-muted">{item.value}</div>}
   ```
-  Renderizar como mini-cards horizontales. Sin APIs adicionales, sin dependencias nuevas — datos ya disponibles en `jobs.ts`. Reduce tasa de abandono cuando la vacante vista no es la correcta.
-
-- **[Kyo podria iniciar la conversacion de forma mas contextual segun la pagina]** Actualmente el saludo es identico sin importar desde que pagina se abre el chat. Si el usuario esta en `/cursos`, el saludo deberia ser diferente al de `/vacantes`. El saludo actual `"Bienvenido a Kyoszen. Mi nombre es Kyo y estoy aqui para orientarte. ¿Me permite saber su nombre?"` funciona para candidatos pero es brusco para una empresa que busca cursos de capacitacion. Propuesta: en `ChatWidget.tsx`, pasar `window.location.pathname` al hook `useChat` al inicializar. En `useChat.ts`, seleccionar el `INITIAL_GREETING` segun la pagina:
-  ```typescript
-  const greetingByPath: Record<string, string> = {
-    "/cursos": "Bienvenido a Kyoszen. Soy Kyo, puedo orientarle sobre nuestros cursos de capacitacion. ¿Me permite su nombre?",
-    "/vacantes": "Bienvenido a Kyoszen. Soy Kyo y le ayudo a encontrar la vacante ideal. ¿Me puede decir su nombre?",
-    "/servicios": "Bienvenido a Kyoszen. Soy Kyo, asistente de la consultora. ¿En que puedo orientarle hoy?",
-  };
-  const greeting = greetingByPath[pathname] ?? INITIAL_GREETING.content;
-  ```
-  El saludo se personaliza sin cambiar el flujo — mejora la primera impresion segun la intencion del usuario.
+  El numero de telefono tambien deberia ser `<a href="tel:5520876765">` para permitir click-to-call en mobile.
