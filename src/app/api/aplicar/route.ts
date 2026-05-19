@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
+import { getSmtpConfig } from "@/lib/smtp-config";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,16 +46,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
     }
 
-    const port = Number(process.env.SMTP_PORT) || 587;
+    const smtp = await getSmtpConfig();
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port,
-      secure: port === 465,
-      requireTLS: port === 587,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.port === 465,
+      requireTLS: smtp.port === 587,
+      auth: { user: smtp.user, pass: smtp.pass },
       tls: { rejectUnauthorized: false },
     });
 
@@ -67,7 +65,7 @@ export async function POST(req: NextRequest) {
     const toEmail = await getAplicacionesEmail();
 
     await transporter.sendMail({
-      from: `"Kyoszen Web" <${process.env.SMTP_USER}>`,
+      from: `"Kyoszen Web" <${smtp.user}>`,
       to: toEmail,
       subject: `Nueva aplicacion: ${vacante} — ${nombre}`,
       html: `
