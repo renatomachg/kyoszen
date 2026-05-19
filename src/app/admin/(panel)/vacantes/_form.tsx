@@ -54,6 +54,29 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
   const [form, setForm] = useState<VacanteFormData>({ ...EMPTY, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [rawText, setRawText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [parseOpen, setParseOpen] = useState(!id); // abierto por default en nueva vacante
+
+  const parseWithAI = async () => {
+    if (!rawText.trim()) return;
+    setParsing(true);
+    try {
+      const res = await fetch("/api/admin/parse-vacante", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: rawText }),
+      });
+      const data = await res.json();
+      if (data.error) { setError("Error de IA: " + data.error); return; }
+      setForm((prev) => ({ ...prev, ...data }));
+      setParseOpen(false);
+    } catch {
+      setError("Error al conectar con la IA");
+    } finally {
+      setParsing(false);
+    }
+  };
 
   const set = (key: keyof VacanteFormData, value: VacanteFormData[typeof key]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -100,6 +123,47 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
           {error}
         </div>
       )}
+
+      {/* Panel IA */}
+      <div className="bg-gradient-to-br from-blue/5 to-navy/5 border border-blue/20 rounded-2xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setParseOpen(!parseOpen)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg">✨</span>
+            <div>
+              <p className="text-[13px] font-black text-navy">Completar con IA</p>
+              <p className="text-[11px] text-muted">Pega la informacion en bruto y la IA rellena el formulario</p>
+            </div>
+          </div>
+          <span className="text-muted text-sm">{parseOpen ? "▲" : "▼"}</span>
+        </button>
+        {parseOpen && (
+          <div className="px-5 pb-5 space-y-3">
+            <textarea
+              value={rawText}
+              onChange={(e) => setRawText(e.target.value)}
+              rows={6}
+              placeholder={`Pega aqui cualquier informacion sobre la vacante. Por ejemplo:\n\nBuscamos cajero para sucursal en Iztapalapa, CDMX. Turno matutino, lunes a sabado. Salario $9,500 mensuales. Empresa Sigma Retail. Requisitos: preparatoria terminada, experiencia en caja, manejo de efectivo...`}
+              className="w-full border border-blue/20 rounded-xl px-4 py-3 text-[13px] text-navy bg-white focus:outline-none focus:border-blue transition-colors resize-none placeholder:text-muted/60"
+            />
+            <button
+              type="button"
+              onClick={parseWithAI}
+              disabled={parsing || !rawText.trim()}
+              className="flex items-center gap-2 bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {parsing ? (
+                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" /> Interpretando...</>
+              ) : (
+                <><span>✨</span> Interpretar con IA</>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="bg-white rounded-2xl border border-border p-6 space-y-4">
         <h3 className="font-extrabold text-navy text-[14px]">Informacion general</h3>

@@ -40,8 +40,35 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
   const [form, setForm] = useState<CursoForm>({ ...EMPTY, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [rawText, setRawText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [parseOpen, setParseOpen] = useState(!initial?.id);
 
   const isEdit = !!form.id;
+
+  const parseWithAI = async () => {
+    if (!rawText.trim()) return;
+    setParsing(true);
+    try {
+      const res = await fetch("/api/admin/parse-curso", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: rawText }),
+      });
+      const data = await res.json();
+      if (data.error) { setError("Error de IA: " + data.error); return; }
+      setForm((prev) => ({
+        ...prev,
+        ...data,
+        slug: data.titulo ? slugify(data.titulo) : prev.slug,
+      }));
+      setParseOpen(false);
+    } catch {
+      setError("Error al conectar con la IA");
+    } finally {
+      setParsing(false);
+    }
+  };
 
   function set<K extends keyof CursoForm>(key: K, value: CursoForm[K]) {
     setForm(f => {
@@ -88,6 +115,47 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+
+      {/* Panel IA */}
+      <div className="bg-gradient-to-br from-blue/5 to-navy/5 border border-blue/20 rounded-2xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setParseOpen(!parseOpen)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg">✨</span>
+            <div>
+              <p className="text-[13px] font-black text-navy">Completar con IA</p>
+              <p className="text-[11px] text-muted">Pega la informacion en bruto y la IA rellena el formulario</p>
+            </div>
+          </div>
+          <span className="text-muted text-sm">{parseOpen ? "▲" : "▼"}</span>
+        </button>
+        {parseOpen && (
+          <div className="px-5 pb-5 space-y-3">
+            <textarea
+              value={rawText}
+              onChange={(e) => setRawText(e.target.value)}
+              rows={6}
+              placeholder={`Pega aqui cualquier informacion sobre el curso. Por ejemplo:\n\nCurso de Excel Avanzado para empresas. Aprende tablas dinamicas, macros y automatizacion. Dirigido a personal administrativo y contable. 16 horas, modalidad presencial. Incluye constancia DC-3...`}
+              className="w-full border border-blue/20 rounded-xl px-4 py-3 text-[13px] text-navy bg-white focus:outline-none focus:border-blue transition-colors resize-none placeholder:text-muted/60"
+            />
+            <button
+              type="button"
+              onClick={parseWithAI}
+              disabled={parsing || !rawText.trim()}
+              className="flex items-center gap-2 bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {parsing ? (
+                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" /> Interpretando...</>
+              ) : (
+                <><span>✨</span> Interpretar con IA</>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
