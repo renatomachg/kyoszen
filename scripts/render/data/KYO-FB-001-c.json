@@ -1,0 +1,17 @@
+{
+  "id": "KYO-FB-001",
+  "format": "facebook-post",
+  "output": "docs/contenido/mayo-2026/KYO-FB-001-layout-c.png",
+  "photo": "docs/contenido/mayo-2026/stock-profesionales.jpg",
+  "badge": "+ 10 anos en RRHH",
+  "headline_line1": "El talento",
+  "headline_line2": "que tu empresa",
+  "headline_accent": "necesita.",
+  "subtitle": "Reclutamos, capacitamos y acompanamos equipos en CDMX.",
+  "cta": "Escribenos hoy — respondemos en 24 horas",
+  "url": "kyoszen.com",
+  "overlay_color": "#042E7B",
+  "accent_color": "#10B981",
+  "link_color": "#1883FF",
+  "layout": "c"
+}

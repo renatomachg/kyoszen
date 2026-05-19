@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { logEvent } from "@/lib/analytics";
 
 export interface ChatMessage {
   id: string;
@@ -66,6 +67,9 @@ export function useChat() {
       const trimmed = text.trim();
       if (!trimmed || isLoading) return;
 
+      // Log user message to analytics
+      logEvent("kyo_mensaje", trimmed.slice(0, 300));
+
       setError(null);
       const userMsg: ChatMessage = {
         id: `u-${Date.now()}`,
@@ -108,7 +112,7 @@ export function useChat() {
         // Navigate to the first requested path, if any (don't fire multiple)
         if (data.navigations.length > 0) {
           const target = data.navigations[0];
-          // Small delay so the user sees the assistant's message first
+          logEvent("kyo_navegacion", target.path);
           setTimeout(() => router.push(target.path), 700);
         }
       } catch (err) {

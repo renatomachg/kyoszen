@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import KyoszenLogo from "./KyoszenLogo";
 import WhatsAppIcon from "@/components/ui/WhatsAppIcon";
+import { supabase } from "@/lib/supabase";
 
-const navLinks = [
+const BASE_LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/servicios", label: "Servicios" },
-  { href: "/vacantes", label: "Vacantes" },
+  { href: "/vacantes", label: "Vacantes", checkVacantes: true },
   { href: "/cursos", label: "Cursos" },
   { href: "/nosotros", label: "Nosotros" },
   { href: "/contacto", label: "Contacto" },
@@ -18,6 +19,17 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hayVacantes, setHayVacantes] = useState(true); // optimista: mostrar por default
+
+  useEffect(() => {
+    supabase
+      .from("vacantes")
+      .select("id", { count: "exact", head: true })
+      .eq("activa", true)
+      .then(({ count }) => setHayVacantes((count ?? 0) > 0));
+  }, []);
+
+  const navLinks = BASE_LINKS.filter((l) => !l.checkVacantes || hayVacantes);
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
 

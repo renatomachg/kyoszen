@@ -157,7 +157,11 @@ Variables CSS en `src/app/globals.css`:
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>`
   - Sin SMTP los formularios no envian correos.
 - [ ] Configurar GitHub Actions para auto-deploy al hacer push a main
-- [ ] Cambiar A record kyoszen.com → 76.13.111.112 (actualmente apunta a hosting viejo)
+- [x] Cambiar A record kyoszen.com → 76.13.111.112 (ya apuntaba correctamente)
+- [x] SSL Certbot configurado para kyoszen.com y www.kyoszen.com (expira 2026-08-17)
+- [ ] **Reemplazar ANTHROPIC_API_KEY en VPS** — el .env.local del VPS tiene el key personal de Renato. Cambiar por el key del cliente cuando esté disponible.
+- [ ] **Agregar SMTP_PASS en VPS** — contraseña de rsalazar@kyoszen.com.mx. Sin esto los formularios no envían correos.
+  - Para actualizar: `ssh root@76.13.111.112` → `nano /home/kyoszen/.env.local` → `pm2 restart kyoszen`
 - **NOTA: Vercel descartado.** Todo va a VPS. Las API keys van solo en .env.local del servidor, nunca en base de datos ni en el panel de admin.
 
 ### General

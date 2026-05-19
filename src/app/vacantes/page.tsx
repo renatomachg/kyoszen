@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import DropdownPill from "@/components/ui/DropdownPill";
 import PageHero from "@/components/ui/PageHero";
 import { supabase } from "@/lib/supabase";
+import { logEvent } from "@/lib/analytics";
 
 interface Vacante {
   id: number;
@@ -68,6 +69,16 @@ function VacantesPageContent() {
     supabase.from("vacantes").select("id,titulo,empresa,categoria,ubicacion,contrato,jornada,salario,badge,badge_class,descripcion,tags,activa")
       .eq("activa", true).order("id").then(({ data }) => setJobs((data as Vacante[]) ?? []));
   }, []);
+
+  // Debounced search tracking
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) return;
+    const t = setTimeout(() => {
+      logEvent("busqueda_vacantes", q.slice(0, 200));
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Initialize filters from URL (?ubicacion=CDMX&q=ventas etc)
   // Allows Kyo and other pages to deep-link with pre-applied filters.

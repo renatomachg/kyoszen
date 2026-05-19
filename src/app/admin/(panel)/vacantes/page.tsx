@@ -93,13 +93,9 @@ export default function AdminVacantes() {
                   <td className="px-5 py-4">
                     <button
                       onClick={() => toggleActiva(v.id, v.activa)}
-                      className={`text-[11px] font-bold px-2.5 py-1 rounded-full cursor-pointer transition-colors ${
-                        v.activa
-                          ? "bg-green-100 text-green-700 hover:bg-green-200"
-                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                      }`}
+                      className={`relative w-9 h-5 rounded-full transition-colors ${v.activa ? "bg-blue" : "bg-border"}`}
                     >
-                      {v.activa ? "Activa" : "Inactiva"}
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${v.activa ? "translate-x-4" : ""}`} />
                     </button>
                   </td>
                   <td className="px-5 py-4">

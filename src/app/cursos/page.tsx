@@ -6,6 +6,7 @@ import PageHero from "@/components/ui/PageHero";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { CATEGORIES, COURSES, type CourseCategory, type Course } from "@/lib/courses";
 import { supabase } from "@/lib/supabase";
+import { logEvent } from "@/lib/analytics";
 
 
 // ─── Modal de solicitud de informes ─────────────────────────────────────────
@@ -298,6 +299,7 @@ export default function CursosPage() {
       return;
     }
     setSelectedCategory(cat);
+    logEvent("ver_categoria_curso", cat.label);
     setTimeout(() => {
       coursesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 370);

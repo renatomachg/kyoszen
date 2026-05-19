@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import PublicShell from "@/components/layout/PublicShell";
 
@@ -22,6 +23,14 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
         <PublicShell>{children}</PublicShell>
+        {/* Google Analytics */}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-1P8CRFRPJS" strategy="afterInteractive" />
+        <Script id="ga-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-1P8CRFRPJS', { page_path: window.location.pathname });
+        `}</Script>
       </body>
     </html>
   );
