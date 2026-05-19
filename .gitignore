@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# VPS-only files (not tracked in git, managed on server directly)
+ecosystem.config.js
+deploy.sh

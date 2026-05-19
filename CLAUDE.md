@@ -65,24 +65,30 @@ src/
 
 ## Supabase — Tablas activas
 
-- **vacantes** — gestionadas desde /admin/vacantes. Sitio público lee de aquí.
+- **vacantes** — CRUD desde /admin/vacantes. Sitio público lee solo activas.
+- **cursos** — CRUD desde /admin/cursos. Sitio público lee solo activos.
+- **blog_posts** — CRUD desde /admin/blog con editor markdown.
 - **aplicaciones** — se llenan desde el modal "Aplicar ahora" del sitio
 - **contactos** — se llenan desde el formulario de /contacto
-- **cursos** — tabla creada, pendiente migrar datos y conectar al sitio
+- **kyo_config** (id, instrucciones) — instrucciones editables del asistente Kyo
+- **site_config** (key, value) — emails destino configurables desde /admin/correos
+- **site_eventos** (id, tipo, valor, session_id, created_at) — analytics propio (RLS activo)
+- **faqs** — preguntas frecuentes del asistente Kyo
 
-RLS activo: publico lee activos, admin autenticado hace todo.
+RLS activo en todas las tablas.
 
 ## VPS Hostinger
 
 - **IP:** 76.13.111.112 (Ubuntu 24.04, 1 CPU, 4 GB RAM, 50 GB)
-- **SSH:** `ssh root@76.13.111.112` (siempre por terminal, nunca consola web)
-- **App:** `/home/kyoszen/` (o buscar con `find /home /root -name "next.config.ts"`)
-- **PM2 proceso:** `kyoszen` (id 3)
-- **Nginx config:** `/etc/nginx/sites-available/demo.kyoszen.com`
-- **SSL:** Certbot, expira 2026-08-09
-- **Otros procesos en el VPS:** `maya` (id 0,2), `kyoszen-backend` (id 1) — no tocar
-- **Para actualizar el VPS:** `cd /home/kyoszen && git pull && npm install && npm run build && pm2 restart kyoszen`
-- **.env.local en VPS:** tiene ANTHROPIC_API_KEY personal (reemplazar por la del cliente al migrar), falta agregar variables de Supabase
+- **SSH desde Claude:** `ssh -i ~/.ssh/kyoszen_vps root@76.13.111.112` (llave permanente en Mac)
+- **App:** `/home/kyoszen/`
+- **PM2 proceso:** `kyoszen` (id 0) — usa `ecosystem.config.js` para cargar `.env.local`
+- **Nginx config:** `/etc/nginx/sites-enabled/kyoszen` — proxy a localhost:3000, SSL Certbot activo
+- **SSL:** Certbot kyoszen.com + www.kyoszen.com
+- **VPS limpio:** solo corre kyoszen, no hay otros proyectos
+- **Para actualizar el VPS:** `bash /home/kyoszen/deploy.sh` (script en VPS que hace pull + rebuild + recreacion de ecosystem.config.js si se borro + pm2 restart)
+- **Repo publico:** git pull funciona sin credenciales
+- **Dev local:** `bash dev.sh` (carga .env.local y arranca en puerto 3002)
 
 ## Documentacion del proyecto
 
@@ -137,37 +143,25 @@ Variables CSS en `src/app/globals.css`:
 
 ## Pendientes activos
 
-### Panel Admin
-- [ ] Cursos — migrar a Supabase y gestionar desde /admin/cursos
-- [ ] Blog — crear y editar artículos desde /admin/blog
-- [ ] Kyo — editar knowledge base y system prompt desde el panel
-
-### Deploy (VPS Hostinger — kyoszen.com)
-- [ ] Clonar repo en VPS de nuevo (se perdió la carpeta)
-- [ ] Agregar variables de Supabase al .env.local del VPS
-- [ ] **ANTES de subir al VPS — variables requeridas en `.env.local` del VPS:**
-  - `SMTP_HOST=smtp.hostinger.com`
-  - `SMTP_PORT=587`
-  - `SMTP_USER=rsalazar@kyoszen.com.mx`
-  - `SMTP_PASS=<contraseña de rsalazar@kyoszen.com.mx>`
-  - `CONTACT_EMAIL=rsalazar@kyoszen.com.mx` — recibe formularios de /contacto y vacantes
-  - `COURSES_EMAIL=info@kyoszen.com` — recibe formularios de solicitud de informes de cursos
-  - `ANTHROPIC_API_KEY=<key del cliente>` — asistente Kyo
-  - `NEXT_PUBLIC_SUPABASE_URL=https://xwzggymwdrvxpwvuefqf.supabase.co`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>`
-  - Sin SMTP los formularios no envian correos.
-- [ ] Configurar GitHub Actions para auto-deploy al hacer push a main
-- [x] Cambiar A record kyoszen.com → 76.13.111.112 (ya apuntaba correctamente)
-- [x] SSL Certbot configurado para kyoszen.com y www.kyoszen.com (expira 2026-08-17)
-- [ ] **Reemplazar ANTHROPIC_API_KEY en VPS** — el .env.local del VPS tiene el key personal de Renato. Cambiar por el key del cliente cuando esté disponible.
-- [ ] **Agregar SMTP_PASS en VPS** — contraseña de rsalazar@kyoszen.com.mx. Sin esto los formularios no envían correos.
-  - Para actualizar: `ssh root@76.13.111.112` → `nano /home/kyoszen/.env.local` → `pm2 restart kyoszen`
-- **NOTA: Vercel descartado.** Todo va a VPS. Las API keys van solo en .env.local del servidor, nunca en base de datos ni en el panel de admin.
-
 ### General
-- [x] Logo SVG del cliente recibido e implementado (`public/images/logo.svg`, componente `KyoszenLogo.tsx`)
-- [ ] Revisar copy con cliente
-- [ ] TikTok: agregar link real a la red social en Footer (actualmente `href="#"`)
+- [ ] **SMTP_PASS** — agregar contraseña de `info@kyoszen.com` en `.env.local` del VPS para que funcionen los correos. Hacerlo con: `ssh -i ~/.ssh/kyoszen_vps root@76.13.111.112` → `nano /home/kyoszen/.env.local` → `pm2 restart kyoszen`
+- [ ] **TikTok** — link en Footer es `href="#"`. Falta URL real del perfil de TikTok de Kyoszen.
+- [ ] **Logo PNG** — pendiente de entrega del cliente. Actualmente usa wordmark de texto.
+- [ ] Revisar copy con cliente (es razonable pero no 100% aprobado)
+
+### Panel Admin — YA COMPLETO
+- [x] Vacantes — CRUD + toggle activa/inactiva + ✨ Completar con IA
+- [x] Cursos — CRUD + toggle activo + ✨ Completar con IA
+- [x] Blog — CRUD + editor markdown + picker de imagenes + duplicar
+- [x] Asistente Kyo — editor instrucciones + test en vivo + FAQs
+- [x] Correos — configurar emails destino desde el panel
+- [x] Analytics — eventos propios + dashboard
+
+### Deploy — YA FUNCIONANDO
+- [x] VPS Hostinger 76.13.111.112 — unico deploy, Vercel descartado
+- [x] PM2 + Nginx + SSL Certbot
+- [x] Repo publico en GitHub — VPS hace `git pull` directo
+- [x] Llave SSH permanente `~/.ssh/kyoszen_vps` para acceso de Claude al VPS
 
 ## Cosas que NO hacer
 
@@ -180,21 +174,33 @@ Variables CSS en `src/app/globals.css`:
 ## Comandos frecuentes
 
 ```bash
-# Dev local
+# Dev local — SIEMPRE usar dev.sh para que cargue el .env.local correctamente
 cd /Users/renatomachado/Desktop/kyoszen
-npm run dev        # http://localhost:3000
+bash dev.sh        # http://localhost:3002
 npm run build
 npm run lint
 
-# Alias configurado en .zshrc
-kyoszen            # entra a la carpeta y abre Claude
+# Deploy a produccion — Claude se conecta directo:
+ssh -i ~/.ssh/kyoszen_vps root@76.13.111.112 "bash /home/kyoszen/deploy.sh"
+# El deploy.sh: git pull → verifica/recrea ecosystem.config.js → npm build → pm2 restart
 
-# VPS
-ssh root@76.13.111.112
-cd /home/kyoszen && git pull && npm install && npm run build && pm2 restart kyoszen
+# Ver logs del VPS
+pm2 logs kyoszen --lines 50 --nostream
 pm2 list
-pm2 logs kyoszen --lines 50
 ```
+
+## Flujo de trabajo
+
+1. Desarrollar en local → probar en `localhost:3002`
+2. Decir "manda a produccion"
+3. Claude hace commit + push al repo + ejecuta `bash /home/kyoszen/deploy.sh` en VPS
+
+## Resiliencia del VPS
+
+- `ecosystem.config.js` NO esta en git (listado en .gitignore) — se crea manualmente en el VPS
+- `deploy.sh` en `/home/kyoszen/deploy.sh` — recrea `ecosystem.config.js` automaticamente si falta
+- Si `pm2 save` se sobreescribe accidentalmente: `pm2 start ecosystem.config.js && pm2 save --force`
+- `pm2-root` servicio systemd activo → PM2 arranca automaticamente en reboot del VPS
 
 ## Ramas
 
@@ -265,4 +271,4 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-05-13 — Sistema de generación de posts HTML/CSS+Puppeteer construido y aprobado. 4 layouts aprobados (D1, D2, Vacante-A, Vacante-B). rembg instalado para recorte de personas con IA. Estrategia social media cargada desde PDF. Agentes de social media creados en .claude/agents/.
+2026-05-19 — Sesion completa: sitio desplegado en produccion (kyoszen.com), VPS limpio solo con kyoszen, llave SSH permanente para Claude, panel admin completo (vacantes, cursos, blog, kyo, correos, analytics), feature ✨ Completar con IA en vacantes y cursos, Navbar y seccion home responden a vacantes activas, analytics propio con tabla site_eventos en Supabase.
