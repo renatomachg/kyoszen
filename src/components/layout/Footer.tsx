@@ -14,12 +14,14 @@ export default function Footer() {
           <div className="flex gap-2 mt-4">
             {[
               { icon: "/images/facebook.svg", label: "Facebook", href: "https://www.facebook.com/profile.php?id=61572162331314" },
-              { icon: "/images/tiktok.svg",   label: "TikTok",   href: "#" },
+              { icon: "/images/tiktok.svg",   label: "TikTok",   href: "https://www.tiktok.com/@kyoszen3" },
             ].map(({ icon, label, href }) => (
               <a
                 key={label}
                 href={href}
                 aria-label={label}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-[34px] h-[34px] bg-white/7 rounded-lg flex items-center justify-center no-underline hover:bg-blue transition-colors p-[9px]"
               >
                 <img
