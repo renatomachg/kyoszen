@@ -1,5 +1,5 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-05-19 00:00 UTC
+**Fecha:** 2026-05-20 14:08 UTC
 
 | Pagina | URL | Codigo HTTP | Estado |
 |--------|-----|-------------|--------|
@@ -14,16 +14,16 @@
 
 ---
 
-> ⚠️ ALERTA TECNICA: Todas las URLs devolvieron HTTP 403, pero **esto NO es una caida del sitio en Vercel**.
+> ⚠️ ALERTA TECNICA: Todas las URLs devolvieron HTTP 403 con header `x-deny-reason: host_not_allowed`,
+> pero **esto NO es una caida del sitio en Vercel**.
 >
 > **Causa:** El entorno de ejecucion remoto (Claude Code en la nube) usa un proxy con inspeccion TLS
 > (`O=Anthropic; CN=sandbox-egress-production TLS Inspection CA`) que bloquea peticiones salientes
 > a dominios externos como `kyoszen.vercel.app`. El codigo 403 lo emite el proxy del sandbox,
 > no el servidor de Vercel.
 >
-> El handshake TLS con Vercel completo exitosamente y el certificado de `*.vercel.app` es valido
-> (emitido 2026-05-17, expira 2026-06-16), lo que confirma que el sitio esta alcanzable
-> desde internet — solo el egress de este sandbox esta restringido.
+> Este comportamiento es identico al registrado el 2026-05-19, confirmando que es una limitacion
+> permanente del sandbox y no un problema nuevo del sitio.
 >
 > **Accion recomendada:** Ejecutar el monitoreo desde un entorno con acceso directo a internet:
 > VPS propio (76.13.111.112), GitHub Actions con runner externo, cron local,
