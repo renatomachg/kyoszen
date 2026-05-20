@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/courses";
+import { logAdminClient } from "@/lib/admin-log-client";
 
 const MODALIDADES = ["En vivo", "Online", "Hibrido"];
 const NIVELES = ["Basico", "Intermedio", "Avanzado"];
@@ -106,6 +107,7 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
 
     setSaving(false);
     if (err) return setError(err.message);
+    logAdminClient(isEdit ? `Curso editado` : `Curso creado`, form.titulo);
     router.push("/admin/cursos");
     router.refresh();
   }

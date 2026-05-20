@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { logAdminClient } from "@/lib/admin-log-client";
 
 interface VacanteFormData {
   titulo: string;
@@ -111,6 +112,7 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
       setError("Error al guardar: " + error.message);
       setSaving(false);
     } else {
+      logAdminClient(id ? `Vacante editada` : `Vacante creada`, form.titulo);
       router.push("/admin/vacantes");
       router.refresh();
     }

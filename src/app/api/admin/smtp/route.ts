@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { clearSmtpCache } from "@/lib/smtp-config";
+import { logAdmin } from "@/lib/admin-log";
 
 export const runtime = "nodejs";
 
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
 
   // Limpiar cache para que los siguientes correos usen la nueva config
   clearSmtpCache();
+  await logAdmin("SMTP actualizado", `Host: ${host}:${portNum} · Usuario: ${user}`);
 
   return NextResponse.json({ ok: true });
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { logAdminClient } from "@/lib/admin-log-client";
 
 const field =
   "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-blue transition-colors bg-white font-mono";
@@ -113,6 +114,7 @@ export default function AdminCorreos() {
     setSavingEmails(false);
     if (error) { setEmailsError(error.message); return; }
     setSavedConfig({ ...config });
+    logAdminClient("Correos de destino actualizados");
     setEmailsOk(true);
     setTimeout(() => setEmailsOk(false), 3000);
   }

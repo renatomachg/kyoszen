@@ -25,11 +25,13 @@ const NAV = [
   {
     href: "/admin/aplicaciones",
     label: "Aplicaciones",
+    badge: "aplicaciones",
     icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
   },
   {
     href: "/admin/contactos",
     label: "Contactos",
+    badge: "contactos",
     icon: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
   },
   {
@@ -43,6 +45,22 @@ const NAV = [
     icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
   },
   {
+    href: "/admin/testimonios",
+    label: "Testimonios",
+    icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z",
+  },
+  { divider: true },
+  {
+    href: "/admin/contenido",
+    label: "Contenido",
+    icon: "M4 6h16M4 12h16M4 18h7",
+  },
+  {
+    href: "/admin/seo",
+    label: "SEO",
+    icon: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
+  },
+  {
     href: "/admin/correos",
     label: "Correos",
     icon: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
@@ -52,6 +70,16 @@ const NAV = [
     label: "Analytics",
     icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
   },
+  {
+    href: "/admin/servidor",
+    label: "Servidor",
+    icon: "M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01",
+  },
+  {
+    href: "/admin/actividad",
+    label: "Actividad",
+    icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+  },
 ];
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
@@ -59,6 +87,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState({ aplicaciones: 0, contactos: 0 });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -70,6 +99,35 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
       }
     });
   }, [router]);
+
+  // Cargar conteo de no leidos
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const [{ count: ap }, { count: co }] = await Promise.all([
+        supabase.from("aplicaciones").select("id", { count: "exact", head: true }).eq("leido", false),
+        supabase.from("contactos").select("id", { count: "exact", head: true }).eq("leido", false),
+      ]);
+      setUnread({ aplicaciones: ap ?? 0, contactos: co ?? 0 });
+    };
+    fetchUnread();
+    // Recargar cada 60 segundos
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Cuando se visita aplicaciones o contactos, refrescar badges
+  useEffect(() => {
+    if (pathname.startsWith("/admin/aplicaciones") || pathname.startsWith("/admin/contactos")) {
+      setTimeout(() => {
+        Promise.all([
+          supabase.from("aplicaciones").select("id", { count: "exact", head: true }).eq("leido", false),
+          supabase.from("contactos").select("id", { count: "exact", head: true }).eq("leido", false),
+        ]).then(([{ count: ap }, { count: co }]) => {
+          setUnread({ aplicaciones: ap ?? 0, contactos: co ?? 0 });
+        });
+      }, 1500);
+    }
+  }, [pathname]);
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -87,6 +145,11 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
+  const getBadge = (badge?: string) => {
+    if (!badge) return 0;
+    return unread[badge as keyof typeof unread] ?? 0;
+  };
+
   return (
     <div className="min-h-screen flex bg-bg">
       {/* Sidebar */}
@@ -103,23 +166,33 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-colors ${
-                isActive(item.href)
-                  ? "bg-yellow text-navy"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d={item.icon} />
-              </svg>
-              {item.label}
-            </Link>
-          ))}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {NAV.map((item, i) => {
+            if ("divider" in item) {
+              return <div key={i} className="border-t border-white/10 my-2 mx-1" />;
+            }
+            const active = isActive(item.href);
+            const badgeCount = getBadge(item.badge);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-colors ${
+                  active ? "bg-yellow text-navy" : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d={item.icon} />
+                </svg>
+                <span className="flex-1">{item.label}</span>
+                {badgeCount > 0 && (
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${active ? "bg-navy text-yellow" : "bg-yellow text-navy"}`}>
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="px-4 py-4 border-t border-white/10 space-y-2">
