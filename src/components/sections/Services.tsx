@@ -11,7 +11,7 @@ const services = [
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
     ),
     bg: "bg-blue-soft",
-    title: "Reclutamiento y Seleccion",
+    title: "Reclutamiento y Selección",
     desc: "Candidatos verificados y alineados a tu cultura organizacional.",
   },
   {
@@ -20,7 +20,7 @@ const services = [
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>
     ),
     bg: "bg-yellow-soft",
-    title: "Capacitacion de Personal",
+    title: "Capacitación de Personal",
     desc: "+25 cursos en RRHH, Liderazgo, Calidad y Normatividad.",
   },
   {
@@ -29,7 +29,7 @@ const services = [
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><polyline points="17 11 19 13 23 9" /></svg>
     ),
     bg: "bg-green-soft",
-    title: "Induccion de Personal",
+    title: "Inducción de Personal",
     desc: "Colaboradores integrados con procesos claros y efectivos.",
   },
   {
@@ -38,8 +38,8 @@ const services = [
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-purple)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
     ),
     bg: "bg-purple-soft",
-    title: "Digitalizacion de RRHH",
-    desc: "Gestion eficiente y moderna de tu area de capital humano.",
+    title: "Digitalización de RRHH",
+    desc: "Gestión eficiente y moderna de tu área de capital humano.",
   },
 ];
 

@@ -6,24 +6,24 @@ import AnimatedSection from "@/components/ui/AnimatedSection";
 
 const faqs = [
   {
-    q: "¿Cuanto cuesta el servicio de reclutamiento?",
-    a: "El costo varia segun el perfil y numero de vacantes. Un asesor te dara una propuesta personalizada sin costo y sin compromiso.",
+    q: "¿Cuánto cuesta el servicio de reclutamiento?",
+    a: "El costo varía según el perfil y número de vacantes. Un asesor te dará una propuesta personalizada sin costo y sin compromiso.",
   },
   {
-    q: "¿En cuanto tiempo cubren una vacante?",
-    a: "Garantizamos cobertura en tiempo y forma. El plazo varia segun el perfil, siempre priorizando rapidez sin sacrificar calidad.",
+    q: "¿En cuánto tiempo cubren una vacante?",
+    a: "Garantizamos cobertura en tiempo y forma. El plazo varía según el perfil, siempre priorizando rapidez sin sacrificar calidad.",
   },
   {
-    q: "¿Que documentos necesito para aplicar a una vacante?",
-    a: "Acta de nacimiento, comprobante de domicilio (max 3 meses), ID oficial, CURP, numero de seguridad social y constancia de situacion fiscal.",
+    q: "¿Qué documentos necesito para aplicar a una vacante?",
+    a: "Acta de nacimiento, comprobante de domicilio (máx 3 meses), ID oficial, CURP, número de seguridad social y constancia de situación fiscal.",
   },
   {
-    q: "¿En que zonas operan?",
-    a: "Principalmente CDMX y Estado de Mexico. Contactanos para confirmar cobertura en tu zona especifica.",
+    q: "¿En qué zonas operan?",
+    a: "Principalmente CDMX y Estado de México. Contáctanos para confirmar cobertura en tu zona específica.",
   },
   {
-    q: "¿Que pasa despues de enviar mis datos?",
-    a: "Te contactamos en 24 horas habiles para dar seguimiento personalizado a tu proceso.",
+    q: "¿Qué pasa después de enviar mis datos?",
+    a: "Te contactamos en 24 horas hábiles para dar seguimiento personalizado a tu proceso.",
   },
 ];
 

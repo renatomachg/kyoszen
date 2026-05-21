@@ -21,7 +21,7 @@ const trust = [
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
-    label: "687+ candidatos colocados",
+    label: "7000+ candidatos colocados",
   },
   {
     icon: (
@@ -29,7 +29,7 @@ const trust = [
         <polyline points="20 6 9 17 4 12" />
       </svg>
     ),
-    label: "Garantia de reposicion",
+    label: "Garantía de reposición",
   },
 ];
 
@@ -64,8 +64,8 @@ export default function CtaFinal() {
           </h2>
           <p className="text-[14.5px] text-white/85 leading-relaxed max-w-[560px] mx-auto mb-8">
             Ya sea que busques empleo o necesites contratar personal, nuestro
-            equipo esta listo para acompañarte en cada paso. Te respondemos en
-            menos de 24 horas habiles.
+            equipo está listo para acompañarte en cada paso. Te respondemos en
+            menos de 24 horas hábiles.
           </p>
 
           <div className="flex gap-3 justify-center flex-wrap mb-10">

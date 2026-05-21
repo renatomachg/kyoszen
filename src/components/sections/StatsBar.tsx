@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 const stats = [
-  { target: 687, label: "Candidatos colocados" },
-  { target: 672, label: "Empresas atendidas" },
+  { target: 7000, label: "Candidatos colocados" },
   { target: 25, label: "Cursos disponibles" },
   { target: 10, label: "Años de experiencia" },
 ];

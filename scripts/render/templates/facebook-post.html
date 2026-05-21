@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='UTF-8'>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1080px;
+    height: 1080px;
+    font-family: 'DM Sans', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-photo {
+    position: absolute;
+    inset: 0;
+    background-image: url('{{PHOTO_DATA}}');
+    background-size: cover;
+    background-position: center;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      {{OVERLAY_95}} 0%,
+      {{OVERLAY_80}} 35%,
+      {{OVERLAY_30}} 65%,
+      {{OVERLAY_00}} 100%
+    );
+  }
+
+  .content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 60px 60px 0 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  .top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    height: 72px;
+    filter: brightness(0) invert(1);
+  }
+
+  .badge {
+    background: {{ACCENT_COLOR}};
+    color: #fff;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 10px 26px;
+    border-radius: 999px;
+  }
+
+  .divider {
+    width: 72px;
+    height: 5px;
+    background: {{LINK_COLOR}};
+    border-radius: 999px;
+  }
+
+  .headline {
+    font-size: 88px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+  }
+
+  .headline-accent {
+    color: {{ACCENT_COLOR}};
+  }
+
+  .subtitle {
+    font-size: 26px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.45;
+  }
+
+  .cta-text {
+    font-size: 22px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.70);
+  }
+
+  .url {
+    position: absolute;
+    bottom: 48px;
+    right: 60px;
+    font-size: 18px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.50);
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+  <div class='bg-photo'></div>
+  <div class='overlay'></div>
+
+  <div class='content'>
+    <div class='top-row'>
+      <img class='logo' src='{{LOGO_DATA}}' alt='Kyoszen' />
+      <div class='badge'>{{BADGE}}</div>
+    </div>
+
+    <div class='divider'></div>
+
+    <div class='headline'>
+      {{HEADLINE_LINE1}}<br>
+      {{HEADLINE_LINE2}}<br>
+      <span class='headline-accent'>{{HEADLINE_ACCENT}}</span>
+    </div>
+
+    <div class='subtitle'>{{SUBTITLE}}</div>
+
+    <div class='cta-text'>{{CTA}}</div>
+  </div>
+
+  <div class='url'>{{URL}}</div>
+</body>
+</html>

@@ -7,10 +7,9 @@ import AnimatedSection from "@/components/ui/AnimatedSection";
 import PageHero from "@/components/ui/PageHero";
 
 const stats = [
-  { n: "687+", l: "Candidatos colocados", s: "y contando" },
-  { n: "672+", l: "Empresas atendidas", s: "CDMX y Edomex" },
-  { n: "99%", l: "Clientes satisfechos", s: "tasa de recomendacion" },
-  { n: "3+", l: "Años de experiencia", s: "en el mercado laboral" },
+  { n: "7000+", l: "Candidatos colocados", s: "y contando" },
+  { n: "99%", l: "Clientes satisfechos", s: "tasa de recomendación" },
+  { n: "10+", l: "Años de experiencia", s: "en el mercado laboral" },
 ];
 
 export default function NosotrosPage() {
@@ -20,13 +19,13 @@ export default function NosotrosPage() {
       <PageHero
         image="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1800&auto=format&fit=crop&q=80"
         title="Sobre nosotros"
-        description="Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnologia, experiencia y un trato genuinamente humano para ofrecer resultados que duran. Cada proceso que manejamos — desde el reclutamiento hasta la capacitacion — esta diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios."
+        description="Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnología, experiencia y un trato genuinamente humano para ofrecer resultados que duran. Cada proceso que manejamos — desde el reclutamiento hasta la capacitación — está diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios."
       />
 
       {/* Stats */}
       <section className="py-20 px-5 md:px-10 xl:px-20 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 text-center">
             {stats.map((s, i) => (
               <motion.div
                 key={s.l}
@@ -53,7 +52,7 @@ export default function NosotrosPage() {
           {/* Top row: title left, intro right */}
           <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-8 md:gap-12 mb-10 md:mb-14 items-start">
             <AnimatedSection>
-              <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">¿Por que existimos?</p>
+              <p className="text-[11px] font-bold text-blue uppercase tracking-[2px] mb-2 flex items-center gap-1.5 before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">¿Por qué existimos?</p>
               <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1]">
                 Empoderamos a los dueños
                 <br />
@@ -63,8 +62,8 @@ export default function NosotrosPage() {
             <AnimatedSection delay={0.15}>
               <p className="text-[13.5px] text-muted leading-relaxed md:pt-2">
                 Entendemos los retos de crecer con recursos limitados. Por eso
-                ofrecemos soluciones de capital humano accesibles, agiles y con
-                resultados medibles desde el primer dia.
+                ofrecemos soluciones de capital humano accesibles, ágiles y con
+                resultados medibles desde el primer día.
               </p>
             </AnimatedSection>
           </div>
@@ -84,7 +83,7 @@ export default function NosotrosPage() {
             <div className="flex flex-col gap-5">
               {[
                 { n: "01", title: "Procesos a la medida", desc: "Diseñamos estrategias de capital humano adaptadas al tamaño, cultura y etapa de tu empresa." },
-                { n: "02", title: "Equipo experimentado", desc: "Mas de 3 años colocando talento verificado en microempresas de CDMX y Estado de Mexico." },
+                { n: "02", title: "Equipo experimentado", desc: "Mas de 10 años colocando talento verificado en microempresas de CDMX y Estado de México." },
                 { n: "03", title: "Enfoque humano", desc: "Cada candidato y cliente recibe trato genuinamente humano, con acompañamiento durante todo el proceso." },
               ].map((item, i) => (
                 <motion.div
@@ -118,7 +117,7 @@ export default function NosotrosPage() {
         <div className="max-w-7xl mx-auto">
           <AnimatedSection className="text-center max-w-[520px] mx-auto mb-10">
             <p className="text-[11px] font-bold text-yellow uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestros valores</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-white">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>
+            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-white">Ayudamos a los negocios a crecer mas rápido y mas grandes</h2>
           </AnimatedSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -132,14 +131,14 @@ export default function NosotrosPage() {
               },
               {
                 tag: "Reconocimiento",
-                title: "Mas de 687 colocaciones exitosas en mercado mexicano",
+                title: "Mas de 7000 colocaciones exitosas en mercado mexicano",
                 image: "/images/nosotros3.jpg",
                 highlight: true,
                 href: "/nosotros",
               },
               {
                 tag: "Reporte",
-                title: "2024 Reporte de satisfaccion y retencion del talento",
+                title: "2024 Reporte de satisfacción y retención del talento",
                 image: "/images/nosotros4.jpg",
                 highlight: false,
                 href: "/contacto",
@@ -229,7 +228,7 @@ export default function NosotrosPage() {
               Nuestros servicios
             </span>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1] mb-5">
-              Estrategias a la medida para el maximo crecimiento de tu negocio
+              Estrategias a la medida para el máximo crecimiento de tu negocio
             </h2>
             <p className="text-[13.5px] text-muted leading-relaxed mb-7">
               Diseñamos soluciones de capital humano adaptadas a la realidad de
@@ -260,14 +259,14 @@ export default function NosotrosPage() {
                 </div>
                 <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Soluciones digitales</h4>
                 <p className="text-[12px] text-muted leading-relaxed">
-                  Procesos agiles con tecnologia, tableros de seguimiento y trato humano en cada etapa.
+                  Procesos ágiles con tecnología, tableros de seguimiento y trato humano en cada etapa.
                 </p>
               </div>
             </div>
 
             <p className="text-[13px] text-muted leading-relaxed">
-              Mas de 3 años conectando talento con empresas mexicanas en
-              crecimiento. Combinamos tecnologia, experiencia y un trato
+              Mas de 10 años conectando talento con empresas mexicanas en
+              crecimiento. Combinamos tecnología, experiencia y un trato
               genuinamente humano.
             </p>
           </AnimatedSection>
@@ -290,18 +289,14 @@ export default function NosotrosPage() {
                 transition={{ delay: 0.35, duration: 0.6 }}
                 className="absolute bottom-5 right-5 left-5 sm:left-auto sm:max-w-[340px] bg-yellow rounded-2xl p-5 shadow-xl"
               >
-                <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="grid grid-cols-2 gap-3 text-center">
                   <div>
-                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">687+</div>
+                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">7000+</div>
                     <div className="text-[10px] font-bold text-navy/75 mt-1.5">Candidatos</div>
                   </div>
                   <div>
-                    <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">672+</div>
-                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Empresas</div>
-                  </div>
-                  <div>
                     <div className="text-[22px] md:text-[26px] font-black text-navy leading-none">99%</div>
-                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Satisfaccion</div>
+                    <div className="text-[10px] font-bold text-navy/75 mt-1.5">Satisfacción</div>
                   </div>
                 </div>
               </motion.div>
@@ -344,7 +339,7 @@ export default function NosotrosPage() {
                   </div>
                 </div>
                 <p className="text-[12px] text-white/85 leading-relaxed">
-                  Garantia de reposicion si el candidato no cumple en los primeros 30 dias.
+                  Garantía de reposición si el candidato no cumple en los primeros 30 días.
                 </p>
               </motion.div>
             </div>
@@ -353,14 +348,14 @@ export default function NosotrosPage() {
           {/* RIGHT - Text column */}
           <AnimatedSection delay={0.2}>
             <span className="inline-block bg-white text-navy text-[11px] font-extrabold uppercase tracking-[1.5px] px-3 py-1.5 rounded-full border border-border mb-5">
-              Como trabajamos
+              Cómo trabajamos
             </span>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1] mb-5">
               Un proceso claro, transparente y con resultados
             </h2>
             <p className="text-[13.5px] text-muted leading-relaxed mb-7">
-              No paramos despues de contratar. Acompañamos cada etapa del
-              proceso con comunicacion directa, criterios claros y seguimiento
+              No paramos después de contratar. Acompañamos cada etapa del
+              proceso con comunicación directa, criterios claros y seguimiento
               continuo para que tu empresa y el talento crezcan juntos.
             </p>
 
@@ -374,7 +369,7 @@ export default function NosotrosPage() {
                 </div>
                 <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Candidatos verificados</h4>
                 <p className="text-[12px] text-muted leading-relaxed">
-                  Documentacion completa y perfil revisado antes de presentarlo a tu empresa.
+                  Documentación completa y perfil revisado antes de presentarlo a tu empresa.
                 </p>
               </div>
               <div>
@@ -388,7 +383,7 @@ export default function NosotrosPage() {
                 </div>
                 <h4 className="text-[15px] font-extrabold text-navy mb-1.5">Acompañamiento total</h4>
                 <p className="text-[12px] text-muted leading-relaxed">
-                  Desde el primer contacto hasta la integracion del colaborador.
+                  Desde el primer contacto hasta la integración del colaborador.
                 </p>
               </div>
             </div>
@@ -409,8 +404,8 @@ export default function NosotrosPage() {
       <section className="bg-bg py-16 px-5 md:px-10 xl:px-20">
         <AnimatedSection className="max-w-[600px] mx-auto text-center">
           <div className="text-2xl mb-2">✦</div>
-          <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy mb-4">Ayudamos a los negocios a crecer mas rapido y mas grandes</h2>
-          <p className="text-[13.5px] text-muted leading-relaxed mb-6">Ya sea que busques empleo o necesites contratar, estamos aqui para acompañarte. Te respondemos en menos de 24 horas habiles.</p>
+          <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy mb-4">Ayudamos a los negocios a crecer mas rápido y mas grandes</h2>
+          <p className="text-[13.5px] text-muted leading-relaxed mb-6">Ya sea que busques empleo o necesites contratar, estamos aquí para acompañarte. Te respondemos en menos de 24 horas hábiles.</p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link href="/vacantes" className="bg-navy text-white rounded-full py-3 px-7 text-[13px] font-bold no-underline hover:bg-blue-dark transition-colors">Ver vacantes →</Link>
             <Link href="/contacto" className="bg-[#E3F2FF] text-blue-dark rounded-full py-3 px-7 text-[13px] font-bold no-underline hover:bg-[#cce5ff] transition-colors">Contratar personal</Link>

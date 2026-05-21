@@ -27,6 +27,22 @@ mejoras pendientes y tareas tecnicas. Se actualiza conforme se van resolviendo.
 
 ---
 
+## 🔵 Deploy — Estado actual y pendientes de infraestructura
+
+### Demo para cliente (LISTO ✅ 2026-05-11)
+- [x] **[DEMO] demo.kyoszen.com en VPS** — Sitio corriendo en VPS Hostinger (76.13.111.112) con Node.js 22, PM2, Nginx y SSL. Muestra funcionalidad completa vs HostGator estatico.
+- [x] **[DEMO] kyoszen.com en HostGator** — Export estatico subido a HostGator para mostrar limitaciones (Kyo, formulario contacto y modal aplicar no funcionan).
+
+### Migracion a produccion (PENDIENTE — esperando decision del cliente)
+- [ ] **[DEPLOY] Cambiar A record de kyoszen.com** — En HostGator DNS, cambiar el A record de `kyoszen.com` de `162.241.62.140` (HostGator) a `76.13.111.112` (VPS). Tambien el registro `www`.
+- [ ] **[DEPLOY] Actualizar config de Nginx en VPS** — Cambiar `demo.kyoszen.com` por `kyoszen.com` en `/etc/nginx/sites-available/demo.kyoszen.com`. Renombrar el archivo tambien.
+- [ ] **[DEPLOY] SSL para kyoszen.com** — Correr `certbot --nginx -d kyoszen.com -d www.kyoszen.com` despues del cambio de DNS.
+- [ ] **[DEPLOY] Reemplazar API key de Anthropic** — En el VPS, editar `/home/kyoszen/.env.local` y reemplazar la API key personal por la del cliente.
+- [ ] **[DEPLOY] Configurar SMTP en VPS** — Agregar variables `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_EMAIL` en `.env.local` del VPS. Usar correo corporativo de Kyoszen en Hostinger.
+- [ ] **[DEPLOY] Auto-deploy con GitHub Actions** — Crear workflow `.github/workflows/deploy.yml` para que cada push a `main` haga SSH al VPS y ejecute `git pull && npm install && npm run build && pm2 restart kyoszen` automaticamente.
+
+---
+
 ## 🟡 Medio — Funcionalidad incompleta
 
 - [ ] **[INCOMPLETO] Newsletter.tsx** — El componente existe y se ve bien, pero no tiene endpoint. El email nunca se guarda ni envia. Necesita `/api/newsletter` o integracion con un servicio de email.

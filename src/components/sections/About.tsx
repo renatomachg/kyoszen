@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 const stats = [
   { n: "687+", l: "Candidatos colocados", color: "text-blue" },
   { n: "672+", l: "Empresas atendidas", color: "text-[#15803d]" },
-  { n: "99%", l: "Satisfaccion", color: "text-[#b45309]" },
+  { n: "99%", l: "Satisfacción", color: "text-[#b45309]" },
 ];
 
 export default function About() {
@@ -76,12 +76,12 @@ export default function About() {
               Sobre Kyoszen
             </span>
             <h2 className="text-[clamp(1.5rem,3vw,2.2rem)] font-black leading-[1.15] tracking-tight text-blue-dark mt-4 mb-4">
-              Mas de <span className="text-blue-btn">10 años</span> impulsando el talento humano en Mexico
+              Mas de <span className="text-blue-btn">10 años</span> impulsando el talento humano en México
             </h2>
             <p className="text-sm text-[#64748B] leading-relaxed mb-6">
               Somos una consultora especializada en Recursos Humanos que apoya a
               microempresas mexicanas en crecimiento. Reclutamiento,
-              capacitacion, induccion y digitalizacion — todo con
+              capacitación, inducción y digitalización — todo con
               acompañamiento personalizado en CDMX y Area Metropolitana.
             </p>
             <div className="flex gap-2.5 flex-wrap">

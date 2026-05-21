@@ -8,17 +8,17 @@ const items = [
   {
     n: "01",
     title: "Candidatos verificados",
-    desc: "Documentacion completa y perfil revisado antes de presentar a tu empresa.",
+    desc: "Documentación completa y perfil revisado antes de presentar a tu empresa.",
   },
   {
     n: "02",
     title: "Respuesta en 24h",
-    desc: "Velocidad sin sacrificar calidad. Soluciones rapidas para tu operacion.",
+    desc: "Velocidad sin sacrificar calidad. Soluciones rápidas para tu operación.",
   },
   {
     n: "03",
     title: "Acompañamiento total",
-    desc: "Desde el primer contacto hasta la integracion del colaborador.",
+    desc: "Desde el primer contacto hasta la integración del colaborador.",
   },
 ];
 
@@ -49,7 +49,7 @@ export default function WhyUs() {
           <AnimatedSection delay={0.15}>
             <p className="text-[13.5px] text-white/85 leading-relaxed">
               Mas de 10 años conectando talento con empresas mexicanas en
-              crecimiento. Combinamos tecnologia, experiencia y un trato
+              crecimiento. Combinamos tecnología, experiencia y un trato
               genuinamente humano para entregar resultados reales.
             </p>
           </AnimatedSection>

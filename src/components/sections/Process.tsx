@@ -11,18 +11,18 @@ const steps = [
   },
   {
     num: "02",
-    title: "Busqueda dirigida",
-    desc: "Reclutamos activamente en multiples canales y evaluamos con criterio claro.",
+    title: "Búsqueda dirigida",
+    desc: "Reclutamos activamente en múltiples canales y evaluamos con criterio claro.",
   },
   {
     num: "03",
-    title: "Evaluacion profunda",
-    desc: "Verificamos habilidades, actitud, compatibilidad y documentacion completa.",
+    title: "Evaluación profunda",
+    desc: "Verificamos habilidades, actitud, compatibilidad y documentación completa.",
   },
   {
     num: "04",
     title: "Cierre y seguimiento",
-    desc: "Presentamos candidatos y acompañamos hasta la contratacion exitosa.",
+    desc: "Presentamos candidatos y acompañamos hasta la contratación exitosa.",
   },
 ];
 
@@ -33,14 +33,14 @@ export default function Process() {
         <AnimatedSection>
           <div className="text-center max-w-[640px] mx-auto mb-12">
             <span className="inline-block bg-yellow text-black text-[11px] font-extrabold py-1.5 px-4 rounded-full uppercase tracking-wider mb-4">
-              Como trabajamos
+              Cómo trabajamos
             </span>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.8rem)] font-black leading-[1.1] tracking-tight text-navy mb-4">
-              No paramos despues de contratar
+              No paramos después de contratar
             </h2>
             <p className="text-[13.5px] text-muted leading-relaxed max-w-[540px] mx-auto">
               Un proceso claro, transparente y con seguimiento en cada etapa.
-              Nuestro metodo garantiza que el talento correcto llegue a tu
+              Nuestro método garantiza que el talento correcto llegue a tu
               empresa y se quede.
             </p>
           </div>

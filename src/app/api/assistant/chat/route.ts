@@ -1,7 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@supabase/supabase-js";
 import { buildSystemPrompt } from "@/lib/assistant/system-prompt";
 import { TOOLS, executeTool } from "@/lib/assistant/tools";
+
+// Cache the instrucciones from Supabase to avoid fetching on every message
+let _cachedInstrucciones: string | null = null;
+let _cacheExpiry = 0;
+
+async function getStoredInstrucciones(): Promise<string | null> {
+  if (_cachedInstrucciones && Date.now() < _cacheExpiry) return _cachedInstrucciones;
+  try {
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data } = await sb
+      .from("kyo_config")
+      .select("instrucciones")
+      .eq("id", 1)
+      .single();
+    if (data?.instrucciones) {
+      _cachedInstrucciones = data.instrucciones as string;
+      _cacheExpiry = Date.now() + 60_000; // cache for 60 seconds
+      return _cachedInstrucciones;
+    }
+  } catch {
+    // Supabase unavailable — fall through to default
+  }
+  return null;
+}
 
 export const runtime = "nodejs";
 
@@ -58,7 +86,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { messages: ChatRequestMessage[] };
+  let body: { messages: ChatRequestMessage[]; previewPrompt?: string };
   try {
     body = await req.json();
   } catch {
@@ -74,6 +102,9 @@ export async function POST(req: NextRequest) {
 
   const client = new Anthropic({ apiKey });
 
+  // Determine instrucciones: preview (draft from admin) > stored (Supabase) > default
+  const instrucciones = body.previewPrompt ?? await getStoredInstrucciones() ?? undefined;
+
   // Tool-use loop: keep calling Claude while it requests tools.
   const conversation: Anthropic.MessageParam[] = history.map((m) => ({
     role: m.role,
@@ -88,7 +119,7 @@ export async function POST(req: NextRequest) {
       const response = await client.messages.create({
         model: MODEL,
         max_tokens: 1024,
-        system: buildSystemPrompt(),
+        system: buildSystemPrompt(instrucciones),
         tools: TOOLS,
         messages: conversation,
       });

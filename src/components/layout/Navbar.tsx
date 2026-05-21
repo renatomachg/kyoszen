@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import KyoszenLogo from "./KyoszenLogo";
 import WhatsAppIcon from "@/components/ui/WhatsAppIcon";
+import { supabase } from "@/lib/supabase";
 
-const navLinks = [
+const BASE_LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/servicios", label: "Servicios" },
-  { href: "/vacantes", label: "Vacantes" },
+  { href: "/vacantes", label: "Vacantes", checkVacantes: true },
   { href: "/cursos", label: "Cursos" },
   { href: "/nosotros", label: "Nosotros" },
   { href: "/contacto", label: "Contacto" },
@@ -18,6 +19,17 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hayVacantes, setHayVacantes] = useState(true); // optimista: mostrar por default
+
+  useEffect(() => {
+    supabase
+      .from("vacantes")
+      .select("id", { count: "exact", head: true })
+      .eq("activa", true)
+      .then(({ count }) => setHayVacantes((count ?? 0) > 0));
+  }, []);
+
+  const navLinks = BASE_LINKS.filter((l) => !l.checkVacantes || hayVacantes);
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
 
@@ -52,7 +64,7 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 no-underline shrink-0 md:relative absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0">
-          <KyoszenLogo />
+          <KyoszenLogo height={25} />
         </Link>
 
         {/* Desktop nav links */}
@@ -75,7 +87,7 @@ export default function Navbar() {
         {/* Right side */}
         <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
           <a
-            href="https://wa.me/525520876765"
+            href="https://wa.link/5zv0ba"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-wa text-white border-none rounded-full cursor-pointer flex items-center gap-[7px] no-underline shrink-0 transition-opacity duration-150 text-[13px] font-bold hover:opacity-90 w-10 h-10 md:w-auto md:h-auto md:px-[18px] md:py-[10px] justify-center md:justify-start"
@@ -101,7 +113,7 @@ export default function Navbar() {
             </Link>
           ))}
           <a
-            href="https://wa.me/525520876765"
+            href="https://wa.link/5zv0ba"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-wa text-white border-none rounded-xl py-[11px] text-sm font-bold cursor-pointer mt-2 text-center no-underline block"

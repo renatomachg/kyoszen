@@ -1,5 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { createClient } from "@supabase/supabase-js";
+import { getSmtpConfig } from "@/lib/smtp-config";
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// Cache aplicaciones email destination from Supabase (60s TTL)
+let _aplicacionesEmail: string | null = null;
+let _emailCacheExpiry = 0;
+
+async function getAplicacionesEmail(): Promise<string> {
+  if (_aplicacionesEmail && Date.now() < _emailCacheExpiry) return _aplicacionesEmail;
+  try {
+    const { data } = await supabaseAdmin
+      .from("site_config")
+      .select("value")
+      .eq("key", "aplicaciones_email")
+      .single();
+    if (data?.value) {
+      _aplicacionesEmail = data.value;
+      _emailCacheExpiry = Date.now() + 60_000;
+      return _aplicacionesEmail!;
+    }
+  } catch { /* fallback */ }
+  return process.env.CONTACT_EMAIL ?? "rsalazar@kyoszen.com.mx";
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,16 +46,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
     }
 
-    const port = Number(process.env.SMTP_PORT) || 587;
+    const smtp = await getSmtpConfig();
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port,
-      secure: port === 465,
-      requireTLS: port === 587,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.port === 465,
+      requireTLS: smtp.port === 587,
+      auth: { user: smtp.user, pass: smtp.pass },
       tls: { rejectUnauthorized: false },
     });
 
@@ -37,9 +62,11 @@ export async function POST(req: NextRequest) {
       attachments.push({ filename: cv.name, content: buffer });
     }
 
+    const toEmail = await getAplicacionesEmail();
+
     await transporter.sendMail({
-      from: `"Kyoszen Web" <${process.env.SMTP_USER}>`,
-      to: "rsalazar@kyoszen.com",
+      from: `"Kyoszen Web" <${smtp.user}>`,
+      to: toEmail,
       subject: `Nueva aplicacion: ${vacante} — ${nombre}`,
       html: `
         <h2>Nueva aplicacion de empleo</h2>
@@ -55,6 +82,16 @@ export async function POST(req: NextRequest) {
         </table>
       `,
       attachments,
+    });
+
+    await supabaseAdmin.from("aplicaciones").insert({
+      vacante,
+      nombre,
+      whatsapp,
+      correo,
+      experiencia,
+      ubicacion,
+      documentacion,
     });
 
     return NextResponse.json({ ok: true });

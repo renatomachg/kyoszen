@@ -47,9 +47,9 @@ export default function Blog() {
                 capital humano
               </h2>
             </div>
-            <button className="bg-blue-btn text-white border-none rounded-full py-3 px-7 text-[13px] font-bold cursor-pointer no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark transition-colors">
+            <Link href="/blog" className="bg-blue-btn text-white border-none rounded-full py-3 px-7 text-[13px] font-bold cursor-pointer no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark transition-colors">
               Ver todos →
-            </button>
+            </Link>
           </div>
         </AnimatedSection>
 
