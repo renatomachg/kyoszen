@@ -98,8 +98,14 @@ export default function ContactoPage() {
                     <textarea placeholder="Escribe tu mensaje aquí..." rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="w-full border-[1.5px] border-border rounded-xl py-2.5 px-3.5 text-[13px] outline-none focus:border-blue transition-colors resize-none" />
                   </div>
                   <label className="flex items-start gap-2.5 mb-5 cursor-pointer">
-                    <input type="checkbox" checked={form.privacy} onChange={(e) => setForm({ ...form, privacy: e.target.checked })} className="mt-0.5" />
-                    <span className="text-xs text-muted">Acepto el aviso de privacidad y el tratamiento de mis datos personales.</span>
+                    <input type="checkbox" checked={form.privacy} onChange={(e) => setForm({ ...form, privacy: e.target.checked })} className="mt-0.5 shrink-0" />
+                    <span className="text-xs text-muted leading-relaxed">
+                      He leído y acepto el{" "}
+                      <a href="/politica-de-privacidad" target="_blank" rel="noopener noreferrer" className="text-blue underline hover:text-blue-dark transition-colors">
+                        Aviso de Privacidad
+                      </a>{" "}
+                      y autorizo el tratamiento de mis datos personales conforme a la LFPDPPP.
+                    </span>
                   </label>
                   {error && (
                     <p className="text-xs text-red-600 mb-3">{error}</p>

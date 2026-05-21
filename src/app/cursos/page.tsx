@@ -158,6 +158,13 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
               >
                 {status === "loading" ? "Enviando..." : "Solicitar informes →"}
               </button>
+              <p className="text-[11px] text-[var(--color-muted)] text-center mt-2 leading-relaxed">
+                Al enviar, aceptas nuestro{" "}
+                <a href="/politica-de-privacidad" target="_blank" rel="noopener noreferrer" className="text-[var(--color-blue)] underline hover:text-[var(--color-blue-dark)] transition-colors">
+                  Aviso de Privacidad
+                </a>{" "}
+                y el tratamiento de tus datos conforme a la LFPDPPP.
+              </p>
             </form>
           )}
         </div>

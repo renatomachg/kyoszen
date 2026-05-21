@@ -225,6 +225,13 @@ export default function AplicarModal({ open, onClose, vacante }: AplicarModalPro
                   >
                     {status === "sending" ? "Enviando..." : "Enviar solicitud"}
                   </button>
+                  <p className="text-[11px] text-muted text-center mt-3 leading-relaxed">
+                    Al enviar, aceptas nuestro{" "}
+                    <a href="/politica-de-privacidad" target="_blank" rel="noopener noreferrer" className="text-blue underline hover:text-blue-dark transition-colors">
+                      Aviso de Privacidad
+                    </a>{" "}
+                    y el tratamiento de tus datos conforme a la LFPDPPP.
+                  </p>
                 </div>
               </form>
             )}
