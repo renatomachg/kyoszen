@@ -80,12 +80,6 @@ export default function Footer() {
           <h5 className="text-[12.5px] font-extrabold mb-4 opacity-85">Contacto</h5>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-[30px] h-[30px] bg-white/7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0">
-              <span role="img" aria-label="phone">📞</span>
-            </div>
-            <span className="text-xs opacity-50">56 4004 5414</span>
-          </div>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-[30px] h-[30px] bg-white/7 rounded-[7px] flex items-center justify-center text-[13px] shrink-0">
               <span role="img" aria-label="email">✉️</span>
             </div>
             <span className="text-xs opacity-50">rsalazar@kyoszen.com.mx</span>

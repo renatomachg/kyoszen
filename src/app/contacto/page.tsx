@@ -59,7 +59,7 @@ export default function ContactoPage() {
             No dudes en <em className="text-yellow not-italic">escribirnos</em>
           </>
         }
-        description="Con mas de 10 años en el mercado laboral mexicano, estamos listos para ayudarte sin costos adicionales ni compromisos."
+        description="Con más de 10 años en el mercado laboral mexicano, estamos listos para ayudarte sin costos adicionales ni compromisos."
       />
 
       {/* Contact body */}

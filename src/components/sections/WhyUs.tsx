@@ -48,7 +48,7 @@ export default function WhyUs() {
           </AnimatedSection>
           <AnimatedSection delay={0.15}>
             <p className="text-[13.5px] text-white/85 leading-relaxed">
-              Mas de 10 años conectando talento con empresas mexicanas en
+              Más de 10 años conectando talento con empresas mexicanas en
               crecimiento. Combinamos tecnología, experiencia y un trato
               genuinamente humano para entregar resultados reales.
             </p>

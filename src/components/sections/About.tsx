@@ -6,9 +6,9 @@ import AnimatedSection from "@/components/ui/AnimatedSection";
 import { motion } from "framer-motion";
 
 const stats = [
-  { n: "687+", l: "Candidatos colocados", color: "text-blue" },
-  { n: "672+", l: "Empresas atendidas", color: "text-[#15803d]" },
-  { n: "99%", l: "Satisfacción", color: "text-[#b45309]" },
+  { n: "7000+", l: "Candidatos colocados", color: "text-blue" },
+  { n: "99%", l: "Clientes satisfechos", color: "text-[#15803d]" },
+  { n: "10+", l: "Años de experiencia", color: "text-[#b45309]" },
 ];
 
 export default function About() {
@@ -76,20 +76,20 @@ export default function About() {
               Sobre Kyoszen
             </span>
             <h2 className="text-[clamp(1.5rem,3vw,2.2rem)] font-black leading-[1.15] tracking-tight text-blue-dark mt-4 mb-4">
-              Mas de <span className="text-blue-btn">10 años</span> impulsando el talento humano en México
+              Más de <span className="text-blue-btn">10 años</span> impulsando el talento humano en México
             </h2>
             <p className="text-sm text-[#64748B] leading-relaxed mb-6">
               Somos una consultora especializada en Recursos Humanos que apoya a
               microempresas mexicanas en crecimiento. Reclutamiento,
               capacitación, inducción y digitalización — todo con
-              acompañamiento personalizado en CDMX y Area Metropolitana.
+              acompañamiento personalizado en CDMX y Área Metropolitana.
             </p>
             <div className="flex gap-2.5 flex-wrap">
               <Link href="/nosotros" className="bg-blue-btn text-white border-none rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center gap-1.5 hover:bg-blue-dark transition-colors">
-                Conocer mas →
+                Conocer más →
               </Link>
               <Link href="/contacto" className="bg-[#E3F2FF] text-blue-dark border-none rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center hover:bg-[#cce5ff] transition-colors">
-                Contactanos
+                Contáctanos
               </Link>
             </div>
           </AnimatedSection>

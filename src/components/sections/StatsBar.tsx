@@ -61,7 +61,7 @@ export default function StatsBar() {
           Resultados que nos respaldan
         </h2>
         <p className="text-center text-[13.5px] text-white/60 max-w-[520px] mx-auto mb-6 leading-relaxed">
-          Mas de una decada conectando talento con empresas mexicanas en
+          Más de una década conectando talento con empresas mexicanas en
           crecimiento. Estos numeros reflejan nuestro compromiso con cada
           cliente.
         </p>

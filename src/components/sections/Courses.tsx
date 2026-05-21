@@ -16,7 +16,7 @@ export default function Courses() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-8 items-end mb-12">
             <div>
               <span className="inline-block bg-yellow text-black text-[11px] font-extrabold py-1.5 px-4 rounded-full uppercase tracking-wider mb-4">
-                Capacitacion
+                Capacitación
               </span>
               <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black leading-[1.1] tracking-tight text-navy">
                 Cursos que impulsan
@@ -28,7 +28,7 @@ export default function Courses() {
               <p className="text-[13.5px] text-muted leading-relaxed mb-4 max-w-[420px] md:ml-auto">
                 Programas diseñados para el mercado laboral mexicano. Todos
                 con constancia DC-3 y en modalidades en vivo, online o
-                hibridas.
+                híbridas.
               </p>
               <Link
                 href="/cursos"
@@ -98,7 +98,7 @@ export default function Courses() {
                         </span>
                       </div>
                       <span className="text-[11.5px] font-extrabold text-blue flex items-center gap-1 transition-all group-hover:gap-1.5">
-                        Ver mas →
+                        Ver más →
                       </span>
                     </div>
                   </div>

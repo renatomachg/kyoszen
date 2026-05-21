@@ -18,8 +18,8 @@ export default function NosotrosPage() {
       {/* Hero */}
       <PageHero
         image="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1800&auto=format&fit=crop&q=80"
-        title="Sobre nosotros"
-        description="Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnología, experiencia y un trato genuinamente humano para ofrecer resultados que duran. Cada proceso que manejamos — desde el reclutamiento hasta la capacitación — está diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios."
+        title="Sobre Nosotros"
+        description="Somos especialistas en capital humano enfocados en microempresas mexicanas. Combinamos tecnología, experiencia y un trato genuinamente humano para ofrecer resultados que duran. Cada proceso que manejamos (desde el reclutamiento hasta la capacitación) está diseñado para que tu empresa cuente con el talento correcto en el momento correcto, sin costos ocultos ni compromisos innecesarios."
       />
 
       {/* Stats */}
@@ -83,7 +83,7 @@ export default function NosotrosPage() {
             <div className="flex flex-col gap-5">
               {[
                 { n: "01", title: "Procesos a la medida", desc: "Diseñamos estrategias de capital humano adaptadas al tamaño, cultura y etapa de tu empresa." },
-                { n: "02", title: "Equipo experimentado", desc: "Mas de 10 años colocando talento verificado en microempresas de CDMX y Estado de México." },
+                { n: "02", title: "Equipo experimentado", desc: "Más de 10 años colocando talento verificado en microempresas de CDMX y Estado de México." },
                 { n: "03", title: "Enfoque humano", desc: "Cada candidato y cliente recibe trato genuinamente humano, con acompañamiento durante todo el proceso." },
               ].map((item, i) => (
                 <motion.div
@@ -117,7 +117,7 @@ export default function NosotrosPage() {
         <div className="max-w-7xl mx-auto">
           <AnimatedSection className="text-center max-w-[520px] mx-auto mb-10">
             <p className="text-[11px] font-bold text-yellow uppercase tracking-[2px] mb-2 flex items-center gap-1.5 justify-center before:content-[''] before:w-3.5 before:h-0.5 before:bg-yellow before:rounded-sm">Nuestros valores</p>
-            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-white">Ayudamos a los negocios a crecer mas rápido y mas grandes</h2>
+            <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-white">Ayudamos a los negocios a crecer más rápido y más grandes</h2>
           </AnimatedSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -232,7 +232,7 @@ export default function NosotrosPage() {
             </h2>
             <p className="text-[13.5px] text-muted leading-relaxed mb-7">
               Diseñamos soluciones de capital humano adaptadas a la realidad de
-              cada empresa mexicana. Sin plantillas genericas: entendemos tu
+              cada empresa mexicana. Sin plantillas genéricas: entendemos tu
               contexto, tus metas y entregamos resultados medibles.
             </p>
 
@@ -265,7 +265,7 @@ export default function NosotrosPage() {
             </div>
 
             <p className="text-[13px] text-muted leading-relaxed">
-              Mas de 10 años conectando talento con empresas mexicanas en
+              Más de 10 años conectando talento con empresas mexicanas en
               crecimiento. Combinamos tecnología, experiencia y un trato
               genuinamente humano.
             </p>
@@ -404,7 +404,7 @@ export default function NosotrosPage() {
       <section className="bg-bg py-16 px-5 md:px-10 xl:px-20">
         <AnimatedSection className="max-w-[600px] mx-auto text-center">
           <div className="text-2xl mb-2">✦</div>
-          <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy mb-4">Ayudamos a los negocios a crecer mas rápido y mas grandes</h2>
+          <h2 className="text-[clamp(1.4rem,2.5vw,2rem)] font-extrabold tracking-tight text-navy mb-4">Ayudamos a los negocios a crecer más rápido y más grandes</h2>
           <p className="text-[13.5px] text-muted leading-relaxed mb-6">Ya sea que busques empleo o necesites contratar, estamos aquí para acompañarte. Te respondemos en menos de 24 horas hábiles.</p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link href="/vacantes" className="bg-navy text-white rounded-full py-3 px-7 text-[13px] font-bold no-underline hover:bg-blue-dark transition-colors">Ver vacantes →</Link>

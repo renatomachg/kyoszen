@@ -8,8 +8,8 @@ import PageHero from "@/components/ui/PageHero";
 const features = [
   { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: "Reclutamiento y Selección", desc: "Identificamos, evaluamos y presentamos candidatos verificados alineados a tu cultura y perfil en tiempo récord.", link: "/vacantes", linkText: "Ver vacantes →" },
   { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#b45309" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>, title: "Capacitación y Cursos", desc: "Programas de formación en RRHH, liderazgo, calidad y normatividad diseñados para el mercado laboral mexicano.", link: "/cursos", linkText: "Ver cursos →" },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#15803d" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>, title: "Inducción y Onboarding", desc: "Diseñamos procesos de integración efectivos para que tus nuevos colaboradores sean productivos desde el primer día.", link: "/contacto", linkText: "Saber mas →" },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-purple)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>, title: "Digitalización de RRHH", desc: "Implementamos herramientas digitales para modernizar y automatizar los procesos de tu área de capital humano.", link: "/contacto", linkText: "Saber mas →" },
+  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#15803d" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>, title: "Inducción y Onboarding", desc: "Diseñamos procesos de integración efectivos para que tus nuevos colaboradores sean productivos desde el primer día.", link: "/contacto", linkText: "Saber más →" },
+  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-purple)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>, title: "Digitalización de RRHH", desc: "Implementamos herramientas digitales para modernizar y automatizar los procesos de tu área de capital humano.", link: "/contacto", linkText: "Saber más →" },
 ];
 
 const splitSections = [
@@ -232,7 +232,7 @@ export default function ServiciosPage() {
                 href="/nosotros"
                 className="inline-flex items-center gap-2 text-[13px] font-extrabold text-white no-underline hover:gap-3 transition-all w-fit"
               >
-                Saber mas
+                Saber más
                 <span className="w-8 h-8 rounded-full bg-yellow flex items-center justify-center">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12" />
