@@ -2,6 +2,19 @@
 
 Este archivo lo lee Claude Code al iniciar cada sesión. Mantiene el contexto del proyecto, decisiones importantes y pendientes entre sesiones.
 
+## ⚠️ REGLA INAMOVIBLE — FLUJO DE TRABAJO
+
+**SIEMPRE local primero, producción después. Sin excepciones.**
+
+1. Hacer el cambio en local
+2. El usuario lo revisa y aprueba en local (`http://localhost:3002`)
+3. Solo después de aprobación explícita: commit → push → deploy al VPS
+4. Esto aplica a TODO: código, datos de Supabase, migraciones, configuraciones
+
+Nunca tocar producción (VPS ni Supabase) sin aprobación local previa del usuario.
+
+---
+
 ## Resumen
 
 Sitio corporativo de **Kyoszen** — consultoría de capital humano (reclutamiento, capacitación, inducción, digitalización de RRHH) en México.
