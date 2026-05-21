@@ -114,7 +114,7 @@ export default function VacanteContent({ id }: { id: string }) {
 
                 {/* Description */}
                 <div className="mb-8">
-                  <h2 className="text-lg font-extrabold text-navy mb-3">Descripcion del puesto</h2>
+                  <h2 className="text-lg font-extrabold text-navy mb-3">Descripción del puesto</h2>
                   <p className="text-[14px] text-muted leading-relaxed">{job.descripcion}</p>
                 </div>
 
@@ -171,10 +171,10 @@ export default function VacanteContent({ id }: { id: string }) {
                   {/* Quick info */}
                   <div className="space-y-3 mb-6 pb-6 border-b border-border">
                     <SidebarRow label="Empresa" value={job.empresa} />
-                    <SidebarRow label="Ubicacion" value={job.ubicacion} />
+                    <SidebarRow label="Ubicación" value={job.ubicacion} />
                     <SidebarRow label="Contrato" value={job.contrato} />
                     <SidebarRow label="Jornada" value={job.jornada} />
-                    <SidebarRow label="Categoria" value={job.categoria} />
+                    <SidebarRow label="Categoría" value={job.categoria} />
                   </div>
 
                   {/* CTA buttons */}

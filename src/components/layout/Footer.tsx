@@ -37,7 +37,7 @@ export default function Footer() {
 
         {/* Navigation */}
         <div>
-          <h5 className="text-[12.5px] font-extrabold mb-4 opacity-85">Navegacion</h5>
+          <h5 className="text-[12.5px] font-extrabold mb-4 opacity-85">Navegación</h5>
           {[
             { href: "/", label: "Inicio" },
             { href: "/servicios", label: "Servicios" },
@@ -61,9 +61,9 @@ export default function Footer() {
           <h5 className="text-[12.5px] font-extrabold mb-4 opacity-85">Servicios</h5>
           {[
             { href: "/servicios", label: "Reclutamiento" },
-            { href: "/cursos", label: "Capacitacion" },
-            { href: "/servicios", label: "Induccion" },
-            { href: "/servicios", label: "Digitalizacion" },
+            { href: "/cursos", label: "Capacitación" },
+            { href: "/servicios", label: "Inducción" },
+            { href: "/servicios", label: "Digitalización" },
           ].map((link) => (
             <Link
               key={link.label}
@@ -103,8 +103,8 @@ export default function Footer() {
         <p className="text-[11px] opacity-20">&copy; 2026 Integradores Kyoszen SA de CV · Todos los derechos reservados</p>
         <div className="flex gap-4 flex-wrap">
           <Link href="/condiciones-de-uso" className="text-[11px] opacity-30 text-white no-underline hover:opacity-70 transition-opacity">Condiciones de Uso</Link>
-          <Link href="/politica-de-cookies" className="text-[11px] opacity-30 text-white no-underline hover:opacity-70 transition-opacity">Politica de Cookies</Link>
-          <Link href="/politica-de-privacidad" className="text-[11px] opacity-30 text-white no-underline hover:opacity-70 transition-opacity">Politica de Privacidad</Link>
+          <Link href="/politica-de-cookies" className="text-[11px] opacity-30 text-white no-underline hover:opacity-70 transition-opacity">Política de Cookies</Link>
+          <Link href="/politica-de-privacidad" className="text-[11px] opacity-30 text-white no-underline hover:opacity-70 transition-opacity">Política de Privacidad</Link>
         </div>
       </div>
     </footer>

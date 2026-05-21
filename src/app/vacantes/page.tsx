@@ -25,8 +25,8 @@ interface Vacante {
   activa: boolean;
 }
 
-const UBICACIONES = ["Todas", "CDMX", "Estado de Mexico", "Hibrido", "Remoto"];
-const MARCAS = ["Todas", "Grupo Corpora", "Logistica Norte", "Sigma Retail", "Clinica Vitalis", "Finanzas MX", "Contact Nova"];
+const UBICACIONES = ["Todas", "CDMX", "Estado de México", "Híbrido", "Remoto"];
+const MARCAS = ["Todas", "Grupo Corpora", "Logística Norte", "Sigma Retail", "Clínica Vitalis", "Finanzas MX", "Contact Nova"];
 const CONTRATOS = ["Todos", "Tiempo completo", "Medio tiempo", "Por proyecto"];
 const JORNADAS = ["Todas", "Matutina", "Vespertina", "Mixta", "Flexible"];
 const SALARIOS = ["Todos", "Menos de $10k", "$10k - $15k", "$15k - $20k", "Mas de $20k"];
@@ -138,8 +138,8 @@ function VacantesPageContent() {
       <PageHero
         image="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1800&auto=format&fit=crop&q=80"
         chip="Vacantes"
-        title="Encuentra tu proximo empleo"
-        description="Vacantes verificadas en CDMX y Estado de Mexico. Aplicar es rapido y confidencial."
+        title="Encuentra tu próximo empleo"
+        description="Vacantes verificadas en CDMX y Estado de México. Aplicar es rápido y confidencial."
       />
 
       {/* Filters + Results */}
@@ -175,7 +175,7 @@ function VacantesPageContent() {
             <div className="inline-flex items-center gap-1 bg-white rounded-full border border-border shadow-sm px-2 py-1.5 flex-wrap max-w-full">
               <span className="px-3 py-1.5 text-[13px] font-semibold text-muted">Vacantes</span>
               <span className="text-border">/</span>
-              <DropdownPill label="Ubicacion" value={ubicacion} options={UBICACIONES} onChange={setUbicacion} highlight={ubicacion !== "Todas"} />
+              <DropdownPill label="Ubicación" value={ubicacion} options={UBICACIONES} onChange={setUbicacion} highlight={ubicacion !== "Todas"} />
               <span className="text-border">/</span>
               <DropdownPill label="Marca" value={marca} options={MARCAS} onChange={setMarca} highlight={marca !== "Todas"} />
               <span className="text-border">/</span>

@@ -65,7 +65,7 @@ export default function Hero() {
           </h1>
           <p className="text-[14.5px] text-white/65 leading-relaxed max-w-[460px] mb-7">
             Conectamos personas que buscan empleo con empresas que necesitan
-            talento. Reclutamiento agil, candidatos verificados, resultados
+            talento. Reclutamiento ágil, candidatos verificados, resultados
             reales.
           </p>
 
@@ -104,7 +104,7 @@ export default function Hero() {
               ))}
             </div>
             <span className="text-[12.5px] text-white/65">
-              <strong>+687</strong> candidatos colocados este año
+              <strong>+7000</strong> candidatos colocados
             </span>
           </div>
         </motion.div>
@@ -154,8 +154,8 @@ export default function Hero() {
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
                 </div>
                 <div>
-                  <div className="text-[17px] font-black text-navy leading-none">672+</div>
-                  <div className="text-[10px] text-muted mt-0.5">Empresas</div>
+                  <div className="text-[17px] font-black text-navy leading-none">10+</div>
+                  <div className="text-[10px] text-muted mt-0.5">Años exp.</div>
                 </div>
               </div>
             </motion.div>
@@ -172,7 +172,7 @@ export default function Hero() {
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg>
                 </div>
                 <div>
-                  <div className="text-[17px] font-black text-navy leading-none">687+</div>
+                  <div className="text-[17px] font-black text-navy leading-none">7000+</div>
                   <div className="text-[10px] text-muted mt-0.5">Colocados</div>
                 </div>
               </div>

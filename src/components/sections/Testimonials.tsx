@@ -15,9 +15,9 @@ interface Testimonio {
 }
 
 const FALLBACK: Testimonio[] = [
-  { id: 1, nombre: "Ana Martinez", cargo: "Gerente RRHH", empresa: "Logistica MX", texto: "Kyoszen cubrio nuestra vacante en menos de una semana. Los candidatos llegaron con documentacion lista y perfectamente alineados al perfil.", orden: 0 },
-  { id: 2, nombre: "Carlos Reyes", cargo: "Director General", empresa: "ServiPro", texto: "Proceso agil y transparente. Nos ahorraron semanas de trabajo. Los volveria a contratar sin dudarlo para cualquier proceso de seleccion.", orden: 1 },
-  { id: 3, nombre: "Laura Sanchez", cargo: "Candidata colocada", empresa: "CDMX", texto: "Encontre trabajo en 3 dias. Me orientaron en todo y me ayudaron a preparar mi documentacion. ¡Totalmente recomendados!", orden: 2 },
+  { id: 1, nombre: "Ana Martinez", cargo: "Gerente RRHH", empresa: "Logística MX", texto: "Kyoszen cubrió nuestra vacante en menos de una semana. Los candidatos llegaron con documentación lista y perfectamente alineados al perfil.", orden: 0 },
+  { id: 2, nombre: "Carlos Reyes", cargo: "Director General", empresa: "ServiPro", texto: "Proceso ágil y transparente. Nos ahorraron semanas de trabajo. Los volvería a contratar sin dudarlo para cualquier proceso de selección.", orden: 1 },
+  { id: 3, nombre: "Laura Sánchez", cargo: "Candidata colocada", empresa: "CDMX", texto: "Encontré trabajo en 3 días. Me orientaron en todo y me ayudaron a preparar mi documentación. ¡Totalmente recomendados!", orden: 2 },
 ];
 
 export default function Testimonials() {

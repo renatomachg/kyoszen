@@ -6,31 +6,31 @@ import AnimatedSection from "@/components/ui/AnimatedSection";
 import PageHero from "@/components/ui/PageHero";
 
 const features = [
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: "Reclutamiento y Seleccion", desc: "Identificamos, evaluamos y presentamos candidatos verificados alineados a tu cultura y perfil en tiempo record.", link: "/vacantes", linkText: "Ver vacantes →" },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#b45309" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>, title: "Capacitacion y Cursos", desc: "Programas de formacion en RRHH, liderazgo, calidad y normatividad diseñados para el mercado laboral mexicano.", link: "/cursos", linkText: "Ver cursos →" },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#15803d" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>, title: "Induccion y Onboarding", desc: "Diseñamos procesos de integracion efectivos para que tus nuevos colaboradores sean productivos desde el primer dia.", link: "/contacto", linkText: "Saber mas →" },
-  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-purple)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>, title: "Digitalizacion de RRHH", desc: "Implementamos herramientas digitales para modernizar y automatizar los procesos de tu area de capital humano.", link: "/contacto", linkText: "Saber mas →" },
+  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, title: "Reclutamiento y Selección", desc: "Identificamos, evaluamos y presentamos candidatos verificados alineados a tu cultura y perfil en tiempo récord.", link: "/vacantes", linkText: "Ver vacantes →" },
+  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#b45309" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>, title: "Capacitación y Cursos", desc: "Programas de formación en RRHH, liderazgo, calidad y normatividad diseñados para el mercado laboral mexicano.", link: "/cursos", linkText: "Ver cursos →" },
+  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#15803d" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>, title: "Inducción y Onboarding", desc: "Diseñamos procesos de integración efectivos para que tus nuevos colaboradores sean productivos desde el primer día.", link: "/contacto", linkText: "Saber mas →" },
+  { icon: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--color-purple)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>, title: "Digitalización de RRHH", desc: "Implementamos herramientas digitales para modernizar y automatizar los procesos de tu área de capital humano.", link: "/contacto", linkText: "Saber mas →" },
 ];
 
 const splitSections = [
   {
     label: "Reclutamiento",
     title: "Recopilamos reseñas de tus mejores candidatos",
-    desc: "Nuestro proceso de seleccion incluye verificacion de documentos, evaluacion de competencias y presentacion de candidatos alineados a tu cultura empresarial.",
+    desc: "Nuestro proceso de selección incluye verificación de documentos, evaluación de competencias y presentación de candidatos alineados a tu cultura empresarial.",
     features: [
-      { title: "Documentacion verificada", desc: "Revisamos cada perfil antes de presentarlo." },
-      { title: "Entrega en 72 horas", desc: "Candidatos disponibles en tiempo record." },
-      { title: "Garantia de reposicion", desc: "Si no funciona, lo reemplazamos." },
-      { title: "Seguimiento activo", desc: "Acompañamos la integracion." },
+      { title: "Documentación verificada", desc: "Revisamos cada perfil antes de presentarlo." },
+      { title: "Entrega en 72 horas", desc: "Candidatos disponibles en tiempo récord." },
+      { title: "Garantía de reposición", desc: "Si no funciona, lo reemplazamos." },
+      { title: "Seguimiento activo", desc: "Acompañamos la integración." },
     ],
     cta: { text: "Solicitar reclutamiento →", href: "/contacto" },
-    phone: "56 4004 5414",
+    phone: null,
     img1: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=900&auto=format&fit=crop&q=80",
     img2: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&auto=format&fit=crop&q=80",
     reverse: false,
   },
   {
-    label: "Capacitacion",
+    label: "Capacitación",
     title: "Contrata a nuestros mejores instructores calificados",
     desc: "Programas diseñados para el contexto laboral mexicano, con instructores especializados en RRHH, liderazgo, calidad y normatividad.",
     features: [
@@ -40,7 +40,7 @@ const splitSections = [
       { title: "Instructores expertos", desc: "Con experiencia mexicana real." },
     ],
     cta: { text: "Ver cursos →", href: "/cursos" },
-    phone: "56 4004 5414",
+    phone: null,
     img1: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&auto=format&fit=crop&q=80",
     img2: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=700&auto=format&fit=crop&q=80",
     reverse: true,
@@ -48,9 +48,9 @@ const splitSections = [
 ];
 
 const reviews = [
-  { text: "Kyoszen cubrio nuestra vacante de gerente en menos de una semana. Los candidatos venian perfectamente filtrados y documentados. Excelente servicio.", name: "Maria Rodriguez", role: "Directora de RRHH · LogiMex", initials: "MR" },
-  { text: "El curso de Liderazgo que tomamos con Kyoszen transformo la dinamica de nuestro equipo. Muy recomendado para empresas en crecimiento.", name: "Jorge Luna", role: "Gerente General · Retail Plus", initials: "JL" },
-  { text: "Gracias a Kyoszen encontre un trabajo en menos de 10 dias. El proceso fue transparente y siempre estuvieron en contacto conmigo. ¡Los recomiendo!", name: "Andrea Garcia", role: "Ejecutiva de Ventas · Candidata", initials: "AG" },
+  { text: "Kyoszen cubrió nuestra vacante de gerente en menos de una semana. Los candidatos venían perfectamente filtrados y documentados. Excelente servicio.", name: "María Rodriguez", role: "Directora de RRHH · LogiMex", initials: "MR" },
+  { text: "El curso de Liderazgo que tomamos con Kyoszen transformó la dinámica de nuestro equipo. Muy recomendado para empresas en crecimiento.", name: "Jorge Luna", role: "Gerente General · Retail Plus", initials: "JL" },
+  { text: "Gracias a Kyoszen encontré un trabajo en menos de 10 días. El proceso fue transparente y siempre estuvieron en contacto conmigo. ¡Los recomiendo!", name: "Andrea Garcia", role: "Ejecutiva de Ventas · Candidata", initials: "AG" },
 ];
 
 export default function ServiciosPage() {
@@ -59,7 +59,7 @@ export default function ServiciosPage() {
       <PageHero
         image="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1800&auto=format&fit=crop&q=80"
         chip="Servicios"
-        title="Nuestros increibles servicios para tu empresa"
+        title="Nuestros increíbles servicios para tu empresa"
         description="Cada servicio esta diseñado para resolver los retos reales de las microempresas mexicanas. Sin burocracia, sin costos ocultos."
       />
 
@@ -73,26 +73,26 @@ export default function ServiciosPage() {
             </span>
             <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black tracking-tight text-navy leading-[1.1] mb-5">
               Empoderamos a tu empresa para alcanzar su{" "}
-              <span className="text-blue">maximo potencial</span> y un
+              <span className="text-blue">máximo potencial</span> y un
               crecimiento sostenido
             </h2>
             <p className="text-[13.5px] text-muted leading-relaxed mb-7">
-              En Kyoszen combinamos tecnologia, experiencia y trato humano para
+              En Kyoszen combinamos tecnología, experiencia y trato humano para
               entregar soluciones integrales de capital humano. Cada servicio
               esta diseñado para que tu empresa crezca con el talento adecuado,
-              procesos claros y resultados medibles desde el primer dia.
+              procesos claros y resultados medibles desde el primer día.
             </p>
 
             <h4 className="text-[13px] font-extrabold text-navy mb-4 uppercase tracking-wider">
-              Areas clave donde nos enfocamos
+              Áreas clave donde nos enfocamos
             </h4>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
               {[
                 "Reclutamiento verificado",
-                "Capacitacion DC-3",
-                "Onboarding y retencion",
+                "Capacitación DC-3",
+                "Onboarding y retención",
                 "Manejo de clima laboral",
-                "Digitalizacion de RRHH",
+                "Digitalización de RRHH",
                 "Cumplimiento normativo",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2.5 text-[13px] text-navy">
@@ -135,7 +135,7 @@ export default function ServiciosPage() {
                   </div>
                 </div>
                 <p className="text-[12px] text-muted leading-relaxed">
-                  Garantia de reposicion y acompañamiento durante todo el proceso.
+                  Garantía de reposición y acompañamiento durante todo el proceso.
                 </p>
               </motion.div>
             </div>
@@ -204,12 +204,14 @@ export default function ServiciosPage() {
                 <Link href={sec.cta.href} className="bg-blue-btn text-white rounded-full py-3 px-7 text-[13px] font-bold no-underline inline-flex items-center hover:bg-blue-dark transition-colors">
                   {sec.cta.text}
                 </Link>
-                <a href={`tel:${sec.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 text-[13px] font-bold text-navy no-underline hover:text-blue">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                  +52 {sec.phone}
-                </a>
+                {sec.phone && (
+                  <a href={`tel:${sec.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 text-[13px] font-bold text-navy no-underline hover:text-blue">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    +52 {sec.phone}
+                  </a>
+                )}
               </div>
             </AnimatedSection>
           </div>
@@ -231,10 +233,10 @@ export default function ServiciosPage() {
                 el crecimiento de tu empresa
               </h3>
               <p className="text-[13.5px] text-white/85 leading-relaxed mb-6">
-                En Kyoszen combinamos tecnologia, experiencia real en el
+                En Kyoszen combinamos tecnología, experiencia real en el
                 mercado mexicano y un trato genuinamente humano. Nos esforzamos
                 por empoderar a las microempresas con capital humano verificado,
-                accesible y listo para integrarse desde el primer dia.
+                accesible y listo para integrarse desde el primer día.
               </p>
               <Link
                 href="/nosotros"

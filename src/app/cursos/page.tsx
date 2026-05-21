@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageHero from "@/components/ui/PageHero";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-import { CATEGORIES, COURSES, type CourseCategory, type Course } from "@/lib/courses";
+import { CATEGORIES, COURSES, MODALITY_LABELS, type CourseCategory, type Course } from "@/lib/courses";
 import { supabase } from "@/lib/supabase";
 import { logEvent } from "@/lib/analytics";
 
@@ -69,7 +69,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
           </button>
           <p className="text-[11px] font-bold uppercase tracking-widest text-white/50 mb-1">{course.categoriaLabel}</p>
           <h2 className="text-white font-extrabold text-[18px] leading-tight pr-6">{course.titulo}</h2>
-          <p className="text-white/60 text-[12.5px] mt-1.5">Solicita informes y un asesor se pondra en contacto contigo.</p>
+          <p className="text-white/60 text-[12.5px] mt-1.5">Solicita informes y un asesor se pondrá en contacto contigo.</p>
         </div>
 
         {/* Body */}
@@ -119,7 +119,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Telefono *</label>
+                  <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Teléfono *</label>
                   <input
                     required
                     type="tel"
@@ -131,7 +131,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                 </div>
               </div>
               <div>
-                <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Curso de interes</label>
+                <label className="text-[11px] font-bold text-[var(--color-navy)] uppercase tracking-wide block mb-1">Curso de interés</label>
                 <input
                   readOnly
                   className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3.5 py-2.5 text-sm text-[var(--color-muted)]"
@@ -149,7 +149,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                 />
               </div>
               {status === "error" && (
-                <p className="text-red-600 text-xs">Ocurrio un error. Intentalo de nuevo o escríbenos por WhatsApp.</p>
+                <p className="text-red-600 text-xs">Ocurrió un error. Inténtalo de nuevo o escríbenos por WhatsApp.</p>
               )}
               <button
                 type="submit"
@@ -198,7 +198,7 @@ function CourseRow({ course, index, onSelect }: { course: Course; index: number;
           <span className="text-[var(--color-border)]">·</span>
           <span className="text-[11px] text-[var(--color-muted)]">{course.nivel}</span>
           <span className="text-[var(--color-border)]">·</span>
-          <span className="text-[11px] text-[var(--color-muted)]">{course.modalidad}</span>
+          <span className="text-[11px] text-[var(--color-muted)]">{MODALITY_LABELS[course.modalidad as keyof typeof MODALITY_LABELS] ?? course.modalidad}</span>
         </div>
       </div>
 
@@ -309,9 +309,9 @@ export default function CursosPage() {
     <>
       <PageHero
         image="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1800&auto=format&fit=crop&q=80"
-        chip="Capacitacion"
+        chip="Capacitación"
         title="Nuestros cursos profesionales"
-        description="Selecciona un area de interes para explorar los cursos disponibles. Todos con constancia DC-3."
+        description="Selecciona un área de interés para explorar los cursos disponibles. Todos con constancia DC-3."
       />
 
       <section className="py-16 px-5 md:px-10 xl:px-20 bg-[var(--color-bg)]">
@@ -320,9 +320,9 @@ export default function CursosPage() {
           {/* Instruccion */}
           <AnimatedSection className="text-center mb-10">
             <h2 className="text-[clamp(1.3rem,2.5vw,1.9rem)] font-extrabold tracking-tight text-[var(--color-navy)] mb-2">
-              Elige un area de capacitacion
+              Elige un área de capacitación
             </h2>
-            <p className="text-sm text-[var(--color-muted)]">Da clic en cualquier categoria para ver los cursos disponibles</p>
+            <p className="text-sm text-[var(--color-muted)]">Da clic en cualquier categoría para ver los cursos disponibles</p>
           </AnimatedSection>
 
           {/* Grid de categorias */}
@@ -363,13 +363,13 @@ export default function CursosPage() {
                       onClick={() => setSelectedCategory(null)}
                       className="text-sm font-bold text-[var(--color-muted)] hover:text-[var(--color-navy)] flex items-center gap-1.5 transition-colors"
                     >
-                      ← Ver todas las areas
+                      ← Ver todas las áreas
                     </button>
                   </div>
 
                   {coursesInCategory.length === 0 ? (
                     <p className="text-sm text-[var(--color-muted)] py-8 text-center">
-                      Proximamente — estamos preparando los cursos de esta area.
+                      Próximamente — estamos preparando los cursos de esta área.
                     </p>
                   ) : (
                     <div className="grid sm:grid-cols-2 divide-y divide-[var(--color-border)] sm:divide-y-0">
@@ -390,7 +390,7 @@ export default function CursosPage() {
                 <h2 className="text-[clamp(1.3rem,2.5vw,1.8rem)] font-black text-white leading-tight">
                   ¿No encuentras el curso que necesitas?
                 </h2>
-                <p className="text-sm text-white/60 mt-2">Cuentanos que habilidades quieres desarrollar y diseñamos un programa a la medida.</p>
+                <p className="text-sm text-white/60 mt-2">Cuéntanos qué habilidades quieres desarrollar y diseñamos un programa a la medida.</p>
               </div>
               <div className="flex gap-3 flex-wrap shrink-0">
                 <a href="/contacto" className="bg-[var(--color-yellow)] text-black rounded-full py-3 px-7 text-[13.5px] font-extrabold no-underline hover:bg-[#e6b800] transition-colors">
