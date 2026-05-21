@@ -85,8 +85,8 @@ RLS activo en todas las tablas.
 - **PM2 proceso:** `kyoszen` (id 0) — usa `ecosystem.config.js` para cargar `.env.local`
 - **Nginx config:** `/etc/nginx/sites-enabled/kyoszen` — proxy a localhost:3000, SSL Certbot activo
 - **SSL:** Certbot kyoszen.com + www.kyoszen.com
-- **VPS limpio:** solo corre kyoszen, no hay otros proyectos
-- **Para actualizar el VPS:** `bash /home/kyoszen/deploy.sh` (script en VPS que hace pull + rebuild + recreacion de ecosystem.config.js si se borro + pm2 restart)
+- **UNICA copia del codigo en el VPS:** `/home/kyoszen/` — no crear copies en otras rutas como /var/www. Si existe otra copia, eliminarla con `rm -rf`.
+- **Para actualizar el VPS:** `ssh -i ~/.ssh/kyoszen_vps root@76.13.111.112 "bash /home/kyoszen/deploy.sh"` — Claude siempre ejecuta este comando directamente despues de hacer push a main.
 - **Repo publico:** git pull funciona sin credenciales
 - **Dev local:** `bash dev.sh` (carga .env.local y arranca en puerto 3002)
 
