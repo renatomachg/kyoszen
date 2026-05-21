@@ -1,6 +1,6 @@
 # Analisis UX y Kyo — Kyoszen
-**Fecha:** 2026-05-20
-**Cambios analizados:** No hubo cambios de codigo en los ultimos 2 dias (solo commits de reportes automaticos). Se analizo el estado actual completo del codigo.
+**Fecha:** 2026-05-21
+**Cambios analizados:** commits del 2026-05-19 al 2026-05-21
 
 **Archivos revisados:**
 - `src/lib/assistant/system-prompt.ts`
@@ -9,22 +9,25 @@
 - `src/app/api/assistant/chat/route.ts`
 - `src/components/assistant/ChatWidget.tsx`
 - `src/components/assistant/useChat.ts`
-- `src/components/sections/Vacancies.tsx`
 - `src/components/sections/Hero.tsx`
-- `src/components/sections/FAQ.tsx`
-- `src/components/sections/Services.tsx`
-- `src/components/layout/Navbar.tsx`
-- `src/components/ui/AplicarModal.tsx`
+- `src/components/sections/Testimonials.tsx`
+- `src/components/sections/Services.tsx` (dentro de `src/app/servicios/page.tsx`)
 - `src/app/vacantes/page.tsx`
-- `src/app/api/aplicar/route.ts`
-- `src/lib/jobs.ts`
-- `src/lib/courses.ts`
+- `src/app/vacantes/[id]/_content.tsx`
+- `src/app/servicios/page.tsx`
+- `src/app/contacto/page.tsx`
+- `src/app/admin/(panel)/vacantes/_form.tsx`
+- `src/app/admin/(panel)/correos/page.tsx`
+- `src/lib/analytics.ts`
 
 ---
 
 ## Cambios Recientes Detectados
 
-No se detectaron cambios de codigo en las ultimas 48 horas. El ultimo cambio funcional fue `9e4d8d0` (GitHub Actions deploy al VPS). El analisis cubre el estado actual del codebase completo.
+- **`b239982`** — `src/app/servicios/page.tsx`: se elimino el bloque `phone` de servicios para resolver error TypeScript en build. Archivo revisado en busca de regresiones de contenido.
+- **`f9808f8`** — Correccion ortografica masiva con acentos en ~15 archivos de componentes y lib. Ninguna regresion logica detectada, solo texto.
+- **`c63795f`** — 6 nuevas features del panel admin: actividad, contenido, correos (SMTP), cursos form, seo, servidor, testimonios. La correccion mas impactante para candidatos: `src/components/sections/Testimonials.tsx` ahora lee de Supabase en lugar de datos hardcoded, con fallback apropiado.
+- **`fa10855`** — SMTP configurable desde el panel admin: `src/lib/smtp-config.ts` + `src/app/api/admin/smtp/route.ts` + las rutas de aplicar y contacto ahora usan config dinamica.
 
 ---
 
@@ -32,42 +35,55 @@ No se detectaron cambios de codigo en las ultimas 48 horas. El ultimo cambio fun
 
 ### Alta prioridad
 
-- **`src/components/sections/Vacancies.tsx` lineas 7-40 — Datos de vacantes desincronizados.**
-  El componente `Vacancies` del Home hardcodea 4 tarjetas con data estatica que NO viene del array `JOBS`. Cuando se agregue o modifique una vacante en `src/lib/jobs.ts`, el home no se actualizara. Solucion: reemplazar el array local con `import { JOBS } from "@/lib/jobs"` y tomar los primeros 4 jobs (`JOBS.slice(0, 4)`). Impacto: candidatos veran vacantes reales actualizadas en el home.
+- **`src/app/admin/(panel)/vacantes/_form.tsx` lineas 42-45 — Taxonomia de jornada/contrato ROTA respecto al sitio publico.**
+  El formulario admin define `JORNADAS = ["Tiempo completo", "Medio tiempo", "Por proyecto"]` y `CONTRATOS = ["Indefinido", "Temporal", "Por honorarios"]`. El sitio publico (`src/app/vacantes/page.tsx` lineas 31-32) tiene `CONTRATOS = ["Tiempo completo", "Medio tiempo", "Por proyecto"]` y `JORNADAS = ["Matutina", "Vespertina", "Mixta", "Flexible"]`. Un admin que crea una vacante con `jornada: "Tiempo completo"` genera un registro que el filtro publico "Contrato: Tiempo completo" NO encuentra (el filtro mira `j.contrato`, no `j.jornada`). Resultado: vacantes activas invisibles en los filtros del candidato. Soluciones: sincronizar los arrays del admin con los del sitio publico, o al menos asegurar que cada campo use el mismo vocabulario:
+  - En `_form.tsx`, cambiar `CONTRATOS` a `["Tiempo completo", "Medio tiempo", "Por proyecto"]`.
+  - Cambiar `JORNADAS` a `["Matutina", "Vespertina", "Mixta", "Flexible"]`.
+  - Verificar vacantes existentes en Supabase que tengan valores del vocabulario antiguo y actualizarlas.
 
-- **`src/components/sections/Vacancies.tsx` linea 73 — Cards no enlazan a la vacante especifica.**
-  Cada tarjeta de vacante en el home hace `<Link href="/vacantes">` para todas las tarjetas. Esto es una oportunidad perdida: el candidato que hace clic en "Auxiliar Administrativo" deberia ir a `/vacantes/1`, no a la lista general. Cambiar `href="/vacantes"` a `href={\`/vacantes/${vac.id}\`}` (una vez que el array venga de `JOBS`). Mejora directamente la tasa de conversion de candidatos.
+- **`src/components/sections/Hero.tsx` lineas 122, 132 — `next/image` en las fotos del hero.**
+  Las imagenes `Hero.jpg` y `Hero2.jpg` usan `<Image ... fill ...>` de `next/image`. CLAUDE.md indica explicitamente no usar `next/image` en el VPS. En produccion esto puede romper las fotos silenciosamente. Reemplazar ambos bloques con `<img>` nativo:
+  ```tsx
+  <img
+    src="/images/Hero.jpg"
+    alt="Equipo profesional Kyoszen"
+    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+  />
+  ```
 
-- **`src/components/sections/Hero.tsx` lineas 122 y 132 — Uso de `next/image` en imagenes del hero.**
-  CLAUDE.md indica explicitamente "No usar `next/image` en VPS — ya se tuvo problema en WhyUs. Preferir `<img>` nativo". El Hero usa `Image` de `next/image` para `Hero.jpg` y `Hero2.jpg`. En el deploy al VPS esto puede romper las imagenes. Reemplazar ambos bloques `<Image ... fill ...>` con `<img style={{ objectFit: "cover", width: "100%", height: "100%", position: "absolute" }}>`.
-
-- **`src/components/sections/Hero.tsx` linea 98-103 — Avatares de confianza desde CDN externo.**
-  Los 4 avatares del bloque "+687 candidatos colocados" vienen de `https://i.pravatar.cc/56?img=X`. Si ese CDN cae o bloquea la peticion, el hero muestra imagenes rotas. Reemplazar con SVGs circulares de color solido (placeholders) o fotos reales en `/public/images/`. No depender de servicios de terceros para elementos visuales criticos del hero.
+- **`src/lib/assistant/knowledge.ts` — Kyo recomienda vacantes desactualizadas.**
+  `StaticKnowledgeProvider` lee de `src/lib/jobs.ts` (hardcoded), pero toda la gestion de vacantes ya ocurre en Supabase via el panel admin. Si el admin agrega vacante "Auxiliar de ventas" o desactiva "Cajero", Kyo no lo sabe y puede recomendar vacantes inexistentes o ignorar las nuevas. La solucion inmediata sin refactor completo: en `knowledge.ts`, cargar los jobs de Supabase en `listJobs()` igual a como lo hace `src/app/vacantes/page.tsx` linea 69. La arquitectura ya prevé `SupabaseKnowledgeProvider` en el comentario de la linea 166. Impacto critico para la confianza del candidato.
 
 ### Media prioridad
 
-- **`src/components/sections/Services.tsx` linea 24 — Inconsistencia en numero de cursos.**
-  El texto dice "+25 cursos" pero `src/lib/courses.ts` tiene exactamente 15 cursos. Cambiar a "+15 cursos" o al numero real. Un candidato que ve "+25" y entra a `/cursos` y ve 15 pierde confianza. Mejor aun: importar `COURSES.length` dinamicamente.
+- **`src/components/sections/Hero.tsx` linea 63 vs `src/lib/assistant/knowledge.ts` linea 76 — Inconsistencia de estadisticas.**
+  El hero dice `+7000 candidatos colocados` (linea 63 del hero, y también en el float card linea 175). El `knowledge.ts` dice `"Candidatos colocados": "687+"`. Kyo responde con 687+ pero la web dice 7000+. Un candidato que le pregunte a Kyo "¿cuantos candidatos han colocado?" recibe 687+, mientras que en la misma pagina ve 7000+. Decidir el numero real y sincronizarlo en ambos archivos. Actualmente 687 en knowledge.ts parece mas cercano a lo real segun el CLAUDE.md ("Candidatos colocados: 687+").
 
-- **`src/components/layout/Navbar.tsx` linea 91-112 — Menu mobile sin animacion.**
-  El menu mobile aparece y desaparece abruptamente con un simple `{mobileOpen && ...}`. Todo el sitio usa Framer Motion. Envolver el menu en `<AnimatePresence>` con `motion.div` (initial: opacity 0 / y: -10, animate: opacity 1 / y: 0, exit: opacity 0 / y: -10, transition: duration 0.18). Consistencia visual y sensacion de calidad.
+- **`src/app/admin/(panel)/vacantes/_form.tsx` linea 28 — Default de ubicacion incorrecto.**
+  El formulario admin usa `ubicacion: "Presencial"` como default, pero el sitio publico no tiene "Presencial" en sus filtros. Los valores publicos son: "CDMX", "Estado de Mexico", "Hibrido", "Remoto". Cambiar el default del form a `ubicacion: "CDMX"` para garantizar que el filtro funcione desde el primer guardado.
 
-- **`src/components/sections/FAQ.tsx` linea 84 — Accordion con altura maxima rigida.**
-  El accordion usa `max-h-[200px]` para mostrar la respuesta. Si la respuesta tiene mas de ~6 lineas (posible al agregar FAQs mas detalladas), el contenido se corta sin scroll visible. Cambiar a `max-h-[500px]` que en la practica nunca se alcanza para texto de FAQ.
+- **`src/app/servicios/page.tsx` linea 18 — Copy incorrecto en la seccion de reclutamiento.**
+  El segundo split-section de reclutamiento tiene el titulo: `"Recopilamos reseñas de tus mejores candidatos"`. Este copy es incorrecto para una seccion de reclutamiento — parece texto de una seccion de reviews. Reemplazar con algo coherente al servicio, como: `"Presentamos candidatos verificados para tu empresa"`.
 
-- **`src/components/assistant/ChatWidget.tsx` — Sin badge de notificacion cuando el widget esta cerrado.**
-  Kyo envia el saludo automatico al cargar la pagina, pero si el widget esta cerrado no hay indicador visual de que hay un mensaje nuevo. Agregar un punto rojo (`w-3 h-3 bg-red-500 rounded-full absolute top-0 right-0`) que aparezca cuando `messages.length > 0` y el widget este cerrado. Aumentaria significativamente la tasa de apertura del chat.
+- **`src/components/sections/Testimonials.tsx` lineas 26-35 — Carga sin skeleton visible.**
+  El componente inicia con `useState(FALLBACK)` y reemplaza los datos cuando llegan de Supabase. Esto es correcto, pero si los datos de Supabase son diferentes a los fallback, el candidato ve un "flash" de contenido (los fallback se renderizan y luego se reemplazan). Cambiar el estado inicial a `useState<Testimonio[] | null>(null)` y mostrar un skeleton de 3 cards mientras `items === null`, luego mostrar los datos reales (o el fallback) una vez que llegue la respuesta.
 
-- **`src/components/assistant/ChatWidget.tsx` linea 170 — Input sin limite de caracteres.**
-  El campo de texto no tiene `maxLength`. Un usuario puede pegar un texto de miles de caracteres, generando una llamada costosa a la API o un error. Agregar `maxLength={500}` al input. Con 500 caracteres hay suficiente espacio para cualquier pregunta razonable.
+- **`src/components/sections/Hero.tsx` lineas 97-103 — Avatares de i.pravatar.cc.**
+  Los 4 avatares del bloque social proof vienen de un CDN externo. Si cae, el hero muestra imagenes rotas. Reemplazar con 4 `<div>` de colores solidos (p.ej. `bg-blue-400`, `bg-navy`, `bg-yellow`, `bg-blue`) con iniciales en blanco, o usar fotos reales del equipo en `/public/images/`.
 
 ### Baja prioridad
 
-- **`src/components/assistant/ChatWidget.tsx` lineas 154-163 — Reset sin confirmacion.**
-  El boton "Nueva conversacion" destruye el historial inmediatamente sin pedir confirmacion. Un candidato que lo presiona por accidente a mitad de su flujo pierde todo el contexto. Agregar un `window.confirm("¿Iniciar nueva conversacion? Se borrara el historial actual.")` antes de llamar a `reset()`.
+- **`src/components/assistant/ChatWidget.tsx` linea 170 — Input sin limite de caracteres.**
+  (Pendiente del reporte anterior.) Agregar `maxLength={500}` al input del chat. Sin esto, un usuario puede pegar un texto largo y generar una llamada costosa al modelo.
 
-- **Accesibilidad — Botones de accordion sin `aria-expanded`.**
-  Los botones del FAQ accordion (`FAQ.tsx` lineas 67-69) no tienen `aria-expanded`. Agregar `aria-expanded={openIndex === i}` para lectores de pantalla.
+- **`src/components/assistant/ChatWidget.tsx` lineas 154-163 — Reset sin confirmacion.**
+  (Pendiente del reporte anterior.) Agregar confirmacion antes de `reset()`:
+  ```tsx
+  onClick={() => window.confirm("¿Iniciar nueva conversacion? Se borrara el historial.") && reset()}
+  ```
+
+- **`src/app/vacantes/page.tsx` lineas 84-99 — Mutacion de estado durante el render.**
+  El bloque `if (prevParams !== params) { setPrevParams(params); setSearch(q); ... }` llama setters de estado durante la fase de render (fuera de un efecto). React puede ejecutar este bloque multiples veces en Strict Mode. Mover toda esa logica a un `useEffect(() => { ... }, [params])` para sincronizar los filtros cuando cambia la URL.
 
 ---
 
@@ -75,77 +91,102 @@ No se detectaron cambios de codigo en las ultimas 48 horas. El ultimo cambio fun
 
 ### Mejoras al flujo de conversacion
 
-- **`src/lib/assistant/system-prompt.ts` — Paso 5 no incluye salario en el formato de recomendacion.**
-  El formato actual es: `[Nombre] — [Empresa] — [Por que le aplica]`. El salario es el dato #1 que un candidato quiere saber al evaluar una vacante, y ya esta disponible en el contexto del sistema (linea 120 del system-prompt, incluye `$${j.salario}/mes`). Cambiar el formato a:
+- **`src/lib/assistant/system-prompt.ts` linea 56-58 — Cierre (Paso 6) navega a `/contacto` pero deberia navegar a la vacante especifica.**
+  El Paso 6 dice: "Invitalo a llenar el formulario de aplicacion. Navega a `/contacto` si acepta." Pero cada vacante ya tiene su propio boton "Aplicar ahora" en `/vacantes/[id]`. Cambiar la instruccion para que Kyo navegue a `/vacantes/[id]` de la vacante que el candidato eligio en el Paso 5, no a `/contacto`. El candidato llega directo al modal de aplicacion de esa vacante especifica. Impacto directo en tasa de conversion.
+  Instruccion corregida:
+  ```
+  ## Paso 6 — CIERRE
+  Cuando el candidato elija una vacante, usa navigate_to con la ruta /vacantes/[id]
+  de esa vacante. El candidato encontrara el boton "Aplicar ahora" directamente.
+  Si no hay vacante compatible, navega a /contacto para el banco de talentos.
+  ```
+
+- **`src/lib/assistant/system-prompt.ts` lineas 31-46 — Flujo no maneja respuestas multiples en un solo mensaje.**
+  (Pendiente del reporte anterior.) Si el candidato escribe todo de golpe ("busco trabajo de ventas en CDMX, tiempo completo, tengo 2 años"), Kyo hace preguntas redundantes. Agregar instruccion despues del Paso 0:
+  ```
+  IMPORTANTE: Si el candidato proporciona voluntariamente datos de varios pasos
+  en un solo mensaje, absorbe esa informacion sin repetir preguntas ya respondidas.
+  Avanza directamente al primer dato faltante o al Paso 5 si ya tienes todo.
+  ```
+
+- **`src/lib/assistant/system-prompt.ts` linea 52 — Formato del Paso 5 sin salario.**
+  (Pendiente del reporte anterior.) El formato de recomendacion no incluye el salario, que es el dato #1 que evalua un candidato. El system-prompt ya tiene el salario disponible en la lista de vacantes. Cambiar el formato de:
+  ```
+  1. [Nombre del puesto] — [Empresa] — [Por que le aplica]
+  ```
+  A:
   ```
   1. [Nombre del puesto] — [Empresa] — $[salario]/mes — [Por que le aplica]
   ```
-  Editar linea 51-56 del system-prompt para agregar el campo de salario en el ejemplo de formato.
 
-- **`src/lib/assistant/system-prompt.ts` lineas 31-46 — No maneja el caso de "usuario da toda la info de golpe".**
-  Si el candidato escribe "busco trabajo de ventas en CDMX tiempo completo, tengo 2 años de experiencia", Kyo deberia saltar directo al Paso 5. Agregar instruccion explicita despues del Paso 0: `Si el usuario proporciona voluntariamente mas de una respuesta en un solo mensaje (puesto + experiencia + ubicacion), absorbe esa informacion sin repetir preguntas ya respondidas y avanza al siguiente dato faltante o directamente a la recomendacion.`
-
-- **`src/lib/assistant/knowledge.ts` lineas 99-105 y `src/components/sections/FAQ.tsx` lineas 7-27 — FAQs desincronizadas.**
-  `knowledge.ts` tiene 5 FAQs distintas a las 5 de `FAQ.tsx`. "¿Que documentos necesito para aplicar?" aparece en FAQ.tsx pero NO en knowledge.ts. Si un candidato le pregunta a Kyo sobre documentos, no tiene esa info. Solucio: agregar esa FAQ a `knowledge.ts > COMPANY.faqs`:
+- **`src/lib/assistant/knowledge.ts` linea 99 — FAQs incompletas comparado con el sitio publico.**
+  (Pendiente del reporte anterior.) La FAQ "¿Que documentos necesito para aplicar?" existe en el sitio pero no en `knowledge.ts`. Kyo no sabe como responderla. Agregar a `COMPANY.faqs`:
   ```typescript
   { q: "¿Que documentos necesito para aplicar?", a: "Acta de nacimiento, comprobante de domicilio (max 3 meses), ID oficial, CURP, numero de seguridad social y constancia de situacion fiscal." }
-  ```
-
-- **`src/components/assistant/useChat.ts` linea 18 — Historial de chat sin caducidad.**
-  El chat persiste hasta 30 mensajes en localStorage sin TTL. Un candidato que regresa 3 meses despues ve una conversacion obsoleta que referencia vacantes que pueden ya no existir. Agregar logica de expiracion en `loadHistory()`: verificar si el ultimo mensaje tiene mas de 7 dias y si es asi, retornar `[INITIAL_GREETING]` en su lugar.
-  ```typescript
-  const last = parsed[parsed.length - 1];
-  if (last && Date.now() - last.timestamp > 7 * 24 * 60 * 60 * 1000) return [INITIAL_GREETING];
   ```
 
 ### Nuevas tools o capacidades recomendadas
 
 - **`src/lib/assistant/tools.ts` — Tool `search_jobs` sin filtros de contrato ni jornada.**
-  En el Paso 4 del flujo, Kyo pregunta sobre disponibilidad (tiempo completo / medio tiempo), pero la tool `search_jobs` no tiene parametros `contract` ni `schedule`. El dato existe en `src/lib/jobs.ts`. Agregar a la definicion de la tool:
+  (Pendiente del reporte anterior.) En el Paso 4, Kyo pregunta disponibilidad pero `search_jobs` no tiene `contract` ni `schedule`. Agregar a la definicion:
   ```typescript
-  contract: { type: "string", description: "Filtra por tipo de contrato: 'Tiempo completo', 'Medio tiempo', 'Por proyecto'" },
+  contract: { type: "string", description: "Filtra por contrato: 'Tiempo completo', 'Medio tiempo', 'Por proyecto'" },
   schedule: { type: "string", description: "Filtra por jornada: 'Matutina', 'Vespertina', 'Mixta', 'Flexible'" },
   ```
-  Y en `knowledge.ts > listJobs` agregar los filtros correspondientes. Sin esto, la respuesta del Paso 4 no mejora la calidad de las recomendaciones del Paso 5.
+  Y en `knowledge.ts > listJobs`, agregar los filtros correspondientes.
 
-- **Tool faltante: `save_candidate_interest` — El "banco de talentos" no guarda nada real.**
-  Cuando no hay vacante compatible, el system-prompt dice ofrecer "registrar sus datos para contactarle". Actualmente solo navega a `/contacto` (formulario generico). Crear tool `save_candidate_interest` que POST a `/api/candidatos` con el perfil recopilado en el flujo (nombre, puesto buscado, ubicacion, jornada). El endpoint puede enviar correo a `rsalazar@kyoszen.com` similar a `/api/aplicar/route.ts`. Esto cierra el funnel para candidatos sin vacante activa.
-
-- **Quick replies / chips de respuesta rapida en el chat.**
-  En el Paso 1 (tipo de puesto) y Paso 3 (ubicacion), las opciones son predecibles. Agregar un campo `suggestions?: string[]` a `ChatMessage` y renderizarlo en `ChatWidget.tsx` como botones clicables bajo el mensaje de Kyo. Ejemplo: despues de "¿En que zona vive?", mostrar chips `["CDMX", "Estado de Mexico", "Hibrido", "Remoto"]`. Esto reduce friccion especialmente en mobile donde escribir es mas lento.
+- **Quick replies / chips de respuesta rapida.**
+  (Pendiente del reporte anterior.) En los pasos donde las respuestas son predecibles (Paso 3: ubicacion, Paso 4: disponibilidad), agregar `suggestions?: string[]` a `ChatMessage` y renderizarlos en `ChatWidget.tsx` como botones clicables. Reduce friccion especialmente en mobile.
 
 ### Problemas detectados
 
-- **`src/app/api/assistant/chat/route.ts` linea 93 — `max_tokens: 1024` puede truncar respuestas del Paso 5.**
-  En el Paso 5, Kyo construye un mensaje con 2-3 vacantes, cada una con nombre, empresa, salario y razon de match. Con el saludo personalizado y el cierre, un mensaje tipico puede acercarse al limite. Si la respuesta se trunca, el candidato ve texto cortado. Aumentar a `max_tokens: 2048`. El costo marginal con Haiku es minimo.
+- **`src/app/api/assistant/chat/route.ts` linea 122 — `max_tokens: 1024` puede truncar el Paso 5.**
+  (Pendiente del reporte anterior.) Con 2-3 vacantes mas salario mas razon de match, el mensaje del Paso 5 puede acercarse al limite. Cambiar a `max_tokens: 2048`. Costo marginal con Haiku minimo.
 
-- **`src/components/assistant/useChat.ts` lineas 109-112 — Navegacion forzada aunque el usuario este en esa pagina.**
-  Si el candidato ya esta en `/vacantes` y Kyo llama `navigate_to('/vacantes?ubicacion=CDMX')`, el hook hace `router.push(target.path)`. Esto recarga la pagina destruyendo el estado local de filtros. Cambiar a `router.replace(target.path)` para evitar agregar al historial del navegador y no recargar la pagina si el pathname base es el mismo.
+- **`src/components/assistant/useChat.ts` lineas 109-112 — Navegacion forzada sobreescribe estado de filtros.**
+  (Pendiente del reporte anterior.) Si el candidato ya esta en `/vacantes` y Kyo navega a `/vacantes?ubicacion=CDMX`, `router.push` lo trata como nueva ruta y reinicia el estado local de filtros. Cambiar a `router.replace(target.path)` para navegaciones dentro de la misma ruta base.
 
-- **`src/app/api/aplicar/route.ts` lineas 20-32 — SMTP sin env vars falla silenciosamente.**
-  Si `SMTP_HOST`, `SMTP_USER` o `SMTP_PASS` no estan configurados en el VPS, `nodemailer` falla al hacer `sendMail` y el candidato ve un error generico sin saber si su aplicacion llego. Agregar al inicio del handler:
+- **`src/components/assistant/useChat.ts` lineas 24-33 — Historial persiste indefinidamente.**
+  (Pendiente del reporte anterior.) El historial en `localStorage` no tiene TTL. Un candidato que regresa despues de semanas ve vacantes que ya no existen. Agregar expiracion de 7 dias en `loadHistory()`:
   ```typescript
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    return NextResponse.json({ error: "Servicio no disponible. Contactanos por WhatsApp." }, { status: 503 });
-  }
+  const last = parsed[parsed.length - 1];
+  if (last && Date.now() - last.timestamp > 7 * 24 * 60 * 60 * 1000) return [INITIAL_GREETING];
   ```
-  Tambien agregar `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` a la seccion de env vars requeridas en `CLAUDE.md`.
 
 ---
 
 ## Oportunidades de mejora general
 
+- **Conectar Kyo a Supabase para vacantes en tiempo real.**
+  Este es el cambio de mayor impacto posible para Kyo. El `StaticKnowledgeProvider` en `knowledge.ts` lee de `JOBS` hardcoded. La arquitectura ya previo esto: el comentario en linea 166 dice "In phase 2, a SupabaseKnowledgeProvider will replace this". Implementar una version simple que en `listJobs()` haga un `supabase.from("vacantes").select(...).eq("activa", true)`. Referencia de query: identica a `src/app/vacantes/page.tsx` linea 69. Sin este cambio, cualquier vacante creada por el admin es invisible para Kyo.
+
+- **Badge de notificacion en el boton de Kyo cuando esta cerrado.**
+  (Pendiente del reporte anterior.) Agregar un punto rojo (`w-3 h-3 bg-red-500 rounded-full absolute -top-0.5 -right-0.5`) visible cuando `messages.length > 0 && !open`. Aumentaria significativamente la tasa de apertura del chat.
+
 - **Auto-abrir Kyo en `/vacantes` para primeras visitas.**
-  En `ChatWidget.tsx`, verificar con `sessionStorage` si el usuario ya abrio el chat en esta sesion. Si esta en `/vacantes` (usando `usePathname`) y no lo ha abierto, hacer `setOpen(true)` automaticamente despues de 4 segundos. Los candidatos en `/vacantes` ya estan en modo de busqueda activa — es el mejor momento para que Kyo se presente. Usar `sessionStorage` (no `localStorage`) para que se abra solo una vez por sesion.
+  (Pendiente del reporte anterior.) En `ChatWidget.tsx`, verificar con `sessionStorage` si el usuario ya abrio el chat. Si esta en `/vacantes` y no lo ha hecho, hacer `setOpen(true)` automaticamente despues de 4 segundos. Usar `usePathname()` para detectar la ruta.
 
-- **Mostrar el `reason` de la navegacion como mensaje en el chat.**
-  En `useChat.ts` lineas 109-112, cuando Kyo navega, el `reason` se ignora en el frontend. Agregar el reason como mensaje del asistente antes de navegar: `"Te llevo a [reason] para que puedas ver las opciones directamente."`. El campo `reason` ya esta definido en la tool (`tools.ts` linea 68) pero no se usa en el widget.
-
-- **Centralizar la data de `SITE_PAGES` en `knowledge.ts`.**
-  `/blog` existe como ruta (`src/app/blog/[slug]/page.tsx`) pero NO esta en el array `SITE_PAGES` de `knowledge.ts` (lineas 60-67). Kyo no sabe que el blog existe y no puede navegar a el ni mencionarlo. Agregar:
+- **`src/lib/assistant/knowledge.ts` linea 60-67 — El blog no esta en `SITE_PAGES`.**
+  (Pendiente del reporte anterior.) La ruta `/blog` existe pero no esta listada en `SITE_PAGES`. Kyo no sabe que el blog existe ni puede navegar a el. Agregar:
   ```typescript
-  { path: "/blog", title: "Blog", purpose: "Articulos y recursos de RRHH", summary: "Contenido sobre reclutamiento, liderazgo y tendencias de capital humano." },
+  { path: "/blog", title: "Blog", purpose: "Articulos y recursos de RRHH", summary: "Contenido sobre reclutamiento, liderazgo y tendencias del mercado laboral mexicano." },
   ```
 
-- **Validacion de numero de telefono en AplicarModal.**
-  `AplicarModal.tsx` linea 146 acepta cualquier `type="tel"`. Un candidato puede escribir "abc" y el formulario se envia. Agregar `pattern="[0-9\s\-\+]{10,15}"` y un mensaje de validacion. Los numeros de WA invalidos hacen que el reclutador no pueda contactar al candidato.
+- **Validacion de telefono en el modal de aplicacion.**
+  (Pendiente del reporte anterior.) `AplicarModal.tsx` acepta cualquier valor en el campo tel. Agregar `pattern="[0-9\s\-\+]{10,15}"` para validar antes de enviar. Sin numero valido, el reclutador no puede contactar al candidato.
+
+---
+
+## Resumen de pendientes del reporte anterior (2026-05-20)
+
+Los siguientes puntos del reporte anterior siguen sin implementarse:
+- `next/image` → `<img>` nativo en Hero (alta prioridad)
+- `max_tokens: 1024` → 2048 en el route de chat
+- Historial con TTL de 7 dias en `useChat.ts`
+- `router.push` → `router.replace` en navegaciones de Kyo
+- Salario en formato de recomendacion del Paso 5
+- Quick replies / chips en el chat
+- Tool `search_jobs` con filtros de contrato/jornada
+- Blog en `SITE_PAGES`
+- Badge de notificacion en boton del chat
+- Validacion de telefono en AplicarModal
