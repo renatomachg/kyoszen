@@ -131,7 +131,7 @@ export default function NosotrosPage() {
               },
               {
                 tag: "Reconocimiento",
-                title: "Mas de 7000 colocaciones exitosas en mercado mexicano",
+                title: "Más de 7000 colocaciones exitosas en mercado mexicano",
                 image: "/images/nosotros3.jpg",
                 highlight: true,
                 href: "/nosotros",
