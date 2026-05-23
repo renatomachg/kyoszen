@@ -1,6 +1,6 @@
 # Analisis UX y Kyo — Kyoszen
-**Fecha:** 2026-05-22
-**Cambios analizados:** commits del 2026-05-21 al 2026-05-22
+**Fecha:** 2026-05-23
+**Cambios analizados:** commits del 2026-05-21 al 2026-05-23
 
 **Archivos revisados:**
 - `src/lib/assistant/system-prompt.ts`
@@ -11,15 +11,17 @@
 - `src/components/assistant/useChat.ts`
 - `src/components/ui/AplicarModal.tsx`
 - `src/app/contacto/page.tsx`
-- `src/app/cursos/page.tsx`
 - `src/app/vacantes/page.tsx`
+- `src/app/vacantes/[id]/_content.tsx`
+- `src/lib/jobs.ts`
 
 ---
 
 ## Cambios Recientes Detectados
 
-- **`596c049`** — Se agrego aviso de privacidad (link a `/politica-de-privacidad`) en tres puntos de conversion: `AplicarModal.tsx` (pie del formulario de aplicacion), `contacto/page.tsx` (checkbox obligatorio antes de enviar), y `cursos/page.tsx` (pie del modal de informes). Buen movimiento para LFPDPPP, pero genera inconsistencias nuevas (ver abajo).
-- **`d542bbb`** — Correcciones de ortografia y acentos en paginas publicas (`contacto`, `nosotros`, `servicios`, `footer`, secciones del home). Sin impacto logico, solo texto.
+- **`e11b192`** — Correccion de acento en "Mas de 7000" en `src/app/nosotros/page.tsx`. Solo texto, sin impacto logico.
+- **`596c049`** — Aviso de privacidad con link a `/politica-de-privacidad` en `AplicarModal.tsx`, `contacto/page.tsx` y `cursos/page.tsx`. La pagina `/politica-de-privacidad/page.tsx` existe, correcto. Persiste inconsistencia de implementacion entre formularios (ver sugerencias).
+- **`d542bbb`** — Correcciones de acentos y ortografia en paginas publicas.
 
 ---
 
@@ -27,63 +29,68 @@
 
 ### Alta prioridad
 
-- **`src/app/contacto/page.tsx` linea 20 — Formulario no se envia con Enter.**
-  `handleSubmit` esta asignado al `onClick` del boton (linea 113), pero el contenedor no es un `<form onSubmit={handleSubmit}>`. Presionar Enter en cualquier input no envia el formulario. Esto rompe el comportamiento esperado en desktop y es un fallo critico de UX en formularios. Solucion: envolver los campos en `<form onSubmit={handleSubmit}>` y cambiar el `<button type="button">` a `<button type="submit">`.
-
-- **`src/app/cursos/page.tsx` lineas 161-168 vs `src/app/contacto/page.tsx` lineas 100-109 — Inconsistencia de consentimiento LFPDPPP.**
-  `contacto/page.tsx` usa checkbox activo (el usuario debe marcar para poder enviar). `cursos/page.tsx` y `AplicarModal.tsx` solo muestran el aviso como texto sin requerir consentimiento activo. Bajo LFPDPPP el consentimiento debe ser expreso para datos personales. En `AplicarModal.tsx` el riesgo es mayor porque incluye datos laborales y CV. Agregar checkbox con estado de validacion en ambos formularios, identico al de `contacto/page.tsx` lineas 100-109:
+- **`src/app/contacto/page.tsx` linea 62 — "10 anos" vs "3+" en knowledge.ts.**
+  El PageHero de `/contacto` dice "Con mas de 10 anos en el mercado laboral mexicano". El `knowledge.ts` linea 179 tiene `"Anos en el mercado": "3+"`. Kyo responde "3 anos" a quien lo pregunte; la pagina de contacto dice 10. Segun CLAUDE.md el dato correcto es "3+". Cambiar en `src/app/contacto/page.tsx:62`:
   ```tsx
+  description="Con mas de 3 anos en el mercado laboral mexicano, estamos listos para ayudarte sin costos adicionales ni compromisos."
+  ```
+
+- **`src/components/ui/AplicarModal.tsx` linea 170 — Aviso de privacidad sin checkbox de consentimiento activo.**
+  `contacto/page.tsx` (lineas 100-109) usa checkbox obligatorio como consentimiento expreso bajo LFPDPPP. `AplicarModal.tsx` solo muestra texto informativo pasivo sin checkbox. El formulario de aplicacion recoge nombre, WhatsApp, correo, datos laborales y CV — datos mas sensibles que el formulario de contacto. Agregar checkbox con estado antes del boton de envio:
+  ```tsx
+  const [privacy, setPrivacy] = useState(false);
+  // Antes del button submit:
   <label className="flex items-start gap-2.5 cursor-pointer">
-    <input type="checkbox" required />
-    <span>He leído y acepto el <a href="/politica-de-privacidad">Aviso de Privacidad</a>...</span>
+    <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} className="mt-0.5 shrink-0" />
+    <span className="text-[11px] text-muted leading-relaxed">
+      He leido y acepto el{" "}
+      <a href="/politica-de-privacidad" target="_blank" className="text-blue underline">Aviso de Privacidad</a>
+      {" "}y el tratamiento de mis datos conforme a la LFPDPPP.
+    </span>
   </label>
+  // En el button: disabled={status === "sending" || !privacy}
   ```
 
-- **`src/app/contacto/page.tsx` linea 62 vs `src/lib/assistant/knowledge.ts` linea 79 — Experiencia declarada contradictoria.**
-  El PageHero de `/contacto` dice "Con mas de 10 anos en el mercado laboral mexicano". El `knowledge.ts` tiene `"Anos en el mercado": "3+"`. El sitio dice 10, Kyo dice 3. Un candidato que le pregunta a Kyo "cuantos anos llevan?" recibe una respuesta diferente a la que ve en la pagina. Decidir el dato correcto y sincronizar ambos. CLAUDE.md dice "3+ anos". La cifra en el hero de contacto parece desactualizada o incorrecta.
-
-- **`/politica-de-privacidad` — Ruta referenciada en 3 formularios que probablemente no existe.**
-  Los commits recientes agregaron links a `/politica-de-privacidad` en `AplicarModal.tsx`, `contacto/page.tsx` y `cursos/page.tsx`. Si esa pagina no existe en el router de Next.js, el candidato que hace clic antes de aplicar ve un 404. Verificar si `src/app/politica-de-privacidad/page.tsx` existe. Si no, crearla con el aviso de privacidad de Kyoszen antes de que el sitio atraiga trafico real.
-
-### Media prioridad
-
-- **`src/components/ui/AplicarModal.tsx` lineas 67-108 — Modal sin atributos de accesibilidad.**
-  El modal no tiene `role="dialog"`, `aria-modal="true"` ni `aria-labelledby`. El foco no queda atrapado dentro del modal al abrirse: un usuario de teclado puede Tab fuera del modal hacia el contenido del fondo. Agregar a la `motion.div` del modal (linea 82):
-  ```tsx
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="modal-title"
-  ```
-  Y en el `<h2>` del header (linea 94): `id="modal-title"`.
-
-- **`src/app/vacantes/page.tsx` lineas 84-99 — Mutacion de estado durante el render (carry-over del reporte anterior).**
-  El bloque `if (prevParams !== params) { setPrevParams(params); setSearch(q); ... }` llama setters de estado en la fase de render, fuera de un efecto. React puede ejecutar esto multiples veces en Strict Mode y genera warnings. Mover toda esa logica a:
+- **`src/app/vacantes/page.tsx` bloque prevParams lineas 88-98 — Mutacion de estado durante render.**
+  Los setters `setPrevParams`, `setSearch`, etc. se llaman en el cuerpo del componente fuera de un efecto. React puede ejecutarlo multiples veces en Strict Mode y genera warnings. Reemplazar por un `useEffect` limpio y eliminar el estado `prevParams`:
   ```tsx
   useEffect(() => {
     const q = params.get("q") || params.get("search");
+    const u = params.get("ubicacion");
+    const m = params.get("marca");
+    const c = params.get("contrato");
+    const j = params.get("jornada");
+    const s = params.get("salario");
     if (q) setSearch(q);
-    // ... resto de filtros
+    if (u && UBICACIONES.includes(u)) setUbicacion(u);
+    if (m && MARCAS.includes(m)) setMarca(m);
+    if (c && CONTRATOS.includes(c)) setContrato(c);
+    if (j && JORNADAS.includes(j)) setJornada(j);
+    if (s && SALARIOS.includes(s)) setSalario(s);
   }, [params]);
   ```
-  Y eliminar el estado `prevParams` que ya no se necesita.
 
-- **`src/components/sections/Hero.tsx` lineas 122, 132 — `next/image` en produccion (carry-over critico).**
-  Las imagenes del hero usan `<Image>` de `next/image`, que CLAUDE.md prohibe explicitamente para el VPS. Puede romper las fotos silenciosamente. Reemplazar con `<img>` nativo:
+### Media prioridad
+
+- **`src/components/ui/AplicarModal.tsx` linea 43 — Campo WhatsApp sin validacion de formato.**
+  El `type="tel"` acepta texto arbitrario. Un candidato puede enviar "hola" como telefono y el formulario lo acepta. Agregar `pattern="[0-9\s\-\+\(\)]{8,15}"` y `title="Ingresa un numero de telefono valido (minimo 8 digitos)"` para feedback inmediato en el cliente antes de llegar al servidor.
+
+- **`src/components/ui/AplicarModal.tsx` lineas 82-84 — Modal sin atributos de accesibilidad.**
+  El `motion.div` del modal no tiene `role="dialog"`, `aria-modal="true"` ni `aria-labelledby`. Agregar a la `motion.div` principal:
   ```tsx
-  <img
-    src="/images/Hero.jpg"
-    alt="Equipo profesional Kyoszen"
-    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-  />
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-aplicar-title"
   ```
+  Y al `<h2>` del header: `id="modal-aplicar-title"`. Sin esto, lectores de pantalla no anuncian el modal correctamente.
+
+- **`src/components/assistant/ChatWidget.tsx` — Sin feedback visual al resetear la conversacion.**
+  Al pulsar "Nueva conversacion" el historial se borra y vuelve el saludo, pero no hay animacion ni confirmacion de que el reset ocurrio. El usuario puede creer que fallo. Agregar un estado temporal `justReset` con `setTimeout(..., 1500)` que muestre un badge "Conversacion reiniciada" en el header del chat por 1.5 segundos tras llamar a `reset()`.
 
 ### Baja prioridad
 
-- **`src/components/ui/AplicarModal.tsx` linea 143 — Campo WhatsApp sin validacion de formato.**
-  El campo `type="tel"` acepta cualquier texto. Sin validar, el reclutador recibe numeros incompletos y no puede contactar al candidato. Agregar `pattern="[0-9\s\-\+]{10,15}"` y `title="Ingresa un numero de 10 digitos"` para dar feedback antes de enviar.
-
-- **`src/app/cursos/page.tsx` linea 14 — `CourseModal` bloquea scroll global con efecto secundario.**
-  El `useEffect` en linea 18-21 modifica `document.body.style.overflow = "hidden"` directamente. Si el usuario navega a otra pagina mientras el modal esta abierto (ej. con el boton atras del navegador), el cleanup no corre y el body queda con overflow hidden. Asegurarse de que el cleanup tambien corra en casos de desmontaje abrupto. El `return () => { document.body.style.overflow = ""; }` deberia ser suficiente, pero verificar que funciona en navegacion Back.
+- **`src/app/contacto/page.tsx` — Boton de envio fuera de un `<form>` impide envio con Enter.**
+  El formulario usa un `<div>` contenedor en lugar de `<form onSubmit>`. Presionar Enter en cualquier input no envia. Envolver en `<form onSubmit={handleSubmit}>` y cambiar `<button type="button" onClick={handleSubmit}>` a `<button type="submit">` para habilitar el comportamiento estandar de teclado en desktop.
 
 ---
 
@@ -91,120 +98,86 @@
 
 ### Mejoras al flujo de conversacion
 
-- **`src/lib/assistant/system-prompt.ts` lineas 40-62 — Kyo no menciona privacidad antes de recomendar vacantes.**
-  Ahora que los formularios del sitio tienen aviso de privacidad activo, hay una desconexia: Kyo guia al candidato a aplicar pero nunca menciona que sus datos seran tratados. Agregar una linea al Paso 6 para suavizar la transicion al formulario:
+- **`src/lib/assistant/system-prompt.ts` Paso 6 linea 61 — Kyo envia candidatos a `/contacto` para aplicar, cuando el flujo correcto es `/vacantes/[id]`.**
+  El Paso 6 dice "Navega a /contacto si acepta". Pero el formulario de aplicacion (`AplicarModal`) esta en la pagina de detalle de cada vacante: `src/app/vacantes/[id]/_content.tsx`. `/contacto` es un formulario generico de "Deja tu mensaje" que no menciona la vacante ni preselecciona nada. Cambiar el Paso 6 en `system-prompt.ts` a:
   ```
   ## Paso 6 — CIERRE
-  Antes de navegar, menciona brevemente: "Sus datos se manejan con total confidencialidad conforme a la LFPDPPP."
-  Luego navega a /vacantes/[id] de la vacante elegida.
+  Invitalo a aplicar directamente. Usa navigate_to con la ruta de la vacante especifica: /vacantes/[id],
+  donde [id] es el numero de id de la vacante recomendada (ej. /vacantes/3).
+  El boton "Aplicar ahora" en esa pagina abrira el formulario con la vacante pre-cargada.
+  Si el candidato no quiere aplicar ahora pero si contactar al equipo, navega a /contacto.
   ```
-  Esto reduce friccion en el paso mas critico (cuando el candidato decide aplicar).
+  Tambien agregar en "Navegacion proactiva": `- /vacantes/[id] — detalle de vacante, donde [id] es el numero de id (ej. /vacantes/3)`
 
-- **`src/lib/assistant/system-prompt.ts` linea 56-58 — Paso 6 navega a `/contacto` en lugar de a la vacante especifica (carry-over de alta prioridad).**
-  El Paso 6 dice "Navega a `/contacto` si acepta". Pero cada vacante tiene su propio modal de aplicacion en `/vacantes/[id]`. Cambiar la instruccion:
+- **`src/lib/assistant/system-prompt.ts` Paso 1 — Sin instruccion para respuestas vagas del candidato.**
+  Si el candidato responde "quiero trabajar" o "lo que sea", Kyo no tiene instruccion de como reformular. Agregar al final del Paso 1:
   ```
-  ## Paso 6 — CIERRE
-  Cuando el candidato elija una vacante, usa navigate_to con /vacantes/[id] de esa vacante.
-  El candidato encontrara el boton "Aplicar ahora" directamente en la pagina.
-  Solo navega a /contacto si no hay vacante compatible (banco de talentos).
-  ```
-
-- **`src/lib/assistant/system-prompt.ts` lineas 22-45 — Flujo no absorbe respuestas multiples en un mensaje (carry-over).**
-  Si el candidato escribe todo de golpe ("busco trabajo de ventas en CDMX, tiempo completo, tengo 2 anos de experiencia"), Kyo hace preguntas ya respondidas. Agregar despues del Paso 0:
-  ```
-  IMPORTANTE: Si el candidato proporciona voluntariamente datos de varios pasos
-  en un solo mensaje, absorbe esa informacion sin repetir preguntas ya respondidas.
-  Avanza directamente al primer dato faltante, o al Paso 5 si ya tienes todo.
+  Si la respuesta es vaga ("algo de oficina", "lo que sea", "cualquier cosa"):
+  Repregunta con opciones concretas: "¿En que area le gustaria trabajar —
+  administracion, ventas, atencion al cliente, operaciones, o algo diferente?"
   ```
 
-- **`src/lib/assistant/system-prompt.ts` linea 52 — Formato del Paso 5 no incluye salario (carry-over).**
-  El candidato evalua primero el salario. Cambiar el formato de recomendacion a:
+- **`src/lib/assistant/system-prompt.ts` — Sin instruccion para retomar el flujo si el candidato pregunta algo fuera de tema.**
+  Si en el Paso 3 el candidato pregunta "oye y cuanto cobran sus servicios?", Kyo responde pero puede perder el contexto del perfil. Agregar despues del Paso 4:
   ```
-  1. [Nombre del puesto] — [Empresa] — $[salario]/mes — [Por que le aplica en 1 linea]
+  Si el candidato hace una pregunta fuera del flujo durante los pasos 1-4:
+  Responde en una linea, luego retoma: "Continuando con su perfil, [siguiente pregunta del paso en curso]."
+  Nunca abandones el flujo de recoleccion de perfil si la pregunta es solo informativa.
   ```
 
 ### Nuevas tools o capacidades recomendadas
 
-- **`src/lib/assistant/tools.ts` — Tool `search_jobs` sin parametros de contrato ni jornada (carry-over).**
-  En el Paso 4 Kyo pregunta disponibilidad pero `search_jobs` no puede filtrar por contrato/jornada. Agregar a `input_schema.properties`:
-  ```typescript
-  contract: { type: "string", description: "Filtra por tipo de contrato: 'Tiempo completo', 'Medio tiempo', 'Por proyecto'" },
-  schedule: { type: "string", description: "Filtra por jornada: 'Matutina', 'Vespertina', 'Mixta', 'Flexible'" },
+- **Pasar la pagina actual desde el frontend — Kyo no sabe donde esta el usuario.**
+  Si el candidato ya esta en `/vacantes` y pregunta "que vacantes tienen?", Kyo puede navegar de nuevo a `/vacantes` (viaje redundante). El frontend puede pasar la ruta actual en el request. En `useChat.ts` linea 87, dentro del `body` del fetch:
+  ```tsx
+  body: JSON.stringify({
+    messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+    currentPath: typeof window !== "undefined" ? window.location.pathname : "/",
+  }),
   ```
-  Y en `knowledge.ts > listJobs()`, agregar los filtros en la cadena `.filter()`.
+  Y en `chat/route.ts`, agregar al system prompt: `# Pagina actual del usuario: ${body.currentPath}`. Con esto, Kyo puede decir "ya estas en la pagina de vacantes" en vez de navegar de nuevo.
 
-- **`src/lib/assistant/knowledge.ts` — Quick replies para pasos con respuestas predecibles.**
-  En pasos donde las respuestas son predecibles (Paso 3: ubicacion, Paso 4: jornada), agregar `suggestions?: string[]` a la interfaz `ChatMessage` y renderizarlos como chips clicables en `ChatWidget.tsx`. Reduce friccion especialmente en mobile donde escribir es lento:
-  - Paso 3 → ["CDMX", "Estado de Mexico", "Hibrido", "Solo remoto"]
-  - Paso 4 → ["Tiempo completo", "Medio tiempo"]
+- **`src/lib/assistant/system-prompt.ts` — URL de detalle de vacante no esta documentada.**
+  El prompt lista rutas como `/vacantes`, `/vacantes?ubicacion=CDMX`, `/cursos`, etc., pero NO lista `/vacantes/[id]`. Kyo no puede navegar al detalle de una vacante especifica porque no conoce ese patron de URL. Agregar en la seccion "Filtros disponibles en URL":
+  ```
+  - /vacantes/[id] — pagina de detalle de vacante especifica (ej. /vacantes/3, /vacantes/7)
+    Usar cuando el candidato ya eligio una vacante y quiere aplicar.
+  ```
 
 ### Problemas detectados
 
-- **`src/lib/assistant/knowledge.ts` linea 167 — Kyo sigue leyendo vacantes hardcoded, no de Supabase (carry-over critico).**
-  `StaticKnowledgeProvider` lee de `src/lib/jobs.ts`. Toda la gestion de vacantes es en Supabase via el panel admin. Vacantes nuevas o desactivadas son invisibles para Kyo. El comentario en linea 166 ya anticipa la solucion: `SupabaseKnowledgeProvider`. Implementar `listJobs()` con:
-  ```typescript
-  const { data } = await supabase.from("vacantes").select("id,titulo,empresa,...").eq("activa", true);
-  return data ?? [];
+- **`src/lib/assistant/knowledge.ts` linea 2 — Kyo usa datos estaticos de `lib/jobs.ts` mientras el sitio usa Supabase.**
+  `StaticKnowledgeProvider` importa `JOBS` de `src/lib/jobs.ts`, un archivo hardcodeado. El sitio publico de vacantes (`vacantes/page.tsx`) lee de Supabase en tiempo real. Resultado: Kyo puede recomendar vacantes desactivadas desde el admin, o ignorar vacantes nuevas publicadas desde el panel. Este es el riesgo tecnico mas alto del asistente hoy. La solucion de "fase 2" (`SupabaseKnowledgeProvider`) esta documentada en `knowledge.ts` linea 163. Priorizar su implementacion, o al minimo, mantener `lib/jobs.ts` sincronizado manualmente cada vez que se agrega o desactiva una vacante.
+
+- **`src/components/assistant/useChat.ts` lineas 27-35 — Historial en localStorage sin expiracion.**
+  El historial persiste indefinidamente. Un candidato que vuelve al sitio dias despues ve la conversacion anterior con vacantes que ya pudieron cerrarse. Agregar verificacion de antiguedad en `loadHistory()`:
+  ```tsx
+  const lastTimestamp = parsed[parsed.length - 1]?.timestamp ?? 0;
+  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  if (Date.now() - lastTimestamp > TWENTY_FOUR_HOURS) {
+    localStorage.removeItem(STORAGE_KEY);
+    return [INITIAL_GREETING];
+  }
   ```
-  Sin este cambio, Kyo recomendara vacantes que ya no existen o ignorara vacantes nuevas activas.
 
-- **`src/components/assistant/useChat.ts` lineas 24-33 — Historial sin TTL (carry-over).**
-  El historial en `localStorage` no expira. Un candidato que regresa despues de 2 semanas ve una conversacion obsoleta con vacantes desaparecidas. Agregar en `loadHistory()`:
-  ```typescript
-  const last = parsed[parsed.length - 1];
-  if (last && Date.now() - last.timestamp > 7 * 24 * 60 * 60 * 1000) return [INITIAL_GREETING];
+- **`src/app/api/assistant/chat/route.ts` linea 54 — Haiku puede fallar en flujos de tool-use multi-paso.**
+  El chat usa `claude-haiku-4-5-20251001`. En el Paso 5 el modelo debe: (1) ejecutar `search_jobs` con filtros del perfil, (2) opcionalmente `get_job_details` para dos o tres vacantes, (3) formatear la respuesta segun el template exacto del prompt, y (4) llamar `navigate_to` con la URL correcta — todo en iteraciones dentro del loop de `MAX_TOOL_ITERATIONS=5`. Si en produccion Kyo da respuestas mal formateadas o no llama las tools, cambiar el modelo en `.env.local` del VPS:
   ```
-
-- **`src/app/api/assistant/chat/route.ts` linea 122 — `max_tokens: 1024` puede truncar el Paso 5 (carry-over).**
-  Con 2-3 vacantes + salario + razon de match + CTA, el Paso 5 se acerca al limite. Cambiar a `max_tokens: 2048`. El costo con Haiku es minimo.
-
-- **`src/components/assistant/useChat.ts` lineas 112-116 — `router.push` reinicia estado de filtros (carry-over).**
-  Si el candidato esta en `/vacantes` y Kyo navega a `/vacantes?ubicacion=CDMX`, `router.push` lo trata como ruta nueva y reinicia filtros locales. Cambiar a `router.replace(target.path)` para navegaciones dentro de la misma ruta base.
+  ANTHROPIC_MODEL=claude-sonnet-4-6
+  ```
 
 ---
 
 ## Oportunidades de mejora general
 
-- **Validar que `/politica-de-privacidad` existe antes de la proxima sesion de trafico real.**
-  Se agrego el link en 3 formularios de conversion. Si la pagina no existe, cualquier candidato que haga clic antes de aplicar ve un 404 y puede abandonar el proceso. Verificar `src/app/politica-de-privacidad/page.tsx` y crearla si no existe.
+- **Quick replies en ChatWidget para reducir la friccion de apertura.**
+  Cuando `messages.length === 1` (solo el saludo inicial), mostrar 2-3 chips de respuesta rapida bajo el mensaje de Kyo: "Busco empleo", "Informacion de cursos", "Soy empresa". El candidato que llega sin contexto no sabe exactamente que escribir. Esta mejora no requiere cambios en el backend: en `ChatWidget.tsx`, renderizar chips condicionales que llamen a `sendMessage(texto)` al hacer clic.
 
-- **Auto-abrir Kyo en `/vacantes` para primera visita del candidato (carry-over).**
-  En `ChatWidget.tsx`, usar `sessionStorage` para detectar si el usuario ya abrio el chat. Si esta en `/vacantes` y no lo ha hecho, `setOpen(true)` despues de 4 segundos. Aumenta tasa de enganche en la pagina con mayor intencion de conversion.
+- **`src/lib/assistant/knowledge.ts` linea 175 — URL de WhatsApp hardcodeada en el codigo.**
+  El campo `whatsapp: "https://wa.link/5zv0ba"` esta en el codigo. Si Kyoszen cambia su numero, requiere deploy. Mover a la tabla `site_config` de Supabase (ya existe) con key `whatsapp_url`, editable desde el panel admin sin tocar el codigo.
 
-- **Badge de notificacion en el boton de Kyo cuando hay mensajes sin leer (carry-over).**
-  Agregar un punto rojo (`w-3 h-3 bg-red-500 rounded-full absolute -top-0.5 -right-0.5`) visible cuando `messages.length > 0 && !open`. Recuerda al candidato que tiene una conversacion activa.
+- **Analitica de Kyo incompleta: no se sabe en que paso del flujo abandona el candidato.**
+  `useChat.ts` linea 70 loguea `kyo_mensaje` por cada mensaje del usuario, pero no el paso del flujo. Para saber si los candidatos abandonan en el Paso 2 (experiencia) o en el Paso 4 (disponibilidad), el backend podria incluir `step: number` en el response JSON de `chat/route.ts`, y el frontend lo loguea con `logEvent("kyo_paso", step.toString())`. Con ese dato, el dashboard de analytics mostraria el funnel de conversion de Kyo.
 
-- **`src/lib/assistant/knowledge.ts` linea 60-67 — El blog no esta en `SITE_PAGES` (carry-over).**
-  La ruta `/blog` existe pero Kyo no sabe que existe ni puede navegar a ella. Agregar:
-  ```typescript
-  { path: "/blog", title: "Blog", purpose: "Articulos y recursos de RRHH", summary: "Contenido sobre reclutamiento, liderazgo y tendencias del mercado laboral mexicano." },
-  ```
-
----
-
-## Resumen de pendientes por ciclo
-
-### Nuevos este ciclo (2026-05-22)
-- [ ] Formulario `/contacto` sin `onSubmit` — Enter no envia (alta prioridad)
-- [ ] Inconsistencia de consentimiento LFPDPPP entre formularios (alta prioridad)
-- [ ] Contradiccion "10 anos" vs "3+" en `/contacto` vs `knowledge.ts`
-- [ ] Verificar y crear `/politica-de-privacidad` si no existe (bloqueante)
-- [ ] `AplicarModal` sin atributos ARIA para accesibilidad
-- [ ] Mencionar privacidad/confidencialidad en el Paso 6 de Kyo
-
-### Pendientes del ciclo anterior (2026-05-21)
-- [ ] `next/image` → `<img>` nativo en `Hero.tsx` (critico para VPS)
-- [ ] Kyo lee vacantes hardcoded — conectar a Supabase (critico para confianza)
-- [ ] `max_tokens: 1024` → 2048 en `/api/assistant/chat/route.ts`
-- [ ] Historial con TTL de 7 dias en `useChat.ts`
-- [ ] `router.push` → `router.replace` en navegaciones de Kyo
-- [ ] Paso 6 navegar a `/vacantes/[id]` en lugar de `/contacto`
-- [ ] Salario en formato de recomendacion del Paso 5
-- [ ] Kyo absorber respuestas multiples en un solo mensaje
-- [ ] Quick replies / chips en el chat
-- [ ] Tool `search_jobs` con filtros de contrato/jornada
-- [ ] Blog en `SITE_PAGES` de `knowledge.ts`
-- [ ] Badge de notificacion en boton del chat
-- [ ] Auto-abrir Kyo en `/vacantes` para primera visita
-- [ ] Validacion de telefono en `AplicarModal`
-- [ ] Mutacion de estado durante render en `vacantes/page.tsx`
+- **SupabaseKnowledgeProvider — implementacion pendiente critica.**
+  El patron esta preparado en `knowledge.ts`. La clase `StaticKnowledgeProvider` puede ser reemplazada por `SupabaseKnowledgeProvider` sin cambiar el asistente, las tools ni el route. Solo hay que: (1) crear la clase con los mismos metodos pero consultando Supabase, (2) cambiar el singleton en la linea 163 de `knowledge.ts`. Esto elimina el desincronismo entre lo que Kyo dice y lo que el sitio muestra.
