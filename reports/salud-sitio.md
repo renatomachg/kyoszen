@@ -1,5 +1,5 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-05-22 00:00 UTC
+**Fecha:** 2026-05-23 00:00 UTC
 
 | Pagina | URL | Codigo HTTP | Estado |
 |--------|-----|-------------|--------|
@@ -14,17 +14,16 @@
 
 ---
 
-> ⚠️ ALERTA TECNICA: Todas las URLs devolvieron HTTP 403 con header `x-deny-reason: host_not_allowed`,
-> pero **esto NO es una caida del sitio en Vercel**.
+> ⚠️ ALERTA TECNICA: Todas las URLs devuelven HTTP 403. Esto NO indica una caida real del sitio.
 >
-> **Causa:** El entorno de ejecucion remoto (Claude Code en la nube) usa un proxy con inspeccion TLS
-> (`O=Anthropic; CN=sandbox-egress-production TLS Inspection CA`) que bloquea peticiones salientes
-> a dominios externos como `kyoszen.vercel.app`. El codigo 403 lo emite el proxy del sandbox,
-> no el servidor de Vercel.
+> **Causa confirmada:** El entorno de ejecucion remoto (Claude Code en la nube) usa un proxy con
+> inspeccion TLS (`O=Anthropic; CN=sandbox-egress-production TLS Inspection CA`) que bloquea
+> peticiones salientes a dominios externos como `kyoszen.vercel.app`. El 403 lo emite el proxy
+> del sandbox, no el servidor de Vercel ni el VPS.
 >
-> Este comportamiento es identico al registrado el 2026-05-19, confirmando que es una limitacion
-> permanente del sandbox y no un problema nuevo del sitio.
+> Comportamiento registrado identico los dias 2026-05-19, 2026-05-22 y 2026-05-23 — limitacion
+> permanente del sandbox de Claude Code, no una falla nueva del sitio.
 >
 > **Accion recomendada:** Ejecutar el monitoreo desde un entorno con acceso directo a internet:
 > VPS propio (76.13.111.112), GitHub Actions con runner externo, cron local,
-> o un servicio como UptimeRobot / Better Uptime.
+> o un servicio dedicado como UptimeRobot / Better Uptime.
