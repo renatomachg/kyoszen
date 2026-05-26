@@ -1,5 +1,5 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-05-25 00:00 UTC
+**Fecha:** 2026-05-26 14:01 UTC
 
 | Pagina | URL | Codigo HTTP | Estado |
 |--------|-----|-------------|--------|
@@ -10,7 +10,7 @@
 | Contacto | /contacto | 403 | ⚠️ No verificable |
 | Servicios | /servicios | 403 | ⚠️ No verificable |
 
-**Resumen:** 0/6 paginas verificadas correctamente.
+**Resumen:** 0/6 paginas verificadas correctamente (limitacion del sandbox — ver nota tecnica).
 
 ---
 
@@ -21,7 +21,7 @@
 > peticiones salientes a dominios externos como `kyoszen.vercel.app`. El 403 lo emite el proxy
 > del sandbox, no el servidor de Vercel ni el VPS.
 >
-> Comportamiento registrado identico los dias 2026-05-19, 2026-05-22, 2026-05-23, 2026-05-24 y 2026-05-25 — limitacion
+> Comportamiento registrado identico los dias 2026-05-19, 2026-05-22, 2026-05-23, 2026-05-24, 2026-05-25 y 2026-05-26 — limitacion
 > permanente del sandbox de Claude Code, no una falla nueva del sitio.
 >
 > **Accion recomendada:** Ejecutar el monitoreo desde un entorno con acceso directo a internet:
