@@ -1,27 +1,29 @@
 # Analisis UX y Kyo — Kyoszen
-**Fecha:** 2026-05-25
-**Cambios analizados:** Sin commits de codigo en los ultimos 2 dias (solo reportes automaticos). Analisis profundo del estado actual del codigo.
+**Fecha:** 2026-05-26
+**Cambios analizados:** Commit `f7943ce` — Estratega, analytics tracking, Kyo logs y reportes PDF
 
 **Archivos revisados:**
-- `src/components/assistant/ChatWidget.tsx`
+- `src/app/api/assistant/chat/route.ts`
 - `src/components/assistant/useChat.ts`
 - `src/lib/assistant/system-prompt.ts`
 - `src/lib/assistant/tools.ts`
 - `src/lib/assistant/knowledge.ts`
-- `src/app/api/assistant/chat/route.ts`
-- `src/app/vacantes/page.tsx`
-- `src/app/vacantes/[id]/_content.tsx`
-- `src/app/vacantes/[id]/page.tsx`
-- `src/components/sections/Hero.tsx`
-- `src/components/sections/Vacancies.tsx`
-- `src/components/layout/Navbar.tsx`
 - `src/components/ui/AplicarModal.tsx`
+- `src/app/vacantes/[id]/_content.tsx`
+- `src/app/cursos/page.tsx`
+- `src/app/contacto/page.tsx`
+- `src/app/admin/(panel)/estratega/page.tsx`
+- `src/app/admin/(panel)/kyo/page.tsx`
 
 ---
 
 ## Cambios Recientes Detectados
 
-No hubo cambios de codigo en los ultimos 2 dias. Los commits recientes son solo reportes automaticos (`salud-sitio.md`, `ux-kyo.md`). El analisis cubre el estado actual del codigo sin delta de cambios.
+El commit `f7943ce` introduce cuatro areas de cambio:
+1. **Persistencia de conversaciones de Kyo** — `chat/route.ts` ahora guarda chats en tabla `kyo_conversaciones` via `saveConversation()`. El hook `useChat.ts` genera y envia un `sessionId` por tab.
+2. **Analytics en acciones de conversion** — Se agregaron `logEvent()` en `AplicarModal`, `_content.tsx`, `cursos/page.tsx` y `contacto/page.tsx` para rastrear vistas, clics y envios de formularios.
+3. **Estratega IA en el admin** — Nueva pagina `/admin/estratega` con un chat AI persistente para el equipo de Kyoszen, con historial en Supabase.
+4. **Cursos desde Supabase** — `cursos/page.tsx` ahora carga el catalogo desde Supabase con fallback al catalogo estatico.
 
 ---
 
@@ -29,31 +31,27 @@ No hubo cambios de codigo en los ultimos 2 dias. Los commits recientes son solo 
 
 ### Alta prioridad
 
-- **[INCONSISTENCIA DE DATOS CRITICA] `Hero.tsx:108` vs `knowledge.ts:75,79`** — El Hero muestra "+7000 candidatos colocados" pero `knowledge.ts` COMPANY.stats dice "687+". La tarjeta flotante en `Hero.tsx:159` dice "10+ Anos exp." mientras `knowledge.ts:79` dice "3+ Anos en el mercado". Estas inconsistencias se ven en el mismo sitio y danan la credibilidad. **Solucion:** Crear `src/lib/constants.ts` con un objeto `KYOSZEN_STATS` compartido y consumirlo en `Hero.tsx` y en `knowledge.ts`. Definir con el cliente cual es el numero correcto y usarlo en ambos lados.
+- **[CRITICO - MEZCLA DE AUDIENCIAS] `src/app/contacto/page.tsx:91`** — El `<select>` de asunto incluye la opcion "Quiero aplicar a una vacante". Los candidatos que eligen esta opcion llegan a un formulario corporativo (empresa, asunto, mensaje libre) en lugar del `AplicarModal` estructurado. El equipo recibe datos de candidatos incompletos mezclados con leads de empresas. **Solucion:** Eliminar esa opcion del select y agregar un banner justo antes del formulario: `<div class="bg-blue-soft rounded-xl p-4 mb-6 flex items-center gap-3"><span>¿Buscas empleo?</span><a href="/vacantes" class="font-bold text-blue underline">Ver vacantes disponibles →</a></div>`. Las opciones que quedan en el select deben ser exclusivamente orientadas a empresas.
 
-- **[VACANTES - ESTADO VACIO SIN CTA] `src/app/vacantes/page.tsx:231-234`** — Cuando ningun resultado coincide con los filtros, el bloque muestra solo texto: "No encontramos vacantes con esos filtros." Sin ninguna accion el usuario abandona. **Solucion:** Reemplazar ese `<div>` por un bloque con dos botones: (1) "Limpiar filtros" que llame `clearAll()`, y (2) "Hablar con Kyo" que dispatch un evento para abrir el ChatWidget o enlace a WhatsApp.
+- **[CRITICO - KYO VE DATOS DESACTUALIZADOS] `src/lib/assistant/knowledge.ts:118,138`** — `listCourses()` lee del array estatico `COURSES` y `listJobs()` lee del array estatico `JOBS`. Ahora que el admin puede ver las conversaciones en la pestaña Conversaciones, notara que Kyo recomienda vacantes y cursos que pueden no coincidir con lo que esta activo en Supabase. Las nuevas vacantes creadas en el panel son invisibles para Kyo. **Solucion:** En `chat/route.ts`, donde ya existe `sbAdmin`, pasar el cliente a la llamada: `buildSystemPrompt(instrucciones, await getSupabaseJobs(sbAdmin), await getSupabaseCourses(sbAdmin))`. Crear `getSupabaseJobs` y `getSupabaseCourses` como funciones async que consulten Supabase con un cache de 60s (igual al de `instrucciones`).
 
-- **[MOBILE - SIN CTA STICKY EN DETALLE] `src/app/vacantes/[id]/_content.tsx:159-199`** — El sidebar con "Aplicar ahora" cae debajo de todo el contenido en mobile porque el grid es `lg:grid-cols-[1.6fr_1fr]`. En mobile el candidato debe scrollear cientos de px para llegar al boton. **Solucion:** Agregar un boton sticky fijo solo en mobile: `<div className="lg:hidden fixed bottom-0 inset-x-0 p-4 bg-white border-t border-border z-50"><button onClick={() => setModalOpen(true)} className="w-full bg-navy text-white rounded-full py-3.5 font-extrabold">Aplicar ahora</button></div>`.
+- **[CRASH EN PRODUCCION] `src/app/api/assistant/chat/route.ts:36-39`** — `sbAdmin` se inicializa a nivel de modulo con `process.env.SUPABASE_SERVICE_ROLE_KEY!`. Si esa variable de entorno no existe en el VPS, el modulo entero falla al importarse y toda la ruta `/api/assistant/chat` devuelve 500 sin mensaje claro. El `!` supprime el error de TypeScript pero no el de runtime. **Solucion:** Mover la creacion dentro de `saveConversation()` con un guard: `const key = process.env.SUPABASE_SERVICE_ROLE_KEY; if (!key) return; const sb = createClient(url, key);`.
 
-- **[generateStaticParams CON DATOS INCORRECTOS] `src/app/vacantes/[id]/page.tsx:3-5`** — `generateStaticParams` importa `JOBS` del archivo estatico `src/lib/jobs.ts`. Vacantes creadas en el admin desde Supabase con IDs nuevos no tienen ruta pre-generada. **Solucion:** Eliminar `generateStaticParams` y agregar `export const dynamic = 'force-dynamic'` en `page.tsx`. El contenido ya se carga desde el cliente en `_content.tsx`, asi que no hay ganancia real de tener rutas estaticas.
+- **[LOCALE INCONSISTENTE EN SALARIO] `src/app/vacantes/[id]/_content.tsx:117,171`** — `job.salario.toLocaleString()` sin locale usa el idioma del navegador del visitante. En un navegador con locale `en-US` se muestra "10,500" y en `es-MX` se muestra "10,500" tambien, pero en algunos dispositivos Android puede mostrar espacios como separadores. **Solucion:** Cambiar ambas ocurrencias a `job.salario.toLocaleString('es-MX')` para garantizar formato consistente. La misma correccion aplica a `system-prompt.ts:131`.
 
 ### Media prioridad
 
-- **[NAVBAR - BLOG NO ENLAZADO] `src/components/layout/Navbar.tsx:10-17`** — El sitio tiene `/blog` gestionado desde el admin, pero `BASE_LINKS` no lo incluye. Los usuarios no pueden descubrir ese contenido. **Solucion:** Agregar `{ href: "/blog", label: "Blog" }` al array. Opcional: seguir el mismo patron de `checkVacantes` para solo mostrarlo cuando haya posts activos.
+- **[CURSOS SUPABASE - DATOS INCOMPLETOS EN MODAL] `src/app/cursos/page.tsx:282-299`** — La consulta a Supabase solo trae `slug,titulo,categoria,categoria_label,modalidad,nivel,horas,descripcion_corta,badge`. Si el `CourseModal` en el futuro necesita `aprenderas`, `modulos` o `dirigidoA`, esos campos seran `undefined` porque no se piden. La tool `get_course_details` en Kyo tampoco los obtendria de Supabase (lee el array estatico). **Solucion a mediano plazo:** Agregar una llamada `getCourse(slug)` dentro de `CourseModal` al montar para obtener el detalle completo desde la API o desde Supabase, no del objeto resumido.
 
-- **[VACANTES - FLASH DE "0 RESULTADOS"] `src/app/vacantes/page.tsx:57-71`** — `jobs` inicia como `[]` y se llena en el `useEffect`. Entre el render inicial y la respuesta de Supabase se muestra brevemente "0 vacantes encontradas". **Solucion:** Agregar `const [loading, setLoading] = useState(true)`, setearlo a `false` en el `.then()`. Mientras `loading === true`, mostrar un skeleton de 8 tarjetas con `animate-pulse` en lugar de mostrar el contador.
+- **[CONTACTO - PRIVACIDAD NO REGISTRADA EN BACKEND] `src/app/contacto/page.tsx:33-41`** — El campo `privacy: true` es validado en el cliente pero no se envia al backend en el POST. Si se requiere evidencia del consentimiento LFPDPPP, el registro en Supabase no lo tiene. **Solucion:** Agregar `acepto_privacidad: form.privacy` en el body del POST a `/api/contacto` y guardarlo en la tabla `contactos`.
 
-- **[PARAMETRO DE BUSQUEDA INCONSISTENTE] `Hero.tsx:76` vs `vacantes/page.tsx:60` vs `system-prompt.ts:89`** — El Hero envia `?search=`, la pagina lee `params.get("q") || params.get("search")`, y el system prompt de Kyo usa `?q=`. Tres codigos, dos parametros distintos. **Solucion:** Estandarizar a `?q=` en todos lados. Cambiar `Hero.tsx:76` de `?search=${...}` a `?q=${...}`. Eliminar el `params.get("search")` de `vacantes/page.tsx:60`.
+- **[ANALYTICS - EVENTO FALTANTE EN CURSOS] `src/app/cursos/page.tsx:219`** — `logEvent("curso_informes_click", ...)` existe pero no hay evento cuando el usuario abre el detalle de un curso haciendo clic en la `CategoryCard`. Solo se registra el clic en "Pedir informes", no la exploracion del catalogo. **Solucion:** En `handleCategoryClick()` ya existe `logEvent("ver_categoria_curso", cat.label)` — lo que falta es registrar cuando el usuario cierra la categoria sin pedir informes: comparar `curso_informes_enviada` vs `ver_categoria_curso` en analytics para medir tasa de conversion por categoria.
 
-- **[MODAL APLICAR - VALIDACION DE TELEFONO] `src/components/ui/AplicarModal.tsx:143-153`** — El campo WhatsApp acepta cualquier valor `tel` sin validar formato. **Solucion:** Agregar `pattern="[0-9]{10}"`, `maxLength={10}`, `title="10 digitos sin espacios ni guiones"`, y cambiar el placeholder a `"5512345678"`.
+- **[MODAL CV SIN ARIA-LABEL] `src/components/ui/AplicarModal.tsx:198-213`** — El boton de subir CV es un `<button>` que dice "PDF o Word — clic para seleccionar" y actua como input de archivo. No tiene `aria-label` descriptivo. Un lector de pantalla no puede distinguirlo del boton de enviar. **Solucion:** Agregar `aria-label="Subir CV en PDF o Word"` al button. Tambien agregar `aria-live="polite"` en un `<span>` que muestre el nombre del archivo seleccionado para que lectores de pantalla lo anuncien.
 
-- **[MOBILE - MENU SIN ANIMACION] `src/components/layout/Navbar.tsx:103-124`** — El menu mobile aparece y desaparece sin transicion mientras que el resto del sitio usa Framer Motion en todo. **Solucion:** Envolver en `<AnimatePresence>` con `motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}`.
+### Baja prioridad
 
-### Accesibilidad
-
-- **[ARIA-LABEL EN CARDS DE VACANTE] `src/app/vacantes/page.tsx:210`** — Los `<Link>` de las tarjetas no tienen `aria-label`. Un lector de pantalla leeria "Ver detalle →" sin contexto. **Solucion:** Agregar `aria-label={`Ver detalle de ${job.titulo} en ${job.empresa}`}` al `<Link>` de cada tarjeta del grid.
-
-- **[CHAT - SIN TIMEOUT DE RESPUESTA] `src/components/assistant/ChatWidget.tsx:147`** — Si la API de Anthropic tarda mas de ~15s, el usuario solo ve los tres puntos indefinidamente. **Solucion:** En `useChat.ts:sendMessage`, agregar `const timeout = setTimeout(() => { setError("La respuesta esta tardando. Intenta de nuevo o contactanos por WhatsApp."); setIsLoading(false); }, 15000)` y limpiar el timeout cuando la respuesta llegue.
+- **[ESTRATEGA - SIN ESTADO DE CARGA INICIAL] `src/app/admin/(panel)/estratega/page.tsx:50-57`** — El componente usa `loadingChats: true` pero no muestra ningun skeleton o spinner mientras carga. El sidebar aparece vacio de forma abrupta. **Solucion:** Mientras `loadingChats === true`, mostrar 3 filas skeleton `<div className="h-10 bg-border/50 rounded-xl animate-pulse mx-3 mb-2" />` en el sidebar.
 
 ---
 
@@ -61,46 +59,38 @@ No hubo cambios de codigo en los ultimos 2 dias. Los commits recientes son solo 
 
 ### Mejoras al flujo de conversacion
 
-- **[CRITICO] Paso 6 envia al candidato a /contacto, que es formulario de EMPRESAS** — `system-prompt.ts:61` dice "Navega a /contacto si acepta." Pero `/contacto` es para cotizaciones corporativas, no para candidatos. El candidato pierde el hilo y no sabe como aplicar. **Solucion:** Cambiar Paso 6 para que Kyo navegue a `/vacantes/{id}` de la vacante elegida: "Te llevo a la pagina de la vacante para que apliques directamente." Si el usuario no eligio vacante especifica, navegar a `/vacantes` con los filtros del perfil.
+- **[CRITICO - CONTINUIDAD ENTRE SESIONES MAL RESUELTA] `src/components/assistant/useChat.ts:14,24-34`** — El historial persiste en `localStorage` indefinidamente. Un usuario que chatea hoy sobre una vacante puede abrir Kyo 3 semanas despues y ver el historial con vacantes que ya cerraron. Kyo podria responder basado en ese contexto obsoleto. **Solucion:** En `loadHistory()`, agregar validacion de edad: si el ultimo mensaje tiene mas de 24 horas, limpiar y volver al saludo inicial. Implementacion: `const lastTs = parsed[parsed.length - 1]?.timestamp ?? 0; if (Date.now() - lastTs > 86_400_000) return [INITIAL_GREETING];`.
 
-- **[CRITICO] Candidatos sin vacante son enviados al formulario corporativo** — `system-prompt.ts:55-58` — cuando no hay vacante compatible, Kyo navega a `/contacto`. Ese formulario pide "nombre de empresa", "servicios de interes", etc. No sirve para candidatos. **Solucion inmediata:** Cambiar el mensaje a "Puedes contactarnos por WhatsApp y te avisamos cuando surja algo para tu perfil" y usar `navigate_to` apuntando a `https://wa.link/5zv0ba`. Solucion definitiva: implementar la tool `save_to_talent_pool` descrita abajo.
+- **[MEJORA DE CONVERSION] Paso 5 no menciona si la vacante tiene aplicaciones recientes** — El system prompt recomienda vacantes con base en perfil pero no indica urgencia. Las vacantes con badge "Urgente" o "Nuevo" deberian priorizarse y mencionarse en la recomendacion. **Solucion:** En `system-prompt.ts:132`, agregar el campo `badge` al formato de vacantes: `${j.badge ? `· [${j.badge}]` : ''}`. En el Paso 5, agregar la instruccion: "Si la vacante tiene badge 'Urgente', menciona que hay alta demanda y que aplicar pronto es recomendable."
 
-- **[INCONSISTENCIA DE TRATAMIENTO] `system-prompt.ts:17` vs resto del prompt** — El saludo usa "usted" ("¿Me permite saber su nombre?", "¿Le gustaria aplicar?") pero en otras partes el tono es mas informal. El perfil de candidato operativo en Mexico responde mejor al tuteo respetuoso y consistente. **Solucion:** Elegir un trato y aplicarlo en todo el system prompt. Recomendacion: tuteo ("¿Me puedes decir tu nombre?", "¿Que tipo de trabajo buscas?", "¿Te gustaria aplicar?") — mas cercano para el perfil target.
-
-- **[MEJORA DE CONVERSION] Paso 5 no muestra salario ni jornada en la recomendacion** — `system-prompt.ts:44-51` — El formato actual es `[Puesto] — [Empresa] — [Por que aplica]`. El salario y la jornada son los dos datos que mas influyen en la decision del candidato. **Solucion:** Cambiar el formato a: `1. [Puesto] — [Empresa] — $[salario]/mes — [Jornada] — [Por que aplica]`. Esto se puede lograr actualizando el bloque de formato en el system prompt.
-
-- **[MEJORA] Paso 5 deberia llamar get_job_details antes de recomendar** — Kyo conoce las vacantes del system prompt pero con datos resumidos. Si llama `get_job_details` en el Paso 5 para las 2-3 mejores candidatas, puede incluir responsabilidades clave en su argumento de "por que aplica", haciendo la recomendacion mas convincente. **Solucion:** Agregar en el system prompt: "Antes de recomendar, llama a get_job_details para cada vacante candidata para poder argumentar con datos reales de responsabilidades."
+- **[MEJORA] Kyo no confirma recepcion de la aplicacion** — Cuando Kyo navega al usuario a la pagina de vacante y este aplica via `AplicarModal`, Kyo no sabe que la aplicacion fue enviada. El flujo termina con la navegacion. **Solucion de mediano plazo:** Cuando `AplicarModal` sube a `status === "success"`, emitir `window.dispatchEvent(new CustomEvent('kyo-aplicacion-enviada', { detail: { vacante } }))`. En `useChat.ts`, escuchar ese evento e inyectar un mensaje proactivo de Kyo: "Excelente, tu solicitud fue enviada. Te contactaran en maximo 24 horas. ¿Tienes alguna otra duda?"
 
 ### Nuevas tools o capacidades recomendadas
 
-- **Tool `save_to_talent_pool`** — Cuando no hay vacante compatible, Kyo deberia poder capturar nombre + WhatsApp + puesto buscado directamente en el chat y guardarlos en Supabase (tabla `aplicaciones` con `vacante = "Banco de talentos"`). Implementacion: agregar la tool en `tools.ts`, crear endpoint `POST /api/talent-pool` que inserte en `aplicaciones`, actualizar Paso 5 del system prompt para usarla en lugar de navegar a /contacto.
+- **Tool `check_application_status` (futura)** — Cuando el usuario pregunta "¿ya recibieron mi solicitud?" o "¿como va mi aplicacion?", Kyo no puede responder. Implementar una tool que reciba el correo del usuario y consulte `aplicaciones` en Supabase retornando el estado. Requiere que la tabla `aplicaciones` tenga un campo `estado` (recibida, en revision, contactado).
 
-- **Filtro de salario en `search_jobs`** — `tools.ts:39-47` — La tool no tiene parametro de salario minimo. Si el candidato dice "busco al menos 12 mil", Kyo no puede usarlo para filtrar. **Solucion:** Agregar `salary_min: { type: "number", description: "Salario minimo esperado en pesos MXN" }` al input schema, y en `knowledge.ts:138-154` agregar `.filter((j) => !filters?.salary_min || j.salario >= filters.salary_min)`.
-
-- **Tool `open_application_modal`** — Actualmente Kyo solo puede navegar a la pagina de la vacante. No puede abrir el modal "Aplicar ahora" directamente. **Solucion:** Crear una tool que retorne una senial especial `{ action: "open_modal", jobId: number }`. En `useChat.ts`, detectar esa senial y emitir un evento custom. En `_content.tsx`, escuchar ese evento y auto-abrir `AplicarModal`. Esto elimina una friccion enorme: el candidato aplica sin salir del flujo de chat.
+- **Sugerencia de cursos al candidato en Paso 6** — Si el candidato aplica a una vacante que requiere cierta habilidad que tambien esta en el catalogo de cursos, Kyo podria sugerirlo. Ejemplo: candidato aplica a "Coordinador RRHH" → Kyo dice "Mientras espera respuesta, notamos que tenemos un curso de Gestion de RRHH que podria fortalecer su candidatura. ¿Le interesa?" Implementacion: en Paso 6, comparar los `tags` de la vacante elegida contra `categoriaLabel` de los cursos y si hay match, sugerir uno.
 
 ### Problemas detectados
 
-- **[BUG CRITICO] `knowledge.ts:167` — Kyo consulta datos hardcodeados, no Supabase** — `StaticKnowledgeProvider.listJobs()` importa `JOBS` de `src/lib/jobs.ts` (datos de demo estaticos). Las vacantes creadas desde el panel admin en Supabase son invisibles para Kyo. Puede recomendar vacantes cerradas y jamas vera vacantes nuevas. El comentario de la linea 167 dice "In phase 2 this will become: new SupabaseKnowledgeProvider" — ese phase 2 nunca llego. **Solucion urgente:** Crear `SupabaseKnowledgeProvider` en `knowledge.ts` con `listJobs()` que llame a `supabase.from("vacantes").select(...).eq("activa", true)` y `getJob(id)` similar. Instanciar en `route.ts` donde existe el cliente de Supabase.
+- **[BUG - MEMORY LEAK EN RATE LIMITER] `src/app/api/assistant/chat/route.ts:68-80`** — `rateLimitMap` agrega una entrada por IP pero nunca limpia las que ya expiraron. En el VPS con uptime largo entre deploys, el mapa puede acumular miles de IPs unicas. **Solucion:** Al inicio de `checkRateLimit()`, antes de buscar la entrada del IP actual, limpiar entradas expiradas: `if (rateLimitMap.size > 1000) { const now = Date.now(); for (const [k, v] of rateLimitMap) if (v.resetAt < now) rateLimitMap.delete(k); }`. El guard `size > 1000` evita limpiar en cada request.
 
-- **[BUG] `system-prompt.ts:131` — Formato de salario puede fallar con valores null** — `j.salario?.toLocaleString?.() ?? j.salario` — si `salario` es `null` en Supabase (campo no rellenado), imprime `null/mes` en el system prompt. **Solucion:** `j.salario != null ? `$${j.salario.toLocaleString('es-MX')}` : "A convenir"`.
+- **[BUG - SESSION STORAGE POR TAB] `src/components/assistant/useChat.ts:45-53`** — `sessionStorage` es por pestaña del navegador. Si el usuario tiene el chat abierto en una tab y abre la misma pagina en otra tab, se generan dos `kyo_session_id` distintos. El admin vera dos conversaciones separadas cuando deberia ser una. La persistencia del historial en `localStorage` es compartida entre tabs pero el `sessionId` no. **Solucion para estandarizar:** Usar `localStorage` para el `session_id` tambien, pero regenerarlo cuando haya pasado mas de 24 horas (misma logica que para el historial de mensajes).
 
-- **[RIESGO] `useChat.ts:36-40` — Historial persiste indefinidamente en localStorage** — El usuario puede retomar el chat dias despues y ver recomendaciones de vacantes ya cerradas. **Solucion:** En `loadHistory()`, limpiar si han pasado mas de 24h: `if (parsed[0]?.timestamp && Date.now() - parsed[0].timestamp > 86_400_000) return [INITIAL_GREETING]`.
+- **[BUG - TABLA kyo_conversaciones PUEDE NO EXISTIR] `src/app/api/assistant/chat/route.ts:52-63`** — `saveConversation()` hace `upsert` en `kyo_conversaciones` y silencia el error con `catch`. Si la tabla no existe, la nueva pestaña "Conversaciones" en `/admin/kyo` queda vacia sin indicacion de por que. **Accion:** Verificar que la migracion de la tabla `kyo_conversaciones` fue aplicada en Supabase. Si no existe, la estructura esperada es: `(id serial, session_id text unique, messages jsonb, ip text, created_at timestamptz, updated_at timestamptz)`.
 
-- **[RIESGO] `route.ts:38-51` — Rate limit in-memory se resetea en cada deploy** — El `rateLimitMap` se limpia con cada `pm2 restart`. Como `deploy.sh` hace restart en cada push, el rate limit es efectivamente nulo despues de cada deploy. **Solucion minima:** Usar un contador basado en cookie HttpOnly con TTL, que sobrevive reinicios del proceso. Solucion optima: Upstash Redis (tier gratuito).
-
-- **[RIESGO] `route.ts:101` — Context window crece con conversaciones largas** — `history = body.messages.slice(-20)` limita a 20 mensajes, pero el system prompt ya es extenso (vacantes + cursos + company info + instrucciones). Con muchas vacantes activas, el system prompt puede acercarse al limite de tokens de claude-haiku. **Solucion:** Agregar un log del numero de tokens del system prompt con `console.log('[kyo] prompt length:', buildSystemPrompt().length)` para monitorear, y considerar reducir la lista de vacantes en el prompt a las 10 mas recientes (confiando mas en la tool `search_jobs`).
+- **[RIESGO LFPDPPP - IP EN CONVERSACIONES] `src/app/api/assistant/chat/route.ts:43-64`** — La tabla `kyo_conversaciones` guarda la IP del usuario junto con el historial completo de mensajes. El aviso de privacidad del sitio menciona tratamiento de datos conforme a LFPDPPP, pero el chat widget no tiene aviso explicito de que la conversacion es guardada. **Solucion minima:** Agregar una nota al pie del `ChatWidget.tsx` bajo el input: `<p class="text-[10px] text-muted text-center mt-1">Esta conversacion puede ser guardada para mejorar el servicio.</p>`.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **Quick-reply chips despues del saludo** — Cuando `messages.length === 1` (solo el saludo inicial), mostrar en `ChatWidget.tsx` tres chips de respuesta rapida: `[Busco empleo]` `[Soy empresa]` `[Ver cursos]`. El usuario hace clic y se envian como mensaje. Reduce la barrera de entrada para quienes no saben que escribir.
+- **Analytics de Estratega no registra uso** — El nuevo `/admin/estratega` no tiene `logEvent()`. Si bien es una herramienta interna, saber cuantas consultas hace el equipo y sobre que temas ayuda a justificar el costo de la API. Agregar `logEvent("estratega_consulta", prompt.slice(0, 100))` al enviar un mensaje.
 
-- **Kyo contextual en pagina de vacantes con 0 resultados** — Cuando `filtered.length === 0` en `vacantes/page.tsx`, agregar un banner: "Kyo puede ayudarte a encontrar algo → [Abrir Kyo]". Requiere un evento global para abrir el widget desde fuera del componente (ej. `window.dispatchEvent(new Event('open-kyo'))`), escuchado en `ChatWidget.tsx` con `useEffect`.
+- **Dashboard de analytics con datos de Kyo** — Ahora que las conversaciones se guardan en `kyo_conversaciones`, el dashboard en `/admin/analytics` podria mostrar: total de conversaciones iniciadas, tasa de completacion del flujo de 6 pasos (estimado por numero de mensajes), y top vacantes recomendadas. Estos datos ya estan en Supabase, solo hay que agregar las queries al endpoint `/api/admin/resumen`.
 
-- **Saludo diferenciado por hora del dia** — Cambiar `INITIAL_GREETING.content` en `useChat.ts:17-21` a una funcion que retorne "Buenos dias", "Buenas tardes" o "Buenas noches" segun `new Date().getHours()`. Detalle que da sensacion de presencia real.
+- **Kyo como entrada al Estratega** — El Estratega tiene acceso a datos del negocio. Una mejora natural: un boton en la pestaña "Conversaciones" del admin que diga "Analizar con Estratega" y pre-cargue el chat con un resumen de las ultimas conversaciones de Kyo. Ejemplo: "Estratega, estas son las ultimas 20 consultas de candidatos. ¿Que vacantes debemos priorizar publicar?"
 
-- **Numero de folio al aplicar** — En `AplicarModal.tsx:117-119`, el success state muestra texto generico. Si `/api/aplicar` retornara el ID de la fila insertada en Supabase, se podria mostrar: "Tu folio es #2847. Te contactaremos en maximo 24 horas habiles." Aumenta confianza del candidato.
+- **Timeout de respuesta en Kyo sigue sin implementarse** — Reportado en el analisis anterior (`2026-05-25`). Si el VPS tiene alta carga o Anthropic tiene latencia, el usuario ve los tres puntos indefinidamente. El fix es de una linea en `useChat.ts:sendMessage`: `const timeout = setTimeout(() => { setError("La respuesta esta tardando. Intenta de nuevo o contactanos por WhatsApp."); setIsLoading(false); }, 15000);` con su correspondiente `clearTimeout(timeout)` en el bloque `finally`.
 
-- **Analytics de abandono del chat** — `useChat.ts:71` loguea `kyo_mensaje` al enviar, pero no hay evento de abandono. Agregar en `ChatWidget.tsx` un `useEffect` que detecte cuando `open` cambia de `true` a `false` con `messages.length > 2` y logee `kyo_abandono` con el numero de mensajes intercambiados. Permitira identificar en que paso del flujo se pierde mas gente.
+- **CTA sticky mobile en detalle de vacante sigue pendiente** — Reportado el `2026-05-25`. El boton "Aplicar ahora" en `/vacantes/[id]` cae al final en mobile. Es el punto de conversion mas importante del sitio. Prioridad alta para implementar en la proxima sesion.
