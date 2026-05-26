@@ -157,7 +157,7 @@ Variables CSS en `src/app/globals.css`:
 ## Pendientes activos
 
 ### General
-- [ ] **SMTP_PASS** — agregar contraseña de `info@kyoszen.com` en `.env.local` del VPS para que funcionen los correos. Hacerlo con: `ssh -i ~/.ssh/kyoszen_vps root@76.13.111.112` → `nano /home/kyoszen/.env.local` → `pm2 restart kyoszen`
+- [x] **SMTP_PASS** — correos funcionando, confirmado por usuario y cliente.
 - [ ] **TikTok** — link en Footer es `href="#"`. Falta URL real del perfil de TikTok de Kyoszen.
 - [ ] **Logo PNG** — pendiente de entrega del cliente. Actualmente usa wordmark de texto.
 - [ ] Revisar copy con cliente (es razonable pero no 100% aprobado)

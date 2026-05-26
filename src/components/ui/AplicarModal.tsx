@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { logEvent } from "@/lib/analytics";
 
 interface AplicarModalProps {
   open: boolean;
@@ -48,6 +49,7 @@ export default function AplicarModal({ open, onClose, vacante }: AplicarModalPro
 
       const res = await fetch("/api/aplicar", { method: "POST", body: fd });
       if (!res.ok) throw new Error();
+      logEvent("vacante_aplicacion_enviada", vacante);
       setStatus("success");
     } catch {
       setStatus("error");

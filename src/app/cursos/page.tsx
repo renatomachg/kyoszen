@@ -34,7 +34,12 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
           mensaje: `Empresa: ${form.empresa || "No especificada"}\nTelefono: ${form.telefono}\n\n${form.mensaje || "Solicita informes sobre el curso."}`,
         }),
       });
-      setStatus(res.ok ? "ok" : "error");
+      if (res.ok) {
+        logEvent("curso_informes_enviada", course.titulo);
+        setStatus("ok");
+      } else {
+        setStatus("error");
+      }
     } catch {
       setStatus("error");
     }
@@ -211,7 +216,7 @@ function CourseRow({ course, index, onSelect }: { course: Course; index: number;
 
       {/* CTA */}
       <button
-        onClick={() => onSelect(course)}
+        onClick={() => { onSelect(course); logEvent("curso_informes_click", course.titulo); }}
         className="shrink-0 text-[11.5px] font-extrabold text-[var(--color-blue)] border border-[var(--color-blue)]/25 rounded-full px-4 py-1.5 hover:bg-[var(--color-blue)] hover:text-white hover:border-[var(--color-blue)] transition-all whitespace-nowrap"
       >
         Pedir informes

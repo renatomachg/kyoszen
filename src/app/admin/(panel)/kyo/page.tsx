@@ -19,6 +19,15 @@ interface ChatMsg {
   content: string;
 }
 
+interface KyoConversacion {
+  id: number;
+  session_id: string;
+  messages: ChatMsg[];
+  ip: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const EMPTY_FAQ = { pregunta: "", respuesta: "", orden: 0, activo: true };
 
 /* ─────────────────────────── Styles ─────────────────────────── */
@@ -31,7 +40,7 @@ const lbl =
 /* ═══════════════════════════ Component ═══════════════════════════ */
 
 export default function AdminKyo() {
-  const [tab, setTab] = useState<"prompt" | "faqs">("prompt");
+  const [tab, setTab] = useState<"prompt" | "faqs" | "conversaciones">("prompt");
 
   /* ── Prompt tab state ── */
   const [instrucciones, setInstrucciones] = useState("");
@@ -45,6 +54,11 @@ export default function AdminKyo() {
   const [testInput, setTestInput] = useState("");
   const [testLoading, setTestLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  /* ── Conversaciones tab state ── */
+  const [convs, setConvs] = useState<KyoConversacion[]>([]);
+  const [loadingConvs, setLoadingConvs] = useState(false);
+  const [expandedConv, setExpandedConv] = useState<number | null>(null);
 
   /* ── FAQ tab state ── */
   const [faqs, setFaqs] = useState<FAQ[]>([]);
@@ -89,6 +103,24 @@ export default function AdminKyo() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [testMessages, testLoading]);
+
+  /* ────────────────────── Conversaciones handlers ────────────────────── */
+
+  const loadConvs = async () => {
+    setLoadingConvs(true);
+    const { data } = await supabase
+      .from("kyo_conversaciones")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(100);
+    setConvs((data as KyoConversacion[]) ?? []);
+    setLoadingConvs(false);
+  };
+
+  useEffect(() => {
+    if (tab === "conversaciones") loadConvs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   /* ────────────────────── Prompt handlers ────────────────────── */
 
@@ -215,7 +247,7 @@ export default function AdminKyo() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-bg border border-border rounded-xl p-1 w-fit">
-        {(["prompt", "faqs"] as const).map((t) => (
+        {(["prompt", "faqs", "conversaciones"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -225,7 +257,7 @@ export default function AdminKyo() {
                 : "text-muted hover:text-navy"
             }`}
           >
-            {t === "prompt" ? "Instrucciones" : "Preguntas frecuentes"}
+            {t === "prompt" ? "Instrucciones" : t === "faqs" ? "Preguntas frecuentes" : "Conversaciones"}
           </button>
         ))}
       </div>
@@ -527,6 +559,76 @@ export default function AdminKyo() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════ TAB: CONVERSACIONES ═══════ */}
+      {tab === "conversaciones" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-[13px] text-muted">Historial de conversaciones con el asistente Kyo. Se registran automáticamente.</p>
+            <button
+              onClick={loadConvs}
+              className="text-[12px] font-semibold text-blue hover:underline"
+            >
+              Actualizar
+            </button>
+          </div>
+
+          {loadingConvs ? (
+            <div className="flex justify-center py-16">
+              <div className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : convs.length === 0 ? (
+            <div className="bg-white border border-border rounded-2xl p-10 text-center">
+              <p className="text-muted text-[13px]">Aún no hay conversaciones registradas.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {convs.map((conv) => {
+                const userMsgs = conv.messages.filter((m) => m.role === "user").length;
+                const preview = conv.messages.find((m) => m.role === "user")?.content ?? "";
+                const isOpen = expandedConv === conv.id;
+                return (
+                  <div key={conv.id} className="bg-white border border-border rounded-2xl overflow-hidden">
+                    <button
+                      onClick={() => setExpandedConv(isOpen ? null : conv.id)}
+                      className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-bg transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-navy/10 flex items-center justify-center shrink-0 text-[13px]">💬</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-navy truncate">{preview || "Sin mensajes"}</p>
+                        <p className="text-[11px] text-muted mt-0.5">
+                          {userMsgs} {userMsgs === 1 ? "mensaje" : "mensajes"} ·{" "}
+                          {new Date(conv.updated_at).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          {conv.ip ? ` · IP: ${conv.ip}` : ""}
+                        </p>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-muted transition-transform ${isOpen ? "rotate-180" : ""}`}>
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+
+                    {isOpen && (
+                      <div className="border-t border-border px-5 py-4 space-y-3 bg-bg/50">
+                        {conv.messages.map((m, i) => (
+                          <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                            <div className={`max-w-[80%] text-[12.5px] leading-relaxed rounded-xl px-3 py-2 ${
+                              m.role === "user"
+                                ? "bg-navy text-white rounded-tr-sm"
+                                : "bg-white border border-border text-navy rounded-tl-sm"
+                            }`}>
+                              {m.content}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

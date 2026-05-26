@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import WhatsAppIcon from "@/components/ui/WhatsAppIcon";
 import AplicarModal from "@/components/ui/AplicarModal";
+import { logEvent } from "@/lib/analytics";
 
 interface Vacante {
   id: number;
@@ -31,7 +32,11 @@ export default function VacanteContent({ id }: { id: string }) {
 
   useEffect(() => {
     supabase.from("vacantes").select("*").eq("id", id).eq("activa", true).single()
-      .then(({ data }) => setJob((data as Vacante) ?? null));
+      .then(({ data }) => {
+        const vacante = (data as Vacante) ?? null;
+        setJob(vacante);
+        if (vacante) logEvent("vacante_vista", JSON.stringify({ id: vacante.id, titulo: vacante.titulo }));
+      });
   }, [id]);
 
   if (job === undefined) {
@@ -181,7 +186,7 @@ export default function VacanteContent({ id }: { id: string }) {
                   <div className="space-y-3">
                     <button
                       type="button"
-                      onClick={() => setModalOpen(true)}
+                      onClick={() => { setModalOpen(true); logEvent("vacante_aplicar_click", JSON.stringify({ id: job.id, titulo: job.titulo })); }}
                       className="block w-full bg-navy text-white text-center rounded-full py-3.5 text-[14px] font-extrabold hover:bg-blue-dark transition-colors cursor-pointer"
                     >
                       Aplicar ahora
@@ -190,6 +195,7 @@ export default function VacanteContent({ id }: { id: string }) {
                       href="https://wa.link/5zv0ba"
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => logEvent("whatsapp_click", JSON.stringify({ origen: "vacante", titulo: job.titulo }))}
                       className="flex items-center justify-center gap-2 w-full bg-wa text-white rounded-full py-3.5 text-[14px] font-extrabold no-underline hover:opacity-90 transition-opacity"
                     >
                       <WhatsAppIcon size={18} />

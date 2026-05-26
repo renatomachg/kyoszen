@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { logEvent } from "@/lib/analytics";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import PageHero from "@/components/ui/PageHero";
 
@@ -41,6 +42,7 @@ export default function ContactoPage() {
       });
       if (!res.ok) throw new Error();
       setSubmitted(true);
+      logEvent("contacto_enviado", form.subject);
     } catch {
       setError("Ocurrió un error al enviar el mensaje. Inténtalo de nuevo o escríbenos por WhatsApp.");
     } finally {

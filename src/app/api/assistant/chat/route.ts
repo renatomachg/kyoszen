@@ -33,6 +33,36 @@ async function getStoredInstrucciones(): Promise<string | null> {
 
 export const runtime = "nodejs";
 
+const sbAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+async function saveConversation(
+  sessionId: string,
+  messages: ChatRequestMessage[],
+  assistantReply: string,
+  ip: string
+) {
+  try {
+    const fullMessages = [
+      ...messages,
+      { role: "assistant" as const, content: assistantReply },
+    ];
+    await sbAdmin.from("kyo_conversaciones").upsert(
+      {
+        session_id: sessionId,
+        messages: fullMessages,
+        ip,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "session_id" }
+    );
+  } catch {
+    /* noop — no romper el flujo si falla el log */
+  }
+}
+
 // Simple in-memory rate limiter (per IP).
 // In production with multiple instances, replace with Upstash Redis.
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -86,7 +116,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { messages: ChatRequestMessage[]; previewPrompt?: string };
+  let body: { messages: ChatRequestMessage[]; previewPrompt?: string; sessionId?: string };
   try {
     body = await req.json();
   } catch {
@@ -169,9 +199,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const replyContent = finalText || "Entendido, ¿en que mas te puedo ayudar?";
+
+  // Guardar conversación en Supabase (fire-and-forget)
+  if (body.sessionId) {
+    saveConversation(body.sessionId, history, replyContent, ip);
+  }
+
   const payload: ChatResponseMessage = {
     role: "assistant",
-    content: finalText || "Entendido, ¿en que mas te puedo ayudar?",
+    content: replyContent,
     navigations,
   };
 

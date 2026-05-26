@@ -42,6 +42,16 @@ function saveHistory(messages: ChatMessage[]) {
   }
 }
 
+function getSessionId(): string {
+  if (typeof window === "undefined") return "ssr";
+  let sid = sessionStorage.getItem("kyo_session_id");
+  if (!sid) {
+    sid = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    sessionStorage.setItem("kyo_session_id", sid);
+  }
+  return sid;
+}
+
 export function useChat() {
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -87,6 +97,7 @@ export function useChat() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+            sessionId: getSessionId(),
           }),
         });
 

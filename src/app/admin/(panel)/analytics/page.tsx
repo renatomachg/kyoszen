@@ -27,6 +27,12 @@ const TIPOS = [
   { key: "kyo_navegacion", label: "Navegaciones de Kyo", color: "bg-navy", icon: "🧭" },
   { key: "busqueda_vacantes", label: "Busquedas en Vacantes", color: "bg-yellow", icon: "🔍" },
   { key: "ver_categoria_curso", label: "Categorias de Cursos", color: "bg-green-500", icon: "📚" },
+  { key: "vacante_vista", label: "Vistas de Vacantes", color: "bg-blue", icon: "👁️" },
+  { key: "vacante_aplicar_click", label: "Clicks Aplicar", color: "bg-navy", icon: "🖱️" },
+  { key: "vacante_aplicacion_enviada", label: "Aplicaciones Enviadas", color: "bg-green-500", icon: "✅" },
+  { key: "curso_informes_click", label: "Clicks Informes Curso", color: "bg-yellow", icon: "📋" },
+  { key: "whatsapp_click", label: "Clicks WhatsApp", color: "bg-green-500", icon: "📱" },
+  { key: "contacto_enviado", label: "Formularios Contacto", color: "bg-blue", icon: "✉️" },
 ];
 
 const RANGOS = [
@@ -90,7 +96,78 @@ export default function AdminAnalytics() {
   const [rango, setRango] = useState(7);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"resumen" | "feed">("resumen");
+  const [tab, setTab] = useState<"resumen" | "feed" | "reportes">("resumen");
+
+  /* ── Reportes state ── */
+  const [reporteEmail, setReporteEmail] = useState("");
+  const [reportePeriodicidad, setReportePeriodicidad] = useState<"desactivado" | "semanal" | "mensual">("desactivado");
+  const [loadingConfig, setLoadingConfig] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [configSaved, setConfigSaved] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
+  const [reportMsg, setReportMsg] = useState("");
+
+  // Cargar config de reportes
+  useEffect(() => {
+    if (tab !== "reportes") return;
+    setLoadingConfig(true);
+    fetch("/api/admin/resumen")
+      .then((r) => r.json())
+      .then((d) => {
+        setReporteEmail(d.email ?? "");
+        setReportePeriodicidad(d.periodicidad ?? "desactivado");
+      })
+      .finally(() => setLoadingConfig(false));
+  }, [tab]);
+
+  const saveReporteConfig = async () => {
+    setSavingConfig(true);
+    await fetch("/api/admin/resumen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "save_config", email: reporteEmail, periodicidad: reportePeriodicidad }),
+    });
+    setSavingConfig(false);
+    setConfigSaved(true);
+    setTimeout(() => setConfigSaved(false), 3000);
+  };
+
+  const downloadFile = async (action: "download" | "download_pdf", ext: "txt" | "pdf") => {
+    const periodo = reportePeriodicidad === "desactivado" ? "mensual" : reportePeriodicidad;
+    setReportMsg(action === "download_pdf" ? "Generando PDF..." : "");
+    const res = await fetch("/api/admin/resumen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, periodicidad: periodo }),
+    });
+    if (!res.ok) { setReportMsg("❌ Error al generar el archivo."); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reporte-kyoszen-${new Date().toISOString().slice(0, 10)}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setReportMsg("");
+  };
+
+  const downloadReport = () => downloadFile("download", "txt");
+  const downloadPdf = () => downloadFile("download_pdf", "pdf");
+
+  const sendReport = async () => {
+    if (!reporteEmail) { setReportMsg("Primero configura el correo de destino."); return; }
+    const periodo = reportePeriodicidad === "desactivado" ? "mensual" : reportePeriodicidad;
+    setSendingReport(true);
+    setReportMsg("");
+    const res = await fetch("/api/admin/resumen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "send", email: reporteEmail, periodicidad: periodo }),
+    });
+    setSendingReport(false);
+    if (res.ok) setReportMsg("✅ Resumen enviado correctamente.");
+    else setReportMsg("❌ Error al enviar. Verifica la configuración SMTP.");
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -105,23 +182,44 @@ export default function AdminAnalytics() {
     });
   }, [rango]);
 
-  // ---- Metricas ----
-  const totalEventos = eventos.length;
-  const sessionesUnicas = new Set(eventos.map((e) => e.session_id).filter(Boolean)).size;
-
+  // ---- Helpers ----
   const conteo = (tipo: string) => eventos.filter((e) => e.tipo === tipo).length;
 
-  const top = (tipo: string, n = 10): TopRow[] => {
+  const top = (tipo: string, n = 8): TopRow[] => {
     const map: Record<string, number> = {};
     for (const e of eventos) {
       if (e.tipo !== tipo || !e.valor) continue;
       map[e.valor] = (map[e.valor] ?? 0) + 1;
     }
-    return Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, n)
-      .map(([valor, count]) => ({ valor, count }));
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, n).map(([valor, count]) => ({ valor, count }));
   };
+
+  // Para eventos con valor JSON: extrae campo "titulo"
+  const topPorTitulo = (tipo: string, n = 8): TopRow[] => {
+    const map: Record<string, number> = {};
+    for (const e of eventos) {
+      if (e.tipo !== tipo || !e.valor) continue;
+      try {
+        const obj = JSON.parse(e.valor);
+        const key = obj.titulo ?? e.valor;
+        map[key] = (map[key] ?? 0) + 1;
+      } catch {
+        map[e.valor] = (map[e.valor] ?? 0) + 1;
+      }
+    }
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, n).map(([valor, count]) => ({ valor, count }));
+  };
+
+  // ---- Metricas ----
+  const totalEventos = eventos.length;
+  const sessionesUnicas = new Set(eventos.map((e) => e.session_id).filter(Boolean)).size;
+
+  // Funnel vacantes
+  const vacanteVistas = conteo("vacante_vista");
+  const vacanteClicks = conteo("vacante_aplicar_click");
+  const vacanteEnviadas = conteo("vacante_aplicacion_enviada");
+  const funnelPct1 = vacanteVistas > 0 ? Math.round((vacanteClicks / vacanteVistas) * 100) : 0;
+  const funnelPct2 = vacanteClicks > 0 ? Math.round((vacanteEnviadas / vacanteClicks) * 100) : 0;
 
   const feed = eventos.slice(0, 200);
 
@@ -130,6 +228,13 @@ export default function AdminAnalytics() {
     kyo_navegacion: "Navegacion Kyo",
     busqueda_vacantes: "Busqueda Vacantes",
     ver_categoria_curso: "Categoria Cursos",
+    vacante_vista: "Vacante Vista",
+    vacante_aplicar_click: "Click Aplicar",
+    vacante_aplicacion_enviada: "Aplicacion Enviada",
+    curso_informes_click: "Click Informes Curso",
+    curso_informes_enviada: "Informes Enviados",
+    whatsapp_click: "Click WhatsApp",
+    contacto_enviado: "Contacto Enviado",
   };
 
   const tipoBadge: Record<string, string> = {
@@ -137,6 +242,13 @@ export default function AdminAnalytics() {
     kyo_navegacion: "bg-navy/10 text-navy",
     busqueda_vacantes: "bg-yellow/30 text-yellow-700",
     ver_categoria_curso: "bg-green-100 text-green-700",
+    vacante_vista: "bg-blue/10 text-blue",
+    vacante_aplicar_click: "bg-navy/10 text-navy",
+    vacante_aplicacion_enviada: "bg-green-100 text-green-700",
+    curso_informes_click: "bg-yellow/30 text-yellow-700",
+    curso_informes_enviada: "bg-green-100 text-green-700",
+    whatsapp_click: "bg-green-100 text-green-700",
+    contacto_enviado: "bg-blue/10 text-blue",
   };
 
   return (
@@ -165,7 +277,7 @@ export default function AdminAnalytics() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-border">
-        {(["resumen", "feed"] as const).map((t) => (
+        {(["resumen", "feed", "reportes"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -173,7 +285,7 @@ export default function AdminAnalytics() {
               tab === t ? "border-blue text-blue" : "border-transparent text-muted hover:text-navy"
             }`}
           >
-            {t === "resumen" ? "Resumen" : "Feed de eventos"}
+            {t === "resumen" ? "Resumen" : t === "feed" ? "Feed de eventos" : "Reportes"}
           </button>
         ))}
       </div>
@@ -184,71 +296,103 @@ export default function AdminAnalytics() {
         </div>
       ) : tab === "resumen" ? (
         <>
-          {/* KPI cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-            <StatCard label="Total eventos" value={totalEventos} icon="📊" />
-            <StatCard label="Sesiones unicas" value={sessionesUnicas} icon="👥" />
-            <StatCard label="Mensajes a Kyo" value={conteo("kyo_mensaje")} icon="💬" />
-            <StatCard label="Navegaciones Kyo" value={conteo("kyo_navegacion")} icon="🧭" />
-            <StatCard label="Busquedas vacantes" value={conteo("busqueda_vacantes")} icon="🔍" />
-            <StatCard label="Vistas categoria" value={conteo("ver_categoria_curso")} icon="📚" />
+          {/* KPIs principales */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <StatCard label="Sesiones unicas" value={sessionesUnicas} icon="👥" sub="Visitantes distintos" />
+            <StatCard label="Vistas de vacantes" value={vacanteVistas} icon="👁️" sub="Paginas de vacante abiertas" />
+            <StatCard label="Aplicaciones enviadas" value={vacanteEnviadas} icon="✅" sub="Candidatos que aplicaron" />
+            <StatCard label="Solicitudes de cursos" value={conteo("curso_informes_enviada")} icon="📋" sub="Informes de curso enviados" />
           </div>
 
-          {/* Top lists */}
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5 mb-5">
+
+            {/* Funnel vacantes */}
+            <div className="bg-white rounded-2xl border border-border p-5">
+              <h3 className="text-[13px] font-black text-navy mb-1">Funnel de vacantes</h3>
+              <p className="text-[11px] text-muted mb-4">De cuantos ven a cuantos aplican</p>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[12px] font-semibold text-navy">👁️ Vieron la vacante</span>
+                    <span className="text-[12px] font-black text-navy">{vacanteVistas}</span>
+                  </div>
+                  <div className="h-2.5 bg-bg rounded-full overflow-hidden">
+                    <div className="h-full bg-blue rounded-full w-full" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[12px] font-semibold text-navy">🖱️ Hicieron clic en Aplicar</span>
+                    <span className="text-[12px] font-black text-navy">{vacanteClicks} <span className="text-muted font-normal">({funnelPct1}%)</span></span>
+                  </div>
+                  <div className="h-2.5 bg-bg rounded-full overflow-hidden">
+                    <div className="h-full bg-blue/60 rounded-full" style={{ width: `${funnelPct1}%` }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[12px] font-semibold text-navy">✅ Enviaron su solicitud</span>
+                    <span className="text-[12px] font-black text-navy">{vacanteEnviadas} <span className="text-muted font-normal">({funnelPct2}%)</span></span>
+                  </div>
+                  <div className="h-2.5 bg-bg rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500 rounded-full" style={{ width: `${funnelPct2}%` }} />
+                  </div>
+                </div>
+              </div>
+              {vacanteVistas === 0 && (
+                <p className="text-[11px] text-muted text-center mt-4">Sin datos en este periodo</p>
+              )}
+            </div>
+
+            {/* Vacantes mas vistas */}
+            <TopList
+              title="Vacantes mas vistas"
+              rows={topPorTitulo("vacante_vista")}
+              emptyMsg="Sin vistas en este periodo"
+            />
+
+            {/* Cursos mas solicitados */}
+            <TopList
+              title="Cursos con mas solicitudes"
+              rows={top("curso_informes_click")}
+              emptyMsg="Sin solicitudes en este periodo"
+            />
+
+            {/* Contactos por asunto */}
+            <TopList
+              title="Motivo de contacto"
+              rows={top("contacto_enviado")}
+              emptyMsg="Sin contactos en este periodo"
+            />
+
+            {/* WhatsApp + Kyo */}
+            <div className="bg-white rounded-2xl border border-border p-5">
+              <h3 className="text-[13px] font-black text-navy mb-4">Otros canales</h3>
+              <div className="space-y-4">
+                {[
+                  { label: "Clicks a WhatsApp", value: conteo("whatsapp_click"), icon: "📱", color: "bg-green-500" },
+                  { label: "Mensajes a Kyo", value: conteo("kyo_mensaje"), icon: "💬", color: "bg-blue" },
+                  { label: "Navegaciones de Kyo", value: conteo("kyo_navegacion"), icon: "🧭", color: "bg-navy" },
+                  { label: "Busquedas en vacantes", value: conteo("busqueda_vacantes"), icon: "🔍", color: "bg-yellow" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-3">
+                    <span className="text-lg w-6">{item.icon}</span>
+                    <span className="flex-1 text-[12px] font-semibold text-navy">{item.label}</span>
+                    <span className="text-[14px] font-black text-navy">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Lo que mas preguntan a Kyo */}
             <TopList
               title="Lo que mas preguntan a Kyo"
               rows={top("kyo_mensaje")}
               emptyMsg="Sin mensajes en este periodo"
             />
-            <TopList
-              title="Rutas donde navega Kyo"
-              rows={top("kyo_navegacion")}
-              emptyMsg="Sin navegaciones en este periodo"
-            />
-            <TopList
-              title="Terminos buscados en Vacantes"
-              rows={top("busqueda_vacantes")}
-              emptyMsg="Sin busquedas en este periodo"
-            />
-            <TopList
-              title="Categorias de cursos mas vistas"
-              rows={top("ver_categoria_curso")}
-              emptyMsg="Sin clics en este periodo"
-            />
-
-            {/* Actividad por tipo */}
-            <div className="bg-white rounded-2xl border border-border p-5 md:col-span-2">
-              <h3 className="text-[13px] font-black text-navy mb-4">Distribucion de eventos</h3>
-              {TIPOS.map((t) => {
-                const n = conteo(t.key);
-                const pct = totalEventos > 0 ? Math.round((n / totalEventos) * 100) : 0;
-                return (
-                  <div key={t.key} className="flex items-center gap-3 mb-3 last:mb-0">
-                    <span className="text-base w-6">{t.icon}</span>
-                    <span className="text-[12px] font-semibold text-navy w-40 shrink-0">{t.label}</span>
-                    <div className="flex-1 bg-bg rounded-full h-2 overflow-hidden">
-                      <div
-                        className="h-full bg-blue rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="text-[12px] font-black text-navy w-10 text-right">{n}</span>
-                    <span className="text-[11px] text-muted w-8 text-right">{pct}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* SQL hint */}
-          <div className="mt-6 bg-navy/5 border border-navy/10 rounded-xl p-4">
-            <p className="text-[11px] text-muted font-mono">
-              Tabla Supabase requerida: <strong className="text-navy">site_eventos</strong> (id serial, tipo text, valor text, session_id text, created_at timestamptz default now())
-            </p>
           </div>
         </>
-      ) : (
+      ) : tab === "feed" ? (
         /* Feed tab */
         <div className="bg-white rounded-2xl border border-border overflow-hidden">
           <table className="w-full text-sm">
@@ -290,7 +434,117 @@ export default function AdminAnalytics() {
             </tbody>
           </table>
         </div>
+      ) : (
+        /* Reportes tab */
+        <div className="max-w-xl space-y-6">
+          {loadingConfig ? (
+            <div className="flex justify-center py-16">
+              <div className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <>
+              {/* Config */}
+              <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
+                <div>
+                  <h3 className="text-[14px] font-black text-navy mb-1">Reporte periódico</h3>
+                  <p className="text-[12.5px] text-muted">Recibe un resumen de actividad por correo de forma automática.</p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-navy uppercase tracking-wide mb-1.5">Correo de destino</label>
+                  <input
+                    type="email"
+                    value={reporteEmail}
+                    onChange={(e) => setReporteEmail(e.target.value)}
+                    placeholder="rsalazar@kyoszen.com.mx"
+                    className="w-full border border-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-blue transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-navy uppercase tracking-wide mb-1.5">Periodicidad</label>
+                  <div className="flex gap-2">
+                    {(["desactivado", "semanal", "mensual"] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setReportePeriodicidad(p)}
+                        className={`flex-1 py-2.5 rounded-xl text-[12.5px] font-semibold border transition-colors capitalize ${
+                          reportePeriodicidad === p
+                            ? "bg-navy text-white border-navy"
+                            : "bg-bg text-muted border-border hover:border-navy hover:text-navy"
+                        }`}
+                      >
+                        {p === "desactivado" ? "Desactivado" : p === "semanal" ? "Semanal" : "Mensual"}
+                      </button>
+                    ))}
+                  </div>
+                  {reportePeriodicidad !== "desactivado" && (
+                    <p className="text-[11px] text-muted mt-2">
+                      {reportePeriodicidad === "semanal"
+                        ? "Se enviará cada lunes a las 8am (requiere cron en el servidor)."
+                        : "Se enviará el 1° de cada mes a las 8am (requiere cron en el servidor)."}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  onClick={saveReporteConfig}
+                  disabled={savingConfig}
+                  className="w-full bg-navy text-white rounded-xl py-2.5 text-[13px] font-bold hover:bg-blue transition-colors disabled:opacity-50"
+                >
+                  {savingConfig ? "Guardando..." : configSaved ? "✓ Guardado" : "Guardar configuración"}
+                </button>
+              </div>
+
+              {/* Acciones manuales */}
+              <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
+                <div>
+                  <h3 className="text-[14px] font-black text-navy mb-1">Generar resumen ahora</h3>
+                  <p className="text-[12.5px] text-muted">Genera el resumen del período seleccionado y descárgalo o envíalo al correo configurado.</p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={downloadPdf}
+                    className="w-full flex items-center justify-center gap-2 bg-navy text-white rounded-xl py-2.5 text-[13px] font-bold hover:bg-blue transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    Descargar PDF con diseño
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={downloadReport}
+                      className="flex-1 flex items-center justify-center gap-2 border border-border rounded-xl py-2.5 text-[13px] font-semibold text-navy hover:bg-bg transition-colors"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                      </svg>
+                      Descargar .txt
+                    </button>
+                    <button
+                      onClick={sendReport}
+                      disabled={sendingReport}
+                      className="flex-1 flex items-center justify-center gap-2 border border-blue/30 text-blue rounded-xl py-2.5 text-[13px] font-semibold hover:bg-blue/5 transition-colors disabled:opacity-50"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                      </svg>
+                      {sendingReport ? "Enviando..." : "Enviar correo"}
+                    </button>
+                  </div>
+                </div>
+
+                {reportMsg && (
+                  <p className="text-[12.5px] font-semibold text-center">{reportMsg}</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
 }
+
