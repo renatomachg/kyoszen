@@ -58,14 +58,17 @@ const ESTADO: Record<string, { label: string; bg: string; color: string; dot: st
   cambios:   { label: "Cambios",    bg: "#FEE2E2", color: "#991B1B", dot: "#EF4444" },
 };
 
-/* ─── Upload helper (Supabase Storage) ──────────────── */
+/* ─── Upload helper — usa API route con service role ─── */
 async function uploadImage(file: File): Promise<string> {
-  const ext = file.name.split(".").pop();
-  const path = `social/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { error } = await supabase.storage.from("media").upload(path, file, { upsert: true });
-  if (error) throw error;
-  const { data } = supabase.storage.from("media").getPublicUrl(path);
-  return data.publicUrl;
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch("/api/admin/social/upload", { method: "POST", body: fd });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? "Upload failed");
+  }
+  const { url } = await res.json();
+  return url;
 }
 
 /* ─── Modal: crear/nueva versión ────────────────────── */
@@ -347,6 +350,8 @@ export default function RedesSocialesPage() {
 
   const [configForm, setConfigForm] = useState({ nombre_pagina: "Kyoszen", avatar_url: "" });
   const [savingConfig, setSavingConfig] = useState(false);
+  const [configError, setConfigError] = useState("");
+  const [configOk, setConfigOk] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
 
@@ -372,17 +377,28 @@ export default function RedesSocialesPage() {
 
   const saveConfig = async () => {
     setSavingConfig(true);
+    setConfigError("");
+    setConfigOk(false);
     let avatar_url = configForm.avatar_url;
     if (avatarFile) {
-      try { avatar_url = await uploadImage(avatarFile); } catch { /* noop */ }
+      try {
+        avatar_url = await uploadImage(avatarFile);
+      } catch (e) {
+        setConfigError("Error al subir la imagen: " + (e instanceof Error ? e.message : "intenta de nuevo"));
+        setSavingConfig(false);
+        return;
+      }
     }
-    await fetch("/api/admin/social/config", {
+    const res = await fetch("/api/admin/social/config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ red_social: "facebook", nombre_pagina: configForm.nombre_pagina, avatar_url }),
     });
-    setAvatarFile(null);
     setSavingConfig(false);
+    if (!res.ok) { setConfigError("Error al guardar la configuración."); return; }
+    setAvatarFile(null);
+    setConfigOk(true);
+    setTimeout(() => setConfigOk(false), 3000);
     loadData();
   };
 
@@ -535,9 +551,10 @@ export default function RedesSocialesPage() {
               </div>
             </div>
 
+            {configError && <p style={{ margin: 0, fontSize: 12, color: "#DC2626", fontWeight: 600 }}>{configError}</p>}
             <button onClick={saveConfig} disabled={savingConfig}
-              style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", opacity: savingConfig ? 0.6 : 1 }}>
-              {savingConfig ? "Guardando..." : "Guardar configuración"}
+              style={{ background: configOk ? "#166534" : "#042E7B", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", opacity: savingConfig ? 0.6 : 1, transition: "background .3s" }}>
+              {savingConfig ? "Subiendo imagen..." : configOk ? "✓ Guardado" : "Guardar configuración"}
             </button>
           </div>
         </div>
