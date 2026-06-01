@@ -99,11 +99,28 @@ src/
 - **aplicaciones** — se llenan desde el modal "Aplicar ahora" del sitio
 - **contactos** — se llenan desde el formulario de /contacto
 - **kyo_config** (id, instrucciones) — instrucciones editables del asistente Kyo
-- **site_config** (key, value) — emails destino configurables desde /admin/correos
+- **kyo_conversaciones** (id, session_id, messages JSONB, ip, created_at) — log de cada chat con Kyo. Se ve en /admin/kyo → tab Conversaciones.
+- **kyo_faqs** — preguntas frecuentes del asistente Kyo
+- **site_config** (key, value) — emails destino + SMTP + config de resumen (`resumen_email`, `resumen_periodicidad`)
 - **site_eventos** (id, tipo, valor, session_id, created_at) — analytics propio (RLS activo)
-- **faqs** — preguntas frecuentes del asistente Kyo
+- **estratega_chats** (id, title, messages JSONB, created_at, updated_at) — historial del Estratega
+- **social_posts** (id, red_social, fecha_programada, estado, titulo_interno) — publicaciones de redes. estado: pendiente/aprobado/cambios
+- **social_post_versions** (id, post_id, version_num, caption, imagenes JSONB, nota_visual, es_activa) — versiones de cada post. `nota_visual` = "qué diseñar"
+- **social_comments** (id, post_id, autor_nombre, autor_rol, contenido) — comentarios del revisor (admin/cliente)
+- **social_page_config** (red_social, nombre_pagina, avatar_url) — config del mockup por red
+- **social_reviewers** (id UUID→auth.users, nombre, email, activo) — clientes que revisan
 
-RLS activo en todas las tablas.
+RLS activo en todas las tablas (políticas permisivas USING(true) — el acceso real lo controla la service_role en las API routes).
+
+### Supabase Storage
+- Bucket **`media`** (público) — imágenes de redes sociales (`social/`), avatares, logos de marca (`brand/`)
+- IMPORTANTE: el bucket debe crearse vía la API de Storage (`sb.storage.createBucket`), NO por SQL — crear por SQL no lo registra en PostgREST.
+- Logos en Storage: `brand/kyoszen-logo.svg`, `brand/kyoszen-icon.png`, `brand/social-illustration.png`
+
+### MCP de Supabase — ojo
+- El MCP genérico `mcp__supabase__*` apunta al proyecto **Makerlab**, NO a Kyoszen.
+- Para Kyoszen usar el MCP con `project_id: "xwzggymwdrvxpwvuefqf"` (`mcp__7f010f9a-...__apply_migration` / `execute_sql`).
+- O usar un script node con `.env.local` (service role) que siempre apunta a Kyoszen.
 
 ## VPS Hostinger
 
@@ -169,12 +186,62 @@ Variables CSS en `src/app/globals.css`:
 - **Vacantes del sitio público leen de Supabase** — no del archivo jobs.ts
 - **Idioma:** español de México
 
+## Módulos nuevos (sesión jun 2026)
+
+### 1. Revisor de redes sociales (`/revisor` + `/admin/redes-sociales`)
+Portal para que el cliente (Rosy, Monse) apruebe el contenido de redes ANTES de publicarse.
+- **`/revisor`** — portal limpio (sin navbar/footer/Kyo, excluido en `PublicShell`). Login con Supabase Auth. Cliente ve publicaciones en grid responsivo, abre modal con mockup de Facebook, botones **Aprobar** / **Necesito cambios** (este abre campo de texto → guarda comentario + cambia estado + notifica por correo, todo junto). Pills de stats del mes. Toggle **Semana/Mes**. **Guía de uso** = tour interactivo con coach marks (spotlight sobre elementos reales), aparece la 1ª vez (localStorage `kyoszen_revisor_guia_vista`) + botón "❔ Guía de uso".
+- **`/admin/redes-sociales`** — 3 tabs: **Calendario** (semana 7-cols con "+ Añadir" por día, o vista mes en grid), **Importar plan**, **Configuración** (nombre + avatar del mockup). Crear publicación con selector de red (Facebook/TikTok), imagen/carrusel, caption, fecha. Ver versiones, comentarios, nota visual "qué diseñar".
+- **APIs:** `/api/admin/social/{posts,config,upload,importar}`, `/api/revisor/posts/[id]/{status,comments}`. Notificaciones a renatomachg@gmail.com vía IONOS SMTP.
+- **Multi-red:** `src/lib/redes-sociales.ts` define cada red (logo, color, emoji). Componente `src/components/RedLogo.tsx` muestra logo o chip de marca si no hay logo. Facebook activo con `/redes/facebook.svg`. TikTok activo pero SIN logo (muestra chip negro) — cuando llegue el SVG, ponerlo en `/public/redes/tiktok.svg` y `logo: "/redes/tiktok.svg"` en redes-sociales.ts.
+
+### 2. Importador de planes de contenido (`/admin/redes-sociales` → tab Importar)
+Pega/sube el HTML o texto de un plan de contenido → lo parsea con Claude (haiku-4-5) → crea las publicaciones en el calendario.
+- 2 pasos: **"Analizar"** (solo lee, NO crea nada) → preview → **"Crear"** (inserta en BD real).
+- Parsing en paralelo por semana (`dividirEnLotes`) → ~18s para un mes (vs 58s en serie). Limpia el HTML antes (`limpiarHtml`) para velocidad y mejor clasificación.
+- **Detección de duplicados por día+red:** si ya existe publicación ese día/red, la marca "✓ Ya en calendario" y la respeta, solo crea las nuevas.
+- Cada pieza crea: fecha, título, caption+hashtags, `nota_visual` (qué diseñar, visible en detalle admin). Imagen vacía → el usuario la diseña en Illustrator y la sube después.
+
+### 3. Estratega (`/admin/estratega`)
+Agente IA (Claude Opus) que lee datos reales de Supabase (30 días) y propone servicios de postventa para Kyoszen. Sidebar con historial de chats persistido en tabla `estratega_chats`. Streaming.
+
+### 4. Analytics — tracking + dashboard + reportes (`/admin/analytics`)
+- **Tracking** activo en frontend con `logEvent()` de `@/lib/analytics`: vacante_vista, vacante_aplicar_click, vacante_aplicacion_enviada, curso_informes_click/enviada, whatsapp_click, kyo_mensaje, contacto_enviado, comparador_*, calculadora_*.
+- **Dashboard** redesign: KPIs, funnel de vacantes, top rankings, tab **Feed** y tab **Reportes**.
+- **Reportes** (`/api/admin/resumen`): genera resumen semanal/mensual. Descarga **PDF con diseño branded** (Puppeteer), descarga TXT, o envía por correo. Config de periodicidad + correo guardada en site_config. (El cron automático real aún no está montado en el VPS).
+
+### 5. Herramientas "secretas" (links no enlazados en el sitio — para presentar al cliente)
+- **`/calculadora`** — calculadora de costo de rotación de personal (metodología SHRM, 3 meses de salario por empleado). CTA WhatsApp pre-llenado.
+- **`/salarios`** — comparador de salarios CDMX 2025. Datos en `src/lib/salarios.ts` (35 puestos, **estimados de mercado** — NO de API real). Wording honesto: "Estimado de mercado · CDMX 2025". Compara salario actual vs mercado (🔴 bajo / 🟢 en línea / 🔵 alto).
+- NO están en el homepage ni navbar. Solo el usuario conoce los links.
+
+## Cuentas de revisores (Supabase Auth)
+Creadas con `sb.auth.admin.createUser` + contraseña temporal `Kyoszen2025!` (el usuario las comparte por WhatsApp; cambian la contraseña al entrar):
+- **Rocio Salazar** — rsalazar@kyoszen.com.mx
+- **Monserrat Gonzalez** — mgonzalez@kyoszen.com.mx
+- **Hector Gonzalez** — info@mhome.mx (cuenta de PRUEBA)
+- **Supabase Auth → URL Configuration:** Site URL = `https://kyoszen.com`, Redirect URLs incluyen `https://kyoszen.com/**` y `http://localhost:3002/**`. (Necesario para que los links de invitación/reset no manden a localhost).
+- Correo de invitación: se envía con script node + nodemailer (IONOS), diseño branded con logo + ilustración. NO hay registro público — el admin crea las cuentas.
+
+## SMTP — IONOS
+- Configurado en `site_config`: smtp_host=`smtp.ionos.com`, smtp_port=`465` (secure), smtp_user=`rsalazar@kyoszen.com.mx`.
+- El HostGator viejo (mail.kyoszen.com / 162.241.62.140) NO entrega — descartado.
+- En `from` usar `{ name, address: smtp_user }` (no template string `"Nombre <correo>"` que da error 501 en IONOS).
+
+## Modelos de Claude usados
+- Asistente Kyo: `claude-haiku-4-5-20251001` (default)
+- Estratega: `claude-opus-4-5` (streaming)
+- Importador de planes: `claude-haiku-4-5-20251001` (rápido, parsing)
+- IDs confirmados que funcionan con la key: `claude-opus-4-5`, `claude-haiku-4-5-20251001`. NO asumir que existe un id de sonnet sin confirmar.
+
 ## Pendientes activos
 
 ### General
-- [x] **SMTP_PASS** — correos funcionando, confirmado por usuario y cliente.
-- [ ] **TikTok** — link en Footer es `href="#"`. Falta URL real del perfil de TikTok de Kyoszen.
-- [ ] **Logo PNG** — pendiente de entrega del cliente. Actualmente usa wordmark de texto.
+- [x] **SMTP_PASS** — correos funcionando vía IONOS, confirmado por usuario y cliente.
+- [ ] **Logo de TikTok** — cuando llegue, ponerlo en `/public/redes/tiktok.svg` y activar `logo` en redes-sociales.ts. Por ahora muestra chip negro "TikTok".
+- [ ] **TikTok** — link en Footer es `href="#"`. Falta URL real del perfil.
+- [ ] **Logo PNG** — el icono ya se usa en el revisor (`brand/kyoszen-icon.png`). Footer aún usa wordmark de texto.
+- [ ] **Cron del resumen mensual** — el toggle guarda la preferencia pero el envío automático (cron en VPS llamando a /api/admin/resumen) aún no está montado.
 - [ ] Revisar copy con cliente (es razonable pero no 100% aprobado)
 
 ### Panel Admin — YA COMPLETO
@@ -299,4 +366,13 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-05-26 — Sesion completa: sitio desplegado en produccion (kyoszen.com), VPS limpio solo con kyoszen, llave SSH permanente para Claude, panel admin completo (vacantes, cursos, blog, kyo, correos, analytics), feature ✨ Completar con IA en vacantes y cursos, Navbar y seccion home responden a vacantes activas, analytics propio con tabla site_eventos en Supabase.
+2026-06-01 — Sesion grande. Nuevos modulos en produccion:
+- **Revisor de redes sociales** (`/revisor` + `/admin/redes-sociales`): calendario, mockup Facebook, aprobar/pedir cambios, comentarios, notificaciones por correo, vista semana/mes, guia interactiva (tour coach marks), multi-red Facebook/TikTok.
+- **Importador de planes** de contenido: pega/sube HTML → Claude parsea en paralelo (~18s) → crea publicaciones con deteccion de duplicados por dia+red. La imagen la sube el usuario despues (disena en Illustrator). La `nota_visual` guarda "que disenar".
+- **Estratega** con historial en Supabase.
+- **Analytics**: tracking en frontend + dashboard redesign + tab Reportes (PDF branded/TXT/correo).
+- **Herramientas secretas** (links no enlazados): `/calculadora` (costo de rotacion) y `/salarios` (comparador de salarios CDMX, datos estimados).
+- **Cuentas de revisor** creadas en Supabase Auth (Rosy, Monse, Hector-prueba), contrasena temporal `Kyoszen2025!`, Site URL de Auth = kyoszen.com.
+- **SMTP** migrado a IONOS (HostGator viejo descartado).
+
+2026-05-26 — Sitio desplegado en produccion, VPS limpio, panel admin completo (vacantes, cursos, blog, kyo, correos, analytics), ✨ Completar con IA, analytics propio.
