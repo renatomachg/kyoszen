@@ -338,9 +338,11 @@ function LoginView({ onLogin }: { onLogin: () => void }) {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #042E7B 0%, #1883FF 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ background: "#fff", borderRadius: 24, padding: "40px 36px", width: "100%", maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,.25)" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 52, height: 52, background: "#042E7B", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-            <span style={{ color: "#FFCC00", fontWeight: 900, fontSize: 18 }}>KZ</span>
-          </div>
+          <img
+            src="https://xwzggymwdrvxpwvuefqf.supabase.co/storage/v1/object/public/media/brand/kyoszen-icon.png"
+            alt="Kyoszen"
+            style={{ width: 64, height: 64, borderRadius: 16, display: "block", margin: "0 auto 16px", objectFit: "cover" }}
+          />
           <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 900, color: "#042E7B" }}>Revisor de contenido</h1>
           <p style={{ margin: 0, fontSize: 13, color: "#64748B" }}>Kyoszen · Aprobación de publicaciones</p>
         </div>
