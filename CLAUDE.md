@@ -2,16 +2,23 @@
 
 Este archivo lo lee Claude Code al iniciar cada sesión. Mantiene el contexto del proyecto, decisiones importantes y pendientes entre sesiones.
 
-## ⚠️ REGLA INAMOVIBLE — FLUJO DE TRABAJO
+## 🚨 REGLA INAMOVIBLE — FLUJO DE TRABAJO
 
-**SIEMPRE local primero, producción después. Sin excepciones.**
+**SIEMPRE local primero → usuario aprueba → LUEGO producción. SIN EXCEPCIONES.**
 
 1. Hacer el cambio en local
-2. El usuario lo revisa y aprueba en local (`http://localhost:3002`)
-3. Solo después de aprobación explícita: commit → push → deploy al VPS
-4. Esto aplica a TODO: código, datos de Supabase, migraciones, configuraciones
+2. Correr el servidor local si no está arriba: `bash dev.sh` → `http://localhost:3002`
+3. Decirle al usuario que revise en local y esperar su aprobación explícita
+4. Solo después del "listo" o "mándalo a producción": commit → push → deploy VPS
 
-Nunca tocar producción (VPS ni Supabase) sin aprobación local previa del usuario.
+**Aplica a TODO — incluyendo:**
+- Cambios de una sola línea ("fixes rápidos")
+- Correcciones de bugs urgentes
+- Migraciones de Supabase
+- Cambios de configuración
+
+**No hay excepciones por urgencia, simplicidad o confianza en el cambio.**
+El flujo es: local → aprobación → producción. Siempre.
 
 ---
 
@@ -117,7 +124,7 @@ docs/
   brandkit/
     colores.md        # Paleta completa con variables CSS y uso por contexto
     tipografia.md     # DM Sans, jerarquia, convenciones
-    voz-tono.md       # Tono corporativo, voz de Kyo, sin acentos
+    voz-tono.md       # Tono corporativo, voz de Kyo
     redes-sociales.md # Dimensiones, redes prioritarias, ideas de contenido
     logos/            # PNGs del logo (pendiente recibir del cliente)
     referencias/      # Moodboards e imagenes de referencia
@@ -147,7 +154,7 @@ Variables CSS en `src/app/globals.css`:
 
 - **Sin output: export** — Next.js con runtime completo (APIs, middleware)
 - **`unoptimized: true`** — compatible con VPS y cualquier hosting
-- **Sin acentos** en textos del sitio (convención del cliente)
+- **Ortografía correcta** en español de México — acentos, signos de apertura (¿¡) y mayúsculas donde corresponda
 - **Navbar flotante redondeada** (no full-width)
 - **PublicShell** oculta Navbar/Footer/Kyo en rutas `/admin`
 - **Supabase sin genérico Database** — el tipo en types/database.ts está desactualizado, no usarlo
@@ -178,7 +185,7 @@ Variables CSS en `src/app/globals.css`:
 
 ## Cosas que NO hacer
 
-- **No meter acentos** en copy
+- **No escribir copy sin acentos** — el español correcto lleva tildes, signos de apertura y mayúsculas
 - **No usar `next/image`** — usar `<img>` nativo
 - **No añadir README.md** sin pedirlo
 - **No commitear** sin que el usuario lo pida
@@ -284,4 +291,4 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-05-19 — Sesion completa: sitio desplegado en produccion (kyoszen.com), VPS limpio solo con kyoszen, llave SSH permanente para Claude, panel admin completo (vacantes, cursos, blog, kyo, correos, analytics), feature ✨ Completar con IA en vacantes y cursos, Navbar y seccion home responden a vacantes activas, analytics propio con tabla site_eventos en Supabase.
+2026-05-26 — Sesion completa: sitio desplegado en produccion (kyoszen.com), VPS limpio solo con kyoszen, llave SSH permanente para Claude, panel admin completo (vacantes, cursos, blog, kyo, correos, analytics), feature ✨ Completar con IA en vacantes y cursos, Navbar y seccion home responden a vacantes activas, analytics propio con tabla site_eventos en Supabase.
