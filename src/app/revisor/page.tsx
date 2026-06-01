@@ -432,11 +432,14 @@ export default function RevisorPage() {
       <header style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, background: "#042E7B", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: "#FFCC00", fontWeight: 900, fontSize: 12 }}>KZ</span>
+            <div style={{ width: 36, height: 36, background: "#042E7B", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {config.avatar_url
+                ? <img src={config.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ color: "#FFCC00", fontWeight: 900, fontSize: 12 }}>KZ</span>
+              }
             </div>
             <div>
-              <p style={{ margin: 0, fontWeight: 900, fontSize: 14, color: "#042E7B", lineHeight: 1 }}>Kyoszen</p>
+              <p style={{ margin: 0, fontWeight: 900, fontSize: 14, color: "#042E7B", lineHeight: 1 }}>{config.nombre_pagina}</p>
               <p style={{ margin: 0, fontSize: 11, color: "#94A3B8" }}>Revisor de contenido</p>
             </div>
           </div>
