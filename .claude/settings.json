@@ -10,6 +10,34 @@
             "command": "npm run lint 1>&2; LINT_EXIT=$?; if [ $LINT_EXIT -ne 0 ]; then printf '{\"continue\":false,\"stopReason\":\"Lint fallo — hay errores de codigo. Corrigelos antes de hacer git push.\"}'; fi",
             "statusMessage": "Verificando lint antes del push...",
             "timeout": 60
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push*)",
+            "command": "npx tsc --noEmit 1>&2; TSC_EXIT=$?; if [ $TSC_EXIT -ne 0 ]; then printf '{\"continue\":false,\"stopReason\":\"TypeScript tiene errores de tipos. Corrigelos antes de hacer git push.\"}'; fi",
+            "statusMessage": "Verificando tipos TypeScript...",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(*deploy.sh*)",
+            "command": "ssh -i ~/.ssh/kyoszen_vps root@76.13.111.112 'pm2 list --no-color | grep kyoszen' 1>&2",
+            "statusMessage": "Verificando PM2 en VPS post-deploy...",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "python3 /Users/renatomachado/Desktop/kyoszen/.claude/update-fecha.py 1>&2",
+            "statusMessage": "Actualizando fecha en CLAUDE.md...",
+            "timeout": 10
           }
         ]
       }

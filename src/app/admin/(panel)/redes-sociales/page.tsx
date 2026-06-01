@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getRedSocial } from "@/lib/redes-sociales";
 
 /* ─── Types ──────────────────────────────────────────── */
 interface Version {
@@ -47,6 +48,13 @@ function weekBounds(offset = 0) {
     hasta: days[6].toISOString().slice(0, 10),
     days,
   };
+}
+
+function monthBounds(offset = 0) {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const last = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+  return { desde: first.toISOString().slice(0, 10), hasta: last.toISOString().slice(0, 10), first, last };
 }
 
 function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
@@ -202,6 +210,7 @@ function PostModal({
 
 /* ─── Post detail panel ──────────────────────────────── */
 function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: PageConfig; onClose: () => void; onUpdated: () => void }) {
+  const red = getRedSocial(post.red_social);
   const active = post.social_post_versions.find((v) => v.es_activa) ?? post.social_post_versions[0];
   const old = post.social_post_versions.filter((v) => !v.es_activa).sort((a, b) => b.version_num - a.version_num);
   const [showNewVersion, setShowNewVersion] = useState(false);
@@ -228,7 +237,12 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
         {/* Header */}
         <div style={{ background: "#042E7B", borderRadius: "20px 20px 0 0", padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <p style={{ margin: "0 0 2px", color: "#FFCC00", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px" }}>Facebook · {post.fecha_programada}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
+              <span style={{ background: "#fff", borderRadius: 5, padding: "2px 7px", display: "inline-flex", alignItems: "center" }}>
+                <img src={red.logo} alt={red.nombre} style={{ height: 10, display: "block" }} />
+              </span>
+              <span style={{ color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 700, letterSpacing: ".3px" }}>{post.fecha_programada}</span>
+            </div>
             <p style={{ margin: 0, color: "#fff", fontWeight: 900, fontSize: 16 }}>{post.titulo_interno || "Sin título interno"}</p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -339,6 +353,7 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
 
 /* ─── Main ───────────────────────────────────────────── */
 export default function RedesSocialesPage() {
+  const [vista, setVista] = useState<"semana" | "mes">("semana");
   const [weekOffset, setWeekOffset] = useState(0);
   const [posts, setPosts] = useState<Post[]>([]);
   const [config, setConfig] = useState<PageConfig>({ red_social: "facebook", nombre_pagina: "Kyoszen", avatar_url: null });
@@ -355,12 +370,22 @@ export default function RedesSocialesPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
 
-  const { desde, hasta, days } = weekBounds(weekOffset);
+  const wb = weekBounds(weekOffset);
+  const mb = monthBounds(weekOffset);
+  const { desde, hasta, days } = wb;
+  const monthRange = vista === "mes" ? mb : null;
+  const queryDesde = vista === "semana" ? desde : mb.desde;
+  const queryHasta = vista === "semana" ? hasta : mb.hasta;
+
+  const cambiarVista = (nueva: "semana" | "mes") => {
+    setVista(nueva);
+    setWeekOffset(0);
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
     const [postsRes, cfgRes] = await Promise.all([
-      fetch(`/api/admin/social/posts?desde=${desde}&hasta=${hasta}`),
+      fetch(`/api/admin/social/posts?desde=${queryDesde}&hasta=${queryHasta}`),
       fetch("/api/admin/social/config"),
     ]);
     const [postsData, cfgData] = await Promise.all([postsRes.json(), cfgRes.json()]);
@@ -371,7 +396,7 @@ export default function RedesSocialesPage() {
       setConfigForm({ nombre_pagina: fb.nombre_pagina, avatar_url: fb.avatar_url ?? "" });
     }
     setLoading(false);
-  }, [desde, hasta]);
+  }, [queryDesde, queryHasta]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -443,15 +468,19 @@ export default function RedesSocialesPage() {
       {/* ── Tab: Calendario ── */}
       {tab === "calendario" && (
         <>
-          {/* Week nav */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          {/* Nav + toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
             <button onClick={() => setWeekOffset(w => w - 1)}
               style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "#042E7B" }}>‹</button>
             <div>
               <p style={{ margin: 0, fontWeight: 900, fontSize: 15, color: "#042E7B" }}>
-                {weekOffset === 0 ? "Esta semana" : weekOffset === -1 ? "Semana pasada" : `${weekOffset > 0 ? "+" : ""}${weekOffset} semanas`}
+                {vista === "semana"
+                  ? (weekOffset === 0 ? "Esta semana" : weekOffset === -1 ? "Semana pasada" : `${weekOffset > 0 ? "+" : ""}${weekOffset} semanas`)
+                  : (weekOffset === 0 ? "Este mes" : weekOffset === -1 ? "Mes pasado" : `${weekOffset > 0 ? "+" : ""}${weekOffset} meses`)}
               </p>
-              <p style={{ margin: 0, fontSize: 12, color: "#94A3B8" }}>{fmtWeek()}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#94A3B8", textTransform: "capitalize" }}>
+                {vista === "semana" ? fmtWeek() : mb.first.toLocaleDateString("es-MX", { month: "long", year: "numeric" })}
+              </p>
             </div>
             {weekOffset !== 0 && (
               <button onClick={() => setWeekOffset(0)}
@@ -459,6 +488,17 @@ export default function RedesSocialesPage() {
             )}
             <button onClick={() => setWeekOffset(w => w + 1)}
               style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "#042E7B" }}>›</button>
+
+            {/* Toggle semana/mes */}
+            <div style={{ marginLeft: "auto", display: "flex", background: "#F1F5F9", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 3 }}>
+              {(["semana", "mes"] as const).map(v => (
+                <button key={v} onClick={() => cambiarVista(v)}
+                  style={{ padding: "7px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, textTransform: "capitalize",
+                    background: vista === v ? "#042E7B" : "transparent", color: vista === v ? "#fff" : "#64748B", transition: "all .15s" }}>
+                  {v}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Calendar grid */}
@@ -466,6 +506,45 @@ export default function RedesSocialesPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 0" }}>
               <div style={{ width: 28, height: 28, border: "3px solid #042E7B", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
             </div>
+          ) : vista === "mes" ? (
+            /* ── Vista mes: grid de todas las publicaciones ── */
+            posts.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 24px", background: "#F8FAFC", borderRadius: 16, border: "1.5px dashed #E2E8F0" }}>
+                <span style={{ fontSize: 36 }}>📭</span>
+                <p style={{ margin: "14px 0 4px", fontWeight: 700, color: "#042E7B", fontSize: 15 }}>Sin publicaciones este mes</p>
+                <p style={{ margin: 0, color: "#94A3B8", fontSize: 13 }}>Usa &quot;+ Nueva publicación&quot; para agregar contenido.</p>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 14 }}>
+                {[...posts].sort((a, b) => a.fecha_programada.localeCompare(b.fecha_programada)).map((p) => {
+                  const v = p.social_post_versions.find((vv) => vv.es_activa) ?? p.social_post_versions[0];
+                  const est = ESTADO[p.estado];
+                  const commentCount = p.social_comments?.length ?? 0;
+                  return (
+                    <button key={p.id} onClick={() => setSelectedPost(p)}
+                      style={{ background: "#fff", border: `1.5px solid ${p.estado === "cambios" ? "#FCA5A5" : p.estado === "aprobado" ? "#86EFAC" : "#E2E8F0"}`, borderRadius: 14, padding: 0, cursor: "pointer", overflow: "hidden", textAlign: "left", width: "100%" }}>
+                      {v?.imagenes?.[0]
+                        ? <img src={v.imagenes[0]} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
+                        : <div style={{ width: "100%", aspectRatio: "1/1", background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>📝</div>}
+                      <div style={{ padding: "8px 10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: "#042E7B" }}>
+                            {new Date(p.fecha_programada + "T12:00:00").toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}
+                          </span>
+                          <img src={getRedSocial(p.red_social).logo} alt="" style={{ height: 9, opacity: .8 }} />
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, flexShrink: 0 }} />
+                          <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
+                        </div>
+                        {v?.caption && <p style={{ margin: 0, fontSize: 11, color: "#64748B", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{v.caption}</p>}
+                        {commentCount > 0 && <p style={{ margin: "3px 0 0", fontSize: 10, color: "#94A3B8" }}>💬 {commentCount}</p>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10 }}>
               {/* Day headers */}
@@ -500,6 +579,7 @@ export default function RedesSocialesPage() {
                             <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
                               <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, flexShrink: 0 }} />
                               <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
+                              <img src={getRedSocial(p.red_social).logo} alt="" style={{ height: 8, marginLeft: "auto", opacity: .8 }} />
                             </div>
                             {v?.caption && <p style={{ margin: 0, fontSize: 10, color: "#64748B", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{v.caption}</p>}
                             {commentCount > 0 && <p style={{ margin: "3px 0 0", fontSize: 10, color: "#94A3B8" }}>💬 {commentCount}</p>}

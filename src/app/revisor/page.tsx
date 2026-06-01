@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
+import { getRedSocial } from "@/lib/redes-sociales";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Version {
@@ -46,6 +47,13 @@ function weekBounds(offset = 0) {
   return { desde: mon.toISOString().slice(0, 10), hasta: sun.toISOString().slice(0, 10), mon, sun };
 }
 
+function monthBounds(offset = 0) {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const last = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+  return { desde: first.toISOString().slice(0, 10), hasta: last.toISOString().slice(0, 10), mon: first, sun: last };
+}
+
 function fmtScheduledDate(d: string) {
   return new Date(d + "T12:00:00").toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
 }
@@ -83,6 +91,7 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
 
   const imgs = active?.imagenes ?? [];
   const est = ESTADO[estado];
+  const red = getRedSocial(post.red_social);
 
   const [showCambiosForm, setShowCambiosForm] = useState(false);
   const [cambiosTexto, setCambiosTexto] = useState("");
@@ -139,9 +148,14 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
         {/* Modal header */}
         <div style={{ background: "#042E7B", borderRadius: "24px 24px 0 0", padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
           <div>
-            <p style={{ margin: "0 0 2px", color: "#FFCC00", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".6px" }}>
-              Facebook · {fmtScheduledDate(post.fecha_programada)}
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+              <span style={{ background: "#fff", borderRadius: 6, padding: "3px 8px", display: "inline-flex", alignItems: "center" }}>
+                <img src={red.logo} alt={red.nombre} style={{ height: 11, display: "block" }} />
+              </span>
+              <span style={{ color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px" }}>
+                {fmtScheduledDate(post.fecha_programada)}
+              </span>
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
               <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{est.label}</span>
@@ -153,7 +167,7 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
           {/* Left: FB mockup */}
           <div style={{ padding: 24, borderRight: "1px solid #F1F5F9" }}>
-            <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 12px rgba(0,0,0,.1)", overflow: "hidden" }}>
+            <div data-tour="preview" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 12px rgba(0,0,0,.1)", overflow: "hidden" }}>
               {/* FB post header */}
               <div style={{ padding: "12px 14px 8px", display: "flex", gap: 10, alignItems: "center" }}>
                 <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#042E7B", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -214,7 +228,7 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
           {/* Right: actions + comments */}
           <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
             {/* Paso de decisión */}
-            <div>
+            <div data-tour="acciones">
               <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 800, color: "#042E7B" }}>
                 ¿Apruebas esta publicación?
               </p>
@@ -297,6 +311,7 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
 function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
   const active = post.social_post_versions.find(v => v.es_activa) ?? post.social_post_versions[0];
   const est = ESTADO[post.estado];
+  const red = getRedSocial(post.red_social);
   const commentCount = post.social_comments?.length ?? 0;
   const hasImage = (active?.imagenes?.length ?? 0) > 0;
   const isCarrusel = (active?.imagenes?.length ?? 0) > 1;
@@ -328,9 +343,12 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
 
       {/* Info */}
       <div style={{ padding: "12px 14px" }}>
-        <p style={{ margin: "0 0 4px", fontSize: 12, fontWeight: 700, color: "#042E7B" }}>
-          {fmtShortDate(post.fecha_programada)}
-        </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#042E7B" }}>
+            {fmtShortDate(post.fecha_programada)}
+          </p>
+          <img src={red.logo} alt={red.nombre} title={red.nombre} style={{ height: 11, display: "block", opacity: .85 }} />
+        </div>
         {active?.caption && (
           <p style={{ margin: "0 0 8px", fontSize: 12, color: "#64748B", lineHeight: 1.45, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
             {active.caption}
@@ -398,6 +416,234 @@ function LoginView({ onLogin }: { onLogin: () => void }) {
   );
 }
 
+/* ─── Guía de uso (tour con coach marks) ─────────────── */
+interface PasoTour {
+  emoji: string;
+  titulo: string;
+  texto: string;
+  selector: string | null;  // null = tarjeta centrada
+  requiereModal?: boolean;   // abre una publicación de ejemplo
+}
+
+const GUIA_PASOS: PasoTour[] = [
+  {
+    emoji: "👋",
+    titulo: "¡Bienvenido a tu Revisor!",
+    texto: "Aquí revisas el contenido que vamos a publicar en tus redes antes de que salga al aire. Te mostramos en 30 segundos cómo funciona.",
+    selector: null,
+  },
+  {
+    emoji: "📊",
+    titulo: "Tu resumen del mes",
+    texto: "Aquí ves de un vistazo cuántas publicaciones están aprobadas, pendientes y con cambios.",
+    selector: "[data-tour='stats']",
+  },
+  {
+    emoji: "🗓️",
+    titulo: "Ver por semana o por mes",
+    texto: "Cambia entre ver solo lo de esta semana o todo el mes completo. Usa las flechas ‹ › para navegar.",
+    selector: "[data-tour='toggle']",
+  },
+  {
+    emoji: "🗂️",
+    titulo: "Aquí están tus publicaciones",
+    texto: "Cada tarjeta es una publicación programada. Haz clic en cualquiera para abrirla y revisarla. Te mostramos qué hay adentro...",
+    selector: "[data-tour='grid']",
+  },
+  {
+    emoji: "👀",
+    titulo: "Así se verá la publicación",
+    texto: "Al abrir una, verás exactamente cómo lucirá en la red social: la imagen, el texto y todo. Revísala con calma.",
+    selector: "[data-tour='preview']",
+    requiereModal: true,
+  },
+  {
+    emoji: "✅",
+    titulo: "Aprobar o pedir cambios",
+    texto: "Aquí decides: toca «Aprobar» si te gusta tal cual, o «Necesito cambios» si quieres ajustar algo. Si pides cambios, escribes qué necesitas y lo recibimos al instante.",
+    selector: "[data-tour='acciones']",
+    requiereModal: true,
+  },
+  {
+    emoji: "❔",
+    titulo: "¿Se te olvidó algo?",
+    texto: "No te preocupes. Puedes volver a abrir esta guía cuando quieras desde este botón.",
+    selector: "[data-tour='guia']",
+  },
+  {
+    emoji: "🎉",
+    titulo: "¡Listo, eso es todo!",
+    texto: "Ya sabes lo esencial. Empieza revisando tu primera publicación. ¡Gracias por tu tiempo!",
+    selector: null,
+  },
+];
+
+function GuiaUso({ onClose, onAbrirEjemplo, onCerrarEjemplo, hayPosts }: {
+  onClose: () => void;
+  onAbrirEjemplo: () => void;
+  onCerrarEjemplo: () => void;
+  hayPosts: boolean;
+}) {
+  const [paso, setPaso] = useState(0);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const actual = GUIA_PASOS[paso];
+  const esUltimo = paso === GUIA_PASOS.length - 1;
+
+  // Controlar modal de ejemplo + medir el elemento resaltado
+  useEffect(() => {
+    // Abrir o cerrar la publicación de ejemplo según el paso
+    if (actual.requiereModal && hayPosts) onAbrirEjemplo();
+    else onCerrarEjemplo();
+
+    if (!actual.selector) { setRect(null); return; }
+    const delay = actual.requiereModal ? 480 : 320;
+    const medir = () => {
+      const el = document.querySelector(actual.selector!) as HTMLElement | null;
+      if (!el) { setRect(null); return; }
+      if (!actual.requiereModal) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setRect(el.getBoundingClientRect());
+    };
+    const t = setTimeout(medir, delay);
+    window.addEventListener("resize", medir);
+    window.addEventListener("scroll", medir, true);
+    return () => { clearTimeout(t); window.removeEventListener("resize", medir); window.removeEventListener("scroll", medir, true); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paso]);
+
+  // Al cerrar el tour, cerrar también el modal de ejemplo
+  const cerrar = () => { onCerrarEjemplo(); onClose(); };
+
+  const PAD = 8;
+  const TT_W = Math.min(340, typeof window !== "undefined" ? window.innerWidth - 24 : 340);
+  const TT_H = 210; // altura estimada del tooltip
+
+  // Calcular posición del tooltip respecto al elemento (sin que se salga de pantalla)
+  let ttStyle: React.CSSProperties = {};
+  let arrow: { pos: number; side: "top" | "bottom" | "left" | "right" } | null = null;
+
+  if (rect) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(val, max));
+    const left = clamp(rect.left + rect.width / 2 - TT_W / 2, 12, vw - TT_W - 12);
+    const spaceBelow = vh - rect.bottom;
+    const spaceAbove = rect.top;
+    const spaceRight = vw - rect.right;
+    const spaceLeft = rect.left;
+
+    if (spaceBelow > TT_H + 28) {
+      // Cabe debajo
+      ttStyle = { top: rect.bottom + PAD + 14, left };
+      arrow = { pos: rect.left + rect.width / 2 - left, side: "top" };
+    } else if (spaceAbove > TT_H + 28) {
+      // Cabe arriba
+      ttStyle = { top: rect.top - PAD - 14 - TT_H, left };
+      arrow = { pos: rect.left + rect.width / 2 - left, side: "bottom" };
+    } else if (spaceRight > TT_W + 28) {
+      // Elemento alto: a la derecha (se ve completo a la izquierda)
+      const top = clamp(rect.top + rect.height / 2 - TT_H / 2, 16, vh - TT_H - 16);
+      ttStyle = { top, left: rect.right + PAD + 14 };
+      arrow = { pos: rect.top + rect.height / 2 - top, side: "left" };
+    } else if (spaceLeft > TT_W + 28) {
+      // Elemento alto: a la izquierda
+      const top = clamp(rect.top + rect.height / 2 - TT_H / 2, 16, vh - TT_H - 16);
+      ttStyle = { top, left: rect.left - PAD - 14 - TT_W };
+      arrow = { pos: rect.top + rect.height / 2 - top, side: "right" };
+    } else {
+      // Sin espacio: flota centrado, sin flecha
+      ttStyle = { top: clamp(vh / 2 - TT_H / 2, 16, vh - TT_H - 16), left };
+      arrow = null;
+    }
+  }
+
+  return (
+    <>
+      {/* Overlay oscuro con recorte del elemento (spotlight) */}
+      {rect ? (
+        <div style={{
+          position: "fixed",
+          top: rect.top - PAD, left: rect.left - PAD,
+          width: rect.width + PAD * 2, height: rect.height + PAD * 2,
+          borderRadius: 14,
+          boxShadow: "0 0 0 9999px rgba(4,46,123,.7)",
+          border: "2.5px solid #1883FF",
+          zIndex: 300, pointerEvents: "none", transition: "all .3s ease",
+        }} />
+      ) : (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(4,46,123,.7)", backdropFilter: "blur(2px)", zIndex: 300 }} />
+      )}
+
+      {/* Tooltip / tarjeta */}
+      {rect ? (
+        /* Coach mark posicionado */
+        <div style={{ position: "fixed", width: TT_W, zIndex: 301, ...ttStyle }}>
+          {/* Flecha */}
+          {arrow && (
+            <div style={{
+              position: "absolute",
+              ...(arrow.side === "top" || arrow.side === "bottom"
+                ? { left: Math.max(16, Math.min(arrow.pos - 7, TT_W - 30)), [arrow.side]: -7 }
+                : { top: Math.max(16, Math.min(arrow.pos - 7, TT_H - 30)), [arrow.side]: -7 }),
+              width: 14, height: 14, background: "#fff",
+              transform: "rotate(45deg)",
+            } as React.CSSProperties} />
+          )}
+          <div style={{ background: "#fff", borderRadius: 18, padding: "20px 22px", boxShadow: "0 20px 50px rgba(0,0,0,.3)", position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <span style={{ fontSize: 24 }}>{actual.emoji}</span>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: "#042E7B" }}>{actual.titulo}</h3>
+            </div>
+            <p style={{ margin: "0 0 16px", fontSize: 13.5, color: "#475569", lineHeight: 1.6 }}>{actual.texto}</p>
+            <TourControls paso={paso} total={GUIA_PASOS.length} esUltimo={esUltimo} onClose={cerrar} setPaso={setPaso} />
+          </div>
+        </div>
+      ) : (
+        /* Tarjeta centrada (bienvenida / final) */
+        <div style={{ position: "fixed", inset: 0, zIndex: 301, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, pointerEvents: "none" }}>
+          <div style={{ background: "#fff", borderRadius: 24, width: "100%", maxWidth: 420, overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,.35)", pointerEvents: "auto" }}>
+            <div style={{ background: "linear-gradient(135deg, #042E7B 0%, #1883FF 100%)", padding: "32px 28px 26px", textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 8, lineHeight: 1 }}>{actual.emoji}</div>
+              <h2 style={{ margin: 0, color: "#fff", fontSize: 20, fontWeight: 900 }}>{actual.titulo}</h2>
+            </div>
+            <div style={{ padding: "24px 28px 26px" }}>
+              <p style={{ margin: "0 0 20px", fontSize: 14, color: "#475569", lineHeight: 1.65, textAlign: "center" }}>{actual.texto}</p>
+              <TourControls paso={paso} total={GUIA_PASOS.length} esUltimo={esUltimo} onClose={cerrar} setPaso={setPaso} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function TourControls({ paso, total, esUltimo, onClose, setPaso }: {
+  paso: number; total: number; esUltimo: boolean; onClose: () => void; setPaso: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
+        {Array.from({ length: total }).map((_, i) => (
+          <span key={i} onClick={() => setPaso(i)}
+            style={{ width: i === paso ? 20 : 7, height: 7, borderRadius: 20, background: i === paso ? "#1883FF" : "#E2E8F0", cursor: "pointer", transition: "all .25s" }} />
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {paso > 0 ? (
+          <button onClick={() => setPaso(p => p - 1)}
+            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "1.5px solid #E2E8F0", background: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#64748B" }}>Atrás</button>
+        ) : (
+          <button onClick={onClose}
+            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "transparent", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#94A3B8" }}>Saltar</button>
+        )}
+        <button onClick={() => esUltimo ? onClose() : setPaso(p => p + 1)}
+          style={{ flex: 2, padding: "11px 0", borderRadius: 11, border: "none", background: "#042E7B", cursor: "pointer", fontSize: 13, fontWeight: 800, color: "#fff" }}>
+          {esUltimo ? "¡Entendido!" : "Siguiente →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main ───────────────────────────────────────────── */
 export default function RevisorPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -405,9 +651,11 @@ export default function RevisorPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [statsMonth, setStatsMonth] = useState({ aprobados: 0, pendientes: 0, cambios: 0, total: 0 });
   const [config, setConfig] = useState<PageConfig>({ nombre_pagina: "Kyoszen", avatar_url: null });
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [vista, setVista] = useState<"semana" | "mes">("semana");
+  const [periodOffset, setPeriodOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [showGuia, setShowGuia] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -416,7 +664,23 @@ export default function RevisorPage() {
     });
   }, []);
 
-  const { desde, hasta, mon, sun } = weekBounds(weekOffset);
+  // Mostrar la guía solo la primera vez
+  useEffect(() => {
+    if (!user) return;
+    try {
+      if (!localStorage.getItem("kyoszen_revisor_guia_vista")) {
+        setShowGuia(true);
+        localStorage.setItem("kyoszen_revisor_guia_vista", "1");
+      }
+    } catch { /* noop */ }
+  }, [user]);
+
+  const { desde, hasta, mon, sun } = vista === "semana" ? weekBounds(periodOffset) : monthBounds(periodOffset);
+
+  const cambiarVista = (nueva: "semana" | "mes") => {
+    setVista(nueva);
+    setPeriodOffset(0);
+  };
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -449,11 +713,21 @@ export default function RevisorPage() {
 
   const logout = async () => { await supabase.auth.signOut(); setUser(null); };
 
-  const fmtWeekRange = () => {
+  const fmtRange = () => {
+    if (vista === "mes") {
+      return mon.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+    }
     const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "long" };
     if (mon.getMonth() === sun.getMonth())
       return `${mon.getDate()} – ${sun.toLocaleDateString("es-MX", opts)}`;
     return `${mon.toLocaleDateString("es-MX", opts)} – ${sun.toLocaleDateString("es-MX", opts)}`;
+  };
+
+  const tituloPeriodo = () => {
+    if (vista === "semana") {
+      return periodOffset === 0 ? "Esta semana" : periodOffset === -1 ? "Semana pasada" : periodOffset < 0 ? `Hace ${Math.abs(periodOffset)} semanas` : `En ${periodOffset} semanas`;
+    }
+    return periodOffset === 0 ? "Este mes" : periodOffset === -1 ? "Mes pasado" : periodOffset < 0 ? `Hace ${Math.abs(periodOffset)} meses` : `En ${periodOffset} meses`;
   };
 
   const handleStatusChange = (id: number, estado: string) => {
@@ -502,7 +776,11 @@ export default function RevisorPage() {
               <p style={{ margin: 0, fontSize: 11, color: "#94A3B8" }}>Revisor de contenido</p>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button data-tour="guia" onClick={() => setShowGuia(true)} title="Ver guía de uso"
+              style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "#1883FF", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ fontSize: 13 }}>❔</span> Guía de uso
+            </button>
             <span style={{ fontSize: 12, color: "#64748B" }}>Hola, <strong>{userName}</strong></span>
             <button onClick={logout} style={{ background: "none", border: "1.5px solid #E2E8F0", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "#64748B", cursor: "pointer", fontWeight: 600 }}>Salir</button>
           </div>
@@ -511,7 +789,7 @@ export default function RevisorPage() {
 
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: "32px 32px" }}>
         {/* Stats del mes */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
+        <div data-tour="stats" style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
           {[
             { label: "Total del mes", value: statsMonth.total, bg: "#F1F5F9", color: "#042E7B", dot: "#94A3B8", emoji: "📅" },
             { label: "Aprobados", value: statsMonth.aprobados, bg: "#DCFCE7", color: "#166534", dot: "#22C55E", emoji: "✅" },
@@ -531,45 +809,58 @@ export default function RevisorPage() {
           </div>
         </div>
 
-        {/* Week navigation */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+        {/* Navigation + toggle */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
           <div>
-            <h2 style={{ margin: "0 0 3px", fontSize: 20, fontWeight: 900, color: "#042E7B" }}>
-              {weekOffset === 0 ? "Esta semana" : weekOffset === -1 ? "Semana pasada" : weekOffset < 0 ? `Hace ${Math.abs(weekOffset)} semanas` : `En ${weekOffset} semanas`}
-            </h2>
-            <p style={{ margin: 0, fontSize: 13, color: "#64748B" }}>{fmtWeekRange()}</p>
+            <h2 style={{ margin: "0 0 3px", fontSize: 20, fontWeight: 900, color: "#042E7B" }}>{tituloPeriodo()}</h2>
+            <p style={{ margin: 0, fontSize: 13, color: "#64748B", textTransform: "capitalize" }}>{fmtRange()}</p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <button onClick={() => setWeekOffset(w => w - 1)}
-              style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, color: "#042E7B", fontWeight: 700 }}>‹</button>
-            {weekOffset !== 0 && (
-              <button onClick={() => setWeekOffset(0)}
-                style={{ height: 36, padding: "0 14px", borderRadius: 10, background: "#042E7B", border: "none", cursor: "pointer", fontSize: 12, color: "#fff", fontWeight: 700 }}>Hoy</button>
-            )}
-            <button onClick={() => setWeekOffset(w => w + 1)}
-              style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, color: "#042E7B", fontWeight: 700 }}>›</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Toggle semana/mes */}
+            <div data-tour="toggle" style={{ display: "flex", background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 3 }}>
+              {(["semana", "mes"] as const).map(v => (
+                <button key={v} onClick={() => cambiarVista(v)}
+                  style={{ padding: "6px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, textTransform: "capitalize",
+                    background: vista === v ? "#042E7B" : "transparent", color: vista === v ? "#fff" : "#64748B", transition: "all .15s" }}>
+                  {v}
+                </button>
+              ))}
+            </div>
+            {/* Navegación */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <button onClick={() => setPeriodOffset(w => w - 1)}
+                style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, color: "#042E7B", fontWeight: 700 }}>‹</button>
+              {periodOffset !== 0 && (
+                <button onClick={() => setPeriodOffset(0)}
+                  style={{ height: 36, padding: "0 14px", borderRadius: 10, background: "#042E7B", border: "none", cursor: "pointer", fontSize: 12, color: "#fff", fontWeight: 700 }}>Hoy</button>
+              )}
+              <button onClick={() => setPeriodOffset(w => w + 1)}
+                style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, color: "#042E7B", fontWeight: 700 }}>›</button>
+            </div>
           </div>
         </div>
 
         {/* Grid */}
-        {loading ? (
-          <div style={{ textAlign: "center", padding: "80px 0" }}>
-            <div style={{ width: 32, height: 32, border: "3px solid #042E7B", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
-            <p style={{ marginTop: 14, color: "#94A3B8", fontSize: 13 }}>Cargando publicaciones...</p>
-          </div>
-        ) : posts.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 24px", background: "#fff", borderRadius: 20, border: "1.5px dashed #E2E8F0" }}>
-            <span style={{ fontSize: 40 }}>📭</span>
-            <p style={{ margin: "16px 0 6px", fontWeight: 700, color: "#042E7B", fontSize: 16 }}>Sin publicaciones esta semana</p>
-            <p style={{ margin: 0, color: "#94A3B8", fontSize: 13 }}>No hay contenido programado para revisar en este período.</p>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
-            {posts.map(post => (
-              <PostCard key={post.id} post={post} onOpen={() => setSelectedPost(post)} />
-            ))}
-          </div>
-        )}
+        <div data-tour="grid">
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "80px 0" }}>
+              <div style={{ width: 32, height: 32, border: "3px solid #042E7B", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
+              <p style={{ marginTop: 14, color: "#94A3B8", fontSize: 13 }}>Cargando publicaciones...</p>
+            </div>
+          ) : posts.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "80px 24px", background: "#fff", borderRadius: 20, border: "1.5px dashed #E2E8F0" }}>
+              <span style={{ fontSize: 40 }}>📭</span>
+              <p style={{ margin: "16px 0 6px", fontWeight: 700, color: "#042E7B", fontSize: 16 }}>Sin publicaciones {vista === "semana" ? "esta semana" : "este mes"}</p>
+              <p style={{ margin: 0, color: "#94A3B8", fontSize: 13 }}>No hay contenido programado para revisar en este período.</p>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
+              {posts.map(post => (
+                <PostCard key={post.id} post={post} onOpen={() => setSelectedPost(post)} />
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Modal */}
@@ -580,6 +871,16 @@ export default function RevisorPage() {
           userName={userName}
           onClose={() => setSelectedPost(null)}
           onStatusChange={handleStatusChange}
+        />
+      )}
+
+      {/* Guía de uso */}
+      {showGuia && (
+        <GuiaUso
+          onClose={() => setShowGuia(false)}
+          hayPosts={posts.length > 0}
+          onAbrirEjemplo={() => { if (posts.length > 0 && !selectedPost) setSelectedPost(posts[0]); }}
+          onCerrarEjemplo={() => setSelectedPost(null)}
         />
       )}
 
