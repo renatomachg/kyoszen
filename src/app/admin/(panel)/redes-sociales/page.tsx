@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getRedSocial } from "@/lib/redes-sociales";
+import { getRedSocial, REDES_SOCIALES as REDES } from "@/lib/redes-sociales";
+import { RedLogo } from "@/components/RedLogo";
 
 /* ─── Types ──────────────────────────────────────────── */
 interface Version {
@@ -10,6 +11,7 @@ interface Version {
   version_num: number;
   caption: string;
   imagenes: string[];
+  nota_visual?: string;
   es_activa: boolean;
   created_at: string;
 }
@@ -26,6 +28,15 @@ interface PageConfig {
   red_social: string;
   nombre_pagina: string;
   avatar_url: string | null;
+}
+interface ImportPieza {
+  fecha: string;
+  red_social: string;
+  formato: string;
+  titulo_interno: string;
+  caption: string;
+  nota_visual: string;
+  ya_existe?: boolean;
 }
 
 /* ─── Helpers ────────────────────────────────────────── */
@@ -99,6 +110,7 @@ function PostModal({
   const [caption, setCaption] = useState(existingCaption ?? "");
   const [fecha, setFecha] = useState(defaultDate ?? new Date().toISOString().slice(0, 10));
   const [titulo, setTitulo] = useState("");
+  const [redSocial, setRedSocial] = useState("facebook");
   const [images, setImages] = useState<string[]>(existingImages ?? []);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -122,7 +134,7 @@ function PostModal({
       await fetch("/api/admin/social/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fecha_programada: fecha, caption, imagenes: images, titulo_interno: titulo }),
+        body: JSON.stringify({ fecha_programada: fecha, caption, imagenes: images, titulo_interno: titulo, red_social: redSocial }),
       });
     } else {
       await fetch(`/api/admin/social/posts/${postId}/versions`, {
@@ -154,10 +166,24 @@ function PostModal({
                 <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej: Post vacante cajero semana 23"
                   style={{ width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "9px 12px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
               </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#042E7B", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 6 }}>Fecha programada</label>
-                <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
-                  style={{ width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "9px 12px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#042E7B", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 6 }}>Fecha programada</label>
+                  <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
+                    style={{ width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "9px 12px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#042E7B", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 6 }}>Red social</label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {Object.values(REDES).map((r) => (
+                      <button key={r.id} type="button" onClick={() => setRedSocial(r.id)}
+                        style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: `1.5px solid ${redSocial === r.id ? r.color : "#E2E8F0"}`, cursor: "pointer", fontSize: 12, fontWeight: 700,
+                          background: redSocial === r.id ? r.color : "#fff", color: redSocial === r.id ? "#fff" : "#64748B", transition: "all .15s" }}>
+                        {r.icono} {r.nombre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </>
           )}
@@ -238,9 +264,11 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
         <div style={{ background: "#042E7B", borderRadius: "20px 20px 0 0", padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
-              <span style={{ background: "#fff", borderRadius: 5, padding: "2px 7px", display: "inline-flex", alignItems: "center" }}>
-                <img src={red.logo} alt={red.nombre} style={{ height: 10, display: "block" }} />
-              </span>
+              {red.logo
+                ? <span style={{ background: "#fff", borderRadius: 5, padding: "2px 7px", display: "inline-flex", alignItems: "center" }}>
+                    <img src={red.logo} alt={red.nombre} style={{ height: 10, display: "block" }} />
+                  </span>
+                : <RedLogo red_social={post.red_social} height={12} />}
               <span style={{ color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 700, letterSpacing: ".3px" }}>{post.fecha_programada}</span>
             </div>
             <p style={{ margin: 0, color: "#fff", fontWeight: 900, fontSize: 16 }}>{post.titulo_interno || "Sin título interno"}</p>
@@ -315,6 +343,14 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
 
           {/* Comments */}
           <div style={{ flex: 1, minWidth: 220 }}>
+            {/* Dirección visual / qué diseñar */}
+            {active?.nota_visual && (
+              <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "12px 14px", marginBottom: 16 }}>
+                <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 800, color: "#92400E", textTransform: "uppercase", letterSpacing: ".4px" }}>🎨 Qué diseñar</p>
+                <p style={{ margin: 0, fontSize: 12.5, color: "#78350F", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{active.nota_visual}</p>
+              </div>
+            )}
+
             <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: ".5px" }}>
               Comentarios del cliente {comments.length > 0 && `(${comments.length})`}
             </p>
@@ -361,7 +397,7 @@ export default function RedesSocialesPage() {
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPostDate, setNewPostDate] = useState<string | undefined>();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [tab, setTab] = useState<"calendario" | "config">("calendario");
+  const [tab, setTab] = useState<"calendario" | "importar" | "config">("calendario");
 
   const [configForm, setConfigForm] = useState({ nombre_pagina: "Kyoszen", avatar_url: "" });
   const [savingConfig, setSavingConfig] = useState(false);
@@ -369,6 +405,15 @@ export default function RedesSocialesPage() {
   const [configOk, setConfigOk] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
+
+  // Importador
+  const [importTexto, setImportTexto] = useState("");
+  const [importPiezas, setImportPiezas] = useState<ImportPieza[] | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importCreando, setImportCreando] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
+  const [importFileName, setImportFileName] = useState("");
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   const wb = weekBounds(weekOffset);
   const mb = monthBounds(weekOffset);
@@ -399,6 +444,66 @@ export default function RedesSocialesPage() {
   }, [queryDesde, queryHasta]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // ── Importador ──
+  const handleImportFile = (file: File | null) => {
+    if (!file) return;
+    setImportFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const txt = (e.target?.result as string) ?? "";
+      setImportTexto(txt);
+    };
+    reader.readAsText(file);
+  };
+
+  const analizarPlan = async () => {
+    setImportLoading(true);
+    setImportMsg("");
+    setImportPiezas(null);
+    try {
+      const res = await fetch("/api/admin/social/importar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "analizar", texto: importTexto }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setImportMsg(data.error ?? "Error al analizar."); setImportLoading(false); return; }
+      setImportPiezas(data.piezas);
+    } catch {
+      setImportMsg("Error de conexión al analizar el plan.");
+    }
+    setImportLoading(false);
+  };
+
+  const crearPiezas = async () => {
+    if (!importPiezas) return;
+    const nuevas = importPiezas.filter(p => !p.ya_existe);
+    if (nuevas.length === 0) { setImportMsg("No hay publicaciones nuevas para crear."); return; }
+    setImportCreando(true);
+    setImportMsg("");
+    try {
+      const res = await fetch("/api/admin/social/importar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "crear", piezas: nuevas }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setImportMsg(data.error ?? "Error al crear."); setImportCreando(false); return; }
+      const omit = data.omitidas ? ` ${data.omitidas} ya existían y se respetaron.` : "";
+      setImportMsg(`✅ Se crearon ${data.creadas} publicaciones nuevas.${omit}${data.errores?.length ? ` (${data.errores.length} con error)` : ""}`);
+      setImportPiezas(null);
+      setImportTexto("");
+      loadData();
+    } catch {
+      setImportMsg("Error de conexión al crear.");
+    }
+    setImportCreando(false);
+  };
+
+  const eliminarPieza = (i: number) => {
+    setImportPiezas(prev => prev ? prev.filter((_, j) => j !== i) : prev);
+  };
 
   const saveConfig = async () => {
     setSavingConfig(true);
@@ -457,13 +562,125 @@ export default function RedesSocialesPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 2, marginBottom: 24, background: "#F1F5F9", borderRadius: 12, padding: 4, width: "fit-content" }}>
-        {(["calendario", "config"] as const).map((t) => (
+        {(["calendario", "importar", "config"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             style={{ padding: "8px 18px", borderRadius: 9, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s", background: tab === t ? "#fff" : "transparent", color: tab === t ? "#042E7B" : "#64748B", boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,.08)" : "none" }}>
-            {t === "calendario" ? "📅 Calendario" : "⚙️ Configuración"}
+            {t === "calendario" ? "📅 Calendario" : t === "importar" ? "📥 Importar plan" : "⚙️ Configuración"}
           </button>
         ))}
       </div>
+
+      {/* ── Tab: Importar plan ── */}
+      {tab === "importar" && (
+        <div style={{ maxWidth: 760 }}>
+          <div style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 14, padding: "16px 18px", marginBottom: 20 }}>
+            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#1E40AF" }}>📥 Importa un plan de contenido completo</p>
+            <p style={{ margin: 0, fontSize: 12.5, color: "#3B5BA5", lineHeight: 1.6 }}>
+              Pega aquí el plan que generaste (texto o HTML). El sistema detecta cada publicación y crea los borradores en el calendario con su fecha, texto, hashtags y la nota de qué diseñar. Las imágenes las subes tú después.
+            </p>
+          </div>
+
+          {!importPiezas ? (
+            <>
+              {/* Subir archivo HTML */}
+              <div
+                onClick={() => importFileRef.current?.click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); handleImportFile(e.dataTransfer.files?.[0] ?? null); }}
+                style={{ border: "2px dashed #BFDBFE", background: "#F8FBFF", borderRadius: 14, padding: "18px", textAlign: "center", cursor: "pointer", marginBottom: 14 }}
+              >
+                <span style={{ fontSize: 24 }}>📎</span>
+                <p style={{ margin: "6px 0 2px", fontSize: 13, fontWeight: 700, color: "#042E7B" }}>
+                  {importFileName ? `Archivo cargado: ${importFileName}` : "Sube el archivo HTML que descargaste"}
+                </p>
+                <p style={{ margin: 0, fontSize: 11.5, color: "#64748B" }}>Arrastra el archivo aquí o haz clic para seleccionarlo · .html o .txt</p>
+                <input ref={importFileRef} type="file" accept=".html,.htm,.txt,text/html" style={{ display: "none" }}
+                  onChange={e => handleImportFile(e.target.files?.[0] ?? null)} />
+              </div>
+
+              <p style={{ margin: "0 0 8px", fontSize: 11.5, color: "#94A3B8", textAlign: "center" }}>— o pega el contenido directamente —</p>
+
+              <textarea
+                value={importTexto}
+                onChange={e => { setImportTexto(e.target.value); if (importFileName) setImportFileName(""); }}
+                placeholder="Pega aquí el plan de contenido completo (el HTML o el texto del calendario)..."
+                rows={10}
+                style={{ width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 14, padding: "14px 16px", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box", marginBottom: 14 }}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <button onClick={analizarPlan} disabled={importLoading || importTexto.trim().length < 30}
+                  style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importLoading || importTexto.trim().length < 30 ? 0.5 : 1, display: "flex", alignItems: "center", gap: 8 }}>
+                  {importLoading ? "Analizando plan..." : "Analizar plan ✨"}
+                </button>
+                {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
+              </div>
+              {importLoading && (
+                <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 10 }}>Esto puede tomar 10-20 segundos mientras la IA lee el plan completo...</p>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Preview de piezas detectadas */}
+              {(() => {
+                const nuevasCount = importPiezas.filter(p => !p.ya_existe).length;
+                const existenCount = importPiezas.length - nuevasCount;
+                return (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+                      <div>
+                        <p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 800, color: "#042E7B" }}>
+                          {importPiezas.length} publicaciones detectadas
+                        </p>
+                        <p style={{ margin: 0, fontSize: 12, color: "#64748B" }}>
+                          <strong style={{ color: "#166534" }}>{nuevasCount} nuevas</strong>
+                          {existenCount > 0 && <> · <strong style={{ color: "#94A3B8" }}>{existenCount} ya en el calendario (se respetan)</strong></>}
+                        </p>
+                      </div>
+                      <button onClick={() => { setImportPiezas(null); setImportMsg(""); }}
+                        style={{ background: "none", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: "#64748B", cursor: "pointer" }}>
+                        ← Volver a pegar
+                      </button>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, maxHeight: 460, overflowY: "auto" }}>
+                      {importPiezas.map((p, i) => (
+                        <div key={i} style={{ background: p.ya_existe ? "#F8FAFC" : "#fff", border: "1.5px solid #E2E8F0", borderRadius: 12, padding: "12px 14px", display: "flex", gap: 12, alignItems: "flex-start", opacity: p.ya_existe ? 0.65 : 1 }}>
+                          <div style={{ flexShrink: 0, textAlign: "center", minWidth: 54 }}>
+                            <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "#042E7B" }}>
+                              {p.fecha ? new Date(p.fecha + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "—"}
+                            </p>
+                            <span style={{ display: "inline-flex", justifyContent: "center", marginTop: 4 }}><RedLogo red_social={p.red_social} height={9} /></span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1E293B" }}>{p.titulo_interno || "Sin título"}</p>
+                              {p.ya_existe && <span style={{ fontSize: 10, fontWeight: 800, color: "#64748B", background: "#E2E8F0", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}>✓ Ya en calendario</span>}
+                            </div>
+                            <p style={{ margin: 0, fontSize: 11.5, color: "#64748B", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.45 }}>{p.caption}</p>
+                            <span style={{ display: "inline-block", marginTop: 5, fontSize: 10, fontWeight: 700, color: "#64748B", background: "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{p.formato}</span>
+                          </div>
+                          {!p.ya_existe && (
+                            <button onClick={() => eliminarPieza(i)} title="Quitar esta pieza"
+                              style={{ background: "none", border: "none", color: "#CBD5E1", cursor: "pointer", fontSize: 18, flexShrink: 0, lineHeight: 1 }}>×</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <button onClick={crearPiezas} disabled={importCreando || nuevasCount === 0}
+                        style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importCreando || nuevasCount === 0 ? 0.5 : 1 }}>
+                        {importCreando ? "Creando publicaciones..." : `Crear ${nuevasCount} publicaciones nuevas`}
+                      </button>
+                      {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
+                    </div>
+                  </>
+                );
+              })()}
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Tab: Calendario ── */}
       {tab === "calendario" && (
@@ -531,7 +748,7 @@ export default function RedesSocialesPage() {
                           <span style={{ fontSize: 11, fontWeight: 800, color: "#042E7B" }}>
                             {new Date(p.fecha_programada + "T12:00:00").toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}
                           </span>
-                          <img src={getRedSocial(p.red_social).logo} alt="" style={{ height: 9, opacity: .8 }} />
+                          <RedLogo red_social={p.red_social} height={9} />
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
                           <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, flexShrink: 0 }} />
@@ -579,7 +796,7 @@ export default function RedesSocialesPage() {
                             <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
                               <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, flexShrink: 0 }} />
                               <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
-                              <img src={getRedSocial(p.red_social).logo} alt="" style={{ height: 8, marginLeft: "auto", opacity: .8 }} />
+                              <span style={{ marginLeft: "auto" }}><RedLogo red_social={p.red_social} height={8} /></span>
                             </div>
                             {v?.caption && <p style={{ margin: 0, fontSize: 10, color: "#64748B", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{v.caption}</p>}
                             {commentCount > 0 && <p style={{ margin: "3px 0 0", fontSize: 10, color: "#94A3B8" }}>💬 {commentCount}</p>}

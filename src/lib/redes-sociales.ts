@@ -16,9 +16,16 @@ export const REDES_SOCIALES: Record<string, RedSocialConfig> = {
     colorSuave: "#E7F0FF",
     icono: "📘",
   },
+  tiktok: {
+    id: "tiktok",
+    nombre: "TikTok",
+    logo: "", // cuando se cargue /redes/tiktok.svg, ponerlo aquí
+    color: "#010101",
+    colorSuave: "#F1F1F1",
+    icono: "🎵",
+  },
   // Preparado para cuando se agreguen:
   // instagram: { id: "instagram", nombre: "Instagram", logo: "/redes/instagram.svg", color: "#E1306C", colorSuave: "#FCE7F0", icono: "📸" },
-  // tiktok:    { id: "tiktok",    nombre: "TikTok",    logo: "/redes/tiktok.svg",    color: "#010101", colorSuave: "#F0F0F0", icono: "🎵" },
   // linkedin:  { id: "linkedin",  nombre: "LinkedIn",  logo: "/redes/linkedin.svg",  color: "#0A66C2", colorSuave: "#E5F0FA", icono: "💼" },
 };
 

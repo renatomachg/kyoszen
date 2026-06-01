@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     .from("social_posts")
     .select(`
       id, red_social, fecha_programada, estado, titulo_interno, created_at, updated_at,
-      social_post_versions!inner(id, version_num, caption, imagenes, es_activa, created_at),
+      social_post_versions!inner(id, version_num, caption, imagenes, nota_visual, es_activa, created_at),
       social_comments(id)
     `)
     .eq("social_post_versions.es_activa", true)

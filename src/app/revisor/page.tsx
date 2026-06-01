@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { getRedSocial } from "@/lib/redes-sociales";
+import { RedLogo } from "@/components/RedLogo";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Version {
@@ -149,9 +150,11 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
         <div style={{ background: "#042E7B", borderRadius: "24px 24px 0 0", padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-              <span style={{ background: "#fff", borderRadius: 6, padding: "3px 8px", display: "inline-flex", alignItems: "center" }}>
-                <img src={red.logo} alt={red.nombre} style={{ height: 11, display: "block" }} />
-              </span>
+              {red.logo
+                ? <span style={{ background: "#fff", borderRadius: 6, padding: "3px 8px", display: "inline-flex", alignItems: "center" }}>
+                    <img src={red.logo} alt={red.nombre} style={{ height: 11, display: "block" }} />
+                  </span>
+                : <RedLogo red_social={post.red_social} height={13} />}
               <span style={{ color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px" }}>
                 {fmtScheduledDate(post.fecha_programada)}
               </span>
@@ -347,7 +350,7 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
           <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#042E7B" }}>
             {fmtShortDate(post.fecha_programada)}
           </p>
-          <img src={red.logo} alt={red.nombre} title={red.nombre} style={{ height: 11, display: "block", opacity: .85 }} />
+          <RedLogo red_social={post.red_social} height={11} />
         </div>
         {active?.caption && (
           <p style={{ margin: "0 0 8px", fontSize: 12, color: "#64748B", lineHeight: 1.45, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
