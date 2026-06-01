@@ -77,42 +77,52 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
   const oldVersions = post.social_post_versions.filter(v => !v.es_activa).sort((a, b) => b.version_num - a.version_num);
   const [slide, setSlide] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
-  const [comment, setComment] = useState("");
   const [comments, setComments] = useState<Comment[]>(post.social_comments ?? []);
-  const [sending, setSending] = useState(false);
   const [estado, setEstado] = useState(post.estado);
   const [changingStatus, setChangingStatus] = useState<string | null>(null);
 
   const imgs = active?.imagenes ?? [];
   const est = ESTADO[estado];
 
-  const submitComment = async () => {
-    const text = comment.trim();
-    if (!text || sending) return;
-    setSending(true);
-    const res = await fetch(`/api/revisor/posts/${post.id}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ autor_nombre: userName, autor_rol: "cliente", contenido: text }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setComments(prev => [...prev, data]);
-      setComment("");
-    }
-    setSending(false);
-  };
+  const [showCambiosForm, setShowCambiosForm] = useState(false);
+  const [cambiosTexto, setCambiosTexto] = useState("");
+  const [enviandoCambios, setEnviandoCambios] = useState(false);
 
-  const changeStatus = async (newEstado: string) => {
-    setChangingStatus(newEstado);
+  const aprobar = async () => {
+    setChangingStatus("aprobado");
     await fetch(`/api/revisor/posts/${post.id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado: newEstado, revisor_nombre: userName }),
+      body: JSON.stringify({ estado: "aprobado", revisor_nombre: userName }),
     });
-    setEstado(newEstado as Post["estado"]);
-    onStatusChange(post.id, newEstado);
+    setEstado("aprobado");
+    onStatusChange(post.id, "aprobado");
     setChangingStatus(null);
+  };
+
+  const enviarCambios = async () => {
+    if (!cambiosTexto.trim()) return;
+    setEnviandoCambios(true);
+    // Guardar comentario + cambiar estado juntos
+    await Promise.all([
+      fetch(`/api/revisor/posts/${post.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autor_nombre: userName, autor_rol: "cliente", contenido: cambiosTexto.trim() }),
+      }),
+      fetch(`/api/revisor/posts/${post.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: "cambios", revisor_nombre: userName }),
+      }),
+    ]);
+    const newComment = { id: Date.now(), autor_nombre: userName, autor_rol: "cliente", contenido: cambiosTexto.trim(), created_at: new Date().toISOString() };
+    setComments(prev => [...prev, newComment]);
+    setEstado("cambios");
+    onStatusChange(post.id, "cambios");
+    setCambiosTexto("");
+    setShowCambiosForm(false);
+    setEnviandoCambios(false);
   };
 
   if (!active) return null;
@@ -202,33 +212,62 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
           </div>
 
           {/* Right: actions + comments */}
-          <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* Approval */}
+          <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
+            {/* Paso de decisión */}
             <div>
-              <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: ".6px" }}>Tu revisión</p>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => changeStatus("aprobado")} disabled={changingStatus !== null}
-                  style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13,
-                    background: estado === "aprobado" ? "#166534" : "#DCFCE7", color: estado === "aprobado" ? "#fff" : "#166534",
-                    opacity: changingStatus !== null ? 0.6 : 1, transition: "all .2s" }}>
-                  {changingStatus === "aprobado" ? "..." : "✅ Aprobar"}
-                </button>
-                <button onClick={() => changeStatus("cambios")} disabled={changingStatus !== null}
-                  style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13,
-                    background: estado === "cambios" ? "#991B1B" : "#FEE2E2", color: estado === "cambios" ? "#fff" : "#991B1B",
-                    opacity: changingStatus !== null ? 0.6 : 1, transition: "all .2s" }}>
-                  {changingStatus === "cambios" ? "..." : "🔴 Pedir cambios"}
-                </button>
-              </div>
+              <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 800, color: "#042E7B" }}>
+                ¿Apruebas esta publicación?
+              </p>
+
+              {!showCambiosForm ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button onClick={aprobar} disabled={changingStatus !== null || enviandoCambios}
+                    style={{ width: "100%", padding: "14px 0", borderRadius: 14, border: "none", cursor: "pointer", fontWeight: 800, fontSize: 15,
+                      background: estado === "aprobado" ? "#166534" : "#DCFCE7", color: estado === "aprobado" ? "#fff" : "#166534",
+                      opacity: changingStatus !== null ? 0.6 : 1, transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    {changingStatus === "aprobado" ? "Guardando..." : estado === "aprobado" ? "✅ Aprobada" : "✅ Aprobar"}
+                  </button>
+                  <button onClick={() => setShowCambiosForm(true)} disabled={changingStatus !== null}
+                    style={{ width: "100%", padding: "14px 0", borderRadius: 14, border: "none", cursor: "pointer", fontWeight: 800, fontSize: 15,
+                      background: estado === "cambios" ? "#991B1B" : "#FEE2E2", color: estado === "cambios" ? "#fff" : "#991B1B",
+                      transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    {estado === "cambios" ? "🔴 Cambios solicitados" : "✏️ Necesito cambios"}
+                  </button>
+                </div>
+              ) : (
+                /* Formulario de cambios */
+                <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 14, padding: 16 }}>
+                  <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 800, color: "#991B1B" }}>
+                    ✏️ ¿Qué necesitas cambiar?
+                  </p>
+                  <p style={{ margin: "0 0 10px", fontSize: 12, color: "#B45454", lineHeight: 1.5 }}>
+                    Escribe los cambios que quieres y los recibiremos al instante.
+                  </p>
+                  <textarea value={cambiosTexto} onChange={e => setCambiosTexto(e.target.value)} autoFocus
+                    placeholder="Ej: Cambiar el color del fondo a azul, corregir la fecha, el texto debe decir..."
+                    rows={4}
+                    style={{ width: "100%", border: "1.5px solid #FCA5A5", borderRadius: 10, padding: "10px 12px", fontSize: 13, resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box", marginBottom: 10 }} />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { setShowCambiosForm(false); setCambiosTexto(""); }}
+                      style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1.5px solid #E2E8F0", background: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, color: "#64748B" }}>
+                      Cancelar
+                    </button>
+                    <button onClick={enviarCambios} disabled={!cambiosTexto.trim() || enviandoCambios}
+                      style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: "#DC2626", cursor: "pointer", fontWeight: 800, fontSize: 13, color: "#fff", opacity: !cambiosTexto.trim() || enviandoCambios ? 0.5 : 1 }}>
+                      {enviandoCambios ? "Enviando..." : "Enviar cambios →"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Comments */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+            {/* Historial de comentarios */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid #F1F5F9", paddingTop: 16 }}>
               <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: ".6px" }}>
-                Comentarios {comments.length > 0 && `(${comments.length})`}
+                Historial de comentarios {comments.length > 0 && `(${comments.length})`}
               </p>
-              {comments.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 280, overflowY: "auto" }}>
+              {comments.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
                   {comments.map(c => (
                     <div key={c.id} style={{ padding: "10px 12px", borderRadius: 12,
                       background: c.autor_rol === "admin" ? "#EFF6FF" : "#F8FAFC",
@@ -243,18 +282,9 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p style={{ margin: 0, fontSize: 12, color: "#94A3B8" }}>Aún no hay comentarios en esta publicación.</p>
               )}
-              {comments.length === 0 && (
-                <p style={{ margin: 0, fontSize: 13, color: "#94A3B8" }}>Sin comentarios aún. Escribe el primero.</p>
-              )}
-              <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginTop: "auto" }}>
-                <textarea value={comment} onChange={e => setComment(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
-                  placeholder="Escribe un comentario..." rows={3}
-                  style={{ flex: 1, border: "1.5px solid #E2E8F0", borderRadius: 12, padding: "10px 12px", fontSize: 13, resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.5 }} />
-                <button onClick={submitComment} disabled={!comment.trim() || sending}
-                  style={{ width: 42, height: 42, borderRadius: 12, background: "#042E7B", border: "none", color: "#fff", cursor: "pointer", fontSize: 18, opacity: !comment.trim() || sending ? 0.4 : 1, flexShrink: 0 }}>↑</button>
-              </div>
             </div>
           </div>
         </div>
@@ -373,6 +403,7 @@ export default function RevisorPage() {
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [statsMonth, setStatsMonth] = useState({ aprobados: 0, pendientes: 0, cambios: 0, total: 0 });
   const [config, setConfig] = useState<PageConfig>({ nombre_pagina: "Kyoszen", avatar_url: null });
   const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -389,14 +420,28 @@ export default function RevisorPage() {
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
-    const [postsRes, configRes] = await Promise.all([
+    // Mes actual para stats
+    const now = new Date();
+    const mesDesde = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const mesHasta = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+    const [postsRes, configRes, mesRes] = await Promise.all([
       fetch(`/api/revisor/posts?desde=${desde}&hasta=${hasta}`),
       fetch("/api/admin/social/config"),
+      fetch(`/api/revisor/posts?desde=${mesDesde}&hasta=${mesHasta}`),
     ]);
-    const [postsData, configData] = await Promise.all([postsRes.json(), configRes.json()]);
+    const [postsData, configData, mesData] = await Promise.all([postsRes.json(), configRes.json(), mesRes.json()]);
     setPosts(Array.isArray(postsData) ? postsData : []);
     const fb = Array.isArray(configData) ? configData.find((c: { red_social: string }) => c.red_social === "facebook") : null;
     if (fb) setConfig({ nombre_pagina: fb.nombre_pagina, avatar_url: fb.avatar_url });
+    if (Array.isArray(mesData)) {
+      setStatsMonth({
+        aprobados: mesData.filter((p: Post) => p.estado === "aprobado").length,
+        pendientes: mesData.filter((p: Post) => p.estado === "pendiente").length,
+        cambios: mesData.filter((p: Post) => p.estado === "cambios").length,
+        total: mesData.length,
+      });
+    }
     setLoading(false);
   }, [desde, hasta]);
 
@@ -412,8 +457,22 @@ export default function RevisorPage() {
   };
 
   const handleStatusChange = (id: number, estado: string) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, estado: estado as Post["estado"] } : p));
+    setPosts(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, estado: estado as Post["estado"] } : p);
+      return updated;
+    });
     if (selectedPost?.id === id) setSelectedPost(prev => prev ? { ...prev, estado: estado as Post["estado"] } : prev);
+    // Actualizar stats del mes en tiempo real
+    setStatsMonth(prev => {
+      const oldEstado = posts.find(p => p.id === id)?.estado;
+      if (!oldEstado || oldEstado === estado) return prev;
+      return {
+        ...prev,
+        aprobados: prev.aprobados + (estado === "aprobado" ? 1 : 0) - (oldEstado === "aprobado" ? 1 : 0),
+        pendientes: prev.pendientes + (estado === "pendiente" ? 1 : 0) - (oldEstado === "pendiente" ? 1 : 0),
+        cambios: prev.cambios + (estado === "cambios" ? 1 : 0) - (oldEstado === "cambios" ? 1 : 0),
+      };
+    });
   };
 
   if (checkingAuth) return (
@@ -450,7 +509,28 @@ export default function RevisorPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 24px" }}>
+      <main style={{ maxWidth: 1400, margin: "0 auto", padding: "32px 32px" }}>
+        {/* Stats del mes */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
+          {[
+            { label: "Total del mes", value: statsMonth.total, bg: "#F1F5F9", color: "#042E7B", dot: "#94A3B8", emoji: "📅" },
+            { label: "Aprobados", value: statsMonth.aprobados, bg: "#DCFCE7", color: "#166534", dot: "#22C55E", emoji: "✅" },
+            { label: "Pendientes", value: statsMonth.pendientes, bg: "#FEF9C3", color: "#854D0E", dot: "#EAB308", emoji: "🕐" },
+            { label: "Con cambios", value: statsMonth.cambios, bg: "#FEE2E2", color: "#991B1B", dot: "#EF4444", emoji: "🔴" },
+          ].map(s => (
+            <div key={s.label} style={{ background: s.bg, borderRadius: 50, padding: "8px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14 }}>{s.emoji}</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: s.color }}>{s.value}</span>
+              <span style={{ fontSize: 12, color: s.color, opacity: .7 }}>{s.label}</span>
+            </div>
+          ))}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: "#94A3B8" }}>
+              {new Date().toLocaleDateString("es-MX", { month: "long", year: "numeric" })}
+            </span>
+          </div>
+        </div>
+
         {/* Week navigation */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
           <div>
@@ -484,7 +564,7 @@ export default function RevisorPage() {
             <p style={{ margin: 0, color: "#94A3B8", fontSize: 13 }}>No hay contenido programado para revisar en este período.</p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
             {posts.map(post => (
               <PostCard key={post.id} post={post} onOpen={() => setSelectedPost(post)} />
             ))}
