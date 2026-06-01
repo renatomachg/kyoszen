@@ -8,8 +8,9 @@ import ChatWidget from "@/components/assistant/ChatWidget";
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
+  const isRevisor = pathname.startsWith("/revisor");
 
-  if (isAdmin) return <>{children}</>;
+  if (isAdmin || isRevisor) return <>{children}</>;
 
   return (
     <>
