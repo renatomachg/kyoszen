@@ -20,6 +20,14 @@ Este archivo lo lee Claude Code al iniciar cada sesión. Mantiene el contexto de
 **No hay excepciones por urgencia, simplicidad o confianza en el cambio.**
 El flujo es: local → aprobación → producción. Siempre.
 
+### Cuando el usuario aprueba y dice "manda a producción":
+Ejecutar los 3 pasos **automáticamente y sin esperar confirmación adicional**:
+1. `git add` + `git commit`
+2. `git push origin main`
+3. `ssh deploy` al VPS
+
+No hacer solo 1 o 2 de los 3. Los 3 siempre juntos.
+
 ---
 
 ## Resumen
