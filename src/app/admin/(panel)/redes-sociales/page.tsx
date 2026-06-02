@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getRedSocial, REDES_SOCIALES as REDES } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
+import InformeAdmin from "@/components/admin/InformeAdmin";
 
 /* ─── Types ──────────────────────────────────────────── */
 interface Version {
@@ -239,10 +240,13 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
   const red = getRedSocial(post.red_social);
   const active = post.social_post_versions.find((v) => v.es_activa) ?? post.social_post_versions[0];
   const old = post.social_post_versions.filter((v) => !v.es_activa).sort((a, b) => b.version_num - a.version_num);
+  const anterior = old[0];
+  const hayCorreccion = old.length > 0;
   const [showNewVersion, setShowNewVersion] = useState(false);
   const [comments, setComments] = useState<{ id: number; autor_nombre: string; autor_rol: string; contenido: string; created_at: string }[]>([]);
   const [slide, setSlide] = useState(0);
-  const [showOld, setShowOld] = useState(false);
+  const [viendoAnterior, setViendoAnterior] = useState(false);
+  const mostrada = viendoAnterior && anterior ? anterior : active;
 
   useEffect(() => {
     fetch(`/api/revisor/posts/${post.id}/comments`).then((r) => r.json()).then(setComments);
@@ -286,57 +290,65 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
 
         <div style={{ padding: 24, display: "flex", gap: 24, flexWrap: "wrap" }}>
           {/* Preview */}
-          <div style={{ flex: "0 0 auto", maxWidth: 360 }}>
-            {active && (
-              <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 8px rgba(0,0,0,.1)", overflow: "hidden" }}>
-                <div style={{ background: est.bg, padding: "6px 12px", display: "flex", gap: 6, alignItems: "center" }}>
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: est.color }}>{est.label}</span>
-                </div>
-                <div style={{ padding: "12px 14px 8px", display: "flex", gap: 10, alignItems: "center" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#042E7B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                    {config.avatar_url ? <img src={config.avatar_url} style={{ width: "100%", objectFit: "cover" }} alt="" /> : <span style={{ color: "#FFCC00", fontWeight: 900, fontSize: 12 }}>KZ</span>}
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{config.nombre_pagina}</p>
-                    <p style={{ margin: 0, fontSize: 11, color: "#65676B" }}>Hoy · 🌐</p>
-                  </div>
-                </div>
-                {active.caption && <p style={{ margin: "0 14px 10px", fontSize: 13, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{active.caption}</p>}
-                {active.imagenes?.length > 0 && (
-                  <div style={{ position: "relative", background: "#F0F2F5", aspectRatio: "1/1" }}>
-                    <img src={active.imagenes[slide]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                    {active.imagenes.length > 1 && (
-                      <span style={{ position: "absolute", top: 8, right: 10, background: "rgba(0,0,0,.55)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-                        {slide + 1}/{active.imagenes.length}
-                      </span>
-                    )}
-                    {active.imagenes.length > 1 && (
-                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px", pointerEvents: "none" }}>
-                        <button onClick={() => setSlide(Math.max(0, slide - 1))} style={{ pointerEvents: "all", background: "rgba(0,0,0,.4)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 14 }}>‹</button>
-                        <button onClick={() => setSlide(Math.min(active.imagenes.length - 1, slide + 1))} style={{ pointerEvents: "all", background: "rgba(0,0,0,.4)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 14 }}>›</button>
-                      </div>
-                    )}
-                  </div>
+          <div style={{ flex: "0 0 auto", maxWidth: 360, width: "100%" }}>
+            {/* Badge de versión + toggle */}
+            {hayCorreccion && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                {viendoAnterior ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#F1F5F9", color: "#64748B", fontSize: 11, fontWeight: 800, padding: "5px 10px", borderRadius: 20 }}>↩️ Versión anterior (v{anterior.version_num})</span>
+                ) : (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#DCFCE7", color: "#166534", fontSize: 11, fontWeight: 800, padding: "5px 10px", borderRadius: 20 }}>✨ Nueva propuesta (v{active.version_num})</span>
                 )}
-                <div style={{ padding: "8px 14px", borderTop: "1px solid #E4E6EB", display: "flex" }}>
-                  {["👍", "💬", "↗"].map((a) => <div key={a} style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#65676B" }}>{a}</div>)}
-                </div>
+                <button onClick={() => { setViendoAnterior(!viendoAnterior); setSlide(0); }}
+                  style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: "#042E7B", cursor: "pointer" }}>
+                  {viendoAnterior ? "Ver nueva propuesta →" : "↩ Ver cómo estaba antes"}
+                </button>
               </div>
             )}
 
-            {old.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <button onClick={() => setShowOld(!showOld)} style={{ background: "none", border: "none", color: "#64748B", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
-                  {showOld ? "▼" : "▶"} Versiones anteriores ({old.length})
-                </button>
-                {showOld && old.map((v) => (
-                  <div key={v.id} style={{ marginTop: 8, opacity: 0.5, border: "1.5px dashed #CBD5E1", borderRadius: 10, overflow: "hidden" }}>
-                    <div style={{ background: "#F8FAFC", padding: "4px 10px", fontSize: 11, color: "#64748B", fontWeight: 700 }}>v{v.version_num}</div>
-                    {v.imagenes?.[0] && <img src={v.imagenes[0]} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover" }} />}
-                    {v.caption && <p style={{ margin: "6px 10px", fontSize: 12, color: "#64748B" }}>{v.caption.slice(0, 100)}{v.caption.length > 100 ? "..." : ""}</p>}
+            {mostrada && (
+              <div style={{ position: "relative" }}>
+                {hayCorreccion && !viendoAnterior && (
+                  <>
+                    <div style={{ position: "absolute", top: -7, left: 9, right: 9, height: 30, background: "#E8EDF5", borderRadius: "12px 12px 0 0", zIndex: 0 }} />
+                    <div style={{ position: "absolute", top: -3.5, left: 4.5, right: 4.5, height: 30, background: "#F1F5F9", borderRadius: "12px 12px 0 0", zIndex: 0 }} />
+                  </>
+                )}
+                <div style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 12, boxShadow: hayCorreccion && !viendoAnterior ? "0 8px 22px rgba(4,46,123,.16)" : "0 1px 8px rgba(0,0,0,.1)", overflow: "hidden", border: viendoAnterior ? "1.5px dashed #CBD5E1" : "none" }}>
+                  <div style={{ background: est.bg, padding: "6px 12px", display: "flex", gap: 6, alignItems: "center" }}>
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: est.color }}>{est.label}</span>
                   </div>
-                ))}
+                  <div style={{ padding: "12px 14px 8px", display: "flex", gap: 10, alignItems: "center" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#042E7B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                      {config.avatar_url ? <img src={config.avatar_url} style={{ width: "100%", objectFit: "cover" }} alt="" /> : <span style={{ color: "#FFCC00", fontWeight: 900, fontSize: 12 }}>KZ</span>}
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{config.nombre_pagina}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: "#65676B" }}>Hoy · 🌐</p>
+                    </div>
+                  </div>
+                  {mostrada.caption && <p style={{ margin: "0 14px 10px", fontSize: 13, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{mostrada.caption}</p>}
+                  {mostrada.imagenes?.length > 0 && (
+                    <div style={{ position: "relative", background: "#F0F2F5", aspectRatio: "1/1" }}>
+                      <img src={mostrada.imagenes[slide]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      {mostrada.imagenes.length > 1 && (
+                        <span style={{ position: "absolute", top: 8, right: 10, background: "rgba(0,0,0,.55)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
+                          {slide + 1}/{mostrada.imagenes.length}
+                        </span>
+                      )}
+                      {mostrada.imagenes.length > 1 && (
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px", pointerEvents: "none" }}>
+                          <button onClick={() => setSlide(Math.max(0, slide - 1))} style={{ pointerEvents: "all", background: "rgba(0,0,0,.4)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 14 }}>‹</button>
+                          <button onClick={() => setSlide(Math.min(mostrada.imagenes.length - 1, slide + 1))} style={{ pointerEvents: "all", background: "rgba(0,0,0,.4)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 14 }}>›</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div style={{ padding: "8px 14px", borderTop: "1px solid #E4E6EB", display: "flex" }}>
+                    {["👍", "💬", "↗"].map((a) => <div key={a} style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#65676B" }}>{a}</div>)}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -397,7 +409,7 @@ export default function RedesSocialesPage() {
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPostDate, setNewPostDate] = useState<string | undefined>();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [tab, setTab] = useState<"calendario" | "importar" | "config">("calendario");
+  const [tab, setTab] = useState<"calendario" | "importar" | "informe" | "config">("calendario");
 
   const [configForm, setConfigForm] = useState({ nombre_pagina: "Kyoszen", avatar_url: "" });
   const [savingConfig, setSavingConfig] = useState(false);
@@ -562,10 +574,10 @@ export default function RedesSocialesPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 2, marginBottom: 24, background: "#F1F5F9", borderRadius: 12, padding: 4, width: "fit-content" }}>
-        {(["calendario", "importar", "config"] as const).map((t) => (
+        {(["calendario", "importar", "informe", "config"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             style={{ padding: "8px 18px", borderRadius: 9, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s", background: tab === t ? "#fff" : "transparent", color: tab === t ? "#042E7B" : "#64748B", boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,.08)" : "none" }}>
-            {t === "calendario" ? "📅 Calendario" : t === "importar" ? "📥 Importar plan" : "⚙️ Configuración"}
+            {t === "calendario" ? "📅 Calendario" : t === "importar" ? "📥 Importar plan" : t === "informe" ? "📊 Informe mensual" : "⚙️ Configuración"}
           </button>
         ))}
       </div>
@@ -816,6 +828,9 @@ export default function RedesSocialesPage() {
           )}
         </>
       )}
+
+      {/* ── Tab: Informe mensual ── */}
+      {tab === "informe" && <InformeAdmin />}
 
       {/* ── Tab: Configuración ── */}
       {tab === "config" && (

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { getRedSocial } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
+import InformeCliente from "@/components/revisor/InformeCliente";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Version {
@@ -690,6 +691,7 @@ export default function RevisorPage() {
   const [statsMonth, setStatsMonth] = useState({ aprobados: 0, pendientes: 0, cambios: 0, total: 0 });
   const [config, setConfig] = useState<PageConfig>({ nombre_pagina: "Kyoszen", avatar_url: null });
   const [vista, setVista] = useState<"semana" | "mes">("semana");
+  const [seccion, setSeccion] = useState<"publicaciones" | "resultados">("publicaciones");
   const [periodOffset, setPeriodOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -826,6 +828,21 @@ export default function RevisorPage() {
       </header>
 
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: "32px 32px" }}>
+        {/* Pestañas de sección */}
+        <div style={{ display: "flex", gap: 2, marginBottom: 24, background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 12, padding: 4, width: "fit-content" }}>
+          {([["publicaciones", "📋 Publicaciones"], ["resultados", "📊 Análisis"]] as const).map(([k, label]) => (
+            <button key={k} onClick={() => setSeccion(k)}
+              style={{ padding: "8px 18px", borderRadius: 9, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s",
+                background: seccion === k ? "#042E7B" : "transparent", color: seccion === k ? "#fff" : "#64748B" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {seccion === "resultados" ? (
+          <InformeCliente />
+        ) : (
+        <>
         {/* Stats del mes */}
         <div data-tour="stats" style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
           {[
@@ -899,6 +916,8 @@ export default function RevisorPage() {
             </div>
           )}
         </div>
+        </>
+        )}
       </main>
 
       {/* Modal */}
