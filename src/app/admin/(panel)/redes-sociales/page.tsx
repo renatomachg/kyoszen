@@ -380,7 +380,7 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
       </div>
 
       {showNewVersion && active && (
-        <PostModal postId={post.id} existingCaption={active.caption} existingImages={active.imagenes}
+        <PostModal postId={post.id} existingCaption={active.caption} existingImages={[]}
           onClose={() => setShowNewVersion(false)} onSaved={() => { onUpdated(); onClose(); }} />
       )}
     </div>

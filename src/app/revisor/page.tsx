@@ -84,13 +84,17 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
 }) {
   const active = post.social_post_versions.find(v => v.es_activa) ?? post.social_post_versions[0];
   const oldVersions = post.social_post_versions.filter(v => !v.es_activa).sort((a, b) => b.version_num - a.version_num);
+  const anterior = oldVersions[0]; // versión anterior más reciente
+  const hayCorreccion = oldVersions.length > 0;
   const [slide, setSlide] = useState(0);
-  const [showHistory, setShowHistory] = useState(false);
+  const [viendoAnterior, setViendoAnterior] = useState(false);
   const [comments, setComments] = useState<Comment[]>(post.social_comments ?? []);
   const [estado, setEstado] = useState(post.estado);
   const [changingStatus, setChangingStatus] = useState<string | null>(null);
 
-  const imgs = active?.imagenes ?? [];
+  // Versión que se muestra en el mockup (nueva por defecto, o la anterior si el cliente la pide)
+  const mostrada = viendoAnterior && anterior ? anterior : active;
+  const imgs = mostrada?.imagenes ?? [];
   const est = ESTADO[estado];
   const red = getRedSocial(post.red_social);
 
@@ -170,61 +174,77 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
           {/* Left: FB mockup */}
           <div style={{ padding: 24, borderRight: "1px solid #F1F5F9" }}>
-            <div data-tour="preview" style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 12px rgba(0,0,0,.1)", overflow: "hidden" }}>
-              {/* FB post header */}
-              <div style={{ padding: "12px 14px 8px", display: "flex", gap: 10, alignItems: "center" }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#042E7B", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {config.avatar_url
-                    ? <img src={config.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : <span style={{ color: "#FFCC00", fontWeight: 900, fontSize: 14 }}>KZ</span>}
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#050505" }}>{config.nombre_pagina}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: "#65676B" }}>{fmtScheduledDate(post.fecha_programada)} · 🌐</p>
+
+            {/* Badge de versión + toggle (solo si hay corrección) */}
+            {hayCorreccion && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                  {viendoAnterior ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#F1F5F9", color: "#64748B", fontSize: 12, fontWeight: 800, padding: "6px 12px", borderRadius: 20 }}>
+                      ↩️ Versión anterior (v{anterior.version_num})
+                    </span>
+                  ) : (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#DCFCE7", color: "#166534", fontSize: 12, fontWeight: 800, padding: "6px 12px", borderRadius: 20 }}>
+                      ✨ Nueva propuesta (v{active.version_num})
+                    </span>
+                  )}
+                  <button onClick={() => { setViendoAnterior(!viendoAnterior); setSlide(0); }}
+                    style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#042E7B", cursor: "pointer" }}>
+                    {viendoAnterior ? "Ver nueva propuesta →" : "↩ Ver cómo estaba antes"}
+                  </button>
                 </div>
               </div>
-              {active.caption && <p style={{ margin: "0 14px 10px", fontSize: 14, color: "#050505", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{active.caption}</p>}
-              {imgs.length > 0 && (
-                <div style={{ position: "relative", background: "#F0F2F5", aspectRatio: "1/1" }}>
-                  <img src={imgs[slide]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                  {imgs.length > 1 && (
-                    <>
-                      <button onClick={() => setSlide(Math.max(0, slide - 1))} disabled={slide === 0}
-                        style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,.5)", color: "#fff", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, opacity: slide === 0 ? 0.3 : 1 }}>‹</button>
-                      <button onClick={() => setSlide(Math.min(imgs.length - 1, slide + 1))} disabled={slide === imgs.length - 1}
-                        style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,.5)", color: "#fff", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, opacity: slide === imgs.length - 1 ? 0.3 : 1 }}>›</button>
-                      <span style={{ position: "absolute", top: 10, right: 12, background: "rgba(0,0,0,.55)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 20 }}>{slide + 1}/{imgs.length}</span>
-                    </>
-                  )}
-                </div>
+            )}
+
+            {/* Mockup con efecto de doble tarjeta cuando hay corrección */}
+            <div style={{ position: "relative" }}>
+              {hayCorreccion && !viendoAnterior && (
+                <>
+                  <div style={{ position: "absolute", top: -8, left: 10, right: 10, height: 40, background: "#E8EDF5", borderRadius: "12px 12px 0 0", zIndex: 0 }} />
+                  <div style={{ position: "absolute", top: -4, left: 5, right: 5, height: 40, background: "#F1F5F9", borderRadius: "12px 12px 0 0", zIndex: 0 }} />
+                </>
               )}
-              <div style={{ padding: "8px 14px", borderTop: "1px solid #E4E6EB", display: "flex" }}>
-                {["👍 Me gusta", "💬 Comentar", "↗ Compartir"].map(a => (
-                  <div key={a} style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#65676B", fontWeight: 600 }}>{a}</div>
-                ))}
+              <div data-tour="preview" style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 12, boxShadow: hayCorreccion && !viendoAnterior ? "0 8px 24px rgba(4,46,123,.18)" : "0 2px 12px rgba(0,0,0,.1)", overflow: "hidden", border: viendoAnterior ? "1.5px dashed #CBD5E1" : "none" }}>
+                {/* FB post header */}
+                <div style={{ padding: "12px 14px 8px", display: "flex", gap: 10, alignItems: "center" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#042E7B", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {config.avatar_url
+                      ? <img src={config.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <span style={{ color: "#FFCC00", fontWeight: 900, fontSize: 14 }}>KZ</span>}
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#050505" }}>{config.nombre_pagina}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "#65676B" }}>{fmtScheduledDate(post.fecha_programada)} · 🌐</p>
+                  </div>
+                </div>
+                {mostrada.caption && <p style={{ margin: "0 14px 10px", fontSize: 14, color: "#050505", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{mostrada.caption}</p>}
+                {imgs.length > 0 && (
+                  <div style={{ position: "relative", background: "#F0F2F5", aspectRatio: "1/1" }}>
+                    <img src={imgs[slide]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    {imgs.length > 1 && (
+                      <>
+                        <button onClick={() => setSlide(Math.max(0, slide - 1))} disabled={slide === 0}
+                          style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,.5)", color: "#fff", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, opacity: slide === 0 ? 0.3 : 1 }}>‹</button>
+                        <button onClick={() => setSlide(Math.min(imgs.length - 1, slide + 1))} disabled={slide === imgs.length - 1}
+                          style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,.5)", color: "#fff", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, opacity: slide === imgs.length - 1 ? 0.3 : 1 }}>›</button>
+                        <span style={{ position: "absolute", top: 10, right: 12, background: "rgba(0,0,0,.55)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 20 }}>{slide + 1}/{imgs.length}</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                <div style={{ padding: "8px 14px", borderTop: "1px solid #E4E6EB", display: "flex" }}>
+                  {["👍 Me gusta", "💬 Comentar", "↗ Compartir"].map(a => (
+                    <div key={a} style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#65676B", fontWeight: 600 }}>{a}</div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Version history */}
-            {oldVersions.length > 0 && (
-              <div style={{ marginTop: 16 }}>
-                <button onClick={() => setShowHistory(!showHistory)}
-                  style={{ background: "none", border: "none", color: "#64748B", fontSize: 12, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 6, padding: 0 }}>
-                  <span style={{ display: "inline-block", transition: "transform .2s", transform: showHistory ? "rotate(90deg)" : "none" }}>▶</span>
-                  Ver versiones anteriores ({oldVersions.length})
-                </button>
-                {showHistory && (
-                  <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
-                    {oldVersions.map(v => (
-                      <div key={v.id} style={{ opacity: 0.5, border: "1.5px dashed #CBD5E1", borderRadius: 12, overflow: "hidden" }}>
-                        <div style={{ background: "#F8FAFC", padding: "5px 12px", fontSize: 11, color: "#64748B", fontWeight: 700 }}>Versión {v.version_num}</div>
-                        {v.imagenes?.[0] && <img src={v.imagenes[0]} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover" }} />}
-                        {v.caption && <p style={{ margin: "6px 12px 8px", fontSize: 12, color: "#64748B" }}>{v.caption.slice(0, 100)}{v.caption.length > 100 ? "…" : ""}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* Nota cuando ve la anterior */}
+            {hayCorreccion && viendoAnterior && (
+              <p style={{ margin: "12px 0 0", fontSize: 12, color: "#94A3B8", textAlign: "center" }}>
+                Esta es la versión que comentaste. Toca &quot;Ver nueva propuesta&quot; para ver los cambios.
+              </p>
             )}
           </div>
 
@@ -318,11 +338,21 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
   const commentCount = post.social_comments?.length ?? 0;
   const hasImage = (active?.imagenes?.length ?? 0) > 0;
   const isCarrusel = (active?.imagenes?.length ?? 0) > 1;
+  // Tiene corrección si hay más de una versión y está pendiente de revisar de nuevo
+  const hayCorreccion = post.social_post_versions.length > 1 && post.estado === "pendiente";
 
   return (
-    <button onClick={onOpen} style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 16, overflow: "hidden", cursor: "pointer", textAlign: "left", width: "100%", transition: "all .2s", boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}
-      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(4,46,123,.12)"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 4px rgba(0,0,0,.06)"; }}>
+    <div style={{ position: "relative", paddingTop: hayCorreccion ? 7 : 0 }}>
+      {/* Capas detrás (efecto doble tarjeta) cuando hay nueva propuesta */}
+      {hayCorreccion && (
+        <>
+          <div style={{ position: "absolute", top: 0, left: 9, right: 9, height: 26, background: "#C9DEFF", borderRadius: "16px 16px 0 0", zIndex: 0 }} />
+          <div style={{ position: "absolute", top: 3.5, left: 4.5, right: 4.5, height: 26, background: "#E3EEFF", borderRadius: "16px 16px 0 0", zIndex: 0 }} />
+        </>
+      )}
+      <button onClick={onOpen} style={{ position: "relative", zIndex: 1, background: "#fff", border: hayCorreccion ? "1.5px solid #1883FF" : "1.5px solid #E2E8F0", borderRadius: 16, overflow: "hidden", cursor: "pointer", textAlign: "left", width: "100%", transition: "all .2s", boxShadow: hayCorreccion ? "0 4px 16px rgba(24,131,255,.18)" : "0 1px 4px rgba(0,0,0,.06)" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(4,46,123,.12)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; (e.currentTarget as HTMLButtonElement).style.boxShadow = hayCorreccion ? "0 4px 16px rgba(24,131,255,.18)" : "0 1px 4px rgba(0,0,0,.06)"; }}>
 
       {/* Image */}
       <div style={{ position: "relative", aspectRatio: "1/1", background: "#F1F5F9", overflow: "hidden" }}>
@@ -338,9 +368,13 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
           </span>
         )}
         {/* Status overlay */}
-        <div style={{ position: "absolute", top: 8, left: 8, background: est.bg, borderRadius: 20, padding: "3px 9px", display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
-          <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
+        <div style={{ position: "absolute", top: 8, left: 8, background: hayCorreccion ? "#DBEAFE" : est.bg, borderRadius: 20, padding: "3px 9px", display: "flex", alignItems: "center", gap: 5 }}>
+          {hayCorreccion
+            ? <span style={{ fontSize: 10, fontWeight: 800, color: "#1E40AF" }}>✨ Nueva propuesta</span>
+            : <>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
+              </>}
         </div>
       </div>
 
@@ -364,7 +398,8 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
           <span style={{ fontSize: 11, color: "#1883FF", fontWeight: 700 }}>Ver →</span>
         </div>
       </div>
-    </button>
+      </button>
+    </div>
   );
 }
 
