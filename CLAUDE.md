@@ -108,7 +108,8 @@ src/
 - **social_post_versions** (id, post_id, version_num, caption, imagenes JSONB, nota_visual, es_activa) — versiones de cada post. `nota_visual` = "qué diseñar"
 - **social_comments** (id, post_id, autor_nombre, autor_rol, contenido) — comentarios del revisor (admin/cliente)
 - **social_page_config** (red_social, nombre_pagina, avatar_url) — config del mockup por red
-- **social_reviewers** (id UUID→auth.users, nombre, email, activo) — clientes que revisan
+- **social_reviewers** (id UUID→auth.users, nombre, email, activo) — clientes que reciben notificaciones del revisor. Solo los `activo:true` reciben correos.
+- **social_informes** (id, periodo "2026-06", periodo_label, desde, hasta, metricas JSONB, resumen, decisiones, propuestas, estado, fuente) — informe mensual de análisis de redes. estado: borrador (solo admin) / publicado (cliente lo ve). fuente: 'sitio' (fase 1) / 'meta' (fase 2). UNIQUE(periodo).
 
 RLS activo en todas las tablas (políticas permisivas USING(true) — el acceso real lo controla la service_role en las API routes).
 
@@ -190,9 +191,10 @@ Variables CSS en `src/app/globals.css`:
 
 ### 1. Revisor de redes sociales (`/revisor` + `/admin/redes-sociales`)
 Portal para que el cliente (Rosy, Monse) apruebe el contenido de redes ANTES de publicarse.
-- **`/revisor`** — portal limpio (sin navbar/footer/Kyo, excluido en `PublicShell`). Login con Supabase Auth. Cliente ve publicaciones en grid responsivo, abre modal con mockup de Facebook, botones **Aprobar** / **Necesito cambios** (este abre campo de texto → guarda comentario + cambia estado + notifica por correo, todo junto). Pills de stats del mes. Toggle **Semana/Mes**. **Guía de uso** = tour interactivo con coach marks (spotlight sobre elementos reales), aparece la 1ª vez (localStorage `kyoszen_revisor_guia_vista`) + botón "❔ Guía de uso".
-- **`/admin/redes-sociales`** — 3 tabs: **Calendario** (semana 7-cols con "+ Añadir" por día, o vista mes en grid), **Importar plan**, **Configuración** (nombre + avatar del mockup). Crear publicación con selector de red (Facebook/TikTok), imagen/carrusel, caption, fecha. Ver versiones, comentarios, nota visual "qué diseñar".
-- **APIs:** `/api/admin/social/{posts,config,upload,importar}`, `/api/revisor/posts/[id]/{status,comments}`. Notificaciones a renatomachg@gmail.com vía IONOS SMTP.
+- **`/revisor`** — portal limpio (sin navbar/footer/Kyo, excluido en `PublicShell`). Login con Supabase Auth. **2 pestañas: "📋 Publicaciones" y "📊 Análisis"**. En Publicaciones ve grid responsivo, abre modal con mockup de Facebook, botones **Aprobar** / **Necesito cambios** (este abre campo de texto → guarda comentario + cambia estado + notifica por correo, todo junto). Pills de stats del mes. Toggle **Semana/Mes**. **Guía de uso** = tour interactivo con coach marks (spotlight sobre elementos reales), aparece la 1ª vez (localStorage `kyoszen_revisor_guia_vista`) + botón "❔ Guía de uso".
+- **Comparador de versiones**: cuando una publicación tiene corrección (>1 versión), el grid la muestra con **efecto doble tarjeta + badge "✨ Nueva propuesta"**; el modal tiene toggle **"Ver cómo estaba antes"** (compara v-nueva vs anterior). Mismo comparador en el modal del admin. Al subir una nueva versión NO se arrastra la imagen anterior (empieza limpia).
+- **`/admin/redes-sociales`** — 4 tabs: **Calendario** (semana 7-cols con "+ Añadir" por día, o vista mes en grid), **Importar plan**, **Informe mensual**, **Configuración** (nombre + avatar del mockup). Crear publicación con selector de red (Facebook/TikTok), imagen/carrusel, caption, fecha. Ver versiones, comentarios, nota visual "qué diseñar".
+- **APIs:** `/api/admin/social/{posts,config,upload,importar,informe}`, `/api/revisor/{posts/[id]/{status,comments},informe}`. Notificaciones a renatomachg@gmail.com vía IONOS SMTP. Al subir nueva versión, notifica a `social_reviewers` activos ("✅ ya corregimos tu publicación").
 - **Multi-red:** `src/lib/redes-sociales.ts` define cada red (logo, color, emoji). Componente `src/components/RedLogo.tsx` muestra logo o chip de marca si no hay logo. Facebook activo con `/redes/facebook.svg`. TikTok activo pero SIN logo (muestra chip negro) — cuando llegue el SVG, ponerlo en `/public/redes/tiktok.svg` y `logo: "/redes/tiktok.svg"` en redes-sociales.ts.
 
 ### 2. Importador de planes de contenido (`/admin/redes-sociales` → tab Importar)
@@ -201,6 +203,14 @@ Pega/sube el HTML o texto de un plan de contenido → lo parsea con Claude (haik
 - Parsing en paralelo por semana (`dividirEnLotes`) → ~18s para un mes (vs 58s en serie). Limpia el HTML antes (`limpiarHtml`) para velocidad y mejor clasificación.
 - **Detección de duplicados por día+red:** si ya existe publicación ese día/red, la marca "✓ Ya en calendario" y la respeta, solo crea las nuevas.
 - Cada pieza crea: fecha, título, caption+hashtags, `nota_visual` (qué diseñar, visible en detalle admin). Imagen vacía → el usuario la diseña en Illustrator y la sube después.
+
+### 2b. Panel de Análisis — informe mensual de redes (Fase 1)
+"Panel de datos/decisiones/propuestas" de cara al cliente. Admin lo genera y publica; el cliente lo ve en la pestaña **"📊 Análisis"** del revisor.
+- **Admin** (`/admin/redes-sociales` → tab "📊 Informe mensual", componente `src/components/admin/InformeAdmin.tsx`): selecciona mes → "Generar" calcula métricas reales + IA (haiku) redacta resumen/decisiones/propuestas → admin edita → "Publicar al cliente". estado borrador/publicado.
+- **Cliente** (`src/components/revisor/InformeCliente.tsx`): diseño editorial de consultoría premium (portada navy con rombo dorado, secciones numeradas 01–05, indicador estrella grande + tabla de indicadores, plan de acción numerado, oportunidades en bloque navy). Responsivo (clases CSS `.inf-*` con media queries). Solo ve informes **publicados** (`/api/revisor/informe`).
+- **Datos Fase 1** (`src/lib/social-informe.ts`, función `calcularMetricasSitio`): de `site_eventos` + `social_posts` + contactos/aplicaciones. Métricas: clics WhatsApp (joya), contactos, aplicaciones, vistas vacantes, interés cursos, mensajes Kyo, publicaciones, comparativa vs mes anterior. `detectarPatrones()` = reglas que fundamentan las decisiones (nada inventado). **Fuente intercambiable**: Fase 2 = conectar API de Meta (alcance/seguidores orgánicos) sin rehacer el panel.
+- **IMPORTANTE control de publicación**: el cliente NO ve nada hasta que el admin da "Publicar". local y prod comparten la MISMA BD, así que generar un informe en local ya queda en la BD real, pero mientras esté en `borrador` el cliente solo ve el empty state.
+- Decisiones del grilleo (visión completa): audiencia admin+cliente con caras distintas · decisiones como columna (datos base, propuestas cierre) · reglas+IA con visto bueno · informe mensual + datos vivos + filtro de fechas futuro · métricas construcción de marca + conversión (joya) · pestaña en revisor · propuestas para que Kyoszen gane en su negocio + upsell · Fase 1 datos propios → Meta en paralelo.
 
 ### 3. Estratega (`/admin/estratega`)
 Agente IA (Claude Opus) que lee datos reales de Supabase (30 días) y propone servicios de postventa para Kyoszen. Sidebar con historial de chats persistido en tabla `estratega_chats`. Streaming.
@@ -242,6 +252,7 @@ Creadas con `sb.auth.admin.createUser` + contraseña temporal `Kyoszen2025!` (el
 - [ ] **TikTok** — link en Footer es `href="#"`. Falta URL real del perfil.
 - [ ] **Logo PNG** — el icono ya se usa en el revisor (`brand/kyoszen-icon.png`). Footer aún usa wordmark de texto.
 - [ ] **Cron del resumen mensual** — el toggle guarda la preferencia pero el envío automático (cron en VPS llamando a /api/admin/resumen) aún no está montado.
+- [ ] **Panel de Análisis Fase 2** — conectar API de Meta (Graph API insights orgánicos: alcance, seguidores, engagement). Requiere: app de Meta for Developers + permisos `read_insights`/`pages_read_engagement` + App Review (días/semanas). El usuario es admin de la página de FB de Kyoszen. La fuente de datos en `social-informe.ts` es intercambiable (`fuente: 'sitio'|'meta'`), enchufar sin rehacer el panel.
 - [ ] Revisar copy con cliente (es razonable pero no 100% aprobado)
 
 ### Panel Admin — YA COMPLETO
@@ -365,6 +376,12 @@ Semana 1 lanzamiento (Mayo 18-24):
 - Martes 20 · TIKTOK 30 seg · Presentación cuenta · 12pm
 
 ## Última actualización
+
+2026-06-02 — Continuacion. En produccion:
+- **Comparador de versiones** en revisor y admin: efecto doble tarjeta + badge "Nueva propuesta" en el grid, toggle "Ver como estaba antes" en el modal. Nueva version ya no arrastra la imagen anterior.
+- **Notificacion al cliente** al subir correccion: correo "ya corregimos tu publicacion" a `social_reviewers` activos (Rosy, Monse). Hector inactivo (era prueba).
+- **Panel de Analisis Fase 1** (informe mensual de redes): admin genera con IA + datos reales del sitio y publica; cliente lo ve en pestaña "Analisis" del revisor (diseño editorial de consultoria, responsivo). Control borrador/publicado. Fuente intercambiable para Meta (Fase 2 pendiente).
+- Cuentas de revisor: contraseñas reales enviadas a Rosy y Monse, ya entraron y les gusto el panel.
 
 2026-06-01 — Sesion grande. Nuevos modulos en produccion:
 - **Revisor de redes sociales** (`/revisor` + `/admin/redes-sociales`): calendario, mockup Facebook, aprobar/pedir cambios, comentarios, notificaciones por correo, vista semana/mes, guia interactiva (tour coach marks), multi-red Facebook/TikTok.
