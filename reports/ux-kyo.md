@@ -1,15 +1,16 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-06-01
-**Cambios analizados:** src/app/revisor/page.tsx, src/components/RedLogo.tsx, src/lib/redes-sociales.ts, src/app/api/admin/social/importar/route.ts, src/app/api/admin/social/posts/route.ts, src/components/layout/PublicShell.tsx, src/components/assistant/ChatWidget.tsx, src/components/assistant/useChat.ts, src/lib/assistant/system-prompt.ts, src/lib/assistant/tools.ts, src/lib/assistant/knowledge.ts, src/app/api/assistant/chat/route.ts, src/lib/jobs.ts
+**Fecha:** 2026-06-03
+**Cambios analizados:** src/app/admin/(panel)/redes-sociales/page.tsx, src/app/revisor/page.tsx, src/app/api/admin/social/posts/[id]/route.ts, src/app/api/admin/social/posts/[id]/versions/route.ts, src/app/api/admin/social/posts/route.ts, src/app/api/admin/social/importar/route.ts, src/app/api/revisor/posts/route.ts, src/lib/assistant/system-prompt.ts, src/lib/assistant/tools.ts, src/lib/assistant/knowledge.ts, src/app/api/assistant/chat/route.ts, src/components/assistant/ChatWidget.tsx, src/components/assistant/useChat.ts
 
 ---
 
 ## Cambios Recientes Detectados
 
-- **Revisor de contenido (`/revisor`):** Portal completo para que los clientes (Rosy, Monse) aprueben o pidan cambios en publicaciones. Incluye login con Supabase Auth, grid de tarjetas por semana/mes, modal con mockup de Facebook, historial de comentarios y tour interactivo con coach marks.
-- **Multi-red (Facebook/TikTok):** `RedLogo.tsx` y `redes-sociales.ts` introducen soporte para múltiples redes con fallback a chip de texto cuando no hay logo SVG.
-- **Importador de planes:** API `/api/admin/social/importar` usa Claude Haiku para parsear HTML de planes de contenido en paralelo por semana, con detección de duplicados por día+red.
-- **PublicShell:** Se extendió para ocultar Navbar/Footer/Kyo también en rutas `/revisor`.
+- **Vista mes como calendario real (dom→sáb):** Tanto en `/admin/redes-sociales` como en `/revisor`, se reemplazó la lista de días por un grid de 7 columnas con semanas reales. El primer día es domingo, hay relleno para días fuera del mes, y las celdas del día actual tienen borde/fondo azul.
+- **Drag & drop en el admin:** El admin puede arrastrar una tarjeta a otro día del calendario (mover) o soltarla sobre otra tarjeta (intercambiar fechas). Incluye actualización optimista y bloqueo de fechas pasadas.
+- **Edición libre de posts (editMode):** Nuevo modo en `PostModal` que edita la versión activa en su lugar sin crear nueva versión ni notificar al cliente. Permite cambiar título, fecha, red social, caption e imágenes.
+- **Control borrador/publicado:** El admin decide qué posts ve el cliente con un toggle. Los borradores muestran un badge amarillo "Borrador" en la vista semana y un punto amarillo en la vista mes.
+- **Selección individual en el importador:** Se puede marcar/desmarcar cada pieza antes de crear, con contadores en tiempo real, "Seleccionar todas" / "Quitar todas", y advertencias por fecha pasada o fin de semana.
 
 ---
 
@@ -17,13 +18,51 @@
 
 ### Alta prioridad
 
-- **[REVISOR] Modal PostModal no es responsive en móvil.**
-  Archivo: `src/app/revisor/page.tsx:170`
-  El grid del modal usa `gridTemplateColumns: "1fr 1fr"` fijo, sin media query. En un iPhone 13 (390px) el mockup de Facebook y el panel de acciones quedan apachurrados e ilegibles. Solución: detectar el ancho de ventana con un hook `useWindowSize` o con una verificación inline de `window.innerWidth < 640` y cambiar a `gridTemplateColumns: "1fr"` bajo 640px, apilando mockup arriba y acciones abajo.
+- **[ADMIN] El drag & drop no tiene `onDragLeave` — las celdas quedan resaltadas al sacar el cursor.**
+  Archivos: `src/app/admin/(panel)/redes-sociales/page.tsx:933-935` (vista mes) y `:992-994` (vista semana).
+  Cuando el usuario arrastra un post sobre una celda y luego mueve el cursor fuera sin soltar, `dropTarget` mantiene el valor y la celda sigue resaltada en azul. Nunca se limpia hasta que se suelta en otro lugar.
+  Fix: añadir `onDragLeave={() => setDropTarget(null)}` en cada celda `<div>` con `onDragOver`. Una línea en cada celda.
 
-- **[REVISOR] Sin soporte de teclado para cerrar el modal.**
-  Archivo: `src/app/revisor/page.tsx:140-311`
-  El modal no escucha `Escape`. Para revisores en desktop que usan teclado, es un punto de fricción notable. Agregar en el `useEffect` del PostModal:
+- **[ADMIN] No hay advertencia al mover/intercambiar posts ya publicados para el cliente.**
+  Archivo: `src/app/admin/(panel)/redes-sociales/page.tsx:551-577` (funciones `moverPostAFecha` e `intercambiarFechas`).
+  Ambas funciones no verifican si el post tiene `publicado: true`. Si el cliente ya vio y aprobó una publicación para el martes, el admin puede moverla accidentalmente al jueves sin ningún aviso, y el cliente verá la fecha incorrecta en su próxima visita al revisor.
+  Fix: en ambas funciones, antes de hacer fetch, verificar `posts.find(x => x.id === postId)?.publicado` y mostrar `confirm("Este post ya está visible para el cliente. ¿Seguro que quieres cambiar su fecha?")`.
+
+- **[ADMIN VISTA MES] No hay botón `+` cuando una celda ya tiene posts.**
+  Archivo: `src/app/admin/(panel)/redes-sociales/page.tsx:938-940`.
+  La condición `{dayPosts.length === 0 && !esPasado && (...)}` solo muestra el `+` cuando el día está vacío. Si ya hay una publicación, no hay forma de agregar otra sin cambiar a la vista semana.
+  Fix: quitar `dayPosts.length === 0 &&` de la condición. El botón puede mostrarse siempre en el `display: flex` del encabezado de la celda, o aparecer solo en hover con `opacity` CSS.
+
+- **[ADMIN VISTA MES] El badge "Borrador" no aparece en las tarjetas del mes.**
+  Archivo: `src/app/admin/(panel)/redes-sociales/page.tsx:943-965` (cards vista mes) vs `:1017` (cards vista semana).
+  La vista semana muestra `<span ...>Borrador</span>` cuando `!p.publicado`. La vista mes solo muestra un punto amarillo apenas visible. El admin no puede distinguir fácilmente qué posts están ocultos para el cliente cuando ve el mes completo.
+  Fix: en las tarjetas del mes (línea ~958-963), añadir el mismo span de "Borrador" que aparece en la semana, o al menos aumentar el punto amarillo de `w-6 h-6` a algo más visible.
+
+- **[ADMIN EDICIÓN] `editMode` no incluye el campo `nota_visual`.**
+  Archivo: `src/app/admin/(panel)/redes-sociales/page.tsx:112-275` (PostModal).
+  Cuando el admin edita una publicación en modo `editMode`, el formulario no muestra ni guarda el campo `nota_visual` ("qué diseñar"). Si el enfoque visual del post cambia (ej. cambia de vacante a marca empleadora), el diseñador seguirá viendo las instrucciones anteriores.
+  Fix: añadir un `<textarea>` para `nota_visual` en el PostModal cuando `editMode || isNew`, y pasarlo en el `body` del fetch a `versions/[id]` (método PUT). La API `PUT /versions` ya acepta ese campo porque lo usa al crear.
+
+### Media prioridad
+
+- **[ADMIN DRAG] Instrucción de arrastrar siempre visible aunque no haya posts.**
+  Archivo: `src/app/admin/(panel)/redes-sociales/page.tsx:907-909`.
+  El texto "✋ Arrastra una publicación a otro día..." aparece incluso cuando no hay posts en el período actual. En la primera semana del mes (antes de importar el plan), el usuario ve la instrucción pero no puede hacer nada.
+  Fix: añadir condición `{posts.length > 0 && (...)}` al wrapper del texto de instrucción.
+
+- **[ADMIN IMPORTADOR] Las piezas de "fin de semana" no permiten ajustar la fecha inline.**
+  Archivo: `src/app/admin/(panel)/redes-sociales/page.tsx:827-851` (lista de piezas del importador).
+  Los posts marcados "⚠ Fin de semana" pueden seleccionarse y crearse igualmente. El admin luego tendría que abrir cada uno y editar su fecha. Sería más eficiente permitir editar la fecha directamente en la fila del importador: un `<input type="date">` inline que aparezca al hacer clic en la fecha marcada en naranja. Requiere cambiar `ImportPieza.fecha` a editable en el estado local.
+
+- **[REVISOR VISTA MES] Las tarjetas en vista mes no muestran el badge "✨ Nueva propuesta".**
+  Archivo: `src/app/revisor/page.tsx` (renderizado de tarjetas en vista mes, bloque análogo al `:943-965` del admin).
+  Cuando hay una corrección, en el revisor el grid de semana y el modal muestran el badge y el efecto de doble tarjeta. Pero en la vista mes del revisor, las tarjetas son botones pequeños sin ese indicador. La cliente no sabe que hay una nueva propuesta para revisar.
+  Fix: en las tarjetas del mes del revisor, cuando `post.social_post_versions.filter(v => !v.es_activa).length > 0`, añadir un pequeño badge verde "✨" en la esquina superior derecha de la tarjeta.
+
+- **[REVISOR] El modal no cierra con `Escape`.**
+  Archivo: `src/app/revisor/page.tsx:160-167` (overlay del PostModal del revisor).
+  El overlay cierra con clic exterior, pero no con teclado. Para revisoras en desktop con teclado, es fricción. Ya se señaló en el reporte anterior y sigue sin implementarse.
+  Fix (una vez, 5 líneas):
   ```js
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -32,36 +71,15 @@
   }, [onClose]);
   ```
 
-- **[REVISOR] No hay "Recuperar contraseña" en la pantalla de login.**
-  Archivo: `src/app/revisor/page.tsx:388-420` (componente `LoginView`)
-  Las revisoras reciben contraseña temporal `Kyoszen2025!`. Si la olvidan, no hay camino visible para recuperarla; deben contactar a Kyoszen por WhatsApp. Agregar un enlace `¿Olvidaste tu contraseña?` que llame a `supabase.auth.resetPasswordForEmail(email)` y muestre un mensaje de confirmación. Esto elimina fricción en un escenario frecuente con usuarios no técnicos.
+- **[REVISOR] Sin "Recuperar contraseña" en el login.**
+  Archivo: `src/app/revisor/page.tsx` (componente `LoginView`).
+  Las revisoras reciben contraseña temporal. Si la olvidan no hay camino visible para recuperarla. Ya señalado en reporte anterior, pendiente de implementar.
+  Fix: enlace `¿Olvidaste tu contraseña?` → `supabase.auth.resetPasswordForEmail(email)` + toast de confirmación.
 
-- **[REVISOR] La guía (tour) pierde el estado si el usuario cierra el modal durante los pasos que lo requieren.**
-  Archivo: `src/app/revisor/page.tsx:496-513`
-  Cuando el tour llega a los pasos `requiereModal: true` (pasos 4 y 5), abre automáticamente `posts[0]`. Si el usuario cierra ese modal haciendo clic en el overlay, `selectedPost` queda en `null` pero el tour sigue buscando `[data-tour="preview"]` y `[data-tour="acciones"]` que ya no están en el DOM. El spotlight desaparece y el usuario queda confundido.
-  Solución: en el handler de cierre del `PostModal`, verificar si `showGuia` está activo y, si es así, no cerrar el modal (o avanzar el tour al siguiente paso automáticamente).
-
-### Media prioridad
-
-- **[REVISOR] Las estadísticas del mes no tienen etiqueta de período clara.**
-  Archivo: `src/app/revisor/page.tsx:795-813`
-  Las pills de stats (Total del mes, Aprobados, Pendientes, Con cambios) siempre muestran el mes actual aunque el usuario esté viendo una semana pasada. El label "junio 2026" aparece pequeño a la derecha pero no es obvio que las pills corresponden al mes completo. Agregar un encabezado de sección explícito sobre las pills: `"Resumen de junio 2026"` o agregar `"(mes completo)"` dentro de cada pill label.
-
-- **[REVISOR] No hay contador de publicaciones pendientes en el header de período.**
-  Archivo: `src/app/revisor/page.tsx:817-844`
-  Cuando el usuario ve "Esta semana", no hay número visible de cuántos posts están pendientes en esa semana. Agregar un badge `(N pendientes)` junto al título `tituloPeriodo()` ayuda al usuario a saber qué le falta sin tener que contar tarjetas.
-
-- **[CHAT KYO] El chat navega automáticamente sin confirmación del usuario.**
-  Archivo: `src/components/assistant/useChat.ts:124-128`
-  `setTimeout(() => router.push(target.path), 700)` cambia la página mientras el candidato aún lee la respuesta de Kyo. Esto es especialmente abrupto en el paso 5, cuando Kyo muestra la lista de vacantes y simultáneamente navega. Mejor UX: mostrar en el chat un chip/botón `→ Ver vacantes en detalle` que el usuario activa voluntariamente, en lugar de redirigir automáticamente.
-
-- **[REVISOR] PostCard sin imagen muestra emoji `📝` como placeholder.**
-  Archivo: `src/app/revisor/page.tsx:331-335`
-  Cuando una publicación aún no tiene imagen diseñada, la tarjeta muestra un emoji plano. Mejor reemplazar con un contenedor con el ícono de la red social centrado y fondo `colorSuave` de la red (`r.colorSuave` de `redes-sociales.ts`), que es más on-brand y comunica mejor el estado "imagen pendiente".
-
-- **[ADMIN] `getRedSocial` fallback silencioso a Facebook.**
-  Archivo: `src/lib/redes-sociales.ts:33`
-  `return REDES_SOCIALES[id] ?? REDES_SOCIALES.facebook` — si se inserta un post con `red_social: "instagram"` en Supabase, todo el UI lo mostrará erróneamente como "Facebook" sin ningún aviso. Agregar al menos un `console.warn("Red social no reconocida:", id)` para detectar el caso durante desarrollo, y considerar un fallback genérico con color gris en lugar de Facebook.
+- **[ADMIN/REVISOR] El calendario mes tiene duplicación de lógica `monthGrid` en dos archivos.**
+  Archivos: `src/app/admin/(panel)/redes-sociales/page.tsx:51-60` y `src/app/revisor/page.tsx:74-83`.
+  Exactamente la misma función `monthGrid(first: Date)` está copiada en ambas páginas. Si en el futuro se quiere cambiar el primer día de la semana o agregar localización, hay que cambiarlo en dos lugares.
+  Fix: extraer a `src/lib/calendar.ts` y exportar como `monthGrid`. Importar en ambas páginas.
 
 ---
 
@@ -69,68 +87,85 @@
 
 ### Mejoras al flujo de conversación
 
-- **El Paso 6 dirige al candidato a `/contacto` en lugar de a la vacante específica.**
-  Archivo: `src/lib/assistant/system-prompt.ts:61`
-  El paso 6 dice `"Navega a /contacto si acepta"`. Pero las vacantes activas en `/vacantes/[id]` tienen su propio modal "Aplicar ahora" con formulario completo (nombre, archivo, etc.). Kyo debería navegar a `/vacantes/[id]` con el ID de la vacante que el candidato eligió. Cambiar a: `"Navega a /vacantes/[id] con el id concreto de la vacante que le interesó. El candidato puede aplicar desde ahí con el botón 'Aplicar ahora'."`.
+- **El historial en localStorage no expira — candidatos que vuelven días después ven una conversación antigua irrelevante.**
+  Archivo: `src/components/assistant/useChat.ts:24-33` (función `loadHistory`).
+  Con `MAX_STORED = 30` mensajes, un candidato que visitó el sitio hace 5 días ve toda la conversación anterior al abrir el chat. Si ya fue contactado o perdió interés, el contexto es confuso. Agregar verificación de antigüedad en `loadHistory`:
+  ```ts
+  const last = parsed[parsed.length - 1];
+  const tooOld = last && (Date.now() - last.timestamp) > 24 * 60 * 60 * 1000; // 24 hrs
+  if (tooOld) return [INITIAL_GREETING];
+  ```
+  Esto resetea automáticamente conversaciones de más de 24 horas sin borrar localStorage manualmente.
 
-- **El sistema de navegación automática interrumpe la lectura en paso 5.**
-  Archivo: `src/lib/assistant/system-prompt.ts:58` y `src/components/assistant/useChat.ts:124`
-  El prompt dice `"Usa navigate_to con /vacantes y los filtros"` al momento de mostrar las vacantes, lo cual hace que la página cambie mientras el candidato lee la lista. Mejor instrucción: en el Paso 5, Kyo NO navega hasta que el candidato confirme qué vacante le interesa. Solo navegar en el Paso 6. Cambiar en system-prompt: `"No llames navigate_to en el Paso 5. Espera confirmación del candidato y navega en el Paso 6."`.
+- **El system prompt no maneja el caso "ya apliqué antes".**
+  Archivo: `src/lib/assistant/system-prompt.ts:63-70` (sección "Manejo de otros temas").
+  Si un candidato dice "ya apliqué la semana pasada" o "ya tengo entrevista con ustedes", Kyo no tiene instrucción clara y puede reiniciar el flujo de 6 pasos, lo que es confuso y poco profesional.
+  Fix: agregar en la sección "Manejo de otros temas":
+  `"Si el candidato menciona que ya aplicó o que ya tiene proceso activo: agradece su interés, dile que el equipo ya tiene su información, y sugiere contactar directamente por WhatsApp para seguimiento."`.
 
-- **El nombre del usuario se antepone mecánicamente en cada respuesta.**
-  Archivo: `src/lib/assistant/system-prompt.ts:18`
-  Con Haiku, el modelo frecuentemente inicia cada respuesta con `"Muy bien, Juan..."` o `"Juan, con base..."` incluso en respuestas cortas de seguimiento, lo que suena repetitivo. Mejorar la instrucción a: `"Usa el nombre del candidato con naturalidad — máximo 1 vez cada 3-4 mensajes. No lo uses en respuestas de 1-2 líneas."`.
+- **`max_tokens: 1024` puede truncar la respuesta del Paso 5.**
+  Archivo: `src/app/api/assistant/chat/route.ts:149-155`.
+  En el Paso 5, Kyo necesita mostrar 2-3 vacantes con nombre, empresa y razón personalizada. Con un perfil complejo (candidato con historial de preguntas previas y contexto acumulado), 1024 tokens puede ser insuficiente y la respuesta aparece cortada.
+  Fix: aumentar `max_tokens` de 1024 a 1500 para dar margen a respuestas más completas.
+
+- **Las vacantes del system prompt y el nombre del usuario se repiten mecánicamente en cada respuesta.**
+  Archivo: `src/lib/assistant/system-prompt.ts:18` (instrucción del nombre).
+  Ya señalado en el reporte anterior. Con Haiku, el modelo saluda con el nombre en casi cada mensaje de seguimiento. Sigue pendiente mejorar la instrucción a: `"Usa el nombre del candidato con naturalidad — máximo 1 vez cada 3-4 mensajes. No lo uses en respuestas de 1-2 líneas."`.
 
 ### Nuevas tools o capacidades recomendadas
 
-- **Tool `register_interest` — registrar el interés del candidato antes de navegar.**
-  Agregar en `src/lib/assistant/tools.ts` una nueva tool que guarde un registro en Supabase (tabla `aplicaciones` con campo `fuente: "kyo"`) cuando el candidato confirma interés en una vacante, antes de navegar. Esto daría a Kyoszen métricas de interés pre-aplicación ("cuántos candidatos llegaron al paso 6 por Kyo vs. cuántos completaron el formulario").
+- **Tool `log_candidate_intent` — registrar el paso actual antes de navegar.**
+  Archivo: `src/lib/assistant/tools.ts` (agregar nueva tool).
+  Actualmente no hay registro de en qué paso del flujo está cada candidato cuando abandona el chat. Agregar una tool que guarde en `site_eventos` el paso alcanzado (`{ tipo: "kyo_paso", valor: "paso_5_recomendacion" }`) cuando el candidato llega al Paso 5. Esto le daría a Kyoszen una métrica valiosa: "X% de candidatos que hablan con Kyo llegan a ver vacantes".
+  La tool sería del lado servidor y no requiere cambio en el frontend:
+  ```ts
+  { name: "log_step", description: "Registra en analytics el paso actual del flujo de conversación. Llama esto cuando el candidato llega al Paso 5 o al Paso 6.", input_schema: { type: "object", properties: { paso: { type: "string" }, vacante_id: { type: "number" } } } }
+  ```
 
-- **Tool `check_salary_range` — orientar expectativas salariales en el paso 2.**
-  Cuando un candidato menciona su puesto en el paso 1, frecuentemente pregunta "¿cuánto pagan?" antes de que Kyo llegue al paso 5. Agregar una tool `get_salary_range(titulo)` que devuelva el rango salarial de las vacantes activas para ese título. Los datos están disponibles en `JOBS.salario` y en Supabase. Esto reduce el abandono por expectativas sin anclar.
-
-- **Quick replies / chips de respuesta rápida para los pasos 1-4.**
-  En los pasos de perfil (tipo de trabajo, jornada, ubicación), los candidatos en mobile tienen que escribir respuestas cortas repetitivas. Agregar un campo `suggestions` en la respuesta del API (ej. `["Tiempo completo", "Medio tiempo"]`) y renderizar chips en `ChatWidget.tsx` que el usuario puede tocar. Requiere señalizar el paso actual en la respuesta del API.
+- **Quick replies / chips de respuesta para jornada y ubicación.**
+  Archivo: `src/app/api/assistant/chat/route.ts` (agregar campo `suggestions` en la respuesta) + `src/components/assistant/ChatWidget.tsx` (renderizar chips).
+  En mobile, el candidato tiene que escribir "Tiempo completo", "CDMX", etc. en el teclado. Los pasos 3 y 4 (ubicación y jornada) tienen opciones predecibles. El API podría devolver `suggestions: ["Tiempo completo", "Medio tiempo"]` cuando Kyo hace esas preguntas, y `ChatWidget.tsx` los renderizaría como chips tocables.
+  Requiere: (1) que el API detecte el paso actual y añada `suggestions` al payload de respuesta; (2) que `ChatWidget.tsx` renderice los chips y los envíe como si fueran texto del usuario cuando se tocan.
 
 ### Problemas detectados
 
-- **BUG CRÍTICO: Kyo recomienda vacantes desactualizadas (fuente estática, no Supabase).**
-  Archivos: `src/lib/assistant/knowledge.ts:1,167` y `src/lib/jobs.ts:18`
-  `StaticKnowledgeProvider.listJobs()` lee del array `JOBS` en `jobs.ts` — el archivo hardcodeado que CLAUDE.md describe como "fallback". El sitio público `/vacantes` lee de Supabase (donde el admin crea/cierra vacantes), pero Kyo usa el array estático. Esto significa que Kyo puede recomendar vacantes ya cerradas o desconocer nuevas vacantes abiertas en el admin.
-  **Fix:** Crear `SupabaseKnowledgeProvider` que implemente la interfaz `KnowledgeProvider` (ya definida en `knowledge.ts:42-58`) y lea de Supabase con `SUPABASE_SERVICE_ROLE_KEY`. La estructura ya está diseñada para esta migración; el comentario en `knowledge.ts:167` incluso la menciona como "phase 2".
+- **BUG CRÍTICO (persistente desde reporte anterior): Kyo recomienda vacantes desactualizadas.**
+  Archivos: `src/lib/assistant/knowledge.ts:167` y `src/lib/jobs.ts`.
+  `StaticKnowledgeProvider.listJobs()` lee del array `JOBS` hardcodeado, no de Supabase. El admin puede abrir o cerrar vacantes desde `/admin/vacantes`, pero Kyo no se entera. También el system prompt se genera con `knowledge.listJobs()` en cada request, con los mismos datos estáticos.
+  Fix pendiente: crear `SupabaseKnowledgeProvider` que implemente la interfaz `KnowledgeProvider` ya definida en `knowledge.ts:42-58`. La arquitectura ya está preparada — el comentario en línea 167 lo confirma: "In phase 2 this will become: new SupabaseKnowledgeProvider(supabaseClient)".
 
-- **BUG: Las FAQs editadas en `/admin/kyo` no llegan al system prompt de Kyo.**
-  Archivos: `src/lib/assistant/knowledge.ts:99-105` y `src/app/api/assistant/chat/route.ts:11-32`
-  El `chat/route.ts` solo carga el campo `instrucciones` de `kyo_config`. Las FAQs en el system prompt vienen de `COMPANY.faqs` hardcodeadas en `knowledge.ts`. La tabla `kyo_faqs` existe en Supabase y el admin puede editarlas desde el panel — pero esas ediciones nunca llegan al `buildSystemPrompt()`.
-  **Fix:** En `getStoredInstrucciones()` (o en una función hermana), cargar también las FAQs de `kyo_faqs` y pasarlas como parámetro override a `buildSystemPrompt()`.
+- **BUG (persistente): las FAQs editadas en `/admin/kyo` no llegan al system prompt.**
+  Archivos: `src/lib/assistant/knowledge.ts:99-105` y `src/app/api/assistant/chat/route.ts:11-32`.
+  `getStoredInstrucciones()` solo carga el campo `instrucciones` de `kyo_config`. Las FAQs en el system prompt vienen de `COMPANY.faqs` hardcodeadas. La tabla `kyo_faqs` en Supabase existe y el admin la edita, pero esas ediciones nunca se reflejan en la conversación.
 
-- **El analytics registra el contenido de los mensajes del usuario (riesgo de privacidad).**
-  Archivo: `src/components/assistant/useChat.ts:81`
-  `logEvent("kyo_mensaje", trimmed.slice(0, 300))` almacena los primeros 300 caracteres del mensaje en `site_eventos`. Si un candidato escribe su nombre completo, teléfono o datos personales en el chat (ocurre en el paso 0 con el nombre), esos datos quedan en la tabla de analytics. Cambiar a registrar solo la longitud del mensaje o una categoría de paso, no el texto: `logEvent("kyo_mensaje", String(trimmed.length))`.
+- **BUG (persistente): el analytics guarda el texto del mensaje del candidato.**
+  Archivo: `src/components/assistant/useChat.ts:81`.
+  `logEvent("kyo_mensaje", trimmed.slice(0, 300))` guarda hasta 300 caracteres en `site_eventos`. Si el candidato escribe su nombre (que Kyo pide en el Paso 0) seguido de información adicional, esos datos personales quedan en la tabla de analytics. Cambiar a `logEvent("kyo_mensaje", String(messages.length))` para registrar solo el número de mensaje en la conversación, no el contenido.
 
-- **El rate limit de Kyo se reinicia en cada deploy/restart de PM2.**
-  Archivo: `src/app/api/assistant/chat/route.ts:68`
-  El `rateLimitMap` es un `Map` in-memory de Node.js que se borra con cada restart del proceso. Si un deploy ocurre durante un período de abuso, los contadores se pierden. El propio comentario en el código anticipa esto (`"replace with Upstash Redis"`). Cuando el tráfico del sitio crezca, considerar migrar a un rate limiter basado en Redis o en la propia tabla `site_eventos` de Supabase.
+- **BUG NUEVO: el system prompt incluye vacantes en texto plano Y la tool `search_jobs` también busca en las mismas vacantes estáticas.**
+  Archivo: `src/lib/assistant/system-prompt.ts:130-131` y `src/lib/assistant/tools.ts:36-46`.
+  El system prompt ya lista todas las vacantes como texto (línea 130-131). Si Claude usa `search_jobs`, obtiene exactamente los mismos datos (del mismo `JOBS` estático). Esto duplica información en el contexto sin agregar valor, y cuando se migre a Supabase, habrá inconsistencia entre los datos del system prompt (cacheados 60s en `_cachedInstrucciones`) y los resultados de `search_jobs` (que podrían estar frescos de Supabase).
+  Fix: en `buildSystemPrompt()`, eliminar el bloque `# Vacantes disponibles actualmente` del texto del system prompt y confiar 100% en la tool `search_jobs` para que Kyo consulte vacantes a demanda. Esto también reduce los tokens del system prompt.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **Añadir TikTok mockup al modal del revisor.**
-  El modal siempre muestra el mockup de Facebook (header con avatar, caption, imagen cuadrada, botones de reacción). Para posts de TikTok, el mockup debería ser vertical (9:16), fondo negro, con overlay de usuario y hashtags al pie. Implementar un componente `TikTokMockup` alternativo al actual bloque de Facebook en `PostModal` (línea 172) y seleccionar con `post.red_social === "tiktok"`. Esto da al cliente una vista previa real de cómo lucirá su contenido de TikTok.
+- **[ADMIN] La vista mes del calendario no muestra un resumen del mes al pie.**
+  Cuando el admin está en vista mes, no hay un contador de "X publicaciones este mes · Y aprobadas · Z pendientes · W borradores". Agregar un bar de stats debajo del grid (igual a las pills del revisor) daría una vista ejecutiva rápida del estado del mes sin tener que contar tarjetas.
 
-- **El importador trunca HTML a 60,000 caracteres sin avisar.**
-  Archivo: `src/app/api/admin/social/importar/route.ts:121`
-  `textoLimpio.slice(0, 60_000)` — si el plan HTML es largo (>60k chars), las publicaciones de las últimas semanas no se extraen. No hay ningún aviso al usuario. Agregar en la respuesta un campo `{ advertencia: "Plan truncado — semanas finales pueden estar incompletas." }` cuando la longitud supera ese límite.
+- **[ADMIN] El tab "Configuración" solo cubre Facebook — sería extensible para TikTok.**
+  Archivo: `src/app/admin/(panel)/redes-sociales/page.tsx:1041-1082` (tab config).
+  El formulario de configuración está hardcodeado para `red_social: "facebook"`. Cuando TikTok tenga logo y se active, el admin no podrá configurar su nombre de perfil ni avatar desde aquí. El form debería iterar sobre `Object.values(REDES)` y mostrar una sección por cada red activa. Requiere cambio menor en el form de guardado.
 
-- **El dedup del importador impide 2 publicaciones legítimas en el mismo día y red.**
-  Archivo: `src/app/api/admin/social/importar/route.ts:132-139`
-  El criterio de deduplicación usa `fecha|red_social` como clave única. Pero un día puede tener 2 posts de Facebook legítimos (mañana y tarde). El segundo post simplemente se descarta. Mejorar el criterio de dedup a `fecha|red_social|titulo_interno` o `fecha|red_social|hora` para permitir múltiples publicaciones por día.
+- **[REVISOR] La vista mes del revisor no tiene navegación de período integrada en el header.**
+  Archivo: `src/app/revisor/page.tsx` (header del revisor).
+  En el revisor, el toggle Semana/Mes y los botones `‹ ›` están en la misma línea. Al cambiar a vista mes, no es obvio que las flechas ahora mueven meses en lugar de semanas. Agregar una etiqueta dinámica junto a las flechas que cambie de "Semana anterior" a "Mes anterior" según la vista activa (via `title` en los botones, o un label visible).
 
-- **Agregar confirmación de cierre de sesión en el revisor.**
-  Archivo: `src/app/revisor/page.tsx:717`
-  El botón "Salir" ejecuta `logout()` directamente sin confirmación. Si la revisora hace clic por accidente, pierde su sesión activa y tiene que hacer login de nuevo. Agregar un `confirm("¿Deseas cerrar sesión?")` o un toast de 2 segundos con opción "Cancelar" antes de ejecutar `signOut()`.
+- **[ADMIN/KYO] Añadir TikTok mockup al modal del revisor.**
+  Archivo: `src/app/revisor/page.tsx:189-256` (layout del mockup del modal).
+  El mockup siempre es de Facebook (cuadrado, fondo blanco, botones de reacción). Para posts de TikTok el mockup debería ser vertical (9:16), fondo negro, con overlay de texto al pie. Implementar un componente `TikTokMockup` que se seleccione con `post.red_social === "tiktok"`. Esto es especialmente relevante ahora que el calendario ya soporta TikTok.
 
-- **Mostrar aviso de horario de atención cuando Kyo recomienda hablar con el equipo.**
-  Archivo: `src/lib/assistant/system-prompt.ts:65-67`
-  Cuando Kyo responde `"Con gusto te conecto con nuestro equipo"` y navega a `/contacto`, no considera el horario. Si el candidato usa Kyo a las 11pm, no hay ningún mensaje de que el equipo responderá hasta el siguiente día hábil (9am-6pm). Agregar en el system prompt: `"Si el candidato pide hablar con alguien fuera del horario Lunes-Viernes 9am-6pm, menciona que el equipo estará disponible al siguiente día hábil y que puede dejar su mensaje igualmente."`.
+- **[GENERAL] Extraer `monthGrid` a una utilidad compartida.**
+  Archivos: `src/app/admin/(panel)/redes-sociales/page.tsx:51-60` y `src/app/revisor/page.tsx:74-83`.
+  La función `monthGrid` está copiada textualmente en dos archivos. Crear `src/lib/calendar.ts` con esta función y las constantes `DAYS_SUN`, `isoDate`, `fmtDay` que también se repiten. Esto elimina la deuda de duplicación y facilita futuros cambios (ej: semana que inicie en lunes en lugar de domingo).
