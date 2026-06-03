@@ -69,6 +69,20 @@ function fmtCommentDate(d: string) {
   return new Date(d).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
+const DAYS_SUN = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+function monthGrid(first: Date): (Date | null)[] {
+  const year = first.getFullYear();
+  const month = first.getMonth();
+  const startWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
 const ESTADO: Record<string, { label: string; bg: string; color: string; dot: string }> = {
   pendiente: { label: "Pendiente revisión", bg: "#FEF9C3", color: "#854D0E", dot: "#EAB308" },
   aprobado:  { label: "Aprobado",           bg: "#DCFCE7", color: "#166534", dot: "#22C55E" },
@@ -907,6 +921,40 @@ export default function RevisorPage() {
               <span style={{ fontSize: 40 }}>📭</span>
               <p style={{ margin: "16px 0 6px", fontWeight: 700, color: "#042E7B", fontSize: 16 }}>Sin publicaciones {vista === "semana" ? "esta semana" : "este mes"}</p>
               <p style={{ margin: 0, color: "#94A3B8", fontSize: 13 }}>No hay contenido programado para revisar en este período.</p>
+            </div>
+          ) : vista === "mes" ? (
+            /* Calendario real del mes (dom→sáb, semanas por fila) */
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+              {DAYS_SUN.map((d) => (
+                <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: ".4px", paddingBottom: 4 }}>{d}</div>
+              ))}
+              {monthGrid(mon).map((d, i) => {
+                if (!d) return <div key={i} style={{ minHeight: 116, borderRadius: 12, background: "#F8FAFC" }} />;
+                const iso = isoDate(d);
+                const isToday = iso === isoDate(new Date());
+                const dayPosts = posts.filter((p) => p.fecha_programada === iso);
+                return (
+                  <div key={i} style={{ minHeight: 116, background: isToday ? "#EFF6FF" : "#fff", border: `1.5px solid ${isToday ? "#BFDBFE" : "#EAEEF3"}`, borderRadius: 12, padding: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: isToday ? "#1883FF" : "#475569", marginBottom: 1 }}>{d.getDate()}</span>
+                    {dayPosts.map((post) => {
+                      const active = post.social_post_versions.find((vv) => vv.es_activa) ?? post.social_post_versions[0];
+                      const est = ESTADO[post.estado];
+                      const hayCorreccion = post.social_post_versions.length > 1 && post.estado === "pendiente";
+                      return (
+                        <button key={post.id} onClick={() => setSelectedPost(post)}
+                          style={{ display: "flex", gap: 5, alignItems: "center", width: "100%", textAlign: "left", background: hayCorreccion ? "#EFF6FF" : "#fff", border: `1px solid ${hayCorreccion ? "#1883FF" : "#EEF1F6"}`, borderLeft: `3px solid ${hayCorreccion ? "#1883FF" : est.dot}`, borderRadius: 8, padding: 4, cursor: "pointer", overflow: "hidden" }}>
+                          {active?.imagenes?.[0]
+                            ? <img src={active.imagenes[0]} alt="" style={{ width: 30, height: 30, borderRadius: 6, objectFit: "cover", flexShrink: 0, display: "block" }} />
+                            : <div style={{ width: 30, height: 30, borderRadius: 6, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📝</div>}
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 600, color: "#475569", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                            {active?.caption || "Publicación"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>

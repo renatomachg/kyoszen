@@ -45,6 +45,20 @@ interface ImportPieza {
 
 /* ─── Helpers ────────────────────────────────────────── */
 const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const DAYS_SUN = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]; // calendario inicia en domingo
+
+// Devuelve las celdas de un mes como calendario (domingo primero): null = relleno fuera del mes
+function monthGrid(first: Date): (Date | null)[] {
+  const year = first.getFullYear();
+  const month = first.getMonth();
+  const startWeekday = new Date(year, month, 1).getDay(); // 0 = domingo
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
 
 function weekBounds(offset = 0) {
   const now = new Date();
@@ -900,51 +914,59 @@ export default function RedesSocialesPage() {
               <div style={{ width: 28, height: 28, border: "3px solid #042E7B", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
             </div>
           ) : vista === "mes" ? (
-            /* ── Vista mes: grid de todas las publicaciones ── */
-            posts.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px 24px", background: "#F8FAFC", borderRadius: 16, border: "1.5px dashed #E2E8F0" }}>
-                <span style={{ fontSize: 36 }}>📭</span>
-                <p style={{ margin: "14px 0 4px", fontWeight: 700, color: "#042E7B", fontSize: 15 }}>Sin publicaciones este mes</p>
-                <p style={{ margin: 0, color: "#94A3B8", fontSize: 13 }}>Usa &quot;+ Nueva publicación&quot; para agregar contenido.</p>
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 14 }}>
-                {[...posts].sort((a, b) => a.fecha_programada.localeCompare(b.fecha_programada)).map((p) => {
-                  const v = p.social_post_versions.find((vv) => vv.es_activa) ?? p.social_post_versions[0];
-                  const est = ESTADO[p.estado];
-                  const commentCount = p.social_comments?.length ?? 0;
-                  return (
-                    <button key={p.id}
-                      draggable
-                      onDragStart={(e) => onCardDragStart(e, p.id)}
-                      onDragEnd={() => { setDragId(null); setDropTarget(null); }}
-                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (dragId != null && dragId !== p.id) setDropTarget("post:" + p.id); }}
-                      onDrop={(e) => onCardDrop(e, p.id)}
-                      onClick={() => setSelectedPost(p)}
-                      style={{ background: "#fff", border: `1.5px solid ${dropTarget === "post:" + p.id && dragId != null && dragId !== p.id ? "#1883FF" : p.estado === "cambios" ? "#FCA5A5" : p.estado === "aprobado" ? "#86EFAC" : "#E2E8F0"}`, borderRadius: 14, padding: 0, cursor: dragId != null ? "grabbing" : "grab", overflow: "hidden", textAlign: "left", width: "100%", opacity: dragId === p.id ? 0.4 : 1, transition: "opacity .12s" }}>
-                      {v?.imagenes?.[0]
-                        ? <img src={v.imagenes[0]} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
-                        : <div style={{ width: "100%", aspectRatio: "1/1", background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>📝</div>}
-                      <div style={{ padding: "8px 10px" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: "#042E7B" }}>
-                            {new Date(p.fecha_programada + "T12:00:00").toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}
+            /* ── Vista mes: calendario real (dom→sáb, semanas por fila) ── */
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+              {/* Encabezado dias */}
+              {DAYS_SUN.map((d) => (
+                <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: ".4px", paddingBottom: 4 }}>{d}</div>
+              ))}
+              {/* Celdas */}
+              {monthGrid(mb.first).map((d, i) => {
+                if (!d) return <div key={i} style={{ minHeight: 124, borderRadius: 12, background: "#FBFCFE" }} />;
+                const iso = isoDate(d);
+                const isToday = iso === isoDate(new Date());
+                const esPasado = iso < hoyIso;
+                const dayPosts = postsByDay(d);
+                const dropAqui = dropTarget === "dia:" + iso && dragId != null;
+                return (
+                  <div key={i}
+                    onDragOver={(e) => { if (dragId != null) { e.preventDefault(); setDropTarget("dia:" + iso); } }}
+                    onDrop={(e) => onDiaDrop(e, iso)}
+                    style={{ minHeight: 124, background: dropAqui ? "#DBEAFE" : isToday ? "#EFF6FF" : esPasado ? "#FAFBFC" : "#fff", border: `1.5px solid ${dropAqui ? "#1883FF" : isToday ? "#BFDBFE" : "#EEF1F6"}`, borderRadius: 12, padding: 6, display: "flex", flexDirection: "column", gap: 4, transition: "background .12s, border-color .12s" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: isToday ? "#1883FF" : esPasado ? "#CBD5E1" : "#475569" }}>{d.getDate()}</span>
+                      {dayPosts.length === 0 && !esPasado && (
+                        <button onClick={() => { setNewPostDate(iso); setShowNewPost(true); }} title="Agregar publicación"
+                          style={{ background: "none", border: "none", color: "#CBD5E1", cursor: "pointer", fontSize: 15, lineHeight: 1, padding: 0 }}>+</button>
+                      )}
+                    </div>
+                    {dayPosts.map((p) => {
+                      const v = p.social_post_versions.find((vv) => vv.es_activa) ?? p.social_post_versions[0];
+                      const est = ESTADO[p.estado];
+                      const swapTarget = dropTarget === "post:" + p.id && dragId != null && dragId !== p.id;
+                      return (
+                        <button key={p.id}
+                          draggable
+                          onDragStart={(e) => onCardDragStart(e, p.id)}
+                          onDragEnd={() => { setDragId(null); setDropTarget(null); }}
+                          onDragOver={(e) => { if (dragId != null && dragId !== p.id) { e.preventDefault(); e.stopPropagation(); setDropTarget("post:" + p.id); } }}
+                          onDrop={(e) => onCardDrop(e, p.id)}
+                          onClick={() => setSelectedPost(p)}
+                          style={{ display: "flex", gap: 5, alignItems: "center", width: "100%", textAlign: "left", background: swapTarget ? "#EFF6FF" : "#fff", border: `1px solid ${swapTarget ? "#1883FF" : "#EEF1F6"}`, borderLeft: `3px solid ${est.dot}`, borderRadius: 8, padding: 4, cursor: dragId != null ? "grabbing" : "grab", overflow: "hidden", opacity: dragId === p.id ? 0.4 : 1, transition: "opacity .12s" }}>
+                          {v?.imagenes?.[0]
+                            ? <img src={v.imagenes[0]} alt="" style={{ width: 30, height: 30, borderRadius: 6, objectFit: "cover", flexShrink: 0, display: "block" }} />
+                            : <div style={{ width: 30, height: 30, borderRadius: 6, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📝</div>}
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 600, color: "#475569", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                            {p.titulo_interno || v?.caption || "Sin título"}
                           </span>
-                          <RedLogo red_social={p.red_social} height={9} />
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3, flexWrap: "wrap" }}>
-                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, flexShrink: 0 }} />
-                          <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
-                          {!p.publicado && <span style={{ fontSize: 9, fontWeight: 800, color: "#854D0E", background: "#FEF9C3", padding: "1px 6px", borderRadius: 10 }}>Borrador</span>}
-                        </div>
-                        {v?.caption && <p style={{ margin: 0, fontSize: 11, color: "#64748B", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{v.caption}</p>}
-                        {commentCount > 0 && <p style={{ margin: "3px 0 0", fontSize: 10, color: "#94A3B8" }}>💬 {commentCount}</p>}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )
+                          {!p.publicado && <span title="Borrador" style={{ width: 6, height: 6, borderRadius: "50%", background: "#EAB308", flexShrink: 0 }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10 }}>
               {/* Day headers */}
