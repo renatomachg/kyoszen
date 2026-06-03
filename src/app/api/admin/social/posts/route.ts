@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   let query = sb
     .from("social_posts")
     .select(`
-      id, red_social, fecha_programada, estado, titulo_interno, created_at, updated_at,
+      id, red_social, fecha_programada, estado, titulo_interno, publicado, created_at, updated_at,
       social_post_versions!inner(id, version_num, caption, imagenes, nota_visual, es_activa, created_at),
       social_comments(id)
     `)
@@ -39,9 +39,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "fecha_programada y caption son requeridos" }, { status: 400 });
   }
 
+  // Bloqueo de fechas pasadas
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (fecha_programada < hoy) {
+    return NextResponse.json({ error: "No se puede programar una publicacion en una fecha pasada." }, { status: 400 });
+  }
+
   const { data: post, error: postErr } = await sb
     .from("social_posts")
-    .insert({ red_social: red_social ?? "facebook", fecha_programada, titulo_interno: titulo_interno ?? "" })
+    .insert({ red_social: red_social ?? "facebook", fecha_programada, titulo_interno: titulo_interno ?? "", publicado: false })
     .select()
     .single();
 

@@ -22,18 +22,19 @@ export async function GET(
   return NextResponse.json({ post, versions: versions ?? [], comments: comments ?? [] });
 }
 
-// PATCH — actualizar estado
+// PATCH — actualizar estado y/o visibilidad (publicado)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { estado } = await req.json();
+  const body = await req.json();
 
-  const { error } = await sb
-    .from("social_posts")
-    .update({ estado, updated_at: new Date().toISOString() })
-    .eq("id", id);
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (typeof body.estado === "string") patch.estado = body.estado;
+  if (typeof body.publicado === "boolean") patch.publicado = body.publicado;
+
+  const { error } = await sb.from("social_posts").update(patch).eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

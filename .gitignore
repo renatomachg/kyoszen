@@ -47,3 +47,6 @@ next-env.d.ts
 # VPS-only files (not tracked in git, managed on server directly)
 ecosystem.config.js
 deploy.sh
+
+# MCP local config (contiene token)
+.mcp.json

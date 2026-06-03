@@ -68,6 +68,47 @@ async function notificarRevisores(titulo: string) {
   }
 }
 
+// PUT — editar la version activa EN SU LUGAR (texto/imagenes/metadatos)
+// No crea version nueva, no cambia el estado y NO notifica al cliente.
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const body = await req.json();
+
+  // 1) actualizar la version activa (texto + imagenes)
+  const vPatch: Record<string, unknown> = {};
+  if (typeof body.caption === "string") vPatch.caption = body.caption;
+  if (Array.isArray(body.imagenes)) vPatch.imagenes = body.imagenes;
+  if (Object.keys(vPatch).length > 0) {
+    const { error: vErr } = await sb
+      .from("social_post_versions")
+      .update(vPatch)
+      .eq("post_id", id)
+      .eq("es_activa", true);
+    if (vErr) return NextResponse.json({ error: vErr.message }, { status: 500 });
+  }
+
+  // 2) actualizar metadatos del post (titulo, red, fecha)
+  const pPatch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (typeof body.titulo_interno === "string") pPatch.titulo_interno = body.titulo_interno;
+  if (typeof body.red_social === "string") pPatch.red_social = body.red_social;
+  if (typeof body.fecha_programada === "string" && body.fecha_programada) {
+    const hoy = new Date().toISOString().slice(0, 10);
+    // permite conservar una fecha ya pasada, pero no MOVER a una fecha pasada
+    const { data: actual } = await sb.from("social_posts").select("fecha_programada").eq("id", id).single();
+    if (body.fecha_programada < hoy && body.fecha_programada !== actual?.fecha_programada) {
+      return NextResponse.json({ error: "No se puede mover la publicacion a una fecha pasada." }, { status: 400 });
+    }
+    pPatch.fecha_programada = body.fecha_programada;
+  }
+  const { error: pErr } = await sb.from("social_posts").update(pPatch).eq("id", id);
+  if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
+}
+
 // POST — subir nueva versión corregida
 export async function POST(
   req: NextRequest,

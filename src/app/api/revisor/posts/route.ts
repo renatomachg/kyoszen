@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
       social_post_versions(id, version_num, caption, imagenes, es_activa, created_at),
       social_comments(id, autor_nombre, autor_rol, contenido, created_at)
     `)
+    .eq("publicado", true) // el cliente SOLO ve las publicaciones que el admin ya publicó
     .order("fecha_programada");
 
   if (desde) query = query.gte("fecha_programada", desde);

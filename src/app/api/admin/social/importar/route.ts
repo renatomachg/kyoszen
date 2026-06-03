@@ -172,6 +172,7 @@ export async function POST(req: NextRequest) {
     let creadas = 0;
     let omitidas = 0;
     const errores: string[] = [];
+    const hoy = new Date().toISOString().slice(0, 10);
 
     // Doble seguridad: re-verificar contra lo que ya existe en el calendario
     const fechas = [...new Set(piezas.map((p) => p.fecha).filter(Boolean))];
@@ -183,6 +184,8 @@ export async function POST(req: NextRequest) {
 
     for (const p of piezas) {
       const clave = `${p.fecha}|${p.red_social || "facebook"}`;
+      // Bloqueo de fechas pasadas: no se crean publicaciones con fecha anterior a hoy
+      if (p.fecha && p.fecha < hoy) { omitidas++; continue; }
       // Si ya hay una publicación ese día en esa red, se respeta lo existente
       if (setExist.has(clave)) { omitidas++; continue; }
 
@@ -193,6 +196,7 @@ export async function POST(req: NextRequest) {
             red_social: p.red_social || "facebook",
             fecha_programada: p.fecha,
             titulo_interno: p.titulo_interno || "",
+            publicado: false, // nace como borrador, solo el admin lo ve hasta publicar
           })
           .select()
           .single();

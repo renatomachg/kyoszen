@@ -22,6 +22,7 @@ interface Post {
   fecha_programada: string;
   estado: "pendiente" | "aprobado" | "cambios";
   titulo_interno: string;
+  publicado: boolean;
   social_post_versions: Version[];
   social_comments: { id: number }[];
 }
@@ -38,6 +39,8 @@ interface ImportPieza {
   caption: string;
   nota_visual: string;
   ya_existe?: boolean;
+  fecha_pasada?: boolean;
+  seleccionada?: boolean;
 }
 
 /* ─── Helpers ────────────────────────────────────────── */
@@ -99,6 +102,10 @@ function PostModal({
   postId,
   existingCaption,
   existingImages,
+  editMode,
+  existingTitulo,
+  existingFecha,
+  existingRed,
 }: {
   onClose: () => void;
   onSaved: () => void;
@@ -106,16 +113,25 @@ function PostModal({
   postId?: number;
   existingCaption?: string;
   existingImages?: string[];
+  editMode?: boolean;          // editar la version activa en su lugar (no crea version ni manda correo)
+  existingTitulo?: string;
+  existingFecha?: string;
+  existingRed?: string;
 }) {
   const isNew = !postId;
+  const hoy = new Date().toISOString().slice(0, 10);
   const [caption, setCaption] = useState(existingCaption ?? "");
-  const [fecha, setFecha] = useState(defaultDate ?? new Date().toISOString().slice(0, 10));
-  const [titulo, setTitulo] = useState("");
-  const [redSocial, setRedSocial] = useState("facebook");
+  const [fecha, setFecha] = useState(existingFecha ?? defaultDate ?? hoy);
+  const [titulo, setTitulo] = useState(existingTitulo ?? "");
+  const [redSocial, setRedSocial] = useState(existingRed ?? "facebook");
   const [images, setImages] = useState<string[]>(existingImages ?? []);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // muestra titulo/fecha/red al crear o al editar; en correccion (nueva version) solo texto+imagen
+  const mostrarMeta = isNew || editMode;
+  // bloquea fecha pasada al crear, o al editar solo si se MUEVE a una fecha pasada distinta de la original
+  const fechaPasada = (isNew && fecha < hoy) || (!!editMode && fecha < hoy && fecha !== (existingFecha ?? ""));
 
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -130,12 +146,20 @@ function PostModal({
 
   const save = async () => {
     if (!caption.trim()) return;
+    if (fechaPasada) { alert("No puedes programar una publicacion en una fecha pasada. Elige hoy o un dia futuro."); return; }
     setSaving(true);
     if (isNew) {
       await fetch("/api/admin/social/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fecha_programada: fecha, caption, imagenes: images, titulo_interno: titulo, red_social: redSocial }),
+      });
+    } else if (editMode) {
+      // edicion en su lugar: actualiza la version activa + metadatos, sin crear version ni notificar al cliente
+      await fetch(`/api/admin/social/posts/${postId}/versions`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption, imagenes: images, titulo_interno: titulo, red_social: redSocial, fecha_programada: fecha }),
       });
     } else {
       await fetch(`/api/admin/social/posts/${postId}/versions`, {
@@ -154,13 +178,13 @@ function PostModal({
       <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 560, maxHeight: "90vh", overflow: "auto", padding: 28 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: "#042E7B" }}>
-            {isNew ? "Nueva publicación" : `Subir corrección (versión ${(existingCaption ? 2 : 1) + 1})`}
+            {isNew ? "Nueva publicación" : editMode ? "Editar publicación" : `Subir corrección (versión ${(existingCaption ? 2 : 1) + 1})`}
           </h3>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#94A3B8" }}>×</button>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {isNew && (
+          {mostrarMeta && (
             <>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#042E7B", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 6 }}>Título interno (opcional)</label>
@@ -170,8 +194,9 @@ function PostModal({
               <div style={{ display: "flex", gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "#042E7B", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 6 }}>Fecha programada</label>
-                  <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
-                    style={{ width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "9px 12px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                  <input type="date" value={fecha} min={isNew ? hoy : undefined} onChange={(e) => setFecha(e.target.value)}
+                    style={{ width: "100%", border: `1.5px solid ${fechaPasada ? "#EF4444" : "#E2E8F0"}`, borderRadius: 10, padding: "9px 12px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                  {fechaPasada && <p style={{ margin: "5px 0 0", fontSize: 11, color: "#EF4444", fontWeight: 600 }}>Fecha pasada — elige hoy o un dia futuro.</p>}
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "#042E7B", textTransform: "uppercase", letterSpacing: ".5px", display: "block", marginBottom: 6 }}>Red social</label>
@@ -225,9 +250,9 @@ function PostModal({
 
         <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
           <button onClick={onClose} style={{ flex: 1, padding: "11px 0", borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 13, fontWeight: 700, color: "#64748B", cursor: "pointer" }}>Cancelar</button>
-          <button onClick={save} disabled={!caption.trim() || saving}
-            style={{ flex: 2, padding: "11px 0", borderRadius: 12, border: "none", background: "#042E7B", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: !caption.trim() || saving ? 0.5 : 1 }}>
-            {saving ? "Guardando..." : isNew ? "Crear publicación" : "Subir nueva versión"}
+          <button onClick={save} disabled={!caption.trim() || saving || fechaPasada}
+            style={{ flex: 2, padding: "11px 0", borderRadius: 12, border: "none", background: "#042E7B", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: !caption.trim() || saving || fechaPasada ? 0.5 : 1 }}>
+            {saving ? "Guardando..." : isNew ? "Crear publicación" : editMode ? "Guardar cambios" : "Subir nueva versión"}
           </button>
         </div>
       </div>
@@ -252,11 +277,31 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
     fetch(`/api/revisor/posts/${post.id}/comments`).then((r) => r.json()).then(setComments);
   }, [post.id]);
 
+  const [publicado, setPublicado] = useState(post.publicado);
+  const [togglingPub, setTogglingPub] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+
   const deletePost = async () => {
     if (!confirm("¿Eliminar esta publicación y todo su historial?")) return;
     await fetch(`/api/admin/social/posts/${post.id}`, { method: "DELETE" });
     onUpdated();
     onClose();
+  };
+
+  const togglePublicado = async () => {
+    const sinImagen = (active?.imagenes?.length ?? 0) === 0;
+    if (!publicado && sinImagen) {
+      if (!confirm("Esta publicación no tiene imagen todavía. ¿Aun así quieres mostrarla al cliente?")) return;
+    }
+    setTogglingPub(true);
+    await fetch(`/api/admin/social/posts/${post.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicado: !publicado }),
+    });
+    setPublicado(!publicado);
+    setTogglingPub(false);
+    onUpdated();
   };
 
   const est = ESTADO[post.estado];
@@ -275,7 +320,12 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
                 : <RedLogo red_social={post.red_social} height={12} />}
               <span style={{ color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 700, letterSpacing: ".3px" }}>{post.fecha_programada}</span>
             </div>
-            <p style={{ margin: 0, color: "#fff", fontWeight: 900, fontSize: 16 }}>{post.titulo_interno || "Sin título interno"}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <p style={{ margin: 0, color: "#fff", fontWeight: 900, fontSize: 16 }}>{post.titulo_interno || "Sin título interno"}</p>
+              <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 20, background: publicado ? "rgba(34,197,94,.2)" : "rgba(255,255,255,.15)", color: publicado ? "#86EFAC" : "rgba(255,255,255,.7)" }}>
+                {publicado ? "● Visible para el cliente" : "● Borrador (solo tú)"}
+              </span>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {post.estado === "cambios" && (
@@ -284,6 +334,14 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
                 + Nueva versión
               </button>
             )}
+            <button onClick={() => setShowEdit(true)}
+              style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 10, padding: "7px 14px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer" }}>
+              ✏️ Editar
+            </button>
+            <button onClick={togglePublicado} disabled={togglingPub}
+              style={{ background: publicado ? "rgba(255,255,255,.15)" : "#22C55E", border: "none", borderRadius: 10, padding: "7px 14px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: togglingPub ? 0.6 : 1 }}>
+              {togglingPub ? "..." : publicado ? "Ocultar al cliente" : "📤 Publicar al cliente"}
+            </button>
             <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 10, width: 34, height: 34, color: "#fff", fontSize: 18, cursor: "pointer" }}>×</button>
           </div>
         </div>
@@ -395,6 +453,20 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
         <PostModal postId={post.id} existingCaption={active.caption} existingImages={[]}
           onClose={() => setShowNewVersion(false)} onSaved={() => { onUpdated(); onClose(); }} />
       )}
+
+      {showEdit && active && (
+        <PostModal
+          postId={post.id}
+          editMode
+          existingCaption={active.caption}
+          existingImages={active.imagenes ?? []}
+          existingTitulo={post.titulo_interno ?? ""}
+          existingFecha={post.fecha_programada}
+          existingRed={post.red_social}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => { onUpdated(); onClose(); }}
+        />
+      )}
     </div>
   );
 }
@@ -481,7 +553,13 @@ export default function RedesSocialesPage() {
       });
       const data = await res.json();
       if (!res.ok) { setImportMsg(data.error ?? "Error al analizar."); setImportLoading(false); return; }
-      setImportPiezas(data.piezas);
+      const hoy = new Date().toISOString().slice(0, 10);
+      const marcadas: ImportPieza[] = (data.piezas as ImportPieza[]).map((p) => {
+        const fecha_pasada = !!p.fecha && p.fecha < hoy;
+        // se selecciona por defecto solo lo creable (no existente, no pasado)
+        return { ...p, fecha_pasada, seleccionada: !p.ya_existe && !fecha_pasada };
+      });
+      setImportPiezas(marcadas);
     } catch {
       setImportMsg("Error de conexión al analizar el plan.");
     }
@@ -490,8 +568,9 @@ export default function RedesSocialesPage() {
 
   const crearPiezas = async () => {
     if (!importPiezas) return;
-    const nuevas = importPiezas.filter(p => !p.ya_existe);
-    if (nuevas.length === 0) { setImportMsg("No hay publicaciones nuevas para crear."); return; }
+    // solo las que el admin dejo seleccionadas, que no existan y que no sean fecha pasada
+    const nuevas = importPiezas.filter(p => p.seleccionada && !p.ya_existe && !p.fecha_pasada);
+    if (nuevas.length === 0) { setImportMsg("No hay publicaciones seleccionadas para crear."); return; }
     setImportCreando(true);
     setImportMsg("");
     try {
@@ -513,8 +592,12 @@ export default function RedesSocialesPage() {
     setImportCreando(false);
   };
 
-  const eliminarPieza = (i: number) => {
-    setImportPiezas(prev => prev ? prev.filter((_, j) => j !== i) : prev);
+  const togglePieza = (i: number) => {
+    setImportPiezas(prev => prev ? prev.map((p, j) => j === i ? { ...p, seleccionada: !p.seleccionada } : p) : prev);
+  };
+
+  const setTodasSeleccion = (valor: boolean) => {
+    setImportPiezas(prev => prev ? prev.map(p => (p.ya_existe || p.fecha_pasada) ? p : { ...p, seleccionada: valor }) : prev);
   };
 
   const saveConfig = async () => {
@@ -634,8 +717,11 @@ export default function RedesSocialesPage() {
             <>
               {/* Preview de piezas detectadas */}
               {(() => {
-                const nuevasCount = importPiezas.filter(p => !p.ya_existe).length;
-                const existenCount = importPiezas.length - nuevasCount;
+                const creables = importPiezas.filter(p => !p.ya_existe && !p.fecha_pasada);
+                const seleccionadasCount = creables.filter(p => p.seleccionada).length;
+                const existenCount = importPiezas.filter(p => p.ya_existe).length;
+                const pasadasCount = importPiezas.filter(p => p.fecha_pasada && !p.ya_existe).length;
+                const findeCount = creables.filter(p => p.fecha && [0, 6].includes(new Date(p.fecha + "T12:00:00").getDay())).length;
                 return (
                   <>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
@@ -644,8 +730,10 @@ export default function RedesSocialesPage() {
                           {importPiezas.length} publicaciones detectadas
                         </p>
                         <p style={{ margin: 0, fontSize: 12, color: "#64748B" }}>
-                          <strong style={{ color: "#166534" }}>{nuevasCount} nuevas</strong>
-                          {existenCount > 0 && <> · <strong style={{ color: "#94A3B8" }}>{existenCount} ya en el calendario (se respetan)</strong></>}
+                          <strong style={{ color: "#166534" }}>{seleccionadasCount} seleccionadas</strong> de {creables.length} disponibles
+                          {existenCount > 0 && <> · <strong style={{ color: "#94A3B8" }}>{existenCount} ya en el calendario</strong></>}
+                          {pasadasCount > 0 && <> · <strong style={{ color: "#DC2626" }}>{pasadasCount} con fecha pasada (bloqueadas)</strong></>}
+                          {findeCount > 0 && <> · <strong style={{ color: "#B45309" }}>{findeCount} en fin de semana</strong></>}
                         </p>
                       </div>
                       <button onClick={() => { setImportPiezas(null); setImportMsg(""); }}
@@ -654,35 +742,56 @@ export default function RedesSocialesPage() {
                       </button>
                     </div>
 
+                    {creables.length > 0 && (
+                      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                        <button onClick={() => setTodasSeleccion(true)}
+                          style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#1E40AF", cursor: "pointer" }}>
+                          ✓ Seleccionar todas
+                        </button>
+                        <button onClick={() => setTodasSeleccion(false)}
+                          style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#64748B", cursor: "pointer" }}>
+                          Quitar todas
+                        </button>
+                      </div>
+                    )}
+
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, maxHeight: 460, overflowY: "auto" }}>
-                      {importPiezas.map((p, i) => (
-                        <div key={i} style={{ background: p.ya_existe ? "#F8FAFC" : "#fff", border: "1.5px solid #E2E8F0", borderRadius: 12, padding: "12px 14px", display: "flex", gap: 12, alignItems: "flex-start", opacity: p.ya_existe ? 0.65 : 1 }}>
+                      {importPiezas.map((p, i) => {
+                        const bloqueada = p.ya_existe || p.fecha_pasada;
+                        const activa = p.seleccionada && !bloqueada;
+                        const finde = !!p.fecha && !bloqueada && [0, 6].includes(new Date(p.fecha + "T12:00:00").getDay());
+                        return (
+                        <div key={i} onClick={() => !bloqueada && togglePieza(i)}
+                          style={{ background: bloqueada ? "#F8FAFC" : activa ? "#fff" : "#FAFBFC", border: `1.5px solid ${activa ? "#93C5FD" : "#E2E8F0"}`, borderRadius: 12, padding: "12px 14px", display: "flex", gap: 12, alignItems: "flex-start", opacity: bloqueada ? 0.6 : activa ? 1 : 0.7, cursor: bloqueada ? "default" : "pointer", transition: "all .12s" }}>
+                          <div style={{ flexShrink: 0, paddingTop: 1 }}>
+                            <input type="checkbox" checked={activa} disabled={bloqueada} readOnly
+                              style={{ width: 17, height: 17, accentColor: "#042E7B", cursor: bloqueada ? "not-allowed" : "pointer" }} />
+                          </div>
                           <div style={{ flexShrink: 0, textAlign: "center", minWidth: 54 }}>
-                            <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "#042E7B" }}>
+                            <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: p.fecha_pasada ? "#DC2626" : "#042E7B" }}>
                               {p.fecha ? new Date(p.fecha + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "—"}
                             </p>
                             <span style={{ display: "inline-flex", justifyContent: "center", marginTop: 4 }}><RedLogo red_social={p.red_social} height={9} /></span>
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
                               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1E293B" }}>{p.titulo_interno || "Sin título"}</p>
                               {p.ya_existe && <span style={{ fontSize: 10, fontWeight: 800, color: "#64748B", background: "#E2E8F0", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}>✓ Ya en calendario</span>}
+                              {p.fecha_pasada && !p.ya_existe && <span style={{ fontSize: 10, fontWeight: 800, color: "#DC2626", background: "#FEE2E2", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}>✕ Fecha pasada</span>}
+                              {finde && <span title="Cae en fin de semana — mejor entre semana" style={{ fontSize: 10, fontWeight: 800, color: "#B45309", background: "#FEF3C7", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}>⚠ Fin de semana</span>}
                             </div>
                             <p style={{ margin: 0, fontSize: 11.5, color: "#64748B", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.45 }}>{p.caption}</p>
                             <span style={{ display: "inline-block", marginTop: 5, fontSize: 10, fontWeight: 700, color: "#64748B", background: "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{p.formato}</span>
                           </div>
-                          {!p.ya_existe && (
-                            <button onClick={() => eliminarPieza(i)} title="Quitar esta pieza"
-                              style={{ background: "none", border: "none", color: "#CBD5E1", cursor: "pointer", fontSize: 18, flexShrink: 0, lineHeight: 1 }}>×</button>
-                          )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <button onClick={crearPiezas} disabled={importCreando || nuevasCount === 0}
-                        style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importCreando || nuevasCount === 0 ? 0.5 : 1 }}>
-                        {importCreando ? "Creando publicaciones..." : `Crear ${nuevasCount} publicaciones nuevas`}
+                      <button onClick={crearPiezas} disabled={importCreando || seleccionadasCount === 0}
+                        style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importCreando || seleccionadasCount === 0 ? 0.5 : 1 }}>
+                        {importCreando ? "Creando publicaciones..." : `Crear ${seleccionadasCount} publicaciones seleccionadas`}
                       </button>
                       {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
                     </div>
@@ -762,9 +871,10 @@ export default function RedesSocialesPage() {
                           </span>
                           <RedLogo red_social={p.red_social} height={9} />
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3, flexWrap: "wrap" }}>
                           <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, flexShrink: 0 }} />
                           <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
+                          {!p.publicado && <span style={{ fontSize: 9, fontWeight: 800, color: "#854D0E", background: "#FEF9C3", padding: "1px 6px", borderRadius: 10 }}>Borrador</span>}
                         </div>
                         {v?.caption && <p style={{ margin: 0, fontSize: 11, color: "#64748B", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{v.caption}</p>}
                         {commentCount > 0 && <p style={{ margin: "3px 0 0", fontSize: 10, color: "#94A3B8" }}>💬 {commentCount}</p>}
@@ -810,6 +920,7 @@ export default function RedesSocialesPage() {
                               <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
                               <span style={{ marginLeft: "auto" }}><RedLogo red_social={p.red_social} height={8} /></span>
                             </div>
+                            {!p.publicado && <span style={{ fontSize: 9, fontWeight: 800, color: "#854D0E", background: "#FEF9C3", padding: "1px 6px", borderRadius: 10, display: "inline-block", marginBottom: 3 }}>Borrador</span>}
                             {v?.caption && <p style={{ margin: 0, fontSize: 10, color: "#64748B", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{v.caption}</p>}
                             {commentCount > 0 && <p style={{ margin: "3px 0 0", fontSize: 10, color: "#94A3B8" }}>💬 {commentCount}</p>}
                           </div>
