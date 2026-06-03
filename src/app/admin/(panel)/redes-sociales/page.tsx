@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent as RDragEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { getRedSocial, REDES_SOCIALES as REDES } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
@@ -529,6 +529,57 @@ export default function RedesSocialesPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // ── Arrastrar para mover / intercambiar publicaciones de dia ──
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null); // "dia:<iso>" o "post:<id>"
+  const hoyIso = isoDate(new Date());
+
+  const moverPostAFecha = async (postId: number, nuevaFecha: string) => {
+    const p = posts.find((x) => x.id === postId);
+    if (!p || p.fecha_programada === nuevaFecha) return;
+    if (nuevaFecha < hoyIso) { alert("No puedes mover una publicacion a una fecha pasada."); return; }
+    // update optimista
+    setPosts((prev) => prev.map((x) => (x.id === postId ? { ...x, fecha_programada: nuevaFecha } : x)));
+    await fetch(`/api/admin/social/posts/${postId}/versions`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fecha_programada: nuevaFecha }),
+    });
+    loadData();
+  };
+
+  const intercambiarFechas = async (aId: number, bId: number) => {
+    if (aId === bId) return;
+    const a = posts.find((x) => x.id === aId);
+    const b = posts.find((x) => x.id === bId);
+    if (!a || !b) return;
+    if (a.fecha_programada === b.fecha_programada) return;
+    if (a.fecha_programada < hoyIso || b.fecha_programada < hoyIso) { alert("No puedes intercambiar con una fecha pasada."); return; }
+    const fa = a.fecha_programada, fb = b.fecha_programada;
+    setPosts((prev) => prev.map((x) => (x.id === aId ? { ...x, fecha_programada: fb } : x.id === bId ? { ...x, fecha_programada: fa } : x)));
+    await Promise.all([
+      fetch(`/api/admin/social/posts/${aId}/versions`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fecha_programada: fb }) }),
+      fetch(`/api/admin/social/posts/${bId}/versions`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fecha_programada: fa }) }),
+    ]);
+    loadData();
+  };
+
+  const onCardDragStart = (e: RDragEvent, id: number) => {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", String(id)); } catch { /* noop */ }
+  };
+  const onCardDrop = (e: RDragEvent, targetId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragId != null) intercambiarFechas(dragId, targetId);
+    setDragId(null); setDropTarget(null);
+  };
+  const onDiaDrop = (e: RDragEvent, iso: string) => {
+    e.preventDefault();
+    if (dragId != null) moverPostAFecha(dragId, iso);
+    setDragId(null); setDropTarget(null);
+  };
+
   // ── Importador ──
   const handleImportFile = (file: File | null) => {
     if (!file) return;
@@ -839,6 +890,10 @@ export default function RedesSocialesPage() {
             </div>
           </div>
 
+          <p style={{ margin: "0 0 12px", fontSize: 12, color: "#94A3B8", display: "flex", alignItems: "center", gap: 6 }}>
+            <span>✋</span> Arrastra una publicación a otro día para moverla, o suéltala sobre otra para intercambiar fechas.
+          </p>
+
           {/* Calendar grid */}
           {loading ? (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 0" }}>
@@ -859,8 +914,14 @@ export default function RedesSocialesPage() {
                   const est = ESTADO[p.estado];
                   const commentCount = p.social_comments?.length ?? 0;
                   return (
-                    <button key={p.id} onClick={() => setSelectedPost(p)}
-                      style={{ background: "#fff", border: `1.5px solid ${p.estado === "cambios" ? "#FCA5A5" : p.estado === "aprobado" ? "#86EFAC" : "#E2E8F0"}`, borderRadius: 14, padding: 0, cursor: "pointer", overflow: "hidden", textAlign: "left", width: "100%" }}>
+                    <button key={p.id}
+                      draggable
+                      onDragStart={(e) => onCardDragStart(e, p.id)}
+                      onDragEnd={() => { setDragId(null); setDropTarget(null); }}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (dragId != null && dragId !== p.id) setDropTarget("post:" + p.id); }}
+                      onDrop={(e) => onCardDrop(e, p.id)}
+                      onClick={() => setSelectedPost(p)}
+                      style={{ background: "#fff", border: `1.5px solid ${dropTarget === "post:" + p.id && dragId != null && dragId !== p.id ? "#1883FF" : p.estado === "cambios" ? "#FCA5A5" : p.estado === "aprobado" ? "#86EFAC" : "#E2E8F0"}`, borderRadius: 14, padding: 0, cursor: dragId != null ? "grabbing" : "grab", overflow: "hidden", textAlign: "left", width: "100%", opacity: dragId === p.id ? 0.4 : 1, transition: "opacity .12s" }}>
                       {v?.imagenes?.[0]
                         ? <img src={v.imagenes[0]} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
                         : <div style={{ width: "100%", aspectRatio: "1/1", background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>📝</div>}
@@ -901,16 +962,27 @@ export default function RedesSocialesPage() {
               {/* Day columns */}
               {days.map((d, i) => {
                 const dayPosts = postsByDay(d);
-                const isToday = isoDate(d) === isoDate(new Date());
+                const diaIso = isoDate(d);
+                const isToday = diaIso === isoDate(new Date());
+                const dropAqui = dropTarget === "dia:" + diaIso && dragId != null;
                 return (
-                  <div key={i} style={{ minHeight: 180, background: isToday ? "#EFF6FF" : "#F8FAFC", borderRadius: 14, border: `1.5px solid ${isToday ? "#BFDBFE" : "#E2E8F0"}`, padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div key={i}
+                    onDragOver={(e) => { if (dragId != null) { e.preventDefault(); setDropTarget("dia:" + diaIso); } }}
+                    onDrop={(e) => onDiaDrop(e, diaIso)}
+                    style={{ minHeight: 180, background: dropAqui ? "#DBEAFE" : isToday ? "#EFF6FF" : "#F8FAFC", borderRadius: 14, border: `1.5px solid ${dropAqui ? "#1883FF" : isToday ? "#BFDBFE" : "#E2E8F0"}`, padding: 8, display: "flex", flexDirection: "column", gap: 6, transition: "background .12s, border-color .12s" }}>
                     {dayPosts.map((p) => {
                       const v = p.social_post_versions.find((v) => v.es_activa) ?? p.social_post_versions[0];
                       const est = ESTADO[p.estado];
                       const commentCount = p.social_comments?.length ?? 0;
                       return (
-                        <button key={p.id} onClick={() => setSelectedPost(p)}
-                          style={{ background: "#fff", border: `1.5px solid ${p.estado === "cambios" ? "#FCA5A5" : p.estado === "aprobado" ? "#86EFAC" : "#E2E8F0"}`, borderRadius: 10, padding: 0, cursor: "pointer", overflow: "hidden", textAlign: "left", width: "100%" }}>
+                        <button key={p.id}
+                          draggable
+                          onDragStart={(e) => onCardDragStart(e, p.id)}
+                          onDragEnd={() => { setDragId(null); setDropTarget(null); }}
+                          onDragOver={(e) => { if (dragId != null && dragId !== p.id) { e.preventDefault(); e.stopPropagation(); setDropTarget("post:" + p.id); } }}
+                          onDrop={(e) => onCardDrop(e, p.id)}
+                          onClick={() => setSelectedPost(p)}
+                          style={{ background: "#fff", border: `1.5px solid ${dropTarget === "post:" + p.id && dragId != null && dragId !== p.id ? "#1883FF" : p.estado === "cambios" ? "#FCA5A5" : p.estado === "aprobado" ? "#86EFAC" : "#E2E8F0"}`, borderRadius: 10, padding: 0, cursor: dragId != null ? "grabbing" : "grab", overflow: "hidden", textAlign: "left", width: "100%", opacity: dragId === p.id ? 0.4 : 1, transition: "opacity .12s" }}>
                           {v?.imagenes?.[0] && (
                             <img src={v.imagenes[0]} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
                           )}
