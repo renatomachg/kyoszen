@@ -1,28 +1,15 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-05-26 09:06 UTC
+**Fecha:** 2026-06-05 14:06 UTC
 
-| Pagina | URL | HTTP | Tiempo | Estado |
-|--------|-----|------|--------|--------|
-| Home | / | 200 | 0.00s | ✅ OK |
-| Vacantes | /vacantes | 200 | 0.00s | ✅ OK |
-| Cursos | /cursos | 200 | 0.00s | ✅ OK |
-| Nosotros | /nosotros | 200 | 0.00s | ✅ OK |
-| Contacto | /contacto | 200 | 0.00s | ✅ OK |
-| Servicios | /servicios | 200 | 0.00s | ✅ OK |
-| Blog | /blog | 200 | 0.00s | ✅ OK |
+| Página | URL | Estado |
+|--------|-----|--------|
+| Home | / | ❌ CAÍDA |
+| Vacantes | /vacantes | ❌ CAÍDA |
+| Cursos | /cursos | ❌ CAÍDA |
+| Nosotros | /nosotros | ❌ CAÍDA |
+| Contacto | /contacto | ❌ CAÍDA |
+| Servicios | /servicios | ❌ CAÍDA |
 
-## Proceso PM2
+**Resumen:** 0/6 páginas operando correctamente.
 
-| Campo | Valor |
-|-------|-------|
-| Estado | online |
-| Uptime | 2h |
-| Reinicios totales | 125 |
-| Memoria | 69.7MB |
-
-## Resumen
-
-- **Paginas OK:** 7 / 7
-- **Advertencias (404):** 0
-- **Errores:** 0
-- **Estado general:** ✅ TODO OK
+> ⚠️ ALERTA CRÍTICA: Todas las páginas de `kyoszen.vercel.app` devuelven HTTP 403 (Forbidden). El dominio de Vercel no está accesible — esto es esperado ya que el deploy de producción fue migrado exclusivamente al VPS Hostinger (`kyoszen.com`). Si el monitoreo debe apuntar al sitio en producción real, actualizar las URLs a `https://kyoszen.com`.
