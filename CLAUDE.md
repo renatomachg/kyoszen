@@ -377,7 +377,7 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-06-03 — Continuacion. En produccion:
+2026-06-05 — Continuacion. En produccion:
 - **Comparador de versiones** en revisor y admin: efecto doble tarjeta + badge "Nueva propuesta" en el grid, toggle "Ver como estaba antes" en el modal. Nueva version ya no arrastra la imagen anterior.
 - **Notificacion al cliente** al subir correccion: correo "ya corregimos tu publicacion" a `social_reviewers` activos (Rosy, Monse). Hector inactivo (era prueba).
 - **Panel de Analisis Fase 1** (informe mensual de redes): admin genera con IA + datos reales del sitio y publica; cliente lo ve en pestaña "Analisis" del revisor (diseño editorial de consultoria, responsivo). Control borrador/publicado. Fuente intercambiable para Meta (Fase 2 pendiente).
