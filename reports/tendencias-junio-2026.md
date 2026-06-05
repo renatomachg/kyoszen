@@ -1,6 +1,6 @@
 # 📊 REPORTE DE TENDENCIAS KYOSZEN — JUNIO 2026
 
-**Generado:** 3 de junio de 2026 · **Actualizado:** 4 de junio de 2026  
+**Generado:** 3 de junio de 2026 · **Actualizado:** 5 de junio de 2026  
 **Preparado por:** Trends Analyst — ciclo mensual automático  
 **Para:** Content Strategist · equipo de producción de contenido
 
@@ -174,6 +174,21 @@ Junio 2026 está dominado por un evento sin precedente: el inicio de la Copa Mun
 - **Contexto:** En TikTok México existe un ciclo constante de memes sobre la frustración del proceso de cambio de trabajo: entrevistas que no dan respuesta, procesos largos, promesas incumplidas. Este dolor es real para candidatos y tema frecuente.
 - **Ángulo para Kyoszen:** Entrar a la conversación con empatía y credibilidad: "Sabemos que los procesos de selección a veces se sienten así... por eso en Kyoszen respondemos en menos de 48 horas." Tono empático, no corporativo.
 
+### 8. "Job hugging" — los empleados que se aferran a su trabajo (nueva tendencia 2026)
+
+- **Contexto:** El "job hugging" es la tendencia opuesta al quiet quitting: empleados que se aferran a sus puestos actuales no por lealtad sino por miedo a la incertidumbre económica. Randstad y Wellhub reportan que es un patrón emergente en México, donde la estabilidad supera a la ambición en un contexto de reforma laboral y ajustes de mercado.
+- **Ángulo para Kyoszen:** Dos ángulos posibles. Para candidatos: "¿Te quedas por miedo o por elección? Aquí hay oportunidades que valen el riesgo." Para empresas: "El job hugging reduce rotación, pero también puede frenar tu transformación — así lo gestionas sin perder productividad."
+
+### 9. "Beyond the CV" — contratar por potencial, no por historial
+
+- **Contexto:** La tendencia "Beyond the CV" se consolida en 2026 como nuevo estándar de selección en México: evaluar potencial de crecimiento y cultural fit en lugar de solo experiencia acumulada. Buk y Fortia reportan que las empresas que lo aplican retienen mejor a la Generación Z.
+- **Ángulo para Kyoszen:** Contenido de autoridad B2B: "¿Por qué tu proceso de selección sigue filtrando por años de experiencia cuando el mercado premia el potencial?" Posiciona a Kyoszen como consultora con metodología moderna de evaluación de talento.
+
+### 10. Inglés y bilingüismo — diferencial crítico en el mercado mundialista
+
+- **Contexto:** OCC reporta que más del 37% de perfiles buscados activamente en CDMX y Nuevo León para el Mundial requieren dominio del inglés, especialmente en hospitalidad, eventos, logística y atención al cliente. El turismo internacional dispara la demanda de personal bilingüe en niveles que el mercado no tiene cubiertos.
+- **Ángulo para Kyoszen:** Oportunidad de posicionamiento único: "El Mundial trae turistas — ¿tienes el talento bilingüe para atenderlos?" Dirigido a hoteles, restaurantes, empresas de eventos y retail en CDMX, Jalisco y Nuevo León.
+
 ---
 
 ## 📅 5. Fechas y Ganchos del Mes
@@ -211,4 +226,4 @@ Junio 2026 está dominado por un evento sin precedente: el inicio de la Copa Mun
 
 ---
 
-*Fuentes consultadas: INEGI ENOE 2026, IMSS datos de afiliación abril 2026, TikTok Next Report 2026 LATAM, Metricool TikTok Trends Junio 2026, Deloitte proyecciones mundialistas, OCC bolsa de trabajo México junio 2026, Merca20, El Heraldo de México, Infobae México, Bloomberg Línea, El Cronista, KPMG flash reforma laboral, DOF decreto reforma 40 horas (03/03/2026), Holland & Knight labor reform analysis, Justia México reforma constitucional, La Jornada (DOF 40 horas), calendariodemexico.com, La Razón de México (Dai Dai/Shakira), STPS programa Jóvenes Embajadores del Mundial.*
+*Fuentes consultadas: INEGI ENOE 2026, IMSS datos de afiliación abril 2026, TikTok Next Report 2026 LATAM, Metricool TikTok Trends Junio 2026, Deloitte proyecciones mundialistas, OCC bolsa de trabajo México junio 2026 (vacantes mundialistas y demanda de inglés), Merca20, El Heraldo de México, Infobae México, Bloomberg Línea, El Cronista, KPMG flash reforma laboral, DOF decreto reforma 40 horas (03/03/2026), Holland & Knight labor reform analysis, Justia México reforma constitucional, La Jornada (DOF 40 horas), calendariodemexico.com, La Razón de México (Dai Dai/Shakira), STPS programa Jóvenes Embajadores del Mundial, Expansión "El Mundial dispara vacantes en México" (04/06/2026), Randstad México tendencias 2026, Wellhub mercado laboral México 2026, Buk "job hugging" y Beyond the CV 2026, Fortia tendencias RRHH 2026, Zety "Gen Z y empleo vía TikTok" 2026.*
