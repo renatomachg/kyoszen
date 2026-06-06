@@ -1,15 +1,15 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-06-05 14:06 UTC
+**Fecha:** 2026-06-06 00:00 UTC
 
-| Página | URL | Estado |
-|--------|-----|--------|
-| Home | / | ❌ CAÍDA |
-| Vacantes | /vacantes | ❌ CAÍDA |
-| Cursos | /cursos | ❌ CAÍDA |
-| Nosotros | /nosotros | ❌ CAÍDA |
-| Contacto | /contacto | ❌ CAÍDA |
-| Servicios | /servicios | ❌ CAÍDA |
+| Página | URL | Estado | HTTP |
+|--------|-----|--------|------|
+| Home | / | ❌ CAÍDA | 403 |
+| Vacantes | /vacantes | ❌ CAÍDA | 403 |
+| Cursos | /cursos | ❌ CAÍDA | 403 |
+| Nosotros | /nosotros | ❌ CAÍDA | 403 |
+| Contacto | /contacto | ❌ CAÍDA | 403 |
+| Servicios | /servicios | ❌ CAÍDA | 403 |
 
 **Resumen:** 0/6 páginas operando correctamente.
 
-> ⚠️ ALERTA CRÍTICA: Todas las páginas de `kyoszen.vercel.app` devuelven HTTP 403 (Forbidden). El dominio de Vercel no está accesible — esto es esperado ya que el deploy de producción fue migrado exclusivamente al VPS Hostinger (`kyoszen.com`). Si el monitoreo debe apuntar al sitio en producción real, actualizar las URLs a `https://kyoszen.com`.
+> ⚠️ ALERTA CRÍTICA: El sitio en `kyoszen.vercel.app` devuelve HTTP 403 (Forbidden) en todas las páginas. El deploy de producción real está en el VPS Hostinger (`kyoszen.com` / 76.13.111.112) — Vercel fue descartado. El proyecto de Vercel parece estar protegido con contraseña o eliminado. Para monitoreo real del sitio en producción, actualizar las URLs a `https://kyoszen.com`.
