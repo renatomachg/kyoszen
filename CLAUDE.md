@@ -327,7 +327,7 @@ node scripts/render/renderer.js scripts/render/data/KYO-FB-001.json
 ### Layouts aprobados
 
 | ID | Template | Estilo | Uso |
-|----|----------|--------|-----|
+|----|----------|--------|---------|
 | D1 | facebook-post-d1.html | Navy · comillas gigantes · texto bold blanco | Marca empleadora, educativo |
 | D2 | facebook-post-d2.html | Blanco · tipografía 148px · foto diagonal | Presentación, servicios |
 | Vacante-A | (demo-vacante-recortada.png) | Navy · persona recortada · rombos | Vacantes urgentes |
@@ -377,7 +377,7 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-06-05 — Continuacion. En produccion:
+2026-06-07 — Continuacion. En produccion:
 - **Comparador de versiones** en revisor y admin: efecto doble tarjeta + badge "Nueva propuesta" en el grid, toggle "Ver como estaba antes" en el modal. Nueva version ya no arrastra la imagen anterior.
 - **Notificacion al cliente** al subir correccion: correo "ya corregimos tu publicacion" a `social_reviewers` activos (Rosy, Monse). Hector inactivo (era prueba).
 - **Panel de Analisis Fase 1** (informe mensual de redes): admin genera con IA + datos reales del sitio y publica; cliente lo ve en pestaña "Analisis" del revisor (diseño editorial de consultoria, responsivo). Control borrador/publicado. Fuente intercambiable para Meta (Fase 2 pendiente).

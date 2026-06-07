@@ -1,6 +1,6 @@
 # 📊 REPORTE DE TENDENCIAS KYOSZEN — JUNIO 2026
 
-**Generado:** 3 de junio de 2026 · **Actualizado:** 5 de junio de 2026  
+**Generado:** 3 de junio de 2026 · **Actualizado:** 7 de junio de 2026  
 **Preparado por:** Trends Analyst — ciclo mensual automático  
 **Para:** Content Strategist · equipo de producción de contenido
 
@@ -226,4 +226,25 @@ Junio 2026 está dominado por un evento sin precedente: el inicio de la Copa Mun
 
 ---
 
-*Fuentes consultadas: INEGI ENOE 2026, IMSS datos de afiliación abril 2026, TikTok Next Report 2026 LATAM, Metricool TikTok Trends Junio 2026, Deloitte proyecciones mundialistas, OCC bolsa de trabajo México junio 2026 (vacantes mundialistas y demanda de inglés), Merca20, El Heraldo de México, Infobae México, Bloomberg Línea, El Cronista, KPMG flash reforma laboral, DOF decreto reforma 40 horas (03/03/2026), Holland & Knight labor reform analysis, Justia México reforma constitucional, La Jornada (DOF 40 horas), calendariodemexico.com, La Razón de México (Dai Dai/Shakira), STPS programa Jóvenes Embajadores del Mundial, Expansión "El Mundial dispara vacantes en México" (04/06/2026), Randstad México tendencias 2026, Wellhub mercado laboral México 2026, Buk "job hugging" y Beyond the CV 2026, Fortia tendencias RRHH 2026, Zety "Gen Z y empleo vía TikTok" 2026.*
+---
+
+## Validacion y Actualizaciones — 7 de junio de 2026
+
+**Datos confirmados en busqueda web actualizada:**
+
+- **Mercado laboral:** OCC reporta 9,000+ vacantes activas en Talenteca a nivel nacional; 3,000+ en CDMX; Computrabajo lista 28,684 vacantes en CDMX. Cifras consistentes con proyecciones de junio.
+- **Burnout:** 92% de empleados mexicanos reporta sintomas de burnout en 2026 (Wellhub Workplace Wellness Panorama). Crisis masiva confirmada. Ansiedad y estres generan 6 de cada 10 consultas medicas laborales.
+- **Trabajo hibrido:** Modalidad hybrid ha bajado de 40% a 34% en 2025 (datos WTW). Regreso presencial confirmado. Tema "¿home office durante el Mundial 2026?" activo — ~19% de empresas lo contempla.
+- **IA en reclutamiento:** 22% de empresas en Mexico ya usan IA en procesos de seleccion (Experis). 73% de usuarios mexicanos abierto a interactuar con IA. Debate discriminacion + LFPDPPP vigente en junio.
+- **Reforma 40 horas:** Publicada en DOF 3 de marzo de 2026. Gradual: 46h (2027), 44h (2028), 42h (2029), 40h (2030). Conversacion actual en empresas es adaptacion operativa, no debate normativo.
+- **Salario minimo:** Confirmado aumento a $315.04/dia (+13% vs 2025).
+- **Informalidad:** 54.6% segun INEGI — contraste con baja tasa abierta de desempleo genera conversacion.
+- **Audios TikTok:** "Copines" (Alizée) en trend vigente de coreografia. "Dai Dai" (Shakira ft. Burna Boy) es himno oficial del Mundial 2026. #lockedin (820K pubs LATAM) + #joblife (240K+ pubs) con traccion real confirmada.
+- **Hashtags:** #vacantesmexico, #empleosmexico, #reclutamiento, #RRHH todos con engagement alto confirmado. #lockedin y #joblife en ventana de crecimiento.
+- **Fechas:** Copa Mundial inicia 11 de junio (confirmado). Dia del Padre cae domingo 21 de junio. Verano comienza 21 de junio. Marcha del Orgullo CDMX 27 de junio.
+
+**Estado del reporte:** Todos los hallazgos principales verificados con fuentes web actualizadas al 7 de junio de 2026. Reporte listo para uso del Content Strategist.
+
+---
+
+*Fuentes consultadas: INEGI ENOE 2026, IMSS datos de afiliacion abril 2026, TikTok Next Report 2026 LATAM, Metricool TikTok Trends Junio 2026, Deloitte proyecciones mundialistas, OCC bolsa de trabajo Mexico junio 2026 (vacantes mundialistas y demanda de ingles), Merca20, El Heraldo de Mexico, Infobae Mexico, Bloomberg Linea, El Cronista, KPMG flash reforma laboral, DOF decreto reforma 40 horas (03/03/2026), Holland & Knight labor reform analysis, Justia Mexico reforma constitucional, La Jornada (DOF 40 horas), calendariodemexico.com, La Razon de Mexico (Dai Dai/Shakira), STPS programa Jovenes Embajadores del Mundial, Expansion "El Mundial dispara vacantes en Mexico" (04/06/2026), Randstad Mexico tendencias 2026, Wellhub mercado laboral Mexico 2026, Wellhub burnout y estres laboral Mexico 2026, Wellhub bienestar 92%, Buk "job hugging" y Beyond the CV 2026, Fortia tendencias RRHH 2026, Zety "Gen Z y empleo via TikTok" 2026, WTW trabajo hibrido reduction 2026, Experis IA reclutamiento 22%, Kelly Services empleo y salarios Mexico abril 2026, Talenteca bolsa de trabajo CDMX junio 2026, Computrabajo vacantes CDMX, Top-Hashtags RRHH Instagram TikTok 2026, Cyberclick hashtags 2026, El Portavoz de Sonora "Mundial 2026 home office", Vive USA Mundial 2026 y home office Mexico, Marketing4Ecommerce tendencias TikTok Mexico 2026.*
