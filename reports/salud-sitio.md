@@ -1,14 +1,14 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-06-08 14:04 UTC
+**Fecha:** 2026-06-09 00:00 UTC
 
 | Página | URL | Estado |
 |--------|-----|--------|
-| Home | / | ❌ CAÍDA (403) |
-| Vacantes | /vacantes | ❌ CAÍDA (403) |
-| Cursos | /cursos | ❌ CAÍDA (403) |
-| Nosotros | /nosotros | ❌ CAÍDA (403) |
-| Contacto | /contacto | ❌ CAÍDA (403) |
-| Servicios | /servicios | ❌ CAÍDA (403) |
+| Home | https://kyoszen.vercel.app/ | ❌ CAÍDA (403) |
+| Vacantes | https://kyoszen.vercel.app/vacantes | ❌ CAÍDA (403) |
+| Cursos | https://kyoszen.vercel.app/cursos | ❌ CAÍDA (403) |
+| Nosotros | https://kyoszen.vercel.app/nosotros | ❌ CAÍDA (403) |
+| Contacto | https://kyoszen.vercel.app/contacto | ❌ CAÍDA (403) |
+| Servicios | https://kyoszen.vercel.app/servicios | ❌ CAÍDA (403) |
 
 **Resumen:** 0/6 páginas operando correctamente.
 
