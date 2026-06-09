@@ -1,34 +1,37 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-06-08
-**Cambios analizados:** `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`, `src/app/vacantes/page.tsx`, `src/app/vacantes/[id]/_content.tsx`, `src/components/sections/Hero.tsx`, `src/components/sections/Vacancies.tsx`, `src/components/layout/Footer.tsx`
+**Fecha:** 2026-06-09
+**Cambios analizados:** `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`, `src/app/vacantes/page.tsx`, `src/app/vacantes/[id]/_content.tsx`, `src/components/sections/Hero.tsx`, `src/components/sections/Vacancies.tsx`, `src/app/contacto/page.tsx`
 
 ---
 
 ## Cambios Recientes Detectados
 
-No hubo commits de código funcional en los últimos 2 días (solo reportes automáticos y actualizaciones de CLAUDE.md). Los bugs críticos escalados en los reportes del 06-06 y 07-06 siguen sin corrección. Este reporte agrega **8 hallazgos nuevos** no reportados antes y escala los 4 bugs críticos sin resolver.
+No hubo commits de código funcional en los últimos 2 días (solo reportes automáticos y actualización de CLAUDE.md). Los bugs críticos escalados en los reportes del 06-06, 07-06 y 08-06 siguen sin corrección. Este reporte agrega **7 hallazgos nuevos** y escala por 5ª vez los 4 bugs críticos sin resolver.
 
 ---
 
-## 🚨 Bugs críticos sin corrección — escalados (4ª vez)
+## 🚨 Bugs críticos sin corrección — escalados (5ª vez)
 
 Estos 4 bugs se detectaron originalmente el 2026-06-05. Cada día sin corregirlos afecta a candidatos reales que usan Kyo.
 
 ### [CRÍTICO-1] Kyo recomienda vacantes del JOBS.ts estático, no de Supabase
 **Archivo:** `src/lib/assistant/knowledge.ts:167`
-Candidatos reciben recomendaciones de vacantes que ya fueron cerradas por el admin. El fix requiere migrar `StaticKnowledgeProvider.listJobs` y `getJob` a queries directas a Supabase con caché de 60s (mismo patrón que `getStoredInstrucciones` en route.ts:8-32).
+Candidatos reciben recomendaciones de vacantes que ya fueron cerradas por el admin. El `StaticKnowledgeProvider` lee de `JOBS` hardcodeado en `src/lib/jobs.ts`, ignorando completamente la tabla `vacantes` de Supabase. Fix: migrar `listJobs()` y `getJob()` a queries directas con caché de 60s (mismo patrón que `getStoredInstrucciones` en `route.ts:8-32`).
 
 ### [CRÍTICO-2] Paso 6: Kyo navega a /contacto (formulario de empresas)
 **Archivo:** `src/lib/assistant/system-prompt.ts:61`
-"Navega a /contacto si acepta" envía al candidato al formulario de empresas. Fix: `navigate_to /vacantes/[id]` cuando hay vacante seleccionada; `/contacto` solo cuando no hay compatible (banco de talentos).
+"Navega a /contacto si acepta" envía al candidato al formulario de contacto de empresas. Cuando el candidato quiere aplicar, debe llegar a `navigate_to /vacantes/[id]`, no a /contacto. Fix: en el Paso 6, cambiar la instrucción a `navigate_to /vacantes/[id]` cuando hay vacante seleccionada; reservar /contacto solo para cuando no hay vacante compatible (banco de talentos).
 
 ### [ALTO-3] FAQs editadas en /admin/kyo no llegan al system prompt
 **Archivo:** `src/lib/assistant/knowledge.ts:99-105`
-`kyo_faqs` de Supabase existe pero nunca se consulta. El admin edita FAQs y Kyo sigue usando las 5 hardcodeadas.
+`kyo_faqs` de Supabase existe pero nunca se consulta. El admin edita FAQs y Kyo sigue usando las 5 hardcodeadas en `knowledge.ts`. Fix: en `getStoredInstrucciones()` o en `buildSystemPrompt()`, hacer una query a `kyo_faqs` y reemplazar el bloque `# FAQs` del prompt.
 
 ### [ALTO-4] Analytics guarda texto libre del candidato
 **Archivo:** `src/components/assistant/useChat.ts:81`
-`logEvent("kyo_mensaje", trimmed.slice(0, 300))` registra hasta 300 chars de texto libre. Fix de 1 línea: `logEvent("kyo_mensaje", String(messages.length));`
+`logEvent("kyo_mensaje", trimmed.slice(0, 300))` registra hasta 300 chars de texto libre. Fix de 1 línea:
+```ts
+logEvent("kyo_mensaje", String(messages.length));
+```
 
 ---
 
@@ -36,192 +39,213 @@ Candidatos reciben recomendaciones de vacantes que ya fueron cerradas por el adm
 
 ### Alta prioridad
 
-#### [NUEVO] Inconsistencia crítica de estadísticas entre Hero y Kyo
-**Archivos:** `src/components/sections/Hero.tsx:107,157,176` y `src/lib/assistant/knowledge.ts:77-83`
+#### [NUEVO-1] CTAs de aplicar enterradas en mobile — conversión crítica perdida
+**Archivo:** `src/app/vacantes/[id]/_content.tsx:166`
 
-El Hero muestra **"7000+ candidatos colocados"** y **"10+ Años exp."** en las tarjetas flotantes. Kyo tiene hardcodeado **"687+ Candidatos colocados"** y **"3+ Años en el mercado"**. Si un candidato pregunta a Kyo por las estadísticas de la empresa, recibe números que contradicen lo que acaba de leer en la página.
+El botón "Aplicar ahora" y el link de WhatsApp están en la columna derecha de un grid `lg:grid-cols-[1.6fr_1fr]`. En mobile y tablet (< 1024px), esa columna cae DESPUÉS de descripción, responsabilidades, requisitos y tags — fácilmente 4-5 pantallas de scroll hacia abajo. Un candidato impaciente en mobile puede abandonar sin ver los CTAs.
 
-**Fix inmediato:**
-1. `knowledge.ts:77-83` — actualizar los valores:
-```ts
-"Candidatos colocados": "7000+",
-"Años en el mercado": "10+",
-```
-2. A largo plazo, mover estas stats a `site_config` en Supabase para que solo exista una fuente de verdad.
-
----
-
-#### [NUEVO] Hero.tsx usa `next/image` — violación de regla de proyecto
-**Archivo:** `src/components/sections/Hero.tsx:6,122,131`
-
-`import Image from "next/image"` aparece en Hero a pesar de que CLAUDE.md establece explícitamente: *"No usar `next/image` — usar `<img>` nativo"*. En el VPS con `unoptimized: true` funciona, pero al actualizar Next.js o si alguien quita esa opción, rompe el build de producción.
-
-**Fix:**
+**Fix — añadir un CTA primario fijo al fondo en mobile:**
 ```tsx
-// Línea 122 — reemplazar:
-<Image src="/images/Hero2.jpg" alt="Trabajo operativo Kyoszen" fill className="object-cover" sizes="250px" />
-// Con:
-<img src="/images/Hero2.jpg" alt="Trabajo operativo Kyoszen" className="object-cover w-full h-full" />
-
-// Línea 131 — igual:
-<img src="/images/Hero.jpg" alt="Equipo profesional Kyoszen" className="object-cover w-full h-full" />
+{/* Añadir antes del cierre de la <section> principal, línea ~210 */}
+<div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border px-5 py-3 z-50 flex gap-3">
+  <button
+    type="button"
+    onClick={() => { setModalOpen(true); logEvent("vacante_aplicar_click", ...); }}
+    className="flex-1 bg-navy text-white rounded-full py-3 text-[14px] font-extrabold"
+  >
+    Aplicar ahora
+  </button>
+  <a
+    href="https://wa.link/5zv0ba"
+    className="bg-wa text-white rounded-full py-3 px-4 flex items-center justify-center"
+  >
+    <WhatsAppIcon size={18} />
+  </a>
+</div>
 ```
-Y eliminar el import de la línea 6.
+Añadir `pb-20 lg:pb-0` al contenedor de la sección para que el contenido no quede tapado.
 
 ---
 
-#### [NUEVO] Hero placeholder "¿Que puesto buscas?" — tilde faltante
-**Archivo:** `src/components/sections/Hero.tsx:81`
+#### [NUEVO-2] Historial de chat sin TTL — Kyo reanuda conversaciones de hace meses
+**Archivo:** `src/components/assistant/useChat.ts:24-33`
 
-El buscador principal del sitio tiene `placeholder="¿Que puesto buscas?"` — falta la tilde en "Qué". Es la barra de búsqueda más visible del sitio; el error tipográfico daña la percepción de profesionalismo.
+`loadHistory()` carga del localStorage sin ninguna verificación de antigüedad. Si un candidato visitó el sitio hace 3 meses, Kyo abre directamente en medio de esa conversación antigua (posiblemente con vacantes ya cerradas recomendadas). El candidato tiene que hacer click manualmente en "Nueva conversación" para empezar de cero.
 
-**Fix de 1 carácter:** `placeholder="¿Qué puesto buscas?"`
+**Fix — añadir TTL de 24 horas en `loadHistory()`:**
+```ts
+function loadHistory(): ChatMessage[] {
+  if (typeof window === "undefined") return [INITIAL_GREETING];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [INITIAL_GREETING];
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    if (parsed.length === 0) return [INITIAL_GREETING];
+    const lastTimestamp = parsed[parsed.length - 1].timestamp;
+    const stale = Date.now() - lastTimestamp > 24 * 60 * 60 * 1000; // 24h
+    if (stale) {
+      localStorage.removeItem(STORAGE_KEY);
+      return [INITIAL_GREETING];
+    }
+    return parsed;
+  } catch {
+    return [INITIAL_GREETING];
+  }
+}
+```
 
 ---
 
-#### [NUEVO] Vacancies.tsx también ordena por ID, no por fecha
-**Archivo:** `src/components/sections/Vacancies.tsx:29`
+#### [NUEVO-3] sessionId y chat history desincronizados — conversaciones fragmentadas en admin
+**Archivo:** `src/components/assistant/useChat.ts:45-53`
 
-```ts
-.order("id")
-```
-La sección de vacantes del homepage muestra las 4 vacantes más antiguas, no las más recientes. Una vacante nueva y urgente nunca aparece destacada.
+`sessionId` vive en `sessionStorage` (se borra al cerrar la pestaña), pero el historial vive en `localStorage` (persiste). Flujo del problema:
+1. Candidato chatea → sessionId = "abc123"
+2. Candidato cierra la pestaña
+3. Candidato regresa → historial cargado de localStorage, pero sessionId = "xyz789" (nuevo)
+4. En `/admin/kyo → Conversaciones`, el admin ve la misma conversación dividida en 2 sesiones distintas, sin poder reconstruir el flujo completo.
 
-**Fix:**
+**Fix — mover sessionId a localStorage (igual que el historial):**
 ```ts
-.order("created_at", { ascending: false })
+function getSessionId(): string {
+  if (typeof window === "undefined") return "ssr";
+  let sid = localStorage.getItem("kyo_session_id"); // cambio: localStorage
+  if (!sid) {
+    sid = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    localStorage.setItem("kyo_session_id", sid); // cambio: localStorage
+  }
+  return sid;
+}
 ```
-(Mismo fix que ya se reportó para `vacantes/page.tsx:70` — aplica igual a esta sección.)
+Nota: Al implementar el TTL de 24h ([NUEVO-2]), también limpiar `kyo_session_id` del localStorage cuando el historial expire, para crear una sesión nueva limpia.
 
 ---
 
 ### Media prioridad
 
-#### [NUEVO] Búsqueda de vacantes registra texto libre — problema de privacidad
-**Archivo:** `src/app/vacantes/page.tsx:78`
-
-```ts
-logEvent("busqueda_vacantes", q.slice(0, 200));
-```
-Un candidato que escribe su nombre o empresa en el buscador queda registrado en `site_eventos`. Mismo patrón que el bug ya reportado en `useChat.ts:81`.
-
-**Fix — registrar solo que hubo una búsqueda, no qué se buscó:**
-```ts
-logEvent("busqueda_vacantes", String(q.length > 0 ? "activa" : "limpia"));
-```
-O si se quieren métricas de términos, aplicar hash antes de guardar.
-
----
-
-#### [NUEVO] Hero depende de imágenes externas de terceros (pravatar.cc)
-**Archivo:** `src/components/sections/Hero.tsx:102`
+#### [NUEVO-4] Suspense sin fallback visible — página de vacantes en blanco al cargar
+**Archivo:** `src/app/vacantes/page.tsx:51`
 
 ```tsx
-src={`https://i.pravatar.cc/56?img=${i}`}
+<Suspense fallback={null}>
 ```
-Los 4 avatares del elemento "social proof" (+7000 candidatos colocados) se cargan de un CDN externo. Si pravatar.cc tiene downtime o bloquea por rate limit, el Hero muestra cuadros rotos. Además, son fotos de personas ficticias sin consentimiento implícito para uso comercial.
+Con `fallback={null}`, en conexiones lentas (o si el JS tarda en hidratarse), el usuario ve una página completamente en blanco excepto el navbar. No hay spinner, skeleton ni texto de carga.
 
-**Fix:** Descargar 4 fotos de stock genéricas a `/public/images/avatars/avatar-{1,2,3,4}.jpg` y reemplazar las URLs externas por paths locales.
-
----
-
-#### [NUEVO] Vacante detalle sin sección de "Otras vacantes"
-**Archivo:** `src/app/vacantes/[id]/_content.tsx` — al final del archivo, después de la línea 217
-
-Un candidato que visita el detalle de una vacante y decide que no le interesa no tiene camino directo a otras opciones. El único CTA visible es "Aplicar ahora" o WhatsApp — si no quiere aplicar, se va del sitio.
-
-**Fix — añadir al final del `<section>` de detalle, antes de cerrar el `max-w-5xl`:**
+**Fix — reemplazar con un fallback mínimo:**
 ```tsx
-const [relacionadas, setRelacionadas] = useState<Vacante[]>([]);
-useEffect(() => {
-  if (!job) return;
-  supabase.from("vacantes")
-    .select("id,titulo,empresa,categoria,ubicacion,contrato,badge,badge_class")
-    .eq("activa", true)
-    .eq("categoria", job.categoria)
-    .neq("id", job.id)
-    .limit(3)
-    .then(({ data }) => setRelacionadas((data as Vacante[]) ?? []));
-}, [job]);
-
-// En el JSX:
-{relacionadas.length > 0 && (
-  <div className="mt-12">
-    <h2 className="text-lg font-extrabold text-navy mb-4">Otras vacantes que podrían interesarte</h2>
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {relacionadas.map(v => (
-        <Link key={v.id} href={`/vacantes/${v.id}`} className="...tarjeta mínima...">
-          {v.titulo} — {v.empresa}
-        </Link>
-      ))}
-    </div>
+<Suspense fallback={
+  <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" />
   </div>
-)}
+}>
 ```
 
 ---
 
-#### [NUEVO] CLAUDE.md desactualizado — TikTok link ya no es "#"
-**Archivo:** CLAUDE.md (pendientes) y `src/components/layout/Footer.tsx:21`
+#### [NUEVO-5] Formulario de contacto — labels sin htmlFor, inputs sin id
+**Archivo:** `src/app/contacto/page.tsx:79-84, 100-103`
 
-El CLAUDE.md lista como tarea pendiente: *"TikTok — link en Footer es `href="#"`. Falta URL real del perfil."* Pero el Footer ya tiene el link real: `href: "https://www.tiktok.com/@kyoszen3"`. La tarea ya está completada y debería marcarse como `[x]` en CLAUDE.md para no confundir futuras sesiones.
+Los `<label>` no tienen `htmlFor` y los `<input>` no tienen `id`. Screen readers no pueden asociarlos. Esto es un problema de accesibilidad básica (WCAG 2.1 criterio 1.3.1) y es especialmente relevante en el checkbox del aviso de privacidad (línea 102), que requiere consentimiento informado.
 
-**Fix:** En CLAUDE.md, cambiar:
+**Fix — añadir `id` a cada input y `htmlFor` al label correspondiente:**
+```tsx
+// Nombre
+<label htmlFor="contact-name" className="...">Nombre</label>
+<input id="contact-name" type="text" ... />
+
+// Email
+<label htmlFor="contact-email" className="...">Correo electrónico</label>
+<input id="contact-email" type="email" ... />
+
+// Mensaje
+<label htmlFor="contact-message" className="...">Mensaje</label>
+<textarea id="contact-message" ... />
 ```
-- [ ] **TikTok** — link en Footer es `href="#"`. Falta URL real del perfil.
+
+---
+
+#### [NUEVO-6] Vacantes page — orden por `id` muestra las más antiguas primero
+**Archivo:** `src/app/vacantes/page.tsx:70` y `src/components/sections/Vacancies.tsx:29`
+
+Ambas queries usan `.order("id")` (ascendente por defecto), lo que muestra las vacantes más antiguas al frente. Una vacante nueva marcada como "Urgente" nunca aparece destacada en el homepage ni en la bolsa.
+
+**Fix en ambos archivos:**
+```ts
+.order("created_at", { ascending: false })
 ```
-Por:
+Requiere que la columna `created_at` exista en la tabla (debería existir por default en Supabase). Si no existe o no tiene valor, alternativa: `.order("id", { ascending: false })`.
+
+---
+
+#### [NUEVO-7] Analytics de interacción con vacante guarda JSON en campo de texto
+**Archivo:** `src/app/vacantes/[id]/_content.tsx:38, 189, 198`
+
+```ts
+logEvent("vacante_vista", JSON.stringify({ id: vacante.id, titulo: vacante.titulo }));
+logEvent("vacante_aplicar_click", JSON.stringify({ id: job.id, titulo: job.titulo }));
+logEvent("whatsapp_click", JSON.stringify({ origen: "vacante", titulo: job.titulo }));
 ```
-- [x] **TikTok** — link en Footer actualizado a https://www.tiktok.com/@kyoszen3
+
+El campo `valor` en `site_eventos` es TEXT. Guardar JSON serializado hace imposible consultar directamente con SQL (`WHERE valor = '...'` no funciona). El dashboard de analytics tiene que deserializar manualmente.
+
+**Fix — separar los datos como campos planos. Sugerencia de convención:**
+```ts
+logEvent("vacante_vista", `${vacante.id}`);           // solo el id
+logEvent("vacante_aplicar_click", `${job.id}`);       // solo el id
+logEvent("whatsapp_click", "vacante");                // origen fijo
 ```
+Si se necesita el título también, agregar una columna `meta JSONB` a `site_eventos` — JSONB permite indexar y consultar.
 
 ---
 
 ## Sugerencias para el Asistente Kyo
 
-### Mejoras al flujo de conversación (no repetidas de reportes anteriores)
+### Mejoras al flujo de conversación
 
-#### [NUEVO] Kyo no usa el nombre del candidato en el Paso 5
-**Archivo:** `src/lib/assistant/system-prompt.ts:44-51`
-
-El template del Paso 5 dice:
-```
-"Con base en lo que me comento, [nombre], estas vacantes se ajustan..."
-```
-Pero en el flujo real, Kyo a veces olvida usar el nombre porque la instrucción de "usar el nombre de forma natural" está en el Paso 0, lejos del Paso 5. El modelo puede perder ese hilo cuando el historial es largo.
-
-**Fix — reforzar en el Paso 5 explícitamente:**
-```
-## Paso 5 — RECOMENDACIÓN
-SIEMPRE abre este paso usando el nombre del candidato tal como lo dio en el Paso 0.
-Formato obligatorio: "Con base en lo que me comentó, [nombre], ..."
-```
-
----
-
-#### [NUEVO] `get_job_details` nunca se llama durante el flujo normal
-**Archivo:** `src/lib/assistant/tools.ts:49-57`
-
-La tool `get_job_details` existe pero el system prompt no la usa en ningún paso. En el Paso 5, Kyo usa el resumen del listado de vacantes del system prompt (que solo incluye `id, titulo, empresa, ubicacion, contrato, jornada, salario`). No llama `get_job_details` para mostrar descripción, responsabilidades o tags — que serían los argumentos más persuasivos para que el candidato aplique.
-
-**Fix — añadir en el Paso 5:**
-```
-Antes de mostrar las vacantes recomendadas, llama get_job_details
-para cada candidata y usa la descripcion corta y los 2-3 primeros
-requisitos para personalizar la explicacion de "por qué le aplica".
-```
-
----
-
-#### [NUEVO] Sin respaldo cuando el candidato escribe un mensaje muy largo
+#### [KYO-1] Kyo puede "olvidar" el nombre del candidato en conversaciones largas
 **Archivo:** `src/app/api/assistant/chat/route.ts:131`
 
-El historial se trunca a los últimos 20 mensajes (`body.messages.slice(-20)`). Pero no hay validación de longitud por mensaje individual. Si un candidato pega un CV completo (2,000+ palabras) en el chat, ese mensaje solo infla el context sin aportar valor, y puede hacer que el system prompt quede cortado por el límite de tokens.
+El historial se trunca a los últimos 20 mensajes. Si el candidato da su nombre en el mensaje 2 y el historial llega a 22+ mensajes, los primeros 2 se cortan y Kyo pierde el nombre. En una sesión real con preguntas adicionales, esto es alcanzable.
 
-**Fix — añadir validación antes del slice:**
+**Fix — añadir extracción de nombre en el system prompt dinámico:**
+En `buildSystemPrompt()`, si se detecta el nombre en los primeros mensajes del historial antes de truncar, incluirlo explícitamente en el header:
+```ts
+// En route.ts, antes de llamar buildSystemPrompt:
+const nombreCandidato = extraerNombre(history); // buscar en los primeros 4 mensajes
+const systemPrompt = buildSystemPrompt(instrucciones, nombreCandidato);
+
+// En system-prompt.ts:
+export function buildSystemPrompt(instrucciones?: string, nombre?: string): string {
+  const nombreHint = nombre ? `\n# Candidato actual\nNombre confirmado: ${nombre}. Úsalo siempre.\n` : "";
+  ...
+}
+```
+
+---
+
+#### [KYO-2] `get_job_details` nunca se llama durante el flujo normal
+**Archivo:** `src/lib/assistant/tools.ts:49-57`
+
+El Paso 5 del system prompt usa solo el resumen de vacantes del prompt (id, título, empresa, ubicación, contrato, jornada, salario). `get_job_details` existe pero nunca se activa en el flujo estándar, por lo que Kyo no puede mencionar responsabilidades ni requisitos al recomendar — los argumentos más persuasivos para que el candidato aplique.
+
+**Fix — añadir al Paso 5:**
+```
+Antes de mostrar las vacantes recomendadas, llama get_job_details para
+cada vacante candidata y usa la descripcion corta y los 2-3 primeros
+requisitos para personalizar la explicacion de "por que le aplica".
+```
+
+---
+
+#### [KYO-3] Sin validación de longitud por mensaje individual
+**Archivo:** `src/app/api/assistant/chat/route.ts:131`
+
+Un candidato que pega su CV en el chat (2,000+ palabras) infla el context sin aportar valor y puede desplazar el system prompt en el límite de tokens de Haiku (8,192 tokens de output con hasta 200k de input, pero context window completo incluye el system prompt de ~2,000 tokens + historial).
+
+**Fix:**
 ```ts
 const history = body.messages
-  .map(m => ({ ...m, content: m.content.slice(0, 1000) }))  // max 1000 chars por mensaje
+  .map(m => ({ ...m, content: m.content.slice(0, 1000) }))
   .slice(-20);
 ```
 
@@ -229,22 +253,24 @@ const history = body.messages
 
 ### Problemas detectados
 
-- **[NUEVO] Stats de Kyo desactualizadas vs Hero**: `knowledge.ts:77` dice `687+`; Hero dice `7000+`. Cualquier candidato que pregunte "¿cuántos candidatos han colocado?" recibe respuesta inconsistente. Fix: ver hallazgo de stats arriba.
-- **[PERSISTENTE] BUG CRÍTICO: `StaticKnowledgeProvider` usa JOBS.ts, no Supabase.** Sin resolver desde hace 4+ días.
-- **[PERSISTENTE] BUG CRÍTICO: Paso 6 navega a /contacto.** Sin resolver desde hace 4+ días.
-- **[PERSISTENTE] FAQs de kyo_faqs ignoradas.** Sin resolver.
-- **[PERSISTENTE] Analytics guarda texto libre.** Fix de 1 línea sin aplicar.
+- **[PERSISTENTE] BUG CRÍTICO: `StaticKnowledgeProvider` usa JOBS.ts, no Supabase.** Sin resolver 5+ días. (Ver [CRÍTICO-1])
+- **[PERSISTENTE] BUG CRÍTICO: Paso 6 navega a /contacto en lugar de /vacantes/[id].** Sin resolver. (Ver [CRÍTICO-2])
+- **[PERSISTENTE] FAQs de kyo_faqs ignoradas.** Sin resolver. (Ver [ALTO-3])
+- **[PERSISTENTE] Analytics guarda texto libre del candidato.** Fix de 1 línea pendiente. (Ver [ALTO-4])
+- **[NUEVO] Chat sin TTL — candidatos regresan a conversaciones rancias con vacantes ya cerradas.** (Ver [NUEVO-2])
 
 ---
 
 ## Oportunidades de mejora general
 
-- **[RUTA FALTANTE EN KNOWLEDGE] `/vacantes/[id]`**: `knowledge.ts:60-67` no lista la ruta dinámica `/vacantes/[id]`. Cuando el fix del Paso 6 se implemente (navigate_to a `/vacantes/12`), la Regla 6 del system prompt bloqueará la navegación porque no está en el listado de rutas permitidas. Añadir: `{ path: "/vacantes/:id", title: "Detalle de vacante", purpose: "Página de detalle de una vacante activa con botón Aplicar", summary: "Muestra descripción, responsabilidades, requisitos y CTA de aplicación." }` a `SITE_PAGES` y actualizar la mención en `system-prompt.ts:77`.
+- **[STATS INCONSISTENTES]** `knowledge.ts:77` dice `687+ candidatos colocados` y `3+ años`; el Hero muestra `7000+` y `10+`. Si un candidato pregunta a Kyo, recibe datos que contradicen lo que leyó en pantalla. Fix: actualizar `knowledge.ts:77-83` con los valores correctos y mover ambas referencias a `site_config` como única fuente de verdad.
 
-- **[CONTACTO] Estado de éxito no refuerza el SLA de 24h**: `src/app/contacto/page.tsx`. El texto "Te respondemos en menos de 24 horas hábiles" aparece antes del envío (línea 76). Después de `submitted === true`, el usuario ya no lo ve — pero es exactamente cuando más lo necesita para no quedarse con incertidumbre. Añadir ese texto al estado de confirmación.
+- **[HERO: next/image]** `src/components/sections/Hero.tsx:5,122,131` — `import Image from "next/image"` viola la regla de proyecto ("No usar `next/image`"). Reemplazar con `<img>` nativo. Risk: si alguien retira `unoptimized: true` de `next.config.ts`, el build en VPS fallaría.
 
-- **[KYO — LATENCIA] Navegación en mobile demasiado rápida**: `src/components/assistant/useChat.ts:127`. `setTimeout(..., 700)` da 700ms al candidato para leer el mensaje de Kyo antes de ser redirigido. En mobile con teclado abierto, esos 700ms no alcanzan. Cambiar a `1400`.
+- **[HERO: tilde faltante]** `src/components/sections/Hero.tsx:81` — `placeholder="¿Que puesto buscas?"` falta tilde en "Qué". Es el buscador más visible del sitio. Fix: `placeholder="¿Qué puesto buscas?"`.
 
-- **[KYO — CONOCIMIENTO] Descripción "microempresas" limita propuesta de valor**: `src/lib/assistant/knowledge.ts:73`. "Consultora mexicana especializada en capital humano para microempresas" puede disuadir contacto de empresas medianas. Fix: `"para empresas en crecimiento"`.
+- **[HERO: avatares externos]** `src/components/sections/Hero.tsx:100` — Los 4 avatares de social proof se cargan de `pravatar.cc` (CDN externo). Si tiene downtime, el Hero muestra imágenes rotas. Descargar 4 fotos genéricas a `/public/images/avatars/` y usar paths locales.
 
-- **[PERFORMANCE] `buildSystemPrompt` concatena listas cada request**: `src/app/api/assistant/chat/route.ts:149`. Cuando la migración a Supabase llegue, cada mensaje del candidato lanzará 4+ queries antes de siquiera llamar a Anthropic. Planear caché de 60s para el resultado completo de `buildSystemPrompt`.
+- **[RUTA FALTANTE EN KNOWLEDGE]** `src/lib/assistant/knowledge.ts:60-67` no lista `/vacantes/:id`. Cuando el fix del [CRÍTICO-2] se implemente (navigate_to `/vacantes/12`), la Regla 6 del system prompt lo bloqueará porque no está listada. Añadir `{ path: "/vacantes/:id", title: "Detalle de vacante", ... }` a `SITE_PAGES`.
+
+- **[LATENCIA EN MOBILE]** `src/components/assistant/useChat.ts:127` — `setTimeout(..., 700)` da 700ms antes de redirigir al candidato. En mobile con teclado virtual abierto, el mensaje de Kyo casi no se puede leer antes del redirect. Cambiar a `1400`.
