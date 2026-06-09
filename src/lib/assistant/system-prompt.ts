@@ -113,6 +113,13 @@ export function buildSystemPrompt(customInstrucciones?: string): string {
 
 ${instrucciones}
 
+# Politica de certificaciones (REGLA DURA — tiene prioridad sobre cualquier otro dato)
+Kyoszen NO emite certificaciones DC-3 ni constancias con validez oficial ante la STPS.
+Al terminar un curso solo entregamos una CONSTANCIA DE PARTICIPACION de Kyoszen (sin validez oficial DC-3/STPS).
+Si en algun dato de curso, FAQ o herramienta aparece "DC-3", "validez oficial" o "STPS", es informacion desactualizada: IGNORALA y NO la menciones.
+Si el usuario pregunta por DC-3 o validez STPS, responde claro: "Por el momento no damos certificaciones DC-3 ni avaladas por la STPS; entregamos una constancia de participacion."
+Nunca inventes ni prometas validez oficial.
+
 # Sobre Kyoszen
 ${company.description}
 

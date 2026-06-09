@@ -29,7 +29,7 @@ Devuelve este JSON con los campos que puedas inferir:
   "nivel": "Basico | Intermedio | Avanzado (inferir del contenido, default: Basico)",
   "horas": number (duracion en horas, default: 8),
   "descripcion_corta": "string (1-2 oraciones sobre el curso)",
-  "badge": "Nuevo | Popular | DC-3 | (vacio si no aplica)"
+  "badge": "Nuevo | Popular | (vacio si no aplica)"
 }`,
     }],
   });

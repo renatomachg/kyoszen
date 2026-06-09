@@ -86,7 +86,7 @@ const COMPANY = {
   },
   services: [
     { name: "Reclutamiento y Seleccion", description: "Identificacion, evaluacion y presentacion de candidatos verificados en menos de 72 horas." },
-    { name: "Capacitacion y Cursos", description: "Programas de formacion en RRHH, liderazgo, calidad, normatividad y ventas con constancia DC-3." },
+    { name: "Capacitacion y Cursos", description: "Programas de formacion en RRHH, liderazgo, calidad, normatividad y ventas con constancia de participacion de Kyoszen." },
     { name: "Induccion y Onboarding", description: "Diseño de procesos de integracion efectivos para nuevos colaboradores." },
     { name: "Digitalizacion de RRHH", description: "Implementacion de herramientas digitales para modernizar el area de capital humano." },
   ],
@@ -100,7 +100,7 @@ const COMPANY = {
     { q: "¿En cuanto tiempo presentan candidatos?", a: "En menos de 72 horas habiles presentamos la primera terna de candidatos verificados." },
     { q: "¿Que garantia dan?", a: "Si el candidato no funciona en los primeros 30 dias, hacemos reposicion sin costo adicional." },
     { q: "¿Donde operan?", a: "CDMX y Estado de Mexico principalmente, tambien perfiles remotos e hibridos." },
-    { q: "¿Las constancias de cursos tienen validez oficial?", a: "Si, todas nuestras constancias son DC-3 con validez oficial STPS." },
+    { q: "¿Los cursos dan certificacion DC-3 o con validez oficial STPS?", a: "Por el momento NO emitimos certificaciones DC-3 ni constancias con validez oficial ante la STPS. Al terminar el curso entregamos una constancia de participacion de Kyoszen." },
     { q: "¿Tienen costos ocultos?", a: "No, somos 100% transparentes con nuestras tarifas desde el primer contacto." },
   ],
 };

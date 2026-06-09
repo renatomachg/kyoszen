@@ -27,7 +27,7 @@ export default function Courses() {
             <div className="md:text-right md:pb-2">
               <p className="text-[13.5px] text-muted leading-relaxed mb-4 max-w-[420px] md:ml-auto">
                 Programas diseñados para el mercado laboral mexicano. Todos
-                con constancia DC-3 y en modalidades en vivo, online o
+                con constancia de participación y en modalidades en vivo, online o
                 híbridas.
               </p>
               <Link

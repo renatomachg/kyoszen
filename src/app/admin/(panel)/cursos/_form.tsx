@@ -140,7 +140,7 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
               rows={6}
-              placeholder={`Pega aqui cualquier informacion sobre el curso. Por ejemplo:\n\nCurso de Excel Avanzado para empresas. Aprende tablas dinamicas, macros y automatizacion. Dirigido a personal administrativo y contable. 16 horas, modalidad presencial. Incluye constancia DC-3...`}
+              placeholder={`Pega aqui cualquier informacion sobre el curso. Por ejemplo:\n\nCurso de Excel Avanzado para empresas. Aprende tablas dinamicas, macros y automatizacion. Dirigido a personal administrativo y contable. 16 horas, modalidad presencial. Incluye constancia de participacion...`}
               className="w-full border border-blue/20 rounded-xl px-4 py-3 text-[13px] text-navy bg-white focus:outline-none focus:border-blue transition-colors resize-none placeholder:text-muted/60"
             />
             <button
@@ -204,7 +204,7 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
 
         <div>
           <label className={label}>Badge / Etiqueta</label>
-          <input className={field} value={form.badge} onChange={e => set("badge", e.target.value)} placeholder="Ej: Nuevo, DC-3, Popular" />
+          <input className={field} value={form.badge} onChange={e => set("badge", e.target.value)} placeholder="Ej: Nuevo, Popular" />
         </div>
 
         <div className="flex items-center gap-3 pt-5">

@@ -159,7 +159,7 @@ export const COURSES: Course[] = [
       { titulo: "Empresa y establecimiento", descripcion: "Concepto y fundamento legal de la empresa · Concepto y fundamento legal del establecimiento.", duracion: "2.5 h" },
       { titulo: "Relaciones laborales estratégicas", descripcion: "Función y objetivo principal · Reformulación de las relaciones laborales.", duracion: "2.5 h" },
     ],
-    incluye: ["Constancia con validez oficial DC-3", "Plantillas de contratos individuales", "Guía rápida de LFT aplicada a PYMEs", "Sesiones de dudas legales"],
+    incluye: ["Constancia de participación", "Plantillas de contratos individuales", "Guía rápida de LFT aplicada a PYMEs", "Sesiones de dudas legales"],
     contactEmail: "rsalazar@kyoszen.com.mx",
   },
   {

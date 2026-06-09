@@ -34,7 +34,7 @@ const splitSections = [
     desc: "Programas diseñados para el contexto laboral mexicano, con instructores especializados en RRHH, liderazgo, calidad y normatividad.",
     features: [
       { title: "Modalidad flexible", desc: "Presencial, online o hibrido." },
-      { title: "Constancia DC-3", desc: "Validez oficial STPS." },
+      { title: "Constancia de participacion", desc: "Al terminar cada programa." },
       { title: "Programas a medida", desc: "Adaptados a tu empresa." },
       { title: "Instructores expertos", desc: "Con experiencia mexicana real." },
     ],
@@ -87,7 +87,7 @@ export default function ServiciosPage() {
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
               {[
                 "Reclutamiento verificado",
-                "Capacitación DC-3",
+                "Capacitación a medida",
                 "Onboarding y retención",
                 "Manejo de clima laboral",
                 "Digitalización de RRHH",

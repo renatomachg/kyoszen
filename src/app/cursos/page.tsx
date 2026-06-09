@@ -323,7 +323,7 @@ export default function CursosPage() {
         image="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1800&auto=format&fit=crop&q=80"
         chip="Capacitación"
         title="Nuestros cursos profesionales"
-        description="Selecciona un área de interés para explorar los cursos disponibles. Todos con constancia DC-3."
+        description="Selecciona un área de interés para explorar los cursos disponibles. Todos con constancia de participación."
       />
 
       <section className="py-16 px-5 md:px-10 xl:px-20 bg-[var(--color-bg)]">
