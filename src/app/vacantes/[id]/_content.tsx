@@ -96,7 +96,7 @@ export default function VacanteContent({ id }: { id: string }) {
                   {job.titulo}
                 </h1>
                 <p className="text-blue text-[15px] font-bold uppercase tracking-wide mb-6">
-                  {job.empresa}
+                  {job.empresa?.trim() ? job.empresa : "Confidencial"}
                 </p>
 
                 {/* Info pills */}
@@ -194,7 +194,7 @@ export default function VacanteContent({ id }: { id: string }) {
 
                   {/* Quick info */}
                   <div className="space-y-3 mb-6 pb-6 border-b border-border">
-                    <SidebarRow label="Empresa" value={job.empresa} />
+                    <SidebarRow label="Empresa" value={job.empresa?.trim() ? job.empresa : "Confidencial"} />
                     <SidebarRow label="Ubicación" value={job.ubicacion} />
                     <SidebarRow label="Contrato" value={job.contrato} />
                     <SidebarRow label="Jornada" value={job.jornada} />
@@ -231,7 +231,7 @@ export default function VacanteContent({ id }: { id: string }) {
       <AplicarModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        vacante={`${job.titulo} — ${job.empresa}`}
+        vacante={`${job.titulo}${job.empresa?.trim() ? " — " + job.empresa : ""}`}
       />
     </>
   );

@@ -105,7 +105,7 @@ function VacantesPageContent() {
         !q ||
         j.titulo.toLowerCase().includes(q) ||
         j.descripcion.toLowerCase().includes(q) ||
-        j.empresa.toLowerCase().includes(q) ||
+        (j.empresa ?? "").toLowerCase().includes(q) ||
         j.tags.some((t) => t.toLowerCase().includes(q));
       const matchesUbicacion = ubicacion === "Todas" || j.ubicacion === ubicacion;
       const matchesMarca = marca === "Todas" || j.empresa === marca;
@@ -213,7 +213,7 @@ function VacantesPageContent() {
                       <span className={`rounded-md px-2.5 py-0.5 text-[11px] font-bold ${job.badge_class}`}>{job.badge}</span>
                     </div>
                     <h3 className="text-base font-extrabold text-navy mb-1">{job.titulo}</h3>
-                    <p className="text-[11px] font-bold text-blue uppercase tracking-wide mb-2">{job.empresa}</p>
+                    <p className="text-[11px] font-bold text-blue uppercase tracking-wide mb-2">{job.empresa?.trim() ? job.empresa : "Confidencial"}</p>
                     <p className="text-xs text-muted leading-relaxed mb-3 flex-1">{job.descripcion}</p>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       <span className="bg-bg text-navy text-[10px] font-semibold px-2 py-0.5 rounded-md">{job.contrato}</span>

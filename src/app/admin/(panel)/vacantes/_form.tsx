@@ -200,8 +200,9 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Empresa">
-            <input required value={form.empresa} onChange={(e) => set("empresa", e.target.value)} className={INPUT} />
+          <Field label="Empresa (opcional)">
+            <input value={form.empresa} onChange={(e) => set("empresa", e.target.value)} className={INPUT}
+              placeholder="Dejar vacio si es confidencial" />
           </Field>
           <Field label="Salario mensual (MXN)">
             <input required type="number" value={form.salario || ""} onChange={(e) => set("salario", Number(e.target.value))}
