@@ -24,6 +24,8 @@ interface Vacante {
   tags: string[];
   responsabilidades: string[];
   requisitos: string[];
+  salario_nota?: string | null;
+  beneficios?: string[] | null;
 }
 
 export default function VacanteContent({ id }: { id: string }) {
@@ -151,6 +153,23 @@ export default function VacanteContent({ id }: { id: string }) {
                   </ul>
                 </div>
 
+                {/* Prestaciones y beneficios */}
+                {(job.beneficios?.length ?? 0) > 0 && (
+                  <div className="mb-8">
+                    <h2 className="text-lg font-extrabold text-navy mb-3">Prestaciones y beneficios</h2>
+                    <ul className="space-y-2.5">
+                      {job.beneficios!.map((b, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-[14px] text-muted leading-relaxed">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2">
                   {job.tags.map((tag) => (
@@ -170,7 +189,7 @@ export default function VacanteContent({ id }: { id: string }) {
                     <p className="text-[clamp(1.6rem,3vw,2rem)] font-black text-navy">
                       ${job.salario.toLocaleString()}
                     </p>
-                    <p className="text-[12px] text-muted">MXN bruto</p>
+                    <p className="text-[12px] text-muted">{job.salario_nota?.trim() ? job.salario_nota : "MXN bruto"}</p>
                   </div>
 
                   {/* Quick info */}

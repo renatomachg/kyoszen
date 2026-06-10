@@ -12,12 +12,14 @@ interface VacanteFormData {
   jornada: string;
   contrato: string;
   salario: number;
+  salario_nota: string;
   categoria: string;
   badge: string;
   badge_class: string;
   descripcion: string;
   responsabilidades: string[];
   requisitos: string[];
+  beneficios: string[];
   tags: string[];
   activa: boolean;
 }
@@ -29,12 +31,14 @@ const EMPTY: VacanteFormData = {
   jornada: "Tiempo completo",
   contrato: "Indefinido",
   salario: 0,
+  salario_nota: "",
   categoria: "Operativo",
   badge: "",
   badge_class: "",
   descripcion: "",
   responsabilidades: [],
   requisitos: [],
+  beneficios: [],
   tags: [],
   activa: true,
 };
@@ -52,7 +56,21 @@ const BADGES = [
 
 export default function VacanteForm({ initial, id }: { initial?: Partial<VacanteFormData>; id?: number }) {
   const router = useRouter();
-  const [form, setForm] = useState<VacanteFormData>({ ...EMPTY, ...initial });
+  const [form, setForm] = useState<VacanteFormData>(() => {
+    const m = { ...EMPTY, ...(initial ?? {}) } as VacanteFormData;
+    // coaccionar nulos de la BD a los defaults para no romper inputs controlados
+    return {
+      ...m,
+      salario_nota: m.salario_nota ?? "",
+      badge: m.badge ?? "",
+      badge_class: m.badge_class ?? "",
+      descripcion: m.descripcion ?? "",
+      responsabilidades: m.responsabilidades ?? [],
+      requisitos: m.requisitos ?? [],
+      beneficios: m.beneficios ?? [],
+      tags: m.tags ?? [],
+    };
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [rawText, setRawText] = useState("");
@@ -94,22 +112,28 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
       jornada: form.jornada,
       contrato: form.contrato,
       salario: form.salario,
+      salario_nota: form.salario_nota || null,
       categoria: form.categoria,
       badge: form.badge || null,
       badge_class: form.badge_class || null,
       descripcion: form.descripcion,
       responsabilidades: form.responsabilidades,
       requisitos: form.requisitos,
+      beneficios: form.beneficios,
       tags: form.tags,
       activa: form.activa,
     };
 
-    const { error } = id
-      ? await supabase.from("vacantes").update(payload).eq("id", id)
-      : await supabase.from("vacantes").insert(payload);
+    const { data, error } = id
+      ? await supabase.from("vacantes").update(payload).eq("id", id).select("id")
+      : await supabase.from("vacantes").insert(payload).select("id");
 
     if (error) {
       setError("Error al guardar: " + error.message);
+      setSaving(false);
+    } else if (!data || data.length === 0) {
+      // RLS/sesion: el update no afecto ninguna fila (no se guardo nada)
+      setError("No se guardo ningun cambio. Tu sesion pudo expirar o no tienes permisos. Cierra sesion, vuelve a entrar e intenta de nuevo.");
       setSaving(false);
     } else {
       logAdminClient(id ? `Vacante editada` : `Vacante creada`, form.titulo);
@@ -185,6 +209,11 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
           </Field>
         </div>
 
+        <Field label="Detalle del salario (opcional)">
+          <input value={form.salario_nota} onChange={(e) => set("salario_nota", e.target.value)}
+            className={INPUT} placeholder="Ej. Neto · pago semanal  (si lo dejas vacio se muestra 'MXN bruto')" />
+        </Field>
+
         <div className="grid grid-cols-3 gap-4">
           <Field label="Ubicacion">
             <select value={form.ubicacion} onChange={(e) => set("ubicacion", e.target.value)} className={INPUT}>
@@ -239,7 +268,8 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
       <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
         <h3 className="font-extrabold text-navy text-[14px]">Detalle</h3>
         <ArrayField label="Responsabilidades" items={form.responsabilidades} onChange={(v) => set("responsabilidades", v)} placeholder="Agregar responsabilidad..." />
-        <ArrayField label="Requisitos" items={form.requisitos} onChange={(v) => set("requisitos", v)} placeholder="Agregar requisito..." />
+        <ArrayField label="Requisitos" items={form.requisitos} onChange={(v) => set("requisitos", v)} placeholder="Ej. Sexo: Indistinto, Edad: 18 a 50 anos..." />
+        <ArrayField label="Prestaciones y beneficios" items={form.beneficios} onChange={(v) => set("beneficios", v)} placeholder="Ej. Prestaciones de Ley, Bono de Temporada..." />
         <ArrayField label="Tags / habilidades" items={form.tags} onChange={(v) => set("tags", v)} placeholder="Ej. Excel, SAP, Ingles..." />
       </div>
 
