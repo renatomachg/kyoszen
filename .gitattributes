@@ -1,0 +1,3 @@
+# CLAUDE.md lo edita un hook (actualiza la fecha) en cada commit y se trabaja desde 2 Macs.
+# merge=union evita conflictos al rebasear: git conserva ambas versiones de la linea en vez de marcar conflicto.
+CLAUDE.md merge=union
