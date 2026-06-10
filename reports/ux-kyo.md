@@ -1,200 +1,84 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-06-09
-**Cambios analizados:** `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`, `src/app/vacantes/page.tsx`, `src/app/vacantes/[id]/_content.tsx`, `src/components/sections/Hero.tsx`, `src/components/sections/Vacancies.tsx`, `src/app/contacto/page.tsx`
+**Fecha:** 2026-06-10
+**Cambios analizados:** `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`, `src/app/vacantes/page.tsx`, `src/app/vacantes/[id]/_content.tsx`, `src/app/admin/(panel)/vacantes/_form.tsx`, `src/app/api/admin/parse-vacante/route.ts`, `src/lib/jobs.ts`
 
 ---
 
 ## Cambios Recientes Detectados
 
-No hubo commits de código funcional en los últimos 2 días (solo reportes automáticos y actualización de CLAUDE.md). Los bugs críticos escalados en los reportes del 06-06, 07-06 y 08-06 siguen sin corrección. Este reporte agrega **7 hallazgos nuevos** y escala por 5ª vez los 4 bugs críticos sin resolver.
+- **Vacantes — empresa opcional ("Confidencial"):** el form ahora acepta empresa vacía; el sitio muestra "Confidencial". Aplica a card y detalle.
+- **Vacantes — salario_nota y beneficios:** nuevos campos en el form, en el parser IA y en la página de detalle (`_content.tsx`).
+- **Vacantes — horario laboral:** nuevo campo textarea en el form; se muestra en la sección de detalle de la vacante.
+- **Kyo — DC-3/STPS:** regla dura en el system prompt para no prometer certificaciones oficiales. FAQ actualizada en `knowledge.ts`.
+- **Admin — botón "Ver" en listado:** permite ir directamente al detalle público de la vacante desde el panel.
 
 ---
 
-## 🚨 Bugs críticos sin corrección — escalados (5ª vez)
+## 🚨 Bugs Críticos Detectados
 
-Estos 4 bugs se detectaron originalmente el 2026-06-05. Cada día sin corregirlos afecta a candidatos reales que usan Kyo.
+### BUG 1 — Kyo usa datos ESTÁTICOS, no Supabase
+**Archivo:** `src/lib/assistant/knowledge.ts` (línea 167) y `src/lib/jobs.ts`
 
-### [CRÍTICO-1] Kyo recomienda vacantes del JOBS.ts estático, no de Supabase
-**Archivo:** `src/lib/assistant/knowledge.ts:167`
-Candidatos reciben recomendaciones de vacantes que ya fueron cerradas por el admin. El `StaticKnowledgeProvider` lee de `JOBS` hardcodeado en `src/lib/jobs.ts`, ignorando completamente la tabla `vacantes` de Supabase. Fix: migrar `listJobs()` y `getJob()` a queries directas con caché de 60s (mismo patrón que `getStoredInstrucciones` en `route.ts:8-32`).
+`StaticKnowledgeProvider.listJobs()` lee de `JOBS` (array hardcodeado en `jobs.ts`) en lugar de la tabla `vacantes` de Supabase. Esto significa que Kyo recomienda 8 vacantes de demostración que no existen, mientras las vacantes reales creadas por el admin son invisibles para él.
 
-### [CRÍTICO-2] Paso 6: Kyo navega a /contacto (formulario de empresas)
-**Archivo:** `src/lib/assistant/system-prompt.ts:61`
-"Navega a /contacto si acepta" envía al candidato al formulario de contacto de empresas. Cuando el candidato quiere aplicar, debe llegar a `navigate_to /vacantes/[id]`, no a /contacto. Fix: en el Paso 6, cambiar la instrucción a `navigate_to /vacantes/[id]` cuando hay vacante seleccionada; reservar /contacto solo para cuando no hay vacante compatible (banco de talentos).
-
-### [ALTO-3] FAQs editadas en /admin/kyo no llegan al system prompt
-**Archivo:** `src/lib/assistant/knowledge.ts:99-105`
-`kyo_faqs` de Supabase existe pero nunca se consulta. El admin edita FAQs y Kyo sigue usando las 5 hardcodeadas en `knowledge.ts`. Fix: en `getStoredInstrucciones()` o en `buildSystemPrompt()`, hacer una query a `kyo_faqs` y reemplazar el bloque `# FAQs` del prompt.
-
-### [ALTO-4] Analytics guarda texto libre del candidato
-**Archivo:** `src/components/assistant/useChat.ts:81`
-`logEvent("kyo_mensaje", trimmed.slice(0, 300))` registra hasta 300 chars de texto libre. Fix de 1 línea:
-```ts
-logEvent("kyo_mensaje", String(messages.length));
-```
+**Fix:** Crear un `SupabaseKnowledgeProvider` que haga `supabase.from("vacantes").select(...).eq("activa", true)` en el constructor de la route. El code ya anticipa esto — línea 167 tiene el comentario *"In phase 2 a SupabaseKnowledgeProvider will replace this"*.
 
 ---
 
-## Nuevos Hallazgos — UX
+### BUG 2 — Los valores de Jornada y Contrato no coinciden entre el form de admin, la página pública y el system prompt de Kyo
+
+**Archivos afectados:**
+- `src/app/admin/(panel)/vacantes/_form.tsx` línea 49-51
+- `src/app/vacantes/page.tsx` líneas 31-32
+- `src/lib/assistant/system-prompt.ts` líneas 85-91
+
+| Campo | Valores en el form (lo que se guarda) | Valores en el filtro público (lo que se busca) |
+|---|---|---|
+| `jornada` | Tiempo completo · Medio tiempo · Por proyecto | Matutina · Vespertina · Mixta · Flexible |
+| `contrato` | Indefinido · Temporal · Por honorarios | Tiempo completo · Medio tiempo · Por proyecto |
+| `ubicacion` | Presencial · Remoto · Hibrido | CDMX · Estado de México · Híbrido · Remoto |
+
+Los filtros públicos nunca devolverán resultados de vacantes reales porque los valores no coinciden. Kyo también usa los valores incorrectos en su guía de navegación URL (system-prompt línea 89: `?jornada=Matutina`).
+
+**Fix A:** Unificar los valores de JORNADAS y CONTRATOS en ambas partes. Opciones recomendadas para jornada: `Matutina · Vespertina · Mixta · Flexible`. Para contrato: `Tiempo completo · Medio tiempo · Por proyecto`.
+**Fix B:** Actualizar el system prompt con los valores que realmente se guardan en la BD.
+**Fix C:** Para ubicación: reemplazar "Presencial" por opciones con colonia/zona real, o bien alinear a "CDMX/Edomex/Híbrido/Remoto".
+
+---
+
+### BUG 3 — Los nuevos campos (horario, beneficios, salario_nota) no llegan a Kyo
+
+**Archivo:** `src/lib/assistant/knowledge.ts` líneas 138-154
+
+El `JobSummary` interface (línea 30-40) y el mapper `listJobs` no incluyen `horario`, `beneficios` ni `salario_nota`. Aunque el candidato pregunte "¿qué prestaciones tiene la vacante?" o "¿cuál es el horario?", Kyo no tiene acceso a esos datos ni siquiera después de migrar a Supabase.
+
+**Fix:** Agregar los tres campos al interface `JobSummary` y al mapper en `listJobs()`. En el system prompt añadir instrucción: al presentar una vacante en Paso 5, mencionar los beneficios clave si existen.
+
+---
+
+## Sugerencias de UX
 
 ### Alta prioridad
 
-#### [NUEVO-1] CTAs de aplicar enterradas en mobile — conversión crítica perdida
-**Archivo:** `src/app/vacantes/[id]/_content.tsx:166`
+- **Sin skeleton en `/vacantes` durante carga de Supabase** — `src/app/vacantes/page.tsx` líneas 206-235. El grid queda vacío y sin indicación mientras se espera la respuesta de Supabase. Agregar un skeleton de 6-8 tarjetas con `animate-pulse` que se muestre mientras `jobs.length === 0`. Evita el "salto" de contenido y comunica que hay vacantes cargando.
 
-El botón "Aplicar ahora" y el link de WhatsApp están en la columna derecha de un grid `lg:grid-cols-[1.6fr_1fr]`. En mobile y tablet (< 1024px), esa columna cae DESPUÉS de descripción, responsabilidades, requisitos y tags — fácilmente 4-5 pantallas de scroll hacia abajo. Un candidato impaciente en mobile puede abandonar sin ver los CTAs.
+- **Empty state sin CTA** — `src/app/vacantes/page.tsx` línea 231-235. Cuando no hay resultados, solo aparece "Sin resultados" sin acción siguiente. Agregar dos botones: "Limpiar filtros" y "Contactar por WhatsApp" (`https://wa.link/5zv0ba`). El candidato frustrado necesita una salida, no un callejón.
 
-**Fix — añadir un CTA primario fijo al fondo en mobile:**
-```tsx
-{/* Añadir antes del cierre de la <section> principal, línea ~210 */}
-<div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border px-5 py-3 z-50 flex gap-3">
-  <button
-    type="button"
-    onClick={() => { setModalOpen(true); logEvent("vacante_aplicar_click", ...); }}
-    className="flex-1 bg-navy text-white rounded-full py-3 text-[14px] font-extrabold"
-  >
-    Aplicar ahora
-  </button>
-  <a
-    href="https://wa.link/5zv0ba"
-    className="bg-wa text-white rounded-full py-3 px-4 flex items-center justify-center"
-  >
-    <WhatsAppIcon size={18} />
-  </a>
-</div>
-```
-Añadir `pb-20 lg:pb-0` al contenedor de la sección para que el contenido no quede tapado.
-
----
-
-#### [NUEVO-2] Historial de chat sin TTL — Kyo reanuda conversaciones de hace meses
-**Archivo:** `src/components/assistant/useChat.ts:24-33`
-
-`loadHistory()` carga del localStorage sin ninguna verificación de antigüedad. Si un candidato visitó el sitio hace 3 meses, Kyo abre directamente en medio de esa conversación antigua (posiblemente con vacantes ya cerradas recomendadas). El candidato tiene que hacer click manualmente en "Nueva conversación" para empezar de cero.
-
-**Fix — añadir TTL de 24 horas en `loadHistory()`:**
-```ts
-function loadHistory(): ChatMessage[] {
-  if (typeof window === "undefined") return [INITIAL_GREETING];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [INITIAL_GREETING];
-    const parsed = JSON.parse(raw) as ChatMessage[];
-    if (parsed.length === 0) return [INITIAL_GREETING];
-    const lastTimestamp = parsed[parsed.length - 1].timestamp;
-    const stale = Date.now() - lastTimestamp > 24 * 60 * 60 * 1000; // 24h
-    if (stale) {
-      localStorage.removeItem(STORAGE_KEY);
-      return [INITIAL_GREETING];
-    }
-    return parsed;
-  } catch {
-    return [INITIAL_GREETING];
-  }
-}
-```
-
----
-
-#### [NUEVO-3] sessionId y chat history desincronizados — conversaciones fragmentadas en admin
-**Archivo:** `src/components/assistant/useChat.ts:45-53`
-
-`sessionId` vive en `sessionStorage` (se borra al cerrar la pestaña), pero el historial vive en `localStorage` (persiste). Flujo del problema:
-1. Candidato chatea → sessionId = "abc123"
-2. Candidato cierra la pestaña
-3. Candidato regresa → historial cargado de localStorage, pero sessionId = "xyz789" (nuevo)
-4. En `/admin/kyo → Conversaciones`, el admin ve la misma conversación dividida en 2 sesiones distintas, sin poder reconstruir el flujo completo.
-
-**Fix — mover sessionId a localStorage (igual que el historial):**
-```ts
-function getSessionId(): string {
-  if (typeof window === "undefined") return "ssr";
-  let sid = localStorage.getItem("kyo_session_id"); // cambio: localStorage
-  if (!sid) {
-    sid = Date.now().toString(36) + Math.random().toString(36).slice(2);
-    localStorage.setItem("kyo_session_id", sid); // cambio: localStorage
-  }
-  return sid;
-}
-```
-Nota: Al implementar el TTL de 24h ([NUEVO-2]), también limpiar `kyo_session_id` del localStorage cuando el historial expire, para crear una sesión nueva limpia.
-
----
+- **Overflow del filtro en mobile** — `src/app/vacantes/page.tsx` líneas 174-188. La barra de filtros es un `inline-flex` en una sola línea. En pantallas <480px el bar se desborda y los últimos filtros (Jornada, Salario) quedan fuera de la vista sin indicación de scroll. Añadir `overflow-x: auto` con `-webkit-overflow-scrolling: touch` al contenedor o cambiar a un layout de dos filas en mobile.
 
 ### Media prioridad
 
-#### [NUEVO-4] Suspense sin fallback visible — página de vacantes en blanco al cargar
-**Archivo:** `src/app/vacantes/page.tsx:51`
+- **salario_nota no se muestra en la tarjeta del listado** — `src/app/vacantes/page.tsx` línea 223. La tarjeta solo muestra `$X / mes` sin la nota de "neto" o "pago semanal". Considerando que el salario_nota es corto (max ~30 chars), añadirlo en gris debajo del salario: `{job.salario_nota && <span className="text-[10px] text-muted">{job.salario_nota}</span>}`. Evita que el candidato aplique esperando algo diferente.
 
-```tsx
-<Suspense fallback={null}>
-```
-Con `fallback={null}`, en conexiones lentas (o si el JS tarda en hidratarse), el usuario ve una página completamente en blanco excepto el navbar. No hay spinner, skeleton ni texto de carga.
+- **Horario no aparece en las infopills del detalle** — `src/app/vacantes/[id]/_content.tsx` líneas 104-121. El horario está disponible como campo nuevo pero solo aparece en una sección de texto más abajo. Agregar una InfoPill de reloj con el horario resumido (primera línea del campo) junto a las demás pills. El candidato evalúa si puede cumplir el horario en los primeros segundos.
 
-**Fix — reemplazar con un fallback mínimo:**
-```tsx
-<Suspense fallback={
-  <div className="min-h-[60vh] flex items-center justify-center">
-    <div className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" />
-  </div>
-}>
-```
+- **"Confidencial" no tiene tratamiento visual diferenciado** — `src/app/vacantes/page.tsx` línea 216 y `_content.tsx` línea 100. "Confidencial" se muestra con el mismo estilo (`text-blue font-bold uppercase`) que un nombre de empresa. Cambiar a `text-muted italic` o agregar un ícono de candado pequeño. Comunica de inmediato que la empresa es confidencial, no que hay un error de datos.
 
----
+- **"Nueva conversacion" sin acento** — `src/components/assistant/ChatWidget.tsx` línea 160. El texto del botón de reset es `Nueva conversacion` sin acento. Corregir a `Nueva conversación` para consistencia con el resto del sitio.
 
-#### [NUEVO-5] Formulario de contacto — labels sin htmlFor, inputs sin id
-**Archivo:** `src/app/contacto/page.tsx:79-84, 100-103`
+### Baja prioridad
 
-Los `<label>` no tienen `htmlFor` y los `<input>` no tienen `id`. Screen readers no pueden asociarlos. Esto es un problema de accesibilidad básica (WCAG 2.1 criterio 1.3.1) y es especialmente relevante en el checkbox del aviso de privacidad (línea 102), que requiere consentimiento informado.
-
-**Fix — añadir `id` a cada input y `htmlFor` al label correspondiente:**
-```tsx
-// Nombre
-<label htmlFor="contact-name" className="...">Nombre</label>
-<input id="contact-name" type="text" ... />
-
-// Email
-<label htmlFor="contact-email" className="...">Correo electrónico</label>
-<input id="contact-email" type="email" ... />
-
-// Mensaje
-<label htmlFor="contact-message" className="...">Mensaje</label>
-<textarea id="contact-message" ... />
-```
-
----
-
-#### [NUEVO-6] Vacantes page — orden por `id` muestra las más antiguas primero
-**Archivo:** `src/app/vacantes/page.tsx:70` y `src/components/sections/Vacancies.tsx:29`
-
-Ambas queries usan `.order("id")` (ascendente por defecto), lo que muestra las vacantes más antiguas al frente. Una vacante nueva marcada como "Urgente" nunca aparece destacada en el homepage ni en la bolsa.
-
-**Fix en ambos archivos:**
-```ts
-.order("created_at", { ascending: false })
-```
-Requiere que la columna `created_at` exista en la tabla (debería existir por default en Supabase). Si no existe o no tiene valor, alternativa: `.order("id", { ascending: false })`.
-
----
-
-#### [NUEVO-7] Analytics de interacción con vacante guarda JSON en campo de texto
-**Archivo:** `src/app/vacantes/[id]/_content.tsx:38, 189, 198`
-
-```ts
-logEvent("vacante_vista", JSON.stringify({ id: vacante.id, titulo: vacante.titulo }));
-logEvent("vacante_aplicar_click", JSON.stringify({ id: job.id, titulo: job.titulo }));
-logEvent("whatsapp_click", JSON.stringify({ origen: "vacante", titulo: job.titulo }));
-```
-
-El campo `valor` en `site_eventos` es TEXT. Guardar JSON serializado hace imposible consultar directamente con SQL (`WHERE valor = '...'` no funciona). El dashboard de analytics tiene que deserializar manualmente.
-
-**Fix — separar los datos como campos planos. Sugerencia de convención:**
-```ts
-logEvent("vacante_vista", `${vacante.id}`);           // solo el id
-logEvent("vacante_aplicar_click", `${job.id}`);       // solo el id
-logEvent("whatsapp_click", "vacante");                // origen fijo
-```
-Si se necesita el título también, agregar una columna `meta JSONB` a `site_eventos` — JSONB permite indexar y consultar.
+- **`aria-label` falta en todos los `InfoPill`** — `_content.tsx` línea 249-256. Los pills de info (ubicación, jornada, contrato, salario) no tienen texto alternativo. Lectores de pantalla solo anuncian el icono SVG sin descripción. Agregar `aria-label` o un `<span className="sr-only">` con "Ubicación: CDMX" etc.
 
 ---
 
@@ -202,75 +86,40 @@ Si se necesita el título también, agregar una columna `meta JSONB` a `site_eve
 
 ### Mejoras al flujo de conversación
 
-#### [KYO-1] Kyo puede "olvidar" el nombre del candidato en conversaciones largas
-**Archivo:** `src/app/api/assistant/chat/route.ts:131`
+- **Paso 5 no maneja empresa vacía** — `src/lib/assistant/system-prompt.ts` línea 44-51. El formato de presentación dice `[Empresa]` pero si `empresa` está vacío en Supabase, Kyo dejará un hueco en blanco o reproducirá `undefined`. Agregar en el system prompt: *"Si la empresa es vacía o `null`, di 'empresa confidencial' en su lugar."*
 
-El historial se trunca a los últimos 20 mensajes. Si el candidato da su nombre en el mensaje 2 y el historial llega a 22+ mensajes, los primeros 2 se cortan y Kyo pierde el nombre. En una sesión real con preguntas adicionales, esto es alcanzable.
+- **Paso 6 no tiene manejo de rechazo** — `src/lib/assistant/system-prompt.ts` líneas 60-61. Si el candidato dice "No, ninguna me interesa" o "No me convence", no hay instrucción de qué hacer. Agregar un Paso 6b: *"Si el usuario no quiere aplicar a ninguna: agradece, ofrece quedar en banco de talentos (`/contacto`) y sugiere explorar `/cursos` si busca mejorar su perfil."*
 
-**Fix — añadir extracción de nombre en el system prompt dinámico:**
-En `buildSystemPrompt()`, si se detecta el nombre en los primeros mensajes del historial antes de truncar, incluirlo explícitamente en el header:
-```ts
-// En route.ts, antes de llamar buildSystemPrompt:
-const nombreCandidato = extraerNombre(history); // buscar en los primeros 4 mensajes
-const systemPrompt = buildSystemPrompt(instrucciones, nombreCandidato);
+- **Conversación larga puede perder el nombre y preferencias del usuario** — `src/app/api/assistant/chat/route.ts` línea 131. El historial se trunca a los últimos 20 mensajes. En una conversación muy larga, la información del Paso 0-3 (nombre, puesto, experiencia, zona) puede desaparecer del contexto. Solución: en el system prompt, después de completar el Paso 3, pedir a Kyo que incluya un resumen en su siguiente respuesta: *"Muy bien, [nombre]. Perfil: [puesto], [N] años, zona [X], [jornada]."* — este resumen queda en el historial y Kyo puede referenciarlo aunque los mensajes originales se trunquen.
 
-// En system-prompt.ts:
-export function buildSystemPrompt(instrucciones?: string, nombre?: string): string {
-  const nombreHint = nombre ? `\n# Candidato actual\nNombre confirmado: ${nombre}. Úsalo siempre.\n` : "";
-  ...
-}
-```
+- **La regla DC-3 es duplicada innecesariamente** — `src/lib/assistant/system-prompt.ts` líneas 116-122 y `src/lib/assistant/knowledge.ts` línea 103. La restricción DC-3 ya está en la FAQ y también como "regla dura" en el system prompt. Está bien tenerla en el prompt, pero el FAQ entry también es suficiente. Riesgo actual es ninguno — simplemente ocupa tokens. No es urgente.
 
----
+### Nuevas tools o capacidades recomendadas
 
-#### [KYO-2] `get_job_details` nunca se llama durante el flujo normal
-**Archivo:** `src/lib/assistant/tools.ts:49-57`
+- **Agregar filtros `jornada` y `contrato` a la tool `search_jobs`** — `src/lib/assistant/tools.ts` líneas 39-46. Después del Paso 4 (disponibilidad), Kyo conoce la jornada preferida del candidato pero no puede pasarla a `search_jobs`. Agregar dos campos opcionales: `jornada: string` y `contrato: string`. En `executeTool` aplicar el filtro equivalente en `knowledge.listJobs()`.
 
-El Paso 5 del system prompt usa solo el resumen de vacantes del prompt (id, título, empresa, ubicación, contrato, jornada, salario). `get_job_details` existe pero nunca se activa en el flujo estándar, por lo que Kyo no puede mencionar responsabilidades ni requisitos al recomendar — los argumentos más persuasivos para que el candidato aplique.
+- **Nueva tool: `register_talent_interest`** — cuando no hay vacante compatible (Paso 5 fallback), Kyo redirige a `/contacto` pero no guarda el perfil del candidato de forma estructurada. Una tool que reciba `{nombre, puesto, experiencia, ubicacion, jornada}` y los inserte en la tabla `contactos` con `origen: 'kyo_banco_talentos'` permitiría al equipo de Kyoszen contactar al candidato sin que tenga que llenar el formulario manualmente. Prioridad alta si se quiere cerrar el flujo de candidatos.
 
-**Fix — añadir al Paso 5:**
-```
-Antes de mostrar las vacantes recomendadas, llama get_job_details para
-cada vacante candidata y usa la descripcion corta y los 2-3 primeros
-requisitos para personalizar la explicacion de "por que le aplica".
-```
-
----
-
-#### [KYO-3] Sin validación de longitud por mensaje individual
-**Archivo:** `src/app/api/assistant/chat/route.ts:131`
-
-Un candidato que pega su CV en el chat (2,000+ palabras) infla el context sin aportar valor y puede desplazar el system prompt en el límite de tokens de Haiku (8,192 tokens de output con hasta 200k de input, pero context window completo incluye el system prompt de ~2,000 tokens + historial).
-
-**Fix:**
-```ts
-const history = body.messages
-  .map(m => ({ ...m, content: m.content.slice(0, 1000) }))
-  .slice(-20);
-```
-
----
+- **Quick-reply chips en el frontend** — `src/components/assistant/ChatWidget.tsx`. Tras ciertos mensajes de Kyo (por ejemplo el de Paso 1 "¿qué tipo de trabajo busca?"), mostrar chips de respuesta rápida con las categorías más comunes: `["Administrativo", "Ventas", "Operativo", "RRHH"]`. Reduce fricción especialmente en mobile donde escribir es más lento. Requiere que la API devuelva `suggestions: string[]` o que el frontend mapee la etapa del flujo a chips predefinidos.
 
 ### Problemas detectados
 
-- **[PERSISTENTE] BUG CRÍTICO: `StaticKnowledgeProvider` usa JOBS.ts, no Supabase.** Sin resolver 5+ días. (Ver [CRÍTICO-1])
-- **[PERSISTENTE] BUG CRÍTICO: Paso 6 navega a /contacto en lugar de /vacantes/[id].** Sin resolver. (Ver [CRÍTICO-2])
-- **[PERSISTENTE] FAQs de kyo_faqs ignoradas.** Sin resolver. (Ver [ALTO-3])
-- **[PERSISTENTE] Analytics guarda texto libre del candidato.** Fix de 1 línea pendiente. (Ver [ALTO-4])
-- **[NUEVO] Chat sin TTL — candidatos regresan a conversaciones rancias con vacantes ya cerradas.** (Ver [NUEVO-2])
+- **`search_jobs` y `get_job_details` buscan en datos estáticos incorrectos** — `src/lib/assistant/tools.ts` líneas 97-103. Actualmente ejecutan contra `JOBS` (datos de demostración). Cuando se implemente `SupabaseKnowledgeProvider`, estas tools funcionarán correctamente sin cambiar su firma. La prioridad es implementar el provider primero (ver Bug 1).
+
+- **Fallback de respuesta vacía es fuera de contexto** — `src/app/api/assistant/chat/route.ts` línea 202: `"Entendido, ¿en que mas te puedo ayudar?"`. Si Claude produce solo un `tool_use` sin texto (lo cual es válido y ocurre cuando navega), `finalText` queda vacío y se devuelve este fallback genérico que llega al candidato como un mensaje no relacionado. Solución: si `navigations.length > 0` y `finalText` es vacío, usar `replyContent = "Te llevo ahí en un momento."` en lugar del fallback genérico.
+
+- **Rate limiter en memoria se reinicia con reinicios de PM2** — `src/app/api/assistant/chat/route.ts` líneas 68-81. El `rateLimitMap` es in-memory, se pierde en cada restart del proceso. Para el volumen actual de Kyoszen esto es aceptable. Si el sitio crece, migrar a Upstash Redis. No es urgente.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **[STATS INCONSISTENTES]** `knowledge.ts:77` dice `687+ candidatos colocados` y `3+ años`; el Hero muestra `7000+` y `10+`. Si un candidato pregunta a Kyo, recibe datos que contradicen lo que leyó en pantalla. Fix: actualizar `knowledge.ts:77-83` con los valores correctos y mover ambas referencias a `site_config` como única fuente de verdad.
+- **Tracking de vacantes recomendadas por Kyo** — no existe un evento de analytics para cuando Kyo presenta una recomendación en el Paso 5. Agregar `logEvent("kyo_vacante_recomendada", id)` en la route o en el frontend cuando se detecta que la respuesta contiene una navegación a `/vacantes/[id]`. Actualmente no se puede medir el embudo completo: Kyo recomienda → candidato aplica.
 
-- **[HERO: next/image]** `src/components/sections/Hero.tsx:5,122,131` — `import Image from "next/image"` viola la regla de proyecto ("No usar `next/image`"). Reemplazar con `<img>` nativo. Risk: si alguien retira `unoptimized: true` de `next.config.ts`, el build en VPS fallaría.
+- **Auto-apertura contextual de Kyo en `/vacantes`** — si el candidato llega a la página de vacantes desde un link de WhatsApp o campaña y aún no tiene historial de chat, Kyo podría abrirse automáticamente (o mostrar un bubble "¿Te ayudo a encontrar tu vacante ideal?") después de 3 segundos. Actualmente la página de vacantes tiene filtros potentes pero ningún punto de entrada guiado. Esto incrementaría la tasa de uso de Kyo.
 
-- **[HERO: tilde faltante]** `src/components/sections/Hero.tsx:81` — `placeholder="¿Que puesto buscas?"` falta tilde en "Qué". Es el buscador más visible del sitio. Fix: `placeholder="¿Qué puesto buscas?"`.
+- **Indicador de progreso en el flujo de Kyo** — el chat de 6 pasos no da retroalimentación de en qué etapa está el candidato. Un indicador sutil en el header del chat (e.g., "Paso 3 de 5 · Perfil") reduciría la tasa de abandono al hacer el proceso predecible y transparente. No requiere cambios en la API, solo en el frontend (detectar la etapa por el número de mensajes del usuario).
 
-- **[HERO: avatares externos]** `src/components/sections/Hero.tsx:100` — Los 4 avatares de social proof se cargan de `pravatar.cc` (CDN externo). Si tiene downtime, el Hero muestra imágenes rotas. Descargar 4 fotos genéricas a `/public/images/avatars/` y usar paths locales.
+- **Búsqueda en `/vacantes` no actualiza la URL** — `src/app/vacantes/page.tsx`. Los filtros aplicados (ubicacion, jornada, salario) se guardan en estado local pero la URL no se actualiza. Si el candidato recarga la página o comparte el link, los filtros se pierden. Agregar `router.replace` con los params actualizados al cambiar cualquier filtro mejoraría la shareability y el comportamiento de "atrás" en el navegador.
 
-- **[RUTA FALTANTE EN KNOWLEDGE]** `src/lib/assistant/knowledge.ts:60-67` no lista `/vacantes/:id`. Cuando el fix del [CRÍTICO-2] se implemente (navigate_to `/vacantes/12`), la Regla 6 del system prompt lo bloqueará porque no está listada. Añadir `{ path: "/vacantes/:id", title: "Detalle de vacante", ... }` a `SITE_PAGES`.
-
-- **[LATENCIA EN MOBILE]** `src/components/assistant/useChat.ts:127` — `setTimeout(..., 700)` da 700ms antes de redirigir al candidato. En mobile con teclado virtual abierto, el mensaje de Kyo casi no se puede leer antes del redirect. Cambiar a `1400`.
+- **Admin form: JORNADAS y CONTRATOS desalineados con el sitio público** (detallado en Bug 2). La corrección también debería incluir una migración SQL para actualizar registros ya existentes en Supabase si se cambian los valores posibles, de lo contrario los datos históricos quedarán sin coincidir con los nuevos filtros.
