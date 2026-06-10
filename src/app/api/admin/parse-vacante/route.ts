@@ -29,6 +29,7 @@ Devuelve este JSON con los campos que puedas inferir. Para campos no mencionados
   "contrato": "Indefinido | Temporal | Por honorarios (default: Indefinido)",
   "salario": number (solo numero en MXN, sin signos, default: 0),
   "salario_nota": "string corto con detalle del salario si se menciona: si es neto o bruto y la periodicidad de pago. Ej: 'Neto · pago semanal'. Vacio si no se menciona.",
+  "horario": "string con el horario laboral si se menciona, respetando los renglones con \\n. Ej: 'Lunes a sabado de 9:00 am a 6:00 pm\\nDomingo de 10:00 am a 4:00 pm'. Vacio si no se menciona.",
   "categoria": "Operativo | Administrativo | Ventas | Recursos Humanos | Contabilidad | Tecnologia | Logistica (inferir del puesto)",
   "badge": "Urgente | Nuevo | Destacado | (vacio si no aplica)",
   "badge_class": "bg-red-100 text-red-700 si Urgente | bg-green-100 text-green-700 si Nuevo | bg-yellow text-black si Destacado | vacio si no aplica",

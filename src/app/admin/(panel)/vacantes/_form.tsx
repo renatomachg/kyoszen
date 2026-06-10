@@ -13,6 +13,7 @@ interface VacanteFormData {
   contrato: string;
   salario: number;
   salario_nota: string;
+  horario: string;
   categoria: string;
   badge: string;
   badge_class: string;
@@ -32,6 +33,7 @@ const EMPTY: VacanteFormData = {
   contrato: "Indefinido",
   salario: 0,
   salario_nota: "",
+  horario: "",
   categoria: "Operativo",
   badge: "",
   badge_class: "",
@@ -62,6 +64,7 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
     return {
       ...m,
       salario_nota: m.salario_nota ?? "",
+      horario: m.horario ?? "",
       badge: m.badge ?? "",
       badge_class: m.badge_class ?? "",
       descripcion: m.descripcion ?? "",
@@ -113,6 +116,7 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
       contrato: form.contrato,
       salario: form.salario,
       salario_nota: form.salario_nota || null,
+      horario: form.horario || null,
       categoria: form.categoria,
       badge: form.badge || null,
       badge_class: form.badge_class || null,
@@ -213,6 +217,12 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
         <Field label="Detalle del salario (opcional)">
           <input value={form.salario_nota} onChange={(e) => set("salario_nota", e.target.value)}
             className={INPUT} placeholder="Ej. Neto · pago semanal  (si lo dejas vacio se muestra 'MXN bruto')" />
+        </Field>
+
+        <Field label="Horario laboral (opcional)">
+          <textarea value={form.horario} onChange={(e) => set("horario", e.target.value)}
+            rows={3} className={INPUT + " resize-none"}
+            placeholder={"Ej.\nLunes a sabado de 9:00 am a 6:00 pm o de 10:00 am a 7:00 pm\nDomingo de 10:00 am a 4:00 pm"} />
         </Field>
 
         <div className="grid grid-cols-3 gap-4">

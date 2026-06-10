@@ -100,6 +100,9 @@ export default function AdminVacantes() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3 justify-end">
+                      <a href={`/vacantes/${v.id}`} target="_blank" rel="noopener noreferrer" className="text-[12px] text-navy font-semibold hover:underline">
+                        Ver
+                      </a>
                       <Link href={`/admin/vacantes/${v.id}`} className="text-[12px] text-blue font-semibold hover:underline">
                         Editar
                       </Link>

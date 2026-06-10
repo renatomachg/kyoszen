@@ -26,6 +26,7 @@ interface Vacante {
   requisitos: string[];
   salario_nota?: string | null;
   beneficios?: string[] | null;
+  horario?: string | null;
 }
 
 export default function VacanteContent({ id }: { id: string }) {
@@ -152,6 +153,14 @@ export default function VacanteContent({ id }: { id: string }) {
                     ))}
                   </ul>
                 </div>
+
+                {/* Horario laboral */}
+                {job.horario?.trim() && (
+                  <div className="mb-8">
+                    <h2 className="text-lg font-extrabold text-navy mb-3">Horario laboral</h2>
+                    <p className="text-[14px] text-muted leading-relaxed whitespace-pre-line">{job.horario}</p>
+                  </div>
+                )}
 
                 {/* Prestaciones y beneficios */}
                 {(job.beneficios?.length ?? 0) > 0 && (
