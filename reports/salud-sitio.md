@@ -1,15 +1,15 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-06-10 00:00 UTC
+**Fecha:** 2026-06-11 00:00 UTC
 
 | Página | URL | Estado |
 |--------|-----|--------|
-| Home | / | ❌ CAÍDA (403) |
-| Vacantes | /vacantes | ❌ CAÍDA (403) |
-| Cursos | /cursos | ❌ CAÍDA (403) |
-| Nosotros | /nosotros | ❌ CAÍDA (403) |
-| Contacto | /contacto | ❌ CAÍDA (403) |
-| Servicios | /servicios | ❌ CAÍDA (403) |
+| Home | / | ❌ CAIDA (403) |
+| Vacantes | /vacantes | ❌ CAIDA (403) |
+| Cursos | /cursos | ❌ CAIDA (403) |
+| Nosotros | /nosotros | ❌ CAIDA (403) |
+| Contacto | /contacto | ❌ CAIDA (403) |
+| Servicios | /servicios | ❌ CAIDA (403) |
 
 **Resumen:** 0/6 páginas operando correctamente.
 
-> ⚠️ ALERTA CRÍTICA: Todas las páginas de `kyoszen.vercel.app` devuelven HTTP 403 (Forbidden). El dominio de Vercel no está disponible. Nota: según la configuración del proyecto, el deploy de producción se realiza en VPS Hostinger (`kyoszen.com`) — Vercel fue descartado. Es posible que `kyoszen.vercel.app` nunca haya estado activo o haya sido deshabilitado intencionalmente. Para monitoreo real, usar `https://kyoszen.com`.
+> ⚠️ ALERTA CRÍTICA: Todas las páginas de `kyoszen.vercel.app` devuelven HTTP 403 (Forbidden). El dominio de Vercel no está activo — el sitio de producción real opera en `kyoszen.com` (VPS Hostinger 76.13.111.112). Vercel fue descartado como plataforma de deploy.
