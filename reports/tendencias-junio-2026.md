@@ -250,3 +250,40 @@ Junio 2026 está dominado por un evento sin precedente: el inicio de la Copa Mun
 ---
 
 *Fuentes consultadas: INEGI ENOE 2026, IMSS datos de afiliacion abril 2026, TikTok Next Report 2026 LATAM, Metricool TikTok Trends Junio 2026, Deloitte proyecciones mundialistas, OCC bolsa de trabajo Mexico junio 2026 (vacantes mundialistas y demanda de ingles), Merca20, El Heraldo de Mexico, Infobae Mexico, Bloomberg Linea, El Cronista, KPMG flash reforma laboral, DOF decreto reforma 40 horas (03/03/2026), Holland & Knight labor reform analysis, Justia Mexico reforma constitucional, La Jornada (DOF 40 horas), calendariodemexico.com, La Razon de Mexico (Dai Dai/Shakira), STPS programa Jovenes Embajadores del Mundial, Expansion "El Mundial dispara vacantes en Mexico" (04/06/2026), Randstad Mexico tendencias 2026, Wellhub mercado laboral Mexico 2026, Wellhub burnout y estres laboral Mexico 2026, Wellhub bienestar 92%, Buk "job hugging" y Beyond the CV 2026, Fortia tendencias RRHH 2026, Zety "Gen Z y empleo via TikTok" 2026, WTW trabajo hibrido reduction 2026, Experis IA reclutamiento 22%, Kelly Services empleo y salarios Mexico abril 2026, Talenteca bolsa de trabajo CDMX junio 2026, Computrabajo vacantes CDMX, Top-Hashtags RRHH Instagram TikTok 2026, Cyberclick hashtags 2026, El Portavoz de Sonora "Mundial 2026 home office", Vive USA Mundial 2026 y home office Mexico, Marketing4Ecommerce tendencias TikTok Mexico 2026.*
+
+---
+
+## Verificación 15 de junio de 2026 — Segunda quincena
+
+**Ejecutada por:** Trends Analyst (ejecucion automatica) | **Fecha:** 15 jun 2026
+
+### Nuevos hallazgos desde el 8 de junio
+
+**1. Audio nuevo en TikTok México — "Un rey sin Reyna" de Julión Álvarez**
+Identificado como audio en tendencia en TikTok México segunda quincena de junio. Encaja con el perfil de música regional mexicana que ya estaba en el reporte (audio #4 y #8), pero es el track específico con tracción activa ahora. **Acción:** el equipo de producción puede usarlo esta semana para posts de vacantes operativas (formato 8–15 seg, fondo navy, datos de la vacante en texto grande). No requiere guión — la música hace el trabajo.
+
+**2. Rotación laboral post-inicio del Mundial — nuevo pain point B2B confirmado**
+Con el torneo ya en curso, el debate en RRHH se trasladó de "¿habrá empleo?" a "¿cómo retengo a mi gente?". IDC (29/05), Lockton, Angulo7 y Líder Empresarial confirman: 53% de empresas prevé contratar más, pero la informalidad (+55% de la PEA) compite activamente por los mismos perfiles operativos. Turismo, hospitalidad y retail son los sectores con mayor riesgo. **Ángulo nuevo para Kyoszen:** "Tu competencia por talento ya no es la empresa de enfrente — es la informalidad. Así te ayudamos a retener." Esto conecta directamente con el servicio de inducción y capacitación de Kyoszen y con la herramienta /calculadora del sitio (costo de rotación).
+
+**3. Gancho doble: Día del Padre (21 jun) + Mundial = confluencia activa en TikTok**
+TikTok México registra volumen creciente de contenido "Día del Padre con temática mundialista" (manualidades, arreglos balón de fútbol, regalos con jersey). La confluencia es un multiplicador de alcance. **Idea concreta para Kyoszen:** post para el 20–21 de junio — "El mejor regalo para el papá que trabaja: una oportunidad que vale la pena" — vacante o CTA WhatsApp con framing aspiracional y toque mundialista. Formato: imagen estática FB o talking head TikTok 15 seg. Usar audio regional mexicano de fondo.
+
+**4. Nueva narrativa de mercado laboral: "el candidato tiene el control"**
+RRHH Digital 2026 consolida esta narrativa: las vacantes se acumulan, los candidatos tienen más opciones y el poder de negociación se desplazó hacia el talento. **Ángulo para Kyoszen (B2B):** "En 2026 ya no gana quien publica más vacantes — gana quien sabe a quién busca y cómo convencerlo. Eso es lo que hacemos." Contenido de autoridad para directores de RRHH y dueños de PyMEs.
+
+**5. Empleos más demandados en México 2026 (BeBee / Randstad)**
+Rankings actualizados: Repartidor (447K vacantes activas), Director de Ventas (266K), Operario de Almacén (225K), Reclutador (127K). Dato útil para posts educativos del pilar Vacantes Activas y para posicionar a Kyoszen en los sectores con mayor volumen real de contratación.
+
+### Ajuste de prioridades para la semana del 15–21 de junio
+
+| Prioridad | Acción |
+|---|---|
+| 🔴 Alta | Post Día del Padre + Mundial (fecha límite: publicar el 20 jun) |
+| 🔴 Alta | Contenido de retención laboral para audiencia B2B (pain point activo ahora) |
+| 🟡 Media | Usar "Un rey sin Reyna" de Julión en próxima vacante operativa |
+| 🟡 Media | Post "el candidato tiene el control" — autoridad para directores de RRHH |
+| 🟢 Normal | Semana 4 (25–30 jun): cierre de trimestre + Marcha del Orgullo (27 jun) — ya contemplados en reporte original |
+
+**Estado del reporte:** Vigente y actualizado al 15 de junio de 2026. No se identificaron cambios que modifiquen las recomendaciones estructurales del reporte original. Se agregan 5 hallazgos accionables para la segunda quincena.
+
+*Fuentes adicionales 15 jun: IDC Online "53% empresas contratan más pero enfrentan mayor rotacion" (29/05/2026), Angulo7 "Mundial elevara rotacion laboral en Mexico" (jun 2026), Lockton / Emprefinanzas "Retencion de talento desafio Mundial 2026" (mayo 2026), Lider Empresarial "Por que el Mundial 2026 elevara presion sobre retencion de talento", RRHH Digital "Mercado laboral 2026: el candidato tiene el control" (jun 2026), BeBee "Informe mercado laboral Mexico 2026", TikTok Discover "audios en tendencia Mexico" / "Un rey sin Reyna" jun 2026, TikTok Discover "Dia del Padre 2026 tendencias CDMX".*
