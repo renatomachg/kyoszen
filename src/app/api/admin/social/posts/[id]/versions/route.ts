@@ -77,10 +77,11 @@ export async function PUT(
   const { id } = await params;
   const body = await req.json();
 
-  // 1) actualizar la version activa (texto + imagenes)
+  // 1) actualizar la version activa (texto + imagenes + storyboard/propuesta)
   const vPatch: Record<string, unknown> = {};
   if (typeof body.caption === "string") vPatch.caption = body.caption;
   if (Array.isArray(body.imagenes)) vPatch.imagenes = body.imagenes;
+  if (body.storyboard !== undefined) vPatch.storyboard = body.storyboard;
   if (Object.keys(vPatch).length > 0) {
     const { error: vErr } = await sb
       .from("social_post_versions")
@@ -115,7 +116,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { caption, imagenes } = await req.json();
+  const { caption, imagenes, storyboard, titulo_interno } = await req.json();
 
   // Desactivar versión actual
   await sb.from("social_post_versions").update({ es_activa: false }).eq("post_id", id).eq("es_activa", true);
@@ -131,17 +132,19 @@ export async function POST(
 
   const nextNum = (last?.version_num ?? 0) + 1;
 
-  // Insertar nueva versión activa
+  // Insertar nueva versión activa (incluye storyboard/propuesta si viene)
   const { data: newVersion, error } = await sb
     .from("social_post_versions")
-    .insert({ post_id: id, version_num: nextNum, caption, imagenes: imagenes ?? [], es_activa: true })
+    .insert({ post_id: id, version_num: nextNum, caption, imagenes: imagenes ?? [], storyboard: storyboard ?? null, es_activa: true })
     .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Volver estado a pendiente
-  await sb.from("social_posts").update({ estado: "pendiente", updated_at: new Date().toISOString() }).eq("id", id);
+  // Volver estado a pendiente (y actualizar titulo si viene)
+  await sb.from("social_posts")
+    .update({ estado: "pendiente", updated_at: new Date().toISOString(), ...(typeof titulo_interno === "string" && titulo_interno ? { titulo_interno } : {}) })
+    .eq("id", id);
 
   // Avisar a los revisores que ya está corregida (fire-and-forget)
   const { data: post } = await sb.from("social_posts").select("titulo_interno").eq("id", id).single();

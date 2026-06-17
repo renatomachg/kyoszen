@@ -279,6 +279,107 @@ function PostModal({
 }
 
 /* ─── Post detail panel ──────────────────────────────── */
+/* ─── Editor de la Propuesta (lo que ve el cliente) ── */
+function PropuestaEditor({ post, version, onSaved, onCancel }: { post: Post; version: Version; onSaved: () => void; onCancel: () => void }) {
+  const sbActual: import("@/components/social/StoryboardView").Storyboard = version.storyboard ?? {};
+  const prop: import("@/components/social/StoryboardView").Propuesta = sbActual.propuesta ?? {};
+  const [titulo, setTitulo] = useState(post.titulo_interno ?? "");
+  const [subtitulo, setSubtitulo] = useState(prop.subtitulo ?? "");
+  const [porQue, setPorQue] = useState(prop.por_que ?? "");
+  const [lineaDiseno, setLineaDiseno] = useState<string[]>(prop.linea_diseno?.length ? prop.linea_diseno : [""]);
+  const [copy, setCopy] = useState<string[]>(prop.copy?.length ? prop.copy : [""]);
+  const [caption, setCaption] = useState(version.caption ?? prop.caption ?? "");
+  const [saving, setSaving] = useState<"" | "guardar" | "avisar">("");
+
+  const lab: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 5 };
+  const inp: React.CSSProperties = { width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "9px 11px", fontSize: 13, outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box" };
+
+  const renderLista = (label: string, items: string[], setItems: (v: string[]) => void, ph: string) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={lab}>{label}</label>
+      {items.map((it, i) => (
+        <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+          <input value={it} onChange={(e) => setItems(items.map((x, j) => (j === i ? e.target.value : x)))} placeholder={ph} style={inp} />
+          <button onClick={() => setItems(items.length > 1 ? items.filter((_, j) => j !== i) : [""])} title="Quitar"
+            style={{ flexShrink: 0, width: 34, borderRadius: 9, border: "1.5px solid #FECACA", background: "#FEF2F2", color: "#DC2626", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>×</button>
+        </div>
+      ))}
+      <button onClick={() => setItems([...items, ""])}
+        style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 8, padding: "5px 12px", fontSize: 11.5, fontWeight: 700, color: "#1E40AF", cursor: "pointer" }}>+ Agregar</button>
+    </div>
+  );
+
+  const construirStoryboard = () => ({
+    ...sbActual,
+    propuesta: {
+      ...prop,
+      subtitulo: subtitulo.trim(),
+      por_que: porQue.trim(),
+      linea_diseno: lineaDiseno.map((s) => s.trim()).filter(Boolean),
+      copy: copy.map((s) => s.trim()).filter(Boolean),
+      caption: caption.trim(),
+    },
+  });
+
+  const guardar = async (avisar: boolean) => {
+    setSaving(avisar ? "avisar" : "guardar");
+    const storyboard = construirStoryboard();
+    const url = `/api/admin/social/posts/${post.id}/versions`;
+    const headers = { "Content-Type": "application/json" };
+    try {
+      const res = avisar
+        ? await fetch(url, { method: "POST", headers, body: JSON.stringify({ caption: caption.trim(), imagenes: [], storyboard, titulo_interno: titulo.trim() }) })
+        : await fetch(url, { method: "PUT", headers, body: JSON.stringify({ caption: caption.trim(), titulo_interno: titulo.trim(), storyboard }) });
+      if (!res.ok) throw new Error();
+      onSaved();
+    } catch {
+      alert("Error al guardar. Intenta de nuevo.");
+      setSaving("");
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>Título</label>
+        <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título del video" style={inp} />
+      </div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>Subtítulo</label>
+        <input value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} placeholder="Descripción corta debajo del título" style={inp} />
+      </div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>Por qué este video</label>
+        <textarea value={porQue} onChange={(e) => setPorQue(e.target.value)} rows={3} placeholder="El argumento para el cliente" style={{ ...inp, resize: "vertical" }} />
+      </div>
+      {renderLista("Línea de diseño", lineaDiseno, setLineaDiseno, "Un punto de diseño")}
+      {renderLista("Mensaje / copy", copy, setCopy, "Una línea del mensaje")}
+      <div style={{ marginBottom: 16 }}>
+        <label style={lab}>Texto de la publicación (caption)</label>
+        <textarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} placeholder="El caption que acompaña la publicación" style={{ ...inp, resize: "vertical" }} />
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => guardar(false)} disabled={!!saving}
+            style={{ flex: 1, background: "#fff", border: "1.5px solid #042E7B", borderRadius: 10, padding: "10px 0", fontSize: 13, fontWeight: 800, color: "#042E7B", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+            {saving === "guardar" ? "Guardando..." : "Guardar"}
+          </button>
+          <button onClick={() => guardar(true)} disabled={!!saving}
+            style={{ flex: 1.4, background: "#042E7B", border: "none", borderRadius: 10, padding: "10px 0", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+            {saving === "avisar" ? "Guardando y avisando..." : "📨 Guardar y avisar al cliente"}
+          </button>
+        </div>
+        <button onClick={onCancel} disabled={!!saving}
+          style={{ background: "none", border: "none", color: "#64748B", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 0" }}>Cancelar</button>
+        <p style={{ margin: 0, fontSize: 11, color: "#94A3B8", lineHeight: 1.5 }}>
+          <b>Guardar</b>: corrige en el sitio sin avisar. <b>Guardar y avisar</b>: crea versión nueva, vuelve a pendiente y manda correo al cliente.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: Version; onUpdated: () => void }) {
   const fase = post.fase ?? "guion";
   const [uploading, setUploading] = useState(false);
@@ -287,7 +388,8 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
   const sb = version.storyboard;
   const tieneProp = !!sb?.propuesta;
   const tieneTec = !!sb?.guia_tecnica;
-  const [docTab, setDocTab] = useState<"propuesta" | "storyboard" | "tecnica">(tieneProp ? "propuesta" : "storyboard");
+  const [docTab, setDocTab] = useState<"propuesta" | "storyboard" | "tecnica">("propuesta");
+  const [editandoProp, setEditandoProp] = useState(false);
 
   const subirVideo = async (file: File | null) => {
     if (!file) return;
@@ -331,30 +433,39 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
       )}
 
       {/* Pestañas de documentos del set */}
-      {(tieneProp || tieneTec) && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 12, background: "#F1F5F9", padding: 4, borderRadius: 11 }}>
-          {tieneProp && (
-            <button onClick={() => setDocTab("propuesta")}
-              style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "propuesta" ? "#fff" : "transparent", color: docTab === "propuesta" ? "#042E7B" : "#64748B", boxShadow: docTab === "propuesta" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
-              📋 Propuesta <span style={{ fontSize: 9.5, color: "#16A34A" }}>· cliente</span>
-            </button>
-          )}
-          <button onClick={() => setDocTab("storyboard")}
-            style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "storyboard" ? "#fff" : "transparent", color: docTab === "storyboard" ? "#042E7B" : "#64748B", boxShadow: docTab === "storyboard" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
-            🎬 Storyboard
+      <div style={{ display: "flex", gap: 6, marginBottom: 12, background: "#F1F5F9", padding: 4, borderRadius: 11 }}>
+        <button onClick={() => { setDocTab("propuesta"); setEditandoProp(false); }}
+          style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "propuesta" ? "#fff" : "transparent", color: docTab === "propuesta" ? "#042E7B" : "#64748B", boxShadow: docTab === "propuesta" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
+          📋 Propuesta <span style={{ fontSize: 9.5, color: "#16A34A" }}>· cliente</span>
+        </button>
+        <button onClick={() => setDocTab("storyboard")}
+          style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "storyboard" ? "#fff" : "transparent", color: docTab === "storyboard" ? "#042E7B" : "#64748B", boxShadow: docTab === "storyboard" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
+          🎬 Storyboard
+        </button>
+        {tieneTec && (
+          <button onClick={() => setDocTab("tecnica")}
+            style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "tecnica" ? "#fff" : "transparent", color: docTab === "tecnica" ? "#042E7B" : "#64748B", boxShadow: docTab === "tecnica" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
+            🛠️ Guía técnica
           </button>
-          {tieneTec && (
-            <button onClick={() => setDocTab("tecnica")}
-              style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "tecnica" ? "#fff" : "transparent", color: docTab === "tecnica" ? "#042E7B" : "#64748B", boxShadow: docTab === "tecnica" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
-              🛠️ Guía técnica
-            </button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
-      {tieneProp && docTab === "propuesta"
-        ? <PropuestaView prop={sb?.propuesta} caption={version.caption} />
-        : tieneTec && docTab === "tecnica"
+      {docTab === "propuesta" ? (
+        editandoProp ? (
+          <PropuestaEditor post={post} version={version} onSaved={() => { setEditandoProp(false); onUpdated(); }} onCancel={() => setEditandoProp(false)} />
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 11.5, color: "#64748B" }}>Esto es lo que ve y aprueba el cliente.</span>
+              <button onClick={() => setEditandoProp(true)}
+                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>✏️ Editar propuesta</button>
+            </div>
+            {tieneProp
+              ? <PropuestaView prop={sb?.propuesta} caption={version.caption} />
+              : <p style={{ margin: 0, fontSize: 13, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "12px 14px" }}>Esta publicación aún no tiene propuesta. Toca <b>✏️ Editar propuesta</b> para crear la que verá el cliente.</p>}
+          </>
+        )
+      ) : docTab === "tecnica" && tieneTec
         ? <GuiaTecnicaView guia={sb?.guia_tecnica} />
         : <StoryboardView sb={version.storyboard} caption={version.caption} showProduccion />}
 

@@ -378,6 +378,8 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
+2026-06-17 (noche 4) — **Editar la Propuesta del cliente en TikToks (admin).** En el detalle de un TikTok → pestaña 📋 Propuesta → "✏️ Editar propuesta": editor (`PropuestaEditor`) de todo lo que ve el cliente (título, subtítulo, por_que, linea_diseno[], copy[], caption). **Dos botones:** "Guardar" = PUT en sitio (sin avisar, no crea versión) · "📨 Guardar y avisar al cliente" = POST nueva versión (vuelve a pendiente + correo a revisores). Endpoints `/api/admin/social/posts/[id]/versions`: PUT ahora acepta `storyboard`; POST acepta `storyboard` + `titulo_interno`. Todo anidado en `storyboard.propuesta` (sin migración). La pestaña Propuesta ahora siempre se muestra en TikTok (permite crear propuesta si no existe).
+
 2026-06-17 (noche 3) — **Arrastrar publicaciones entre meses.** En el calendario admin, soltar una publicación sobre las flechas **‹ ›** la mueve al mes (o semana, según vista) anterior/siguiente — mismo día del mes, ajustado si el destino es más corto — y navega para seguirla. Las flechas son drop targets (se resaltan azul + escalan al arrastrar encima). Respeta bloqueo de fechas pasadas. Función `moverPostPeriodo(postId, dir)` en `redes-sociales/page.tsx`. Para saltos lejanos: repetir gesto o usar ✏️ Editar.
 
 2026-06-17 (noche 2) — **Distintivo de red en calendario + filtros en revisor + tour de novedad.**
