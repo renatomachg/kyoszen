@@ -694,10 +694,28 @@ export default function RedesSocialesPage() {
       });
       const data = await res.json();
       if (!res.ok) { setImportMsg(data.error ?? "Error al crear."); setImportCreando(false); return; }
-      const omit = data.omitidas ? ` ${data.omitidas} omitidas (fecha pasada).` : "";
-      setImportMsg(`✅ Se crearon ${data.creadas} TikToks (borrador).${omit}`);
-      setTtPiezas(null); setImportTexto("");
-      loadData();
+
+      // Navegar al calendario en el mes del primer TikTok creado, para que se vean al instante
+      const fechasCreadas = sel.map((p) => p.fecha).filter(Boolean).sort();
+      const primera = fechasCreadas[0];
+      const fechasLabel = fechasCreadas
+        .map((f) => new Date(f + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }))
+        .join(", ");
+
+      resetTT(); setImportTexto(""); setImportFileName("");
+
+      if (primera) {
+        const now = new Date();
+        const d = new Date(primera + "T12:00:00");
+        const monthOffset = (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth());
+        setVista("mes");
+        setWeekOffset(monthOffset);
+        setTab("calendario");
+        setImportMsg(`✅ Se crearon ${data.creadas} TikToks (borrador): ${fechasLabel}. Te llevamos al calendario.`);
+      } else {
+        setImportMsg(`✅ Se crearon ${data.creadas} TikToks (borrador).`);
+        loadData();
+      }
     } catch { setImportMsg("Error de conexión al crear."); }
     setImportCreando(false);
   };
@@ -922,6 +940,14 @@ export default function RedesSocialesPage() {
           </button>
         ))}
       </div>
+
+      {/* Banner de éxito global (visible al cambiar de tab tras crear) */}
+      {importMsg.startsWith("✅") && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 12, padding: "11px 16px", marginBottom: 18 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#166534" }}>{importMsg}</span>
+          <button onClick={() => setImportMsg("")} style={{ background: "none", border: "none", color: "#166534", fontSize: 16, cursor: "pointer", lineHeight: 1, padding: 0 }}>×</button>
+        </div>
+      )}
 
       {/* ── Tab: Importar plan ── */}
       {tab === "importar" && (
@@ -1267,6 +1293,7 @@ export default function RedesSocialesPage() {
                     {dayPosts.map((p) => {
                       const v = p.social_post_versions.find((vv) => vv.es_activa) ?? p.social_post_versions[0];
                       const est = ESTADO[p.estado];
+                      const red = getRedSocial(p.red_social);
                       const swapTarget = dropTarget === "post:" + p.id && dragId != null && dragId !== p.id;
                       return (
                         <button key={p.id}
@@ -1276,14 +1303,24 @@ export default function RedesSocialesPage() {
                           onDragOver={(e) => { if (dragId != null && dragId !== p.id) { e.preventDefault(); e.stopPropagation(); setDropTarget("post:" + p.id); } }}
                           onDrop={(e) => onCardDrop(e, p.id)}
                           onClick={() => setSelectedPost(p)}
-                          style={{ display: "flex", gap: 5, alignItems: "center", width: "100%", textAlign: "left", background: swapTarget ? "#EFF6FF" : "#fff", border: `1px solid ${swapTarget ? "#1883FF" : "#EEF1F6"}`, borderLeft: `3px solid ${est.dot}`, borderRadius: 8, padding: 4, cursor: dragId != null ? "grabbing" : "grab", overflow: "hidden", opacity: dragId === p.id ? 0.4 : 1, transition: "opacity .12s" }}>
-                          {v?.imagenes?.[0]
-                            ? <img src={v.imagenes[0]} alt="" style={{ width: 30, height: 30, borderRadius: 6, objectFit: "cover", flexShrink: 0, display: "block" }} />
-                            : <div style={{ width: 30, height: 30, borderRadius: 6, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📝</div>}
-                          <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 600, color: "#475569", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                            {p.titulo_interno || v?.caption || "Sin título"}
-                          </span>
-                          {!p.publicado && <span title="Borrador" style={{ width: 6, height: 6, borderRadius: "50%", background: "#EAB308", flexShrink: 0 }} />}
+                          style={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", textAlign: "left", background: swapTarget ? "#EFF6FF" : "#fff", border: `1px solid ${swapTarget ? "#1883FF" : "#EEF1F6"}`, borderLeft: `3px solid ${red.color}`, borderRadius: 8, padding: 4, cursor: dragId != null ? "grabbing" : "grab", overflow: "hidden", opacity: dragId === p.id ? 0.4 : 1, transition: "opacity .12s" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: red.colorSuave, color: red.color, fontSize: 8.5, fontWeight: 800, padding: "1px 6px", borderRadius: 5, lineHeight: 1.5, whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: ".02em" }}>
+                              <span style={{ width: 5, height: 5, borderRadius: "50%", background: red.color, display: "inline-block" }} />{red.nombre}
+                            </span>
+                            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                              <span title={est.label} style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
+                              {!p.publicado && <span title="Borrador" style={{ fontSize: 7.5, fontWeight: 800, color: "#92400E", background: "#FEF3C7", padding: "0 4px", borderRadius: 4 }}>BORRADOR</span>}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                            {v?.imagenes?.[0]
+                              ? <img src={v.imagenes[0]} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0, display: "block" }} />
+                              : <div style={{ width: 28, height: 28, borderRadius: 6, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>{p.red_social === "tiktok" ? "🎬" : "📝"}</div>}
+                            <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 600, color: "#475569", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                              {p.titulo_interno || v?.caption || "Sin título"}
+                            </span>
+                          </div>
                         </button>
                       );
                     })}

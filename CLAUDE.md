@@ -378,6 +378,12 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
+2026-06-17 (noche 2) — **Distintivo de red en calendario + filtros en revisor + tour de novedad.**
+- **Chip de red en vista Mes** (admin y cliente): cada evento muestra chip `● FACEBOOK` (azul) / `● TIKTOK` (negro) + borde izquierdo en color de la red, ícono 🎬 (TikTok) / 📝 (Facebook). Admin además: pill "BORRADOR" y punto de estado; cliente: badge "✨ NUEVA" si hay corrección (sin pill borrador).
+- **Filtros en el revisor (`/revisor`):** las 4 píldoras (Total/Aprobados/Pendientes/Con cambios) ahora **filtran por estado** al tocarlas; nueva fila de **filtros de red** (Todas/📘 Facebook/🎵 TikTok). Combinables, con contador "X de Y", "✕ Limpiar filtros" y empty state inteligente. `postsFiltrados` aplica a vista semana y mes.
+- **Tour de novedad (una sola vez):** `NovedadFiltros` = coach-mark de 6 pasos (intro → Aprobados → Pendientes → Con cambios → Facebook → TikTok) con spotlight sobre cada píldora real (atributos `data-fpill` / `data-fred`), puntos de progreso, Atrás/Siguiente. localStorage `kyoszen_revisor_novedad_filtros_v1`. Usuario que ya vio la guía → ve la novedad; usuario nuevo → ve la guía y se marca la novedad como vista (sin doble popup).
+- **UX importador:** al "Crear" TikToks, salta al tab Calendario en el mes del primero y banner verde global con las fechas. Se borraron 4 TikToks viejos de prueba (ids 59/65/71/77).
+
 2026-06-17 (noche) — **Importador de set TikTok (3 documentos) + separación por audiencia.**
 - **3 documentos por set** (Holadiseño entrega 3 HTML/PDF por mes): **Propuesta CLIENTE** (pitch que aprueba el cliente), **Storyboard** (guion cuadro por cuadro, para generar el video) y **Guía técnica INTERNA** (prompts Higgsfield + montaje CapCut). Todo se guarda **anidado en el `storyboard` jsonb** existente → `storyboard.propuesta` y `storyboard.guia_tecnica`. **Cero migración de BD.**
 - **Importador** (`/admin/redes-sociales` → Importar → 🎬 TikTok): **3 zonas de carga** (acepta HTML/TXT/PDF arrastrar/subir/pegar). Acción `analizar-set` en `/api/admin/social/importar-tiktok` parsea los 3 en paralelo (haiku, prompts `SYSTEM`/`SYSTEM_PROP`/`SYSTEM_TEC`) y **empata por índice de video**. Con uno solo basta (storyboard o propuesta). Fechas sugeridas en martes.

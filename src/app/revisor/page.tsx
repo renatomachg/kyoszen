@@ -784,6 +784,96 @@ function TourControls({ paso, total, esUltimo, onClose, setPaso }: {
   );
 }
 
+/* ─── Aviso de novedad (una sola vez) — tour por cada filtro ── */
+const NOVEDAD_PASOS = [
+  { sel: "[data-novedad='filtros']", emoji: "✨", titulo: "Novedad: ahora puedes filtrar", texto: "Te mostramos rápido cómo encontrar tus publicaciones más fácil. Son 5 segundos." },
+  { sel: "[data-fpill='aprobado']", emoji: "✅", titulo: "Aprobados", texto: "Tócalo para ver solo las publicaciones que ya aprobaste." },
+  { sel: "[data-fpill='pendiente']", emoji: "🕐", titulo: "Pendientes", texto: "Las que te faltan por revisar. Tócalo para verlas solas." },
+  { sel: "[data-fpill='cambios']", emoji: "🔴", titulo: "Con cambios", texto: "Las que pediste corregir. Aquí las encuentras al instante." },
+  { sel: "[data-fred='facebook']", emoji: "📘", titulo: "Facebook", texto: "Filtra para ver solo las publicaciones de Facebook." },
+  { sel: "[data-fred='tiktok']", emoji: "🎵", titulo: "TikTok", texto: "O solo los videos de TikTok. Puedes combinarlo con los de arriba." },
+];
+
+function NovedadFiltros({ onClose }: { onClose: () => void }) {
+  const [paso, setPaso] = useState(0);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const actual = NOVEDAD_PASOS[paso];
+  const esUltimo = paso === NOVEDAD_PASOS.length - 1;
+
+  useEffect(() => {
+    const medir = () => {
+      const el = document.querySelector(actual.sel) as HTMLElement | null;
+      if (!el) { setRect(null); return; }
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setRect(el.getBoundingClientRect());
+    };
+    const t = setTimeout(medir, 300);
+    window.addEventListener("resize", medir);
+    window.addEventListener("scroll", medir, true);
+    return () => { clearTimeout(t); window.removeEventListener("resize", medir); window.removeEventListener("scroll", medir, true); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paso]);
+
+  const PAD = 9;
+  const TT_W = Math.min(320, typeof window !== "undefined" ? window.innerWidth - 24 : 320);
+
+  // Tooltip debajo del elemento (las píldoras están arriba, hay espacio); si no, centrado.
+  let ttStyle: React.CSSProperties = { top: "50%", left: "50%", transform: "translate(-50%,-50%)" };
+  let arrowLeft = TT_W / 2;
+  let conFlecha = false;
+  if (rect && typeof window !== "undefined") {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const left = Math.max(12, Math.min(rect.left + rect.width / 2 - TT_W / 2, vw - TT_W - 12));
+    if (vh - rect.bottom > 200) {
+      ttStyle = { top: rect.bottom + PAD + 12, left };
+      arrowLeft = Math.max(18, Math.min(rect.left + rect.width / 2 - left, TT_W - 18));
+      conFlecha = true;
+    } else {
+      ttStyle = { top: Math.max(16, rect.top - PAD - 12 - 170), left };
+    }
+  }
+
+  return (
+    <>
+      {/* Spotlight */}
+      {rect ? (
+        <div style={{ position: "fixed", top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2, borderRadius: 14, boxShadow: "0 0 0 9999px rgba(4,46,123,.72)", border: "2.5px solid #1883FF", zIndex: 300, pointerEvents: "none", transition: "all .3s ease" }} />
+      ) : (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(4,46,123,.72)", zIndex: 300 }} />
+      )}
+
+      {/* Tarjeta */}
+      <div style={{ position: "fixed", width: TT_W, zIndex: 301, background: "#fff", borderRadius: 16, boxShadow: "0 16px 48px rgba(0,0,0,.28)", padding: 18, ...ttStyle }}>
+        {conFlecha && <div style={{ position: "absolute", top: -8, left: arrowLeft - 8, width: 16, height: 16, background: "#fff", transform: "rotate(45deg)", borderRadius: 3 }} />}
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+            <span style={{ fontSize: 20 }}>{actual.emoji}</span>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: "#042E7B" }}>{actual.titulo}</h3>
+          </div>
+          <p style={{ margin: "0 0 14px", fontSize: 13, color: "#475569", lineHeight: 1.55 }}>{actual.texto}</p>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* Puntos de progreso */}
+            <div style={{ display: "flex", gap: 5, flex: 1 }}>
+              {NOVEDAD_PASOS.map((_, i) => (
+                <span key={i} style={{ width: i === paso ? 16 : 6, height: 6, borderRadius: 50, background: i === paso ? "#1883FF" : "#E2E8F0", transition: "all .2s" }} />
+              ))}
+            </div>
+            {paso > 0 && (
+              <button onClick={() => setPaso((p) => p - 1)} style={{ background: "none", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "7px 12px", fontSize: 12.5, fontWeight: 700, color: "#64748B", cursor: "pointer" }}>Atrás</button>
+            )}
+            <button onClick={() => (esUltimo ? onClose() : setPaso((p) => p + 1))} style={{ background: "#042E7B", border: "none", borderRadius: 10, padding: "7px 16px", fontSize: 12.5, fontWeight: 800, color: "#fff", cursor: "pointer" }}>
+              {esUltimo ? "Entendido 👍" : "Siguiente"}
+            </button>
+          </div>
+
+          <button onClick={onClose} style={{ position: "absolute", top: -6, right: -4, background: "none", border: "none", color: "#CBD5E1", fontSize: 18, cursor: "pointer", lineHeight: 1, padding: 4 }}>×</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 /* ─── Main ───────────────────────────────────────────── */
 export default function RevisorPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -797,6 +887,9 @@ export default function RevisorPage() {
   const [loading, setLoading] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [showGuia, setShowGuia] = useState(false);
+  const [showNovedad, setShowNovedad] = useState(false);
+  const [filtroEstado, setFiltroEstado] = useState<"todos" | "aprobado" | "pendiente" | "cambios">("todos");
+  const [filtroRed, setFiltroRed] = useState<"todos" | "facebook" | "tiktok">("todos");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -805,13 +898,20 @@ export default function RevisorPage() {
     });
   }, []);
 
-  // Mostrar la guía solo la primera vez
+  // Mostrar la guía (usuario nuevo) o el aviso de novedad (usuario que ya la vio), una sola vez
   useEffect(() => {
     if (!user) return;
     try {
-      if (!localStorage.getItem("kyoszen_revisor_guia_vista")) {
+      const guiaVista = localStorage.getItem("kyoszen_revisor_guia_vista");
+      const novedadVista = localStorage.getItem("kyoszen_revisor_novedad_filtros_v1");
+      if (!guiaVista) {
         setShowGuia(true);
         localStorage.setItem("kyoszen_revisor_guia_vista", "1");
+        // Usuario nuevo: ya conoce la UI actual; no le mostramos la novedad después
+        localStorage.setItem("kyoszen_revisor_novedad_filtros_v1", "1");
+      } else if (!novedadVista) {
+        setShowNovedad(true);
+        localStorage.setItem("kyoszen_revisor_novedad_filtros_v1", "1");
       }
     } catch { /* noop */ }
   }, [user]);
@@ -890,6 +990,13 @@ export default function RevisorPage() {
     });
   };
 
+  // Posts filtrados por estado y red (los filtros de las píldoras)
+  const postsFiltrados = posts.filter((p) =>
+    (filtroEstado === "todos" || p.estado === filtroEstado) &&
+    (filtroRed === "todos" || p.red_social === filtroRed)
+  );
+  const hayFiltro = filtroEstado !== "todos" || filtroRed !== "todos";
+
   if (checkingAuth) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: 32, height: 32, border: "3px solid #042E7B", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
@@ -944,25 +1051,54 @@ export default function RevisorPage() {
           <InformeCliente />
         ) : (
         <>
-        {/* Stats del mes */}
-        <div data-tour="stats" style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
-          {[
-            { label: "Total del mes", value: statsMonth.total, bg: "#F1F5F9", color: "#042E7B", dot: "#94A3B8", emoji: "📅" },
-            { label: "Aprobados", value: statsMonth.aprobados, bg: "#DCFCE7", color: "#166534", dot: "#22C55E", emoji: "✅" },
-            { label: "Pendientes", value: statsMonth.pendientes, bg: "#FEF9C3", color: "#854D0E", dot: "#EAB308", emoji: "🕐" },
-            { label: "Con cambios", value: statsMonth.cambios, bg: "#FEE2E2", color: "#991B1B", dot: "#EF4444", emoji: "🔴" },
-          ].map(s => (
-            <div key={s.label} style={{ background: s.bg, borderRadius: 50, padding: "8px 16px", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 14 }}>{s.emoji}</span>
-              <span style={{ fontSize: 13, fontWeight: 900, color: s.color }}>{s.value}</span>
-              <span style={{ fontSize: 12, color: s.color, opacity: .7 }}>{s.label}</span>
-            </div>
-          ))}
+        <div data-novedad="filtros">
+        {/* Stats del mes (clickeables = filtro por estado) */}
+        <div data-tour="stats" style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+          {([
+            { label: "Total del mes", filtro: "todos", value: statsMonth.total, bg: "#F1F5F9", color: "#042E7B", emoji: "📅" },
+            { label: "Aprobados", filtro: "aprobado", value: statsMonth.aprobados, bg: "#DCFCE7", color: "#166534", emoji: "✅" },
+            { label: "Pendientes", filtro: "pendiente", value: statsMonth.pendientes, bg: "#FEF9C3", color: "#854D0E", emoji: "🕐" },
+            { label: "Con cambios", filtro: "cambios", value: statsMonth.cambios, bg: "#FEE2E2", color: "#991B1B", emoji: "🔴" },
+          ] as const).map(s => {
+            const activo = filtroEstado === s.filtro;
+            return (
+              <button key={s.label} data-fpill={s.filtro} onClick={() => setFiltroEstado(s.filtro)} title={`Filtrar: ${s.label}`}
+                style={{ background: s.bg, borderRadius: 50, padding: "8px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", border: `2px solid ${activo ? s.color : "transparent"}`, boxShadow: activo ? "0 1px 6px rgba(0,0,0,.1)" : "none", transition: "all .12s" }}>
+                <span style={{ fontSize: 14 }}>{s.emoji}</span>
+                <span style={{ fontSize: 13, fontWeight: 900, color: s.color }}>{s.value}</span>
+                <span style={{ fontSize: 12, color: s.color, opacity: .75 }}>{s.label}</span>
+              </button>
+            );
+          })}
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
             <span style={{ fontSize: 12, color: "#94A3B8" }}>
               {new Date().toLocaleDateString("es-MX", { month: "long", year: "numeric" })}
             </span>
           </div>
+        </div>
+
+        {/* Filtros de red */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: ".05em", marginRight: 2 }}>Red</span>
+          {([
+            { key: "todos", label: "Todas", color: "#475569", bg: "#F1F5F9" },
+            { key: "facebook", label: "📘 Facebook", color: getRedSocial("facebook").color, bg: getRedSocial("facebook").colorSuave },
+            { key: "tiktok", label: "🎵 TikTok", color: getRedSocial("tiktok").color, bg: getRedSocial("tiktok").colorSuave },
+          ] as const).map(r => {
+            const activo = filtroRed === r.key;
+            return (
+              <button key={r.key} data-fred={r.key} onClick={() => setFiltroRed(r.key)}
+                style={{ background: activo ? r.bg : "#fff", color: r.color, border: `1.5px solid ${activo ? r.color : "#E2E8F0"}`, borderRadius: 50, padding: "6px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", transition: "all .12s" }}>
+                {r.label}
+              </button>
+            );
+          })}
+          {hayFiltro && (
+            <button onClick={() => { setFiltroEstado("todos"); setFiltroRed("todos"); }}
+              style={{ marginLeft: 2, background: "none", border: "none", color: "#64748B", fontSize: 12, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>✕ Limpiar filtros</button>
+          )}
+          <span style={{ marginLeft: "auto", fontSize: 12, color: "#94A3B8" }}>{postsFiltrados.length} de {posts.length}</span>
+        </div>
         </div>
 
         {/* Navigation + toggle */}
@@ -1003,11 +1139,19 @@ export default function RevisorPage() {
               <div style={{ width: 32, height: 32, border: "3px solid #042E7B", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
               <p style={{ marginTop: 14, color: "#94A3B8", fontSize: 13 }}>Cargando publicaciones...</p>
             </div>
-          ) : posts.length === 0 ? (
+          ) : postsFiltrados.length === 0 ? (
             <div style={{ textAlign: "center", padding: "80px 24px", background: "#fff", borderRadius: 20, border: "1.5px dashed #E2E8F0" }}>
-              <span style={{ fontSize: 40 }}>📭</span>
-              <p style={{ margin: "16px 0 6px", fontWeight: 700, color: "#042E7B", fontSize: 16 }}>Sin publicaciones {vista === "semana" ? "esta semana" : "este mes"}</p>
-              <p style={{ margin: 0, color: "#94A3B8", fontSize: 13 }}>No hay contenido programado para revisar en este período.</p>
+              <span style={{ fontSize: 40 }}>{hayFiltro ? "🔍" : "📭"}</span>
+              <p style={{ margin: "16px 0 6px", fontWeight: 700, color: "#042E7B", fontSize: 16 }}>
+                {hayFiltro ? "Sin publicaciones con este filtro" : `Sin publicaciones ${vista === "semana" ? "esta semana" : "este mes"}`}
+              </p>
+              <p style={{ margin: 0, color: "#94A3B8", fontSize: 13 }}>
+                {hayFiltro ? "Prueba con otro estado o red, o limpia los filtros." : "No hay contenido programado para revisar en este período."}
+              </p>
+              {hayFiltro && (
+                <button onClick={() => { setFiltroEstado("todos"); setFiltroRed("todos"); }}
+                  style={{ marginTop: 16, background: "#042E7B", border: "none", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>✕ Limpiar filtros</button>
+              )}
             </div>
           ) : vista === "mes" ? (
             /* Calendario real del mes (dom→sáb, semanas por fila) */
@@ -1019,7 +1163,7 @@ export default function RevisorPage() {
                 if (!d) return <div key={i} style={{ minHeight: 116, borderRadius: 12, background: "#F8FAFC" }} />;
                 const iso = isoDate(d);
                 const isToday = iso === isoDate(new Date());
-                const dayPosts = posts.filter((p) => p.fecha_programada === iso);
+                const dayPosts = postsFiltrados.filter((p) => p.fecha_programada === iso);
                 return (
                   <div key={i} style={{ minHeight: 116, background: isToday ? "#EFF6FF" : "#fff", border: `1.5px solid ${isToday ? "#BFDBFE" : "#EAEEF3"}`, borderRadius: 12, padding: 6, display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, fontWeight: 800, color: isToday ? "#1883FF" : "#475569", marginBottom: 1 }}>{d.getDate()}</span>
@@ -1027,15 +1171,27 @@ export default function RevisorPage() {
                       const active = post.social_post_versions.find((vv) => vv.es_activa) ?? post.social_post_versions[0];
                       const est = ESTADO[post.estado];
                       const hayCorreccion = post.social_post_versions.length > 1 && post.estado === "pendiente";
+                      const red = getRedSocial(post.red_social);
                       return (
                         <button key={post.id} onClick={() => setSelectedPost(post)}
-                          style={{ display: "flex", gap: 5, alignItems: "center", width: "100%", textAlign: "left", background: hayCorreccion ? "#EFF6FF" : "#fff", border: `1px solid ${hayCorreccion ? "#1883FF" : "#EEF1F6"}`, borderLeft: `3px solid ${hayCorreccion ? "#1883FF" : est.dot}`, borderRadius: 8, padding: 4, cursor: "pointer", overflow: "hidden" }}>
-                          {active?.imagenes?.[0]
-                            ? <img src={active.imagenes[0]} alt="" style={{ width: 30, height: 30, borderRadius: 6, objectFit: "cover", flexShrink: 0, display: "block" }} />
-                            : <div style={{ width: 30, height: 30, borderRadius: 6, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📝</div>}
-                          <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 600, color: "#475569", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                            {active?.caption || "Publicación"}
-                          </span>
+                          style={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", textAlign: "left", background: hayCorreccion ? "#EFF6FF" : "#fff", border: `1px solid ${hayCorreccion ? "#1883FF" : "#EEF1F6"}`, borderLeft: `3px solid ${red.color}`, borderRadius: 8, padding: 4, cursor: "pointer", overflow: "hidden" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: red.colorSuave, color: red.color, fontSize: 8.5, fontWeight: 800, padding: "1px 6px", borderRadius: 5, lineHeight: 1.5, whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: ".02em" }}>
+                              <span style={{ width: 5, height: 5, borderRadius: "50%", background: red.color, display: "inline-block" }} />{red.nombre}
+                            </span>
+                            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                              {hayCorreccion && <span title="Nueva propuesta" style={{ fontSize: 7.5, fontWeight: 800, color: "#1E40AF", background: "#DBEAFE", padding: "0 4px", borderRadius: 4 }}>✨ NUEVA</span>}
+                              <span title={est.label} style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                            {active?.imagenes?.[0]
+                              ? <img src={active.imagenes[0]} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0, display: "block" }} />
+                              : <div style={{ width: 28, height: 28, borderRadius: 6, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>{post.red_social === "tiktok" ? "🎬" : "📝"}</div>}
+                            <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 600, color: "#475569", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                              {active?.caption || "Publicación"}
+                            </span>
+                          </div>
                         </button>
                       );
                     })}
@@ -1045,7 +1201,7 @@ export default function RevisorPage() {
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
-              {posts.map(post => (
+              {postsFiltrados.map(post => (
                 <PostCard key={post.id} post={post} onOpen={() => setSelectedPost(post)} />
               ))}
             </div>
@@ -1075,6 +1231,9 @@ export default function RevisorPage() {
           onCerrarEjemplo={() => setSelectedPost(null)}
         />
       )}
+
+      {/* Aviso de novedad — filtros (una sola vez) */}
+      {showNovedad && <NovedadFiltros onClose={() => setShowNovedad(false)} />}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
