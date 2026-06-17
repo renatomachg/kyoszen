@@ -1,6 +1,29 @@
 "use client";
 
+import { useState } from "react";
+
 export type Frame = { tc: string; tipo: string; overlay: string; escena: string; dice: string };
+
+// Propuesta = lo que ve y aprueba el CLIENTE (pitch limpio, sin detalle técnico)
+export type Propuesta = {
+  subtitulo?: string;
+  por_que?: string;
+  linea_diseno?: string[];
+  copy?: string[];
+  caption?: string;
+};
+
+// Guía técnica = solo ADMIN (prompts Higgsfield + montaje CapCut)
+export type MontajeBeat = { beat?: string; texto?: string; color?: string; nota?: string };
+export type GuiaTecnica = {
+  prompt?: string;
+  linea_hablada?: string;
+  montaje?: MontajeBeat[];
+  caption?: string;
+  hashtags?: string;
+  cta_tecnica?: string;
+};
+
 export type Storyboard = {
   audiencia?: string;
   duracion?: string;
@@ -8,6 +31,8 @@ export type Storyboard = {
   cta?: string;
   hashtags?: string;
   nota_produccion?: string;
+  propuesta?: Propuesta | null;    // cliente
+  guia_tecnica?: GuiaTecnica | null; // admin
 };
 
 const TIPO: Record<string, { tc: string; tcText: string; screen: string; overlay: string }> = {
@@ -90,6 +115,151 @@ export default function StoryboardView({
           <span style={{ fontSize: 10, letterSpacing: ".07em", textTransform: "uppercase", color: "#92400E", fontWeight: 800, display: "block", marginBottom: 3 }}>🎬 Nota de producción (interno)</span>
           <p style={{ margin: 0, fontSize: 12, color: "#78350F", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{sb.nota_produccion}</p>
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Propuesta (vista del CLIENTE) ─────────────────────
+   Pitch limpio: por qué el video, línea de diseño, mensaje. */
+export function PropuestaView({ prop, caption }: { prop: Propuesta | null | undefined; caption?: string }) {
+  if (!prop) return null;
+  const cap = caption || prop.caption;
+  return (
+    <div>
+      {prop.subtitulo && (
+        <p style={{ margin: "0 0 14px", fontSize: 14.5, color: "#475569", lineHeight: 1.5 }}>{prop.subtitulo}</p>
+      )}
+
+      {prop.por_que && (
+        <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderLeft: "4px solid #10B981", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+          <span style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#10B981", fontWeight: 800, display: "block", marginBottom: 6 }}>Por qué este video</span>
+          <p style={{ margin: 0, fontSize: 14, color: "#0F172A", lineHeight: 1.6 }}>{prop.por_que}</p>
+        </div>
+      )}
+
+      {!!prop.linea_diseno?.length && (
+        <div style={{ marginBottom: 14 }}>
+          <span style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#1883FF", fontWeight: 800, display: "block", marginBottom: 8 }}>Línea de diseño</span>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {prop.linea_diseno.map((d, i) => (
+              <li key={i} style={{ fontSize: 14, color: "#0F172A", padding: "8px 0 8px 22px", position: "relative", borderBottom: i < prop.linea_diseno!.length - 1 ? "1px dashed #E2E8F0" : "none", lineHeight: 1.45 }}>
+                <span style={{ position: "absolute", left: 0, top: 9, color: "#1883FF", fontSize: 11 }}>◆</span>{d}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {!!prop.copy?.length && (
+        <div style={{ background: "#fff", border: "1px dashed #b9d4fb", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+          <span style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#004EE0", fontWeight: 800, display: "block", marginBottom: 8 }}>Mensaje</span>
+          {prop.copy.map((c, i) => (
+            <p key={i} style={{ margin: "6px 0", fontSize: 14, color: "#0F172A", paddingLeft: 16, position: "relative", lineHeight: 1.45 }}>
+              <span style={{ position: "absolute", left: 0, color: "#1883FF", fontWeight: 800 }}>›</span>{c}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {cap && (
+        <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: "10px 12px" }}>
+          <span style={{ fontSize: 10, letterSpacing: ".07em", textTransform: "uppercase", color: "#1883FF", fontWeight: 800, display: "block", marginBottom: 4 }}>Texto de la publicación</span>
+          <p style={{ margin: 0, fontSize: 13, color: "#0F172A", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{cap}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Guía técnica (solo ADMIN) ─────────────────────────
+   Prompt Higgsfield copiable + tabla de montaje CapCut. */
+function CopyBox({ label, text, dark = false }: { label: string; text: string; dark?: boolean }) {
+  const [copiado, setCopiado] = useState(false);
+  const copiar = async () => {
+    try { await navigator.clipboard.writeText(text); setCopiado(true); setTimeout(() => setCopiado(false), 1500); } catch { /* noop */ }
+  };
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+        <span style={{ fontSize: 10.5, letterSpacing: ".06em", textTransform: "uppercase", color: dark ? "#1E40AF" : "#475569", fontWeight: 800 }}>{label}</span>
+        <button onClick={copiar} style={{ background: copiado ? "#16A34A" : "#fff", border: `1.5px solid ${copiado ? "#16A34A" : "#E2E8F0"}`, borderRadius: 8, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: copiado ? "#fff" : "#042E7B", cursor: "pointer" }}>
+          {copiado ? "✓ Copiado" : "Copiar"}
+        </button>
+      </div>
+      <pre style={{ margin: 0, background: dark ? "#0f172a" : "#F8FAFC", color: dark ? "#e2e8f0" : "#0F172A", border: dark ? "none" : "1px solid #E2E8F0", borderRadius: 10, padding: "12px 14px", fontFamily: "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace", fontSize: 12, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowX: "auto" }}>{text}</pre>
+    </div>
+  );
+}
+
+const COLOR_NOMBRE: Record<string, string> = {
+  "#F59E0B": "Ámbar", "#042E7B": "Azul profundo", "#004EE0": "Azul", "#1883FF": "Azul brillante", "#10B981": "Verde",
+};
+
+export function GuiaTecnicaView({ guia }: { guia: GuiaTecnica | null | undefined }) {
+  if (!guia) return null;
+  const tieneAlgo = guia.prompt || guia.linea_hablada || guia.montaje?.length || guia.caption || guia.hashtags || guia.cta_tecnica;
+  if (!tieneAlgo) return null;
+  return (
+    <div>
+      <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "8px 12px", marginBottom: 14, fontSize: 11.5, color: "#92400E", fontWeight: 700 }}>
+        🔒 Documento interno de producción · no lo ve el cliente
+      </div>
+
+      {guia.prompt && <CopyBox label="Prompt Higgsfield · clip principal" text={guia.prompt} dark />}
+      {guia.linea_hablada && <CopyBox label="Línea hablada" text={guia.linea_hablada} />}
+
+      {!!guia.montaje?.length && (
+        <div style={{ marginBottom: 12 }}>
+          <span style={{ fontSize: 10.5, letterSpacing: ".06em", textTransform: "uppercase", color: "#475569", fontWeight: 800, display: "block", marginBottom: 6 }}>Montaje · texto por beat (CapCut)</span>
+          <div style={{ border: "1px solid #E2E8F0", borderRadius: 10, overflow: "hidden", overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr>
+                  {["Beat", "Texto en pantalla", "Color", "Nota"].map((h) => (
+                    <th key={h} style={{ background: "#042E7B", color: "#fff", fontSize: 10, letterSpacing: ".04em", textTransform: "uppercase", padding: "7px 9px", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {guia.montaje.map((m, i) => (
+                  <tr key={i} style={{ background: i % 2 ? "#F8FAFC" : "#fff" }}>
+                    <td style={{ padding: "7px 9px", borderTop: "1px solid #E2E8F0", fontWeight: 700, color: "#042E7B", whiteSpace: "nowrap" }}>{m.beat}</td>
+                    <td style={{ padding: "7px 9px", borderTop: "1px solid #E2E8F0", color: "#0F172A" }}>{m.texto}</td>
+                    <td style={{ padding: "7px 9px", borderTop: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>
+                      {m.color ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ width: 13, height: 13, borderRadius: 3, background: m.color, border: "1px solid rgba(0,0,0,.1)", display: "inline-block" }} />
+                          <span style={{ fontSize: 11, color: "#475569" }}>{COLOR_NOMBRE[m.color?.toUpperCase?.() ?? ""] ?? m.color}</span>
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td style={{ padding: "7px 9px", borderTop: "1px solid #E2E8F0", color: "#64748B" }}>{m.nota}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        {guia.caption && (
+          <div style={{ flex: "1 1 220px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: "9px 12px" }}>
+            <span style={{ fontSize: 10, letterSpacing: ".07em", textTransform: "uppercase", color: "#1883FF", fontWeight: 800, display: "block", marginBottom: 3 }}>Caption</span>
+            <p style={{ margin: 0, fontSize: 12.5, color: "#0F172A", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{guia.caption}</p>
+          </div>
+        )}
+        {guia.hashtags && (
+          <div style={{ flex: "1 1 220px", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "9px 12px" }}>
+            <span style={{ fontSize: 10, letterSpacing: ".07em", textTransform: "uppercase", color: "#1E40AF", fontWeight: 800, display: "block", marginBottom: 3 }}>Hashtags</span>
+            <p style={{ margin: 0, fontSize: 12.5, color: "#1883FF", fontWeight: 600 }}>{guia.hashtags}</p>
+          </div>
+        )}
+      </div>
+
+      {guia.cta_tecnica && (
+        <p style={{ margin: "10px 0 0", fontSize: 12, color: "#64748B", lineHeight: 1.5 }}><b style={{ color: "#0F172A" }}>CTA técnica:</b> {guia.cta_tecnica}</p>
       )}
     </div>
   );

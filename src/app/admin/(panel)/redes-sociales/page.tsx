@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { getRedSocial, REDES_SOCIALES as REDES } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
 import InformeAdmin from "@/components/admin/InformeAdmin";
-import StoryboardView from "@/components/social/StoryboardView";
+import StoryboardView, { PropuestaView, GuiaTecnicaView } from "@/components/social/StoryboardView";
 
 /* ─── Types ──────────────────────────────────────────── */
 interface Version {
@@ -284,6 +284,10 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const guionAprobado = post.estado === "aprobado";
+  const sb = version.storyboard;
+  const tieneProp = !!sb?.propuesta;
+  const tieneTec = !!sb?.guia_tecnica;
+  const [docTab, setDocTab] = useState<"propuesta" | "storyboard" | "tecnica">(tieneProp ? "propuesta" : "storyboard");
 
   const subirVideo = async (file: File | null) => {
     if (!file) return;
@@ -326,7 +330,33 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
         </div>
       )}
 
-      <StoryboardView sb={version.storyboard} caption={version.caption} showProduccion />
+      {/* Pestañas de documentos del set */}
+      {(tieneProp || tieneTec) && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 12, background: "#F1F5F9", padding: 4, borderRadius: 11 }}>
+          {tieneProp && (
+            <button onClick={() => setDocTab("propuesta")}
+              style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "propuesta" ? "#fff" : "transparent", color: docTab === "propuesta" ? "#042E7B" : "#64748B", boxShadow: docTab === "propuesta" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
+              📋 Propuesta <span style={{ fontSize: 9.5, color: "#16A34A" }}>· cliente</span>
+            </button>
+          )}
+          <button onClick={() => setDocTab("storyboard")}
+            style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "storyboard" ? "#fff" : "transparent", color: docTab === "storyboard" ? "#042E7B" : "#64748B", boxShadow: docTab === "storyboard" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
+            🎬 Storyboard
+          </button>
+          {tieneTec && (
+            <button onClick={() => setDocTab("tecnica")}
+              style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "tecnica" ? "#fff" : "transparent", color: docTab === "tecnica" ? "#042E7B" : "#64748B", boxShadow: docTab === "tecnica" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
+              🛠️ Guía técnica
+            </button>
+          )}
+        </div>
+      )}
+
+      {tieneProp && docTab === "propuesta"
+        ? <PropuestaView prop={sb?.propuesta} caption={version.caption} />
+        : tieneTec && docTab === "tecnica"
+        ? <GuiaTecnicaView guia={sb?.guia_tecnica} />
+        : <StoryboardView sb={version.storyboard} caption={version.caption} showProduccion />}
 
       <input ref={fileRef} type="file" accept="video/*" style={{ display: "none" }} onChange={(e) => subirVideo(e.target.files?.[0] ?? null)} />
 
@@ -595,22 +625,60 @@ export default function RedesSocialesPage() {
   const [importFileName, setImportFileName] = useState("");
   const importFileRef = useRef<HTMLInputElement>(null);
 
-  // Importador de storyboards TikTok
+  // Lee un archivo a texto (PDF via endpoint, HTML/TXT directo). Reutilizado por todos los importadores.
+  const leerArchivoComoTexto = async (file: File): Promise<string> => {
+    const esPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (esPdf) {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/social/extract-pdf", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo leer el PDF.");
+      return data.text ?? "";
+    }
+    return await file.text();
+  };
+
+  // Importador de storyboards TikTok (set de 3 docs: propuesta cliente + storyboard + guia tecnica)
   type TTPieza = { titulo: string; caption: string; storyboard: import("@/components/social/StoryboardView").Storyboard; fecha: string; seleccionada: boolean };
+  type TTDoc = { texto: string; nombre: string; cargando: boolean };
+  const TT_DOC_VACIO: TTDoc = { texto: "", nombre: "", cargando: false };
   const [importTipo, setImportTipo] = useState<"facebook" | "tiktok">("facebook");
   const [ttPiezas, setTtPiezas] = useState<TTPieza[] | null>(null);
+  const [ttProp, setTtProp] = useState<TTDoc>(TT_DOC_VACIO);
+  const [ttStory, setTtStory] = useState<TTDoc>(TT_DOC_VACIO);
+  const [ttTec, setTtTec] = useState<TTDoc>(TT_DOC_VACIO);
 
-  const analizarTiktok = async () => {
+  const ttSetter = (which: "prop" | "story" | "tec") =>
+    which === "prop" ? setTtProp : which === "story" ? setTtStory : setTtTec;
+
+  const cargarDocTT = async (which: "prop" | "story" | "tec", file: File | null) => {
+    if (!file) return;
+    const setter = ttSetter(which);
+    setImportMsg("");
+    setter((d) => ({ ...d, nombre: file.name, cargando: true }));
+    try {
+      const t = await leerArchivoComoTexto(file);
+      setter({ texto: t, nombre: file.name, cargando: false });
+    } catch (e) {
+      setImportMsg(e instanceof Error ? e.message : "Error al leer el archivo.");
+      setter(TT_DOC_VACIO);
+    }
+  };
+
+  const resetTT = () => { setTtPiezas(null); setTtProp(TT_DOC_VACIO); setTtStory(TT_DOC_VACIO); setTtTec(TT_DOC_VACIO); };
+
+  const analizarSetTiktok = async () => {
     setImportLoading(true); setImportMsg(""); setTtPiezas(null);
     try {
       const res = await fetch("/api/admin/social/importar-tiktok", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "analizar", texto: importTexto }),
+        body: JSON.stringify({ action: "analizar-set", propuesta: ttProp.texto, storyboard: ttStory.texto, tecnica: ttTec.texto }),
       });
       const data = await res.json();
       if (!res.ok) { setImportMsg(data.error ?? "Error al analizar."); setImportLoading(false); return; }
       setTtPiezas(data.piezas as TTPieza[]);
-    } catch { setImportMsg("Error de conexión al analizar el storyboard."); }
+    } catch { setImportMsg("Error de conexión al analizar los documentos."); }
     setImportLoading(false);
   };
 
@@ -720,23 +788,15 @@ export default function RedesSocialesPage() {
     if (!file) return;
     setImportFileName(file.name);
     setImportMsg("");
-    const esPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-    if (esPdf) {
-      setImportLoading(true);
-      try {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/admin/social/extract-pdf", { method: "POST", body: fd });
-        const data = await res.json();
-        if (!res.ok) { setImportMsg(data.error ?? "No se pudo leer el PDF."); setImportFileName(""); setImportLoading(false); return; }
-        setImportTexto(data.text ?? "");
-      } catch { setImportMsg("Error al leer el PDF."); setImportFileName(""); }
-      setImportLoading(false);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (e) => setImportTexto((e.target?.result as string) ?? "");
-      reader.readAsText(file);
+    setImportLoading(true);
+    try {
+      const t = await leerArchivoComoTexto(file);
+      setImportTexto(t);
+    } catch (e) {
+      setImportMsg(e instanceof Error ? e.message : "Error al leer el archivo.");
+      setImportFileName("");
     }
+    setImportLoading(false);
   };
 
   const analizarPlan = async () => {
@@ -869,7 +929,7 @@ export default function RedesSocialesPage() {
           {/* Toggle Facebook / TikTok */}
           <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
             {(["facebook", "tiktok"] as const).map((t) => (
-              <button key={t} onClick={() => { setImportTipo(t); setImportPiezas(null); setTtPiezas(null); setImportTexto(""); setImportMsg(""); setImportFileName(""); }}
+              <button key={t} onClick={() => { setImportTipo(t); setImportPiezas(null); resetTT(); setImportTexto(""); setImportMsg(""); setImportFileName(""); }}
                 style={{ flex: 1, padding: "10px 14px", borderRadius: 11, border: `1.5px solid ${importTipo === t ? "#042E7B" : "#E2E8F0"}`, background: importTipo === t ? "#042E7B" : "#fff", color: importTipo === t ? "#fff" : "#64748B", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
                 {t === "facebook" ? "📘 Plan de Facebook" : "🎬 Storyboards de TikTok"}
               </button>
@@ -1013,48 +1073,58 @@ export default function RedesSocialesPage() {
 
           {/* ── Importador de storyboards TikTok ── */}
           {importTipo === "tiktok" && (<>
-          <div style={{ background: "#FFF1F5", border: "1.5px solid #FBCFE8", borderRadius: 14, padding: "16px 18px", marginBottom: 20 }}>
-            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#9D174D" }}>🎬 Importa los storyboards de TikTok</p>
+          <div style={{ background: "#FFF1F5", border: "1.5px solid #FBCFE8", borderRadius: 14, padding: "16px 18px", marginBottom: 18 }}>
+            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#9D174D" }}>🎬 Importa el set de TikTok (3 documentos)</p>
             <p style={{ margin: 0, fontSize: 12.5, color: "#9F5476", lineHeight: 1.6 }}>
-              Pega el storyboard (texto o HTML) con los videos. El sistema detecta cada video y su guion cuadro por cuadro (hook, escena, qué dice) y crea los borradores como <b>guion para aprobar</b>. El video lo subes tú después, cuando el cliente apruebe el guion.
+              Sube los 3 documentos del set (HTML o PDF). El sistema empata cada video y separa por audiencia: el cliente verá solo la <b>Propuesta</b>; tú verás el <b>Storyboard</b> y la <b>Guía técnica</b>. Con uno solo basta para empezar — los demás los puedes dejar vacíos.
             </p>
           </div>
 
           {!ttPiezas ? (
             <>
-              {/* Subir archivo HTML / TXT / PDF */}
-              <div
-                onClick={() => importFileRef.current?.click()}
-                onDragOver={e => e.preventDefault()}
-                onDrop={e => { e.preventDefault(); handleImportFile(e.dataTransfer.files?.[0] ?? null); }}
-                style={{ border: "2px dashed #FBCFE8", background: "#FFF8FB", borderRadius: 14, padding: "18px", textAlign: "center", cursor: "pointer", marginBottom: 14 }}
-              >
-                <span style={{ fontSize: 24 }}>📎</span>
-                <p style={{ margin: "6px 0 2px", fontSize: 13, fontWeight: 700, color: "#9D174D" }}>
-                  {importFileName ? `Archivo cargado: ${importFileName}` : "Sube el storyboard (HTML o PDF)"}
-                </p>
-                <p style={{ margin: 0, fontSize: 11.5, color: "#64748B" }}>Arrastra el archivo aquí o haz clic para seleccionarlo · .html, .txt o .pdf</p>
-                <input ref={importFileRef} type="file" accept=".html,.htm,.txt,.pdf,text/html,application/pdf" style={{ display: "none" }}
-                  onChange={e => handleImportFile(e.target.files?.[0] ?? null)} />
-              </div>
+              {([
+                { key: "prop", emoji: "📋", label: "Propuesta del cliente", hint: "Lo que el cliente ve y aprueba", doc: ttProp, accent: "#16A34A", border: "#BBF7D0" },
+                { key: "story", emoji: "🎬", label: "Storyboard", hint: "Guion cuadro por cuadro · para generar el video", doc: ttStory, accent: "#042E7B", border: "#BFDBFE" },
+                { key: "tec", emoji: "🛠️", label: "Guía técnica", hint: "Prompts Higgsfield + montaje · interno", doc: ttTec, accent: "#92400E", border: "#FDE68A" },
+              ] as const).map((z) => (
+                <div key={z.key} style={{ border: `1.5px solid ${z.border}`, borderRadius: 14, padding: 14, marginBottom: 12, background: "#fff" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: z.accent }}>{z.emoji} {z.label}</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#64748B" }}>{z.hint}</p>
+                    </div>
+                    {z.doc.cargando
+                      ? <span style={{ fontSize: 11, color: "#94A3B8", whiteSpace: "nowrap" }}>leyendo…</span>
+                      : z.doc.texto
+                      ? <span style={{ fontSize: 11, fontWeight: 800, color: "#16A34A", whiteSpace: "nowrap" }}>✓ {z.doc.nombre || "pegado"}</span>
+                      : <span style={{ fontSize: 11, color: "#CBD5E1", whiteSpace: "nowrap" }}>opcional</span>}
+                  </div>
+                  <label
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); cargarDocTT(z.key, e.dataTransfer.files?.[0] ?? null); }}
+                    style={{ display: "block", border: `2px dashed ${z.border}`, borderRadius: 10, padding: "9px", textAlign: "center", cursor: "pointer", background: "#FAFBFC", fontSize: 11.5, fontWeight: 700, color: z.accent }}>
+                    📎 Subir archivo (.html, .txt, .pdf) o arrástralo
+                    <input type="file" accept=".html,.htm,.txt,.pdf,text/html,application/pdf" style={{ display: "none" }}
+                      onChange={(e) => cargarDocTT(z.key, e.target.files?.[0] ?? null)} />
+                  </label>
+                  <textarea
+                    value={z.doc.texto}
+                    onChange={(e) => ttSetter(z.key)({ texto: e.target.value, nombre: e.target.value ? (z.doc.nombre || "pegado") : "", cargando: false })}
+                    placeholder="…o pega el HTML / texto aquí"
+                    rows={3}
+                    style={{ width: "100%", marginTop: 8, border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box" }}
+                  />
+                </div>
+              ))}
 
-              <p style={{ margin: "0 0 8px", fontSize: 11.5, color: "#94A3B8", textAlign: "center" }}>— o pega el contenido directamente —</p>
-
-              <textarea
-                value={importTexto}
-                onChange={e => { setImportTexto(e.target.value); if (importFileName) setImportFileName(""); }}
-                placeholder="Pega aquí el storyboard completo de TikTok (HTML o texto)..."
-                rows={10}
-                style={{ width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 14, padding: "14px 16px", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box", marginBottom: 14 }}
-              />
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <button onClick={analizarTiktok} disabled={importLoading || importTexto.trim().length < 30}
-                  style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importLoading || importTexto.trim().length < 30 ? 0.5 : 1, display: "flex", alignItems: "center", gap: 8 }}>
-                  {importLoading ? "Analizando storyboard..." : "Analizar storyboard ✨"}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 4 }}>
+                <button onClick={analizarSetTiktok} disabled={importLoading || (ttStory.texto.trim().length < 40 && ttProp.texto.trim().length < 40)}
+                  style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importLoading || (ttStory.texto.trim().length < 40 && ttProp.texto.trim().length < 40) ? 0.5 : 1, display: "flex", alignItems: "center", gap: 8 }}>
+                  {importLoading ? "Analizando documentos..." : "Analizar set ✨"}
                 </button>
                 {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
               </div>
-              {importLoading && <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 10 }}>Esto puede tomar 10-20 segundos mientras la IA lee cada guion...</p>}
+              {importLoading && <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 10 }}>Esto puede tomar ~10-30 segundos mientras la IA lee los documentos...</p>}
             </>
           ) : (
             <>
@@ -1095,7 +1165,11 @@ export default function RedesSocialesPage() {
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ margin: "0 0 3px", fontSize: 13, fontWeight: 700, color: "#1E293B" }}>{p.titulo || "Sin título"}</p>
                               {hook?.overlay && <p style={{ margin: "0 0 4px", fontSize: 11.5, color: "#64748B", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.45 }}>🎯 {hook.overlay}</p>}
-                              <span style={{ display: "inline-block", fontSize: 10, fontWeight: 700, color: "#64748B", background: "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{frames} cuadros · {p.storyboard?.duracion || "TikTok"}</span>
+                              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: "#64748B", background: "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{frames} cuadros · {p.storyboard?.duracion || "TikTok"}</span>
+                                {p.storyboard?.propuesta && <span style={{ fontSize: 10, fontWeight: 700, color: "#166534", background: "#F0FDF4", padding: "2px 8px", borderRadius: 6 }}>📋 Propuesta</span>}
+                                {p.storyboard?.guia_tecnica && <span style={{ fontSize: 10, fontWeight: 700, color: "#92400E", background: "#FFFBEB", padding: "2px 8px", borderRadius: 6 }}>🛠️ Guía técnica</span>}
+                              </div>
                             </div>
                           </div>
                         );

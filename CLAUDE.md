@@ -378,6 +378,13 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
+2026-06-17 (noche) — **Importador de set TikTok (3 documentos) + separación por audiencia.**
+- **3 documentos por set** (Holadiseño entrega 3 HTML/PDF por mes): **Propuesta CLIENTE** (pitch que aprueba el cliente), **Storyboard** (guion cuadro por cuadro, para generar el video) y **Guía técnica INTERNA** (prompts Higgsfield + montaje CapCut). Todo se guarda **anidado en el `storyboard` jsonb** existente → `storyboard.propuesta` y `storyboard.guia_tecnica`. **Cero migración de BD.**
+- **Importador** (`/admin/redes-sociales` → Importar → 🎬 TikTok): **3 zonas de carga** (acepta HTML/TXT/PDF arrastrar/subir/pegar). Acción `analizar-set` en `/api/admin/social/importar-tiktok` parsea los 3 en paralelo (haiku, prompts `SYSTEM`/`SYSTEM_PROP`/`SYSTEM_TEC`) y **empata por índice de video**. Con uno solo basta (storyboard o propuesta). Fechas sugeridas en martes.
+- **Separación por audiencia:** cliente (`/revisor`) ve **solo la Propuesta** (`PropuestaView`); admin ve pestañas **📋 Propuesta · 🎬 Storyboard · 🛠️ Guía técnica** (`GuiaTecnicaView` = prompts en bloques copiables + tabla de montaje). Componentes en `src/components/social/StoryboardView.tsx` (exports `PropuestaView`, `GuiaTecnicaView`, tipos `Propuesta`/`GuiaTecnica`).
+- **OJO datos:** local y prod comparten la MISMA Supabase. Los 3 archivos subidos NO se almacenan (se parsean en memoria; el PDF se descarta). Lo que SÍ persiste al dar "Crear" son los posts (borrador, `publicado=false`) y los videos/imágenes (Storage `media`). La barrera con el cliente es el flag `publicado`, no el entorno.
+- Lector de archivos compartido `leerArchivoComoTexto` (PDF→extract-pdf, HTML/TXT directo) reusado por importador Facebook y TikTok.
+
 2026-06-17 (tarde) — **TikTok de 2 fases (guion → video) + importador de storyboards + soporte PDF.**
 - **Flujo TikTok 2 fases:** una pieza de TikTok nace como **guion/storyboard** (`fase='guion'`), el cliente lo aprueba en el revisor, luego el admin **sube el video generado** (cambia a `fase='video'`, `estado='pendiente'`) y se le avisa al cliente para que también lo revise. Columnas: `social_posts.fase` ('guion'|'video'), `social_post_versions.storyboard` (jsonb: audiencia/duracion/frames[hook|normal|cta con tc/overlay/escena/dice]/cta/hashtags/nota_produccion) y `.video_url`.
 - **Componente `src/components/social/StoryboardView.tsx`** dibuja el guion visual (cuadros con colores por tipo). Vista admin = `TikTokAdminBlock` (stepper Guion/Video + subir video), vista cliente = `TikTokReview` (aprueba guion → revisa video, toggle "ver guion").

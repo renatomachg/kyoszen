@@ -6,7 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { getRedSocial } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
 import InformeCliente from "@/components/revisor/InformeCliente";
-import StoryboardView from "@/components/social/StoryboardView";
+import StoryboardView, { PropuestaView } from "@/components/social/StoryboardView";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Version {
@@ -391,15 +391,23 @@ function TikTokReview({ post, version }: { post: Post; version: Version }) {
             </div>
           )}
           <button onClick={() => setVerGuion((v) => !v)} style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 14px", fontSize: 12.5, fontWeight: 700, color: "#042E7B", cursor: "pointer" }}>
-            {verGuion ? "Ocultar guion ▲" : "Ver guion del video ▼"}
+            {verGuion ? "Ocultar propuesta ▲" : "Ver propuesta aprobada ▼"}
           </button>
-          {verGuion && <div style={{ marginTop: 12 }}><StoryboardView sb={version.storyboard} /></div>}
+          {verGuion && (
+            <div style={{ marginTop: 12 }}>
+              {version.storyboard?.propuesta
+                ? <PropuestaView prop={version.storyboard.propuesta} />
+                : <StoryboardView sb={version.storyboard} />}
+            </div>
+          )}
         </>
       ) : (
         <>
-          <StoryboardView sb={version.storyboard} caption={version.caption} />
+          {version.storyboard?.propuesta
+            ? <PropuestaView prop={version.storyboard.propuesta} caption={version.caption} />
+            : <StoryboardView sb={version.storyboard} caption={version.caption} />}
           <p style={{ margin: "14px 0 0", fontSize: 12.5, color: "#64748B", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "10px 12px" }}>
-            🎬 Primero apruebas el <b>guion</b>. Cuando lo apruebes, subimos el <b>video</b> generado y te avisamos para que también lo revises.
+            🎬 Primero apruebas esta <b>propuesta</b>. Cuando la apruebes, producimos el <b>video</b> y te avisamos para que también lo revises.
           </p>
         </>
       )}
