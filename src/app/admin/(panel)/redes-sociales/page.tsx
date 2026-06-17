@@ -784,6 +784,31 @@ export default function RedesSocialesPage() {
     loadData();
   };
 
+  // Mover una publicación al mes (o semana) anterior/siguiente soltándola sobre las flechas ‹ ›
+  const moverPostPeriodo = async (postId: number, dir: -1 | 1) => {
+    const p = posts.find((x) => x.id === postId);
+    if (!p) return;
+    const base = new Date(p.fecha_programada + "T12:00:00");
+    let nueva: Date;
+    if (vista === "mes") {
+      const first = new Date(base.getFullYear(), base.getMonth() + dir, 1);
+      const ultimoDia = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+      nueva = new Date(first.getFullYear(), first.getMonth(), Math.min(base.getDate(), ultimoDia), 12);
+    } else {
+      nueva = new Date(base);
+      nueva.setDate(nueva.getDate() + dir * 7);
+    }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const nuevaIso = `${nueva.getFullYear()}-${pad(nueva.getMonth() + 1)}-${pad(nueva.getDate())}`;
+    if (nuevaIso < hoyIso) { alert("No puedes mover una publicacion a una fecha pasada."); return; }
+    setDragId(null); setDropTarget(null);
+    await fetch(`/api/admin/social/posts/${postId}/versions`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fecha_programada: nuevaIso }),
+    });
+    setWeekOffset((w) => w + dir); // seguir la publicación al nuevo periodo (dispara loadData)
+  };
+
   const onCardDragStart = (e: RDragEvent, id: number) => {
     setDragId(id);
     e.dataTransfer.effectAllowed = "move";
@@ -1224,7 +1249,11 @@ export default function RedesSocialesPage() {
           {/* Nav + toggle */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
             <button onClick={() => setWeekOffset(w => w - 1)}
-              style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "#042E7B" }}>‹</button>
+              onDragOver={(e) => { if (dragId != null) { e.preventDefault(); setDropTarget("nav:prev"); } }}
+              onDragLeave={() => setDropTarget((t) => (t === "nav:prev" ? null : t))}
+              onDrop={(e) => { e.preventDefault(); if (dragId != null) moverPostPeriodo(dragId, -1); }}
+              title={dragId != null ? `Soltar para mover al ${vista === "mes" ? "mes" : "semana"} anterior` : undefined}
+              style={{ width: 36, height: 36, borderRadius: 10, background: dropTarget === "nav:prev" ? "#1883FF" : "#fff", border: `1.5px solid ${dropTarget === "nav:prev" ? "#1883FF" : "#E2E8F0"}`, cursor: "pointer", fontSize: 16, fontWeight: 700, color: dropTarget === "nav:prev" ? "#fff" : "#042E7B", transform: dropTarget === "nav:prev" ? "scale(1.12)" : "none", transition: "all .12s" }}>‹</button>
             <div>
               <p style={{ margin: 0, fontWeight: 900, fontSize: 15, color: "#042E7B" }}>
                 {vista === "semana"
@@ -1240,7 +1269,11 @@ export default function RedesSocialesPage() {
                 style={{ height: 32, padding: "0 12px", borderRadius: 8, background: "#042E7B", border: "none", cursor: "pointer", fontSize: 12, color: "#fff", fontWeight: 700 }}>Hoy</button>
             )}
             <button onClick={() => setWeekOffset(w => w + 1)}
-              style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "#042E7B" }}>›</button>
+              onDragOver={(e) => { if (dragId != null) { e.preventDefault(); setDropTarget("nav:next"); } }}
+              onDragLeave={() => setDropTarget((t) => (t === "nav:next" ? null : t))}
+              onDrop={(e) => { e.preventDefault(); if (dragId != null) moverPostPeriodo(dragId, 1); }}
+              title={dragId != null ? `Soltar para mover al ${vista === "mes" ? "mes" : "semana"} siguiente` : undefined}
+              style={{ width: 36, height: 36, borderRadius: 10, background: dropTarget === "nav:next" ? "#1883FF" : "#fff", border: `1.5px solid ${dropTarget === "nav:next" ? "#1883FF" : "#E2E8F0"}`, cursor: "pointer", fontSize: 16, fontWeight: 700, color: dropTarget === "nav:next" ? "#fff" : "#042E7B", transform: dropTarget === "nav:next" ? "scale(1.12)" : "none", transition: "all .12s" }}>›</button>
 
             {/* Toggle semana/mes */}
             <div style={{ marginLeft: "auto", display: "flex", background: "#F1F5F9", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 3 }}>
@@ -1255,7 +1288,7 @@ export default function RedesSocialesPage() {
           </div>
 
           <p style={{ margin: "0 0 12px", fontSize: 12, color: "#94A3B8", display: "flex", alignItems: "center", gap: 6 }}>
-            <span>✋</span> Arrastra una publicación a otro día para moverla, o suéltala sobre otra para intercambiar fechas.
+            <span>✋</span> Arrastra una publicación a otro día para moverla, suéltala sobre otra para intercambiar fechas, o suéltala sobre <b>‹ ›</b> para pasarla al {vista === "mes" ? "mes" : "semana"} anterior/siguiente.
           </p>
 
           {/* Calendar grid */}

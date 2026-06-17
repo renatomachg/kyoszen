@@ -378,6 +378,8 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
+2026-06-17 (noche 3) — **Arrastrar publicaciones entre meses.** En el calendario admin, soltar una publicación sobre las flechas **‹ ›** la mueve al mes (o semana, según vista) anterior/siguiente — mismo día del mes, ajustado si el destino es más corto — y navega para seguirla. Las flechas son drop targets (se resaltan azul + escalan al arrastrar encima). Respeta bloqueo de fechas pasadas. Función `moverPostPeriodo(postId, dir)` en `redes-sociales/page.tsx`. Para saltos lejanos: repetir gesto o usar ✏️ Editar.
+
 2026-06-17 (noche 2) — **Distintivo de red en calendario + filtros en revisor + tour de novedad.**
 - **Chip de red en vista Mes** (admin y cliente): cada evento muestra chip `● FACEBOOK` (azul) / `● TIKTOK` (negro) + borde izquierdo en color de la red, ícono 🎬 (TikTok) / 📝 (Facebook). Admin además: pill "BORRADOR" y punto de estado; cliente: badge "✨ NUEVA" si hay corrección (sin pill borrador).
 - **Filtros en el revisor (`/revisor`):** las 4 píldoras (Total/Aprobados/Pendientes/Con cambios) ahora **filtran por estado** al tocarlas; nueva fila de **filtros de red** (Todas/📘 Facebook/🎵 TikTok). Combinables, con contador "X de Y", "✕ Limpiar filtros" y empty state inteligente. `postsFiltrados` aplica a vista semana y mes.
