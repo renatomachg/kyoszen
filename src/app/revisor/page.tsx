@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { getRedSocial } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
 import InformeCliente from "@/components/revisor/InformeCliente";
+import StoryboardView from "@/components/social/StoryboardView";
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Version {
@@ -13,6 +14,8 @@ interface Version {
   version_num: number;
   caption: string;
   imagenes: string[];
+  storyboard?: import("@/components/social/StoryboardView").Storyboard | null;
+  video_url?: string | null;
   es_activa: boolean;
   created_at: string;
 }
@@ -28,6 +31,8 @@ interface Post {
   red_social: string;
   fecha_programada: string;
   estado: "pendiente" | "aprobado" | "cambios";
+  titulo_interno?: string;
+  fase?: "guion" | "video";
   social_post_versions: Version[];
   social_comments: Comment[];
 }
@@ -211,6 +216,10 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
               </div>
             )}
 
+            {post.red_social === "tiktok" ? (
+              <TikTokReview post={post} version={mostrada} />
+            ) : (
+            <>
             {/* Mockup con efecto de doble tarjeta cuando hay corrección */}
             <div style={{ position: "relative" }}>
               {hayCorreccion && !viendoAnterior && (
@@ -254,6 +263,8 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
                 </div>
               </div>
             </div>
+            </>
+            )}
 
             {/* Nota cuando ve la anterior */}
             {hayCorreccion && viendoAnterior && (
@@ -345,6 +356,57 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
   );
 }
 
+/* ─── Vista de revisión TikTok (guion / video) ───────── */
+function TikTokReview({ post, version }: { post: Post; version: Version }) {
+  const [verGuion, setVerGuion] = useState(false);
+  const fase = post.fase ?? "guion";
+  const enVideo = fase === "video" && !!version?.video_url;
+
+  const Step = ({ n, label, state }: { n: number; label: string; state: "done" | "active" | "todo" }) => (
+    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: state === "active" ? "#EFF6FF" : state === "done" ? "#F0FDF4" : "#F8FAFC", border: `1.5px solid ${state === "active" ? "#BFDBFE" : state === "done" ? "#BBF7D0" : "#E2E8F0"}`, borderRadius: 12, padding: "8px 12px" }}>
+      <span style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#fff", background: state === "done" ? "#16A34A" : state === "active" ? "#1883FF" : "#CBD5E1" }}>{state === "done" ? "✓" : n}</span>
+      <div>
+        <p style={{ margin: 0, fontSize: 12.5, fontWeight: 800, color: state === "todo" ? "#94A3B8" : "#0F172A" }}>{label}</p>
+        <p style={{ margin: 0, fontSize: 10.5, color: state === "active" ? "#1E40AF" : state === "done" ? "#166534" : "#94A3B8", fontWeight: 600 }}>{state === "done" ? "Aprobado" : state === "active" ? "En revisión" : "Pendiente"}</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <Step n={1} label="Guion" state={fase === "video" ? "done" : "active"} />
+        <Step n={2} label="Video" state={fase === "video" ? "active" : "todo"} />
+      </div>
+
+      {enVideo ? (
+        <>
+          <div style={{ maxWidth: 264, margin: "0 auto 6px", borderRadius: 18, overflow: "hidden", background: "#000", aspectRatio: "9/16", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
+            <video src={version.video_url!} controls playsInline style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000", display: "block" }} />
+          </div>
+          {version.caption && (
+            <div style={{ margin: "10px 0", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: "10px 12px" }}>
+              <span style={{ fontSize: 10, letterSpacing: ".07em", textTransform: "uppercase", color: "#1883FF", fontWeight: 800, display: "block", marginBottom: 4 }}>Caption</span>
+              <p style={{ margin: 0, fontSize: 13, color: "#0F172A", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{version.caption}</p>
+            </div>
+          )}
+          <button onClick={() => setVerGuion((v) => !v)} style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 14px", fontSize: 12.5, fontWeight: 700, color: "#042E7B", cursor: "pointer" }}>
+            {verGuion ? "Ocultar guion ▲" : "Ver guion del video ▼"}
+          </button>
+          {verGuion && <div style={{ marginTop: 12 }}><StoryboardView sb={version.storyboard} /></div>}
+        </>
+      ) : (
+        <>
+          <StoryboardView sb={version.storyboard} caption={version.caption} />
+          <p style={{ margin: "14px 0 0", fontSize: 12.5, color: "#64748B", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "10px 12px" }}>
+            🎬 Primero apruebas el <b>guion</b>. Cuando lo apruebes, subimos el <b>video</b> generado y te avisamos para que también lo revises.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ─── Post Card (compact grid) ───────────────────────── */
 function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
   const active = post.social_post_versions.find(v => v.es_activa) ?? post.social_post_versions[0];
@@ -355,6 +417,11 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
   const isCarrusel = (active?.imagenes?.length ?? 0) > 1;
   // Tiene corrección si hay más de una versión y está pendiente de revisar de nuevo
   const hayCorreccion = post.social_post_versions.length > 1 && post.estado === "pendiente";
+
+  const isTiktok = post.red_social === "tiktok";
+  const ttFase = post.fase ?? "guion";
+  const ttHook = active?.storyboard?.frames?.find((f) => f.tipo === "hook") ?? active?.storyboard?.frames?.[0];
+  const ttVideo = active?.video_url;
 
   return (
     <div style={{ position: "relative", paddingTop: hayCorreccion ? 7 : 0 }}>
@@ -371,13 +438,25 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
 
       {/* Image */}
       <div style={{ position: "relative", aspectRatio: "1/1", background: "#F1F5F9", overflow: "hidden" }}>
-        {hasImage
+        {isTiktok ? (
+          ttVideo
+            ? <video src={ttVideo} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#000" }} />
+            : <div style={{ width: "100%", height: "100%", background: "linear-gradient(160deg,#0F172A 0%,#1e293b 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 14, textAlign: "center", gap: 8 }}>
+                <span style={{ fontSize: 22 }}>🎬</span>
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", lineHeight: 1.3 }}>{ttHook?.overlay || post.titulo_interno || "Storyboard TikTok"}</span>
+              </div>
+        ) : hasImage
           ? <img src={active!.imagenes[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: 32 }}>📝</span>
             </div>
         }
-        {isCarrusel && (
+        {isTiktok && (
+          <span style={{ position: "absolute", top: 8, right: 8, background: ttVideo ? "rgba(0,0,0,.65)" : "rgba(24,131,255,.92)", color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 20 }}>
+            🎬 {ttFase === "video" ? "Video" : "Guion"}
+          </span>
+        )}
+        {isCarrusel && !isTiktok && (
           <span style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,.6)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 20 }}>
             📎 {active!.imagenes.length}
           </span>

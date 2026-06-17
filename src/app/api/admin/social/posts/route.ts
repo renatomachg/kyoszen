@@ -15,8 +15,8 @@ export async function GET(req: NextRequest) {
   let query = sb
     .from("social_posts")
     .select(`
-      id, red_social, fecha_programada, estado, titulo_interno, publicado, created_at, updated_at,
-      social_post_versions!inner(id, version_num, caption, imagenes, nota_visual, es_activa, created_at),
+      id, red_social, fecha_programada, estado, titulo_interno, publicado, fase, created_at, updated_at,
+      social_post_versions!inner(id, version_num, caption, imagenes, nota_visual, storyboard, video_url, es_activa, created_at),
       social_comments(id)
     `)
     .eq("social_post_versions.es_activa", true)
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
   const { data: post, error: postErr } = await sb
     .from("social_posts")
-    .insert({ red_social: red_social ?? "facebook", fecha_programada, titulo_interno: titulo_interno ?? "", publicado: false })
+    .insert({ red_social: red_social ?? "facebook", fecha_programada, titulo_interno: titulo_interno ?? "", publicado: false, ...((red_social ?? "facebook") === "tiktok" ? { fase: "guion" } : {}) })
     .select()
     .single();
 

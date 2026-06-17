@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { getRedSocial, REDES_SOCIALES as REDES } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
 import InformeAdmin from "@/components/admin/InformeAdmin";
+import StoryboardView from "@/components/social/StoryboardView";
 
 /* ─── Types ──────────────────────────────────────────── */
 interface Version {
@@ -13,6 +14,8 @@ interface Version {
   caption: string;
   imagenes: string[];
   nota_visual?: string;
+  storyboard?: import("@/components/social/StoryboardView").Storyboard | null;
+  video_url?: string | null;
   es_activa: boolean;
   created_at: string;
 }
@@ -23,6 +26,7 @@ interface Post {
   estado: "pendiente" | "aprobado" | "cambios";
   titulo_interno: string;
   publicado: boolean;
+  fase?: "guion" | "video";
   social_post_versions: Version[];
   social_comments: { id: number }[];
 }
@@ -275,6 +279,80 @@ function PostModal({
 }
 
 /* ─── Post detail panel ──────────────────────────────── */
+function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: Version; onUpdated: () => void }) {
+  const fase = post.fase ?? "guion";
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const guionAprobado = post.estado === "aprobado";
+
+  const subirVideo = async (file: File | null) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const up = await fetch("/api/admin/social/upload", { method: "POST", body: fd });
+      const { url } = await up.json();
+      if (!url) throw new Error("sin url");
+      await fetch(`/api/admin/social/posts/${post.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ video_url: url, fase: "video", estado: "pendiente" }),
+      });
+      onUpdated();
+    } catch {
+      alert("Error al subir el video. Intenta de nuevo.");
+    }
+    setUploading(false);
+  };
+
+  const Step = ({ n, label, state }: { n: number; label: string; state: "done" | "active" | "todo" }) => (
+    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 7, background: state === "active" ? "#EFF6FF" : state === "done" ? "#F0FDF4" : "#F8FAFC", border: `1.5px solid ${state === "active" ? "#BFDBFE" : state === "done" ? "#BBF7D0" : "#E2E8F0"}`, borderRadius: 10, padding: "6px 10px" }}>
+      <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#fff", background: state === "done" ? "#16A34A" : state === "active" ? "#1883FF" : "#CBD5E1" }}>{state === "done" ? "✓" : n}</span>
+      <span style={{ fontSize: 11.5, fontWeight: 800, color: state === "todo" ? "#94A3B8" : "#0F172A" }}>{label}</span>
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <Step n={1} label="Guion" state={fase === "video" ? "done" : "active"} />
+        <Step n={2} label="Video" state={fase === "video" ? "active" : "todo"} />
+      </div>
+
+      {fase === "video" && version.video_url && (
+        <div style={{ maxWidth: 240, margin: "0 auto 14px", borderRadius: 16, overflow: "hidden", background: "#000", aspectRatio: "9/16", boxShadow: "0 6px 18px rgba(0,0,0,.18)" }}>
+          <video src={version.video_url} controls playsInline style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000", display: "block" }} />
+        </div>
+      )}
+
+      <StoryboardView sb={version.storyboard} caption={version.caption} showProduccion />
+
+      <input ref={fileRef} type="file" accept="video/*" style={{ display: "none" }} onChange={(e) => subirVideo(e.target.files?.[0] ?? null)} />
+
+      <div style={{ marginTop: 14 }}>
+        {fase === "guion" ? (
+          guionAprobado ? (
+            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              style={{ width: "100%", padding: "11px 0", borderRadius: 12, border: "none", background: "#042E7B", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
+              {uploading ? "Subiendo video..." : "📹 Subir video generado"}
+            </button>
+          ) : (
+            <p style={{ margin: 0, fontSize: 12.5, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "10px 12px" }}>
+              🎬 Cuando el cliente <b>apruebe el guion</b>, aquí podrás subir el video generado y pasará a revisión de video.
+            </p>
+          )
+        ) : (
+          <button onClick={() => fileRef.current?.click()} disabled={uploading}
+            style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 12.5, fontWeight: 700, color: "#042E7B", cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
+            {uploading ? "Subiendo..." : "↻ Reemplazar video"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: PageConfig; onClose: () => void; onUpdated: () => void }) {
   const red = getRedSocial(post.red_social);
   const active = post.social_post_versions.find((v) => v.es_activa) ?? post.social_post_versions[0];
@@ -303,7 +381,7 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
   };
 
   const togglePublicado = async () => {
-    const sinImagen = (active?.imagenes?.length ?? 0) === 0;
+    const sinImagen = post.red_social !== "tiktok" && (active?.imagenes?.length ?? 0) === 0;
     if (!publicado && sinImagen) {
       if (!confirm("Esta publicación no tiene imagen todavía. ¿Aun así quieres mostrarla al cliente?")) return;
     }
@@ -378,7 +456,11 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
               </div>
             )}
 
-            {mostrada && (
+            {mostrada && post.red_social === "tiktok" && (
+              <TikTokAdminBlock post={post} version={mostrada} onUpdated={onUpdated} />
+            )}
+
+            {mostrada && post.red_social !== "tiktok" && (
               <div style={{ position: "relative" }}>
                 {hayCorreccion && !viendoAnterior && (
                   <>
@@ -513,6 +595,45 @@ export default function RedesSocialesPage() {
   const [importFileName, setImportFileName] = useState("");
   const importFileRef = useRef<HTMLInputElement>(null);
 
+  // Importador de storyboards TikTok
+  type TTPieza = { titulo: string; caption: string; storyboard: import("@/components/social/StoryboardView").Storyboard; fecha: string; seleccionada: boolean };
+  const [importTipo, setImportTipo] = useState<"facebook" | "tiktok">("facebook");
+  const [ttPiezas, setTtPiezas] = useState<TTPieza[] | null>(null);
+
+  const analizarTiktok = async () => {
+    setImportLoading(true); setImportMsg(""); setTtPiezas(null);
+    try {
+      const res = await fetch("/api/admin/social/importar-tiktok", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "analizar", texto: importTexto }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setImportMsg(data.error ?? "Error al analizar."); setImportLoading(false); return; }
+      setTtPiezas(data.piezas as TTPieza[]);
+    } catch { setImportMsg("Error de conexión al analizar el storyboard."); }
+    setImportLoading(false);
+  };
+
+  const crearTiktok = async () => {
+    if (!ttPiezas) return;
+    const sel = ttPiezas.filter((p) => p.seleccionada);
+    if (sel.length === 0) { setImportMsg("No hay videos seleccionados."); return; }
+    setImportCreando(true); setImportMsg("");
+    try {
+      const res = await fetch("/api/admin/social/importar-tiktok", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "crear", piezas: sel }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setImportMsg(data.error ?? "Error al crear."); setImportCreando(false); return; }
+      const omit = data.omitidas ? ` ${data.omitidas} omitidas (fecha pasada).` : "";
+      setImportMsg(`✅ Se crearon ${data.creadas} TikToks (borrador).${omit}`);
+      setTtPiezas(null); setImportTexto("");
+      loadData();
+    } catch { setImportMsg("Error de conexión al crear."); }
+    setImportCreando(false);
+  };
+
   const wb = weekBounds(weekOffset);
   const mb = monthBounds(weekOffset);
   const { desde, hasta, days } = wb;
@@ -595,15 +716,27 @@ export default function RedesSocialesPage() {
   };
 
   // ── Importador ──
-  const handleImportFile = (file: File | null) => {
+  const handleImportFile = async (file: File | null) => {
     if (!file) return;
     setImportFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const txt = (e.target?.result as string) ?? "";
-      setImportTexto(txt);
-    };
-    reader.readAsText(file);
+    setImportMsg("");
+    const esPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (esPdf) {
+      setImportLoading(true);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/admin/social/extract-pdf", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok) { setImportMsg(data.error ?? "No se pudo leer el PDF."); setImportFileName(""); setImportLoading(false); return; }
+        setImportTexto(data.text ?? "");
+      } catch { setImportMsg("Error al leer el PDF."); setImportFileName(""); }
+      setImportLoading(false);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => setImportTexto((e.target?.result as string) ?? "");
+      reader.readAsText(file);
+    }
   };
 
   const analizarPlan = async () => {
@@ -733,6 +866,17 @@ export default function RedesSocialesPage() {
       {/* ── Tab: Importar plan ── */}
       {tab === "importar" && (
         <div style={{ maxWidth: 760 }}>
+          {/* Toggle Facebook / TikTok */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            {(["facebook", "tiktok"] as const).map((t) => (
+              <button key={t} onClick={() => { setImportTipo(t); setImportPiezas(null); setTtPiezas(null); setImportTexto(""); setImportMsg(""); setImportFileName(""); }}
+                style={{ flex: 1, padding: "10px 14px", borderRadius: 11, border: `1.5px solid ${importTipo === t ? "#042E7B" : "#E2E8F0"}`, background: importTipo === t ? "#042E7B" : "#fff", color: importTipo === t ? "#fff" : "#64748B", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+                {t === "facebook" ? "📘 Plan de Facebook" : "🎬 Storyboards de TikTok"}
+              </button>
+            ))}
+          </div>
+
+          {importTipo === "facebook" && (<>
           <div style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 14, padding: "16px 18px", marginBottom: 20 }}>
             <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#1E40AF" }}>📥 Importa un plan de contenido completo</p>
             <p style={{ margin: 0, fontSize: 12.5, color: "#3B5BA5", lineHeight: 1.6 }}>
@@ -751,10 +895,10 @@ export default function RedesSocialesPage() {
               >
                 <span style={{ fontSize: 24 }}>📎</span>
                 <p style={{ margin: "6px 0 2px", fontSize: 13, fontWeight: 700, color: "#042E7B" }}>
-                  {importFileName ? `Archivo cargado: ${importFileName}` : "Sube el archivo HTML que descargaste"}
+                  {importFileName ? `Archivo cargado: ${importFileName}` : "Sube el archivo que descargaste"}
                 </p>
-                <p style={{ margin: 0, fontSize: 11.5, color: "#64748B" }}>Arrastra el archivo aquí o haz clic para seleccionarlo · .html o .txt</p>
-                <input ref={importFileRef} type="file" accept=".html,.htm,.txt,text/html" style={{ display: "none" }}
+                <p style={{ margin: 0, fontSize: 11.5, color: "#64748B" }}>Arrastra el archivo aquí o haz clic para seleccionarlo · .html, .txt o .pdf</p>
+                <input ref={importFileRef} type="file" accept=".html,.htm,.txt,.pdf,text/html,application/pdf" style={{ display: "none" }}
                   onChange={e => handleImportFile(e.target.files?.[0] ?? null)} />
               </div>
 
@@ -865,6 +1009,112 @@ export default function RedesSocialesPage() {
               })()}
             </>
           )}
+          </>)}
+
+          {/* ── Importador de storyboards TikTok ── */}
+          {importTipo === "tiktok" && (<>
+          <div style={{ background: "#FFF1F5", border: "1.5px solid #FBCFE8", borderRadius: 14, padding: "16px 18px", marginBottom: 20 }}>
+            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#9D174D" }}>🎬 Importa los storyboards de TikTok</p>
+            <p style={{ margin: 0, fontSize: 12.5, color: "#9F5476", lineHeight: 1.6 }}>
+              Pega el storyboard (texto o HTML) con los videos. El sistema detecta cada video y su guion cuadro por cuadro (hook, escena, qué dice) y crea los borradores como <b>guion para aprobar</b>. El video lo subes tú después, cuando el cliente apruebe el guion.
+            </p>
+          </div>
+
+          {!ttPiezas ? (
+            <>
+              {/* Subir archivo HTML / TXT / PDF */}
+              <div
+                onClick={() => importFileRef.current?.click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); handleImportFile(e.dataTransfer.files?.[0] ?? null); }}
+                style={{ border: "2px dashed #FBCFE8", background: "#FFF8FB", borderRadius: 14, padding: "18px", textAlign: "center", cursor: "pointer", marginBottom: 14 }}
+              >
+                <span style={{ fontSize: 24 }}>📎</span>
+                <p style={{ margin: "6px 0 2px", fontSize: 13, fontWeight: 700, color: "#9D174D" }}>
+                  {importFileName ? `Archivo cargado: ${importFileName}` : "Sube el storyboard (HTML o PDF)"}
+                </p>
+                <p style={{ margin: 0, fontSize: 11.5, color: "#64748B" }}>Arrastra el archivo aquí o haz clic para seleccionarlo · .html, .txt o .pdf</p>
+                <input ref={importFileRef} type="file" accept=".html,.htm,.txt,.pdf,text/html,application/pdf" style={{ display: "none" }}
+                  onChange={e => handleImportFile(e.target.files?.[0] ?? null)} />
+              </div>
+
+              <p style={{ margin: "0 0 8px", fontSize: 11.5, color: "#94A3B8", textAlign: "center" }}>— o pega el contenido directamente —</p>
+
+              <textarea
+                value={importTexto}
+                onChange={e => { setImportTexto(e.target.value); if (importFileName) setImportFileName(""); }}
+                placeholder="Pega aquí el storyboard completo de TikTok (HTML o texto)..."
+                rows={10}
+                style={{ width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 14, padding: "14px 16px", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box", marginBottom: 14 }}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <button onClick={analizarTiktok} disabled={importLoading || importTexto.trim().length < 30}
+                  style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importLoading || importTexto.trim().length < 30 ? 0.5 : 1, display: "flex", alignItems: "center", gap: 8 }}>
+                  {importLoading ? "Analizando storyboard..." : "Analizar storyboard ✨"}
+                </button>
+                {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
+              </div>
+              {importLoading && <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 10 }}>Esto puede tomar 10-20 segundos mientras la IA lee cada guion...</p>}
+            </>
+          ) : (
+            <>
+              {(() => {
+                const sel = ttPiezas.filter(p => p.seleccionada).length;
+                return (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+                      <div>
+                        <p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 800, color: "#042E7B" }}>{ttPiezas.length} videos detectados</p>
+                        <p style={{ margin: 0, fontSize: 12, color: "#64748B" }}><strong style={{ color: "#166534" }}>{sel} seleccionados</strong> · fechas sugeridas en martes</p>
+                      </div>
+                      <button onClick={() => { setTtPiezas(null); setImportMsg(""); }}
+                        style={{ background: "none", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: "#64748B", cursor: "pointer" }}>← Volver a pegar</button>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                      <button onClick={() => setTtPiezas(prev => prev?.map(p => ({ ...p, seleccionada: true })) ?? null)}
+                        style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#1E40AF", cursor: "pointer" }}>✓ Seleccionar todos</button>
+                      <button onClick={() => setTtPiezas(prev => prev?.map(p => ({ ...p, seleccionada: false })) ?? null)}
+                        style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#64748B", cursor: "pointer" }}>Quitar todos</button>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, maxHeight: 460, overflowY: "auto" }}>
+                      {ttPiezas.map((p, i) => {
+                        const frames = p.storyboard?.frames?.length ?? 0;
+                        const hook = p.storyboard?.frames?.find(f => f.tipo === "hook") ?? p.storyboard?.frames?.[0];
+                        return (
+                          <div key={i} onClick={() => setTtPiezas(prev => prev?.map((x, j) => j === i ? { ...x, seleccionada: !x.seleccionada } : x) ?? null)}
+                            style={{ background: p.seleccionada ? "#fff" : "#FAFBFC", border: `1.5px solid ${p.seleccionada ? "#93C5FD" : "#E2E8F0"}`, borderRadius: 12, padding: "12px 14px", display: "flex", gap: 12, alignItems: "flex-start", opacity: p.seleccionada ? 1 : 0.7, cursor: "pointer", transition: "all .12s" }}>
+                            <div style={{ flexShrink: 0, paddingTop: 1 }}>
+                              <input type="checkbox" checked={p.seleccionada} readOnly style={{ width: 17, height: 17, accentColor: "#042E7B", cursor: "pointer" }} />
+                            </div>
+                            <div style={{ flexShrink: 0, textAlign: "center", minWidth: 54 }}>
+                              <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "#042E7B" }}>{p.fecha ? new Date(p.fecha + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "—"}</p>
+                              <span style={{ display: "inline-flex", justifyContent: "center", marginTop: 4 }}><RedLogo red_social="tiktok" height={9} /></span>
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ margin: "0 0 3px", fontSize: 13, fontWeight: 700, color: "#1E293B" }}>{p.titulo || "Sin título"}</p>
+                              {hook?.overlay && <p style={{ margin: "0 0 4px", fontSize: 11.5, color: "#64748B", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.45 }}>🎯 {hook.overlay}</p>}
+                              <span style={{ display: "inline-block", fontSize: 10, fontWeight: 700, color: "#64748B", background: "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{frames} cuadros · {p.storyboard?.duracion || "TikTok"}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <button onClick={crearTiktok} disabled={importCreando || sel === 0}
+                        style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importCreando || sel === 0 ? 0.5 : 1 }}>
+                        {importCreando ? "Creando guiones..." : `Crear ${sel} guiones de TikTok`}
+                      </button>
+                      {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
+                    </div>
+                  </>
+                );
+              })()}
+            </>
+          )}
+          </>)}
         </div>
       )}
 

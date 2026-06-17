@@ -33,6 +33,17 @@ export async function PATCH(
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (typeof body.estado === "string") patch.estado = body.estado;
   if (typeof body.publicado === "boolean") patch.publicado = body.publicado;
+  if (typeof body.fase === "string") patch.fase = body.fase; // 'guion' | 'video'
+
+  // video_url va en la version activa (subir video del TikTok)
+  if (typeof body.video_url === "string") {
+    const { error: vErr } = await sb
+      .from("social_post_versions")
+      .update({ video_url: body.video_url })
+      .eq("post_id", id)
+      .eq("es_activa", true);
+    if (vErr) return NextResponse.json({ error: vErr.message }, { status: 500 });
+  }
 
   const { error } = await sb.from("social_posts").update(patch).eq("id", id);
 

@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
   let query = sb
     .from("social_posts")
     .select(`
-      id, red_social, fecha_programada, estado, created_at,
-      social_post_versions(id, version_num, caption, imagenes, es_activa, created_at),
+      id, red_social, fecha_programada, estado, titulo_interno, fase, created_at,
+      social_post_versions(id, version_num, caption, imagenes, storyboard, video_url, es_activa, created_at),
       social_comments(id, autor_nombre, autor_rol, contenido, created_at)
     `)
     .eq("publicado", true) // el cliente SOLO ve las publicaciones que el admin ya publicó
