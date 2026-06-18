@@ -879,6 +879,7 @@ export default function RevisorPage() {
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [postsTodos, setPostsTodos] = useState<Post[]>([]); // todas las publicadas (para modo filtro multi-fecha)
   const [statsMonth, setStatsMonth] = useState({ aprobados: 0, pendientes: 0, cambios: 0, total: 0 });
   const [config, setConfig] = useState<PageConfig>({ nombre_pagina: "Kyoszen", avatar_url: null });
   const [vista, setVista] = useState<"semana" | "mes">("semana");
@@ -930,13 +931,15 @@ export default function RevisorPage() {
     const mesDesde = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
     const mesHasta = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
 
-    const [postsRes, configRes, mesRes] = await Promise.all([
+    const [postsRes, configRes, mesRes, todosRes] = await Promise.all([
       fetch(`/api/revisor/posts?desde=${desde}&hasta=${hasta}`),
       fetch("/api/admin/social/config"),
       fetch(`/api/revisor/posts?desde=${mesDesde}&hasta=${mesHasta}`),
+      fetch(`/api/revisor/posts`), // todas (sin límite de fechas) para el modo filtro
     ]);
-    const [postsData, configData, mesData] = await Promise.all([postsRes.json(), configRes.json(), mesRes.json()]);
+    const [postsData, configData, mesData, todosData] = await Promise.all([postsRes.json(), configRes.json(), mesRes.json(), todosRes.json()]);
     setPosts(Array.isArray(postsData) ? postsData : []);
+    setPostsTodos(Array.isArray(todosData) ? todosData : []);
     const fb = Array.isArray(configData) ? configData.find((c: { red_social: string }) => c.red_social === "facebook") : null;
     if (fb) setConfig({ nombre_pagina: fb.nombre_pagina, avatar_url: fb.avatar_url });
     if (Array.isArray(mesData)) {
@@ -972,10 +975,9 @@ export default function RevisorPage() {
   };
 
   const handleStatusChange = (id: number, estado: string) => {
-    setPosts(prev => {
-      const updated = prev.map(p => p.id === id ? { ...p, estado: estado as Post["estado"] } : p);
-      return updated;
-    });
+    const aplicar = (arr: Post[]) => arr.map(p => p.id === id ? { ...p, estado: estado as Post["estado"] } : p);
+    setPosts(aplicar);
+    setPostsTodos(aplicar); // mantener el modo filtro sincronizado
     if (selectedPost?.id === id) setSelectedPost(prev => prev ? { ...prev, estado: estado as Post["estado"] } : prev);
     // Actualizar stats del mes en tiempo real
     setStatsMonth(prev => {
@@ -990,12 +992,16 @@ export default function RevisorPage() {
     });
   };
 
-  // Posts filtrados por estado y red (los filtros de las píldoras)
-  const postsFiltrados = posts.filter((p) =>
-    (filtroEstado === "todos" || p.estado === filtroEstado) &&
-    (filtroRed === "todos" || p.red_social === filtroRed)
-  );
   const hayFiltro = filtroEstado !== "todos" || filtroRed !== "todos";
+  // Con filtro: busca en TODAS las fechas (no solo el periodo visible) y ordena por fecha.
+  // Sin filtro: usa el periodo cargado (semana/mes) para el calendario.
+  const postsFiltrados = (hayFiltro ? postsTodos : posts)
+    .filter((p) =>
+      (filtroEstado === "todos" || p.estado === filtroEstado) &&
+      (filtroRed === "todos" || p.red_social === filtroRed)
+    )
+    .slice()
+    .sort((a, b) => (hayFiltro ? a.fecha_programada.localeCompare(b.fecha_programada) : 0));
 
   if (checkingAuth) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1097,40 +1103,49 @@ export default function RevisorPage() {
             <button onClick={() => { setFiltroEstado("todos"); setFiltroRed("todos"); }}
               style={{ marginLeft: 2, background: "none", border: "none", color: "#64748B", fontSize: 12, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>✕ Limpiar filtros</button>
           )}
-          <span style={{ marginLeft: "auto", fontSize: 12, color: "#94A3B8" }}>{postsFiltrados.length} de {posts.length}</span>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: "#94A3B8" }}>{postsFiltrados.length} de {hayFiltro ? postsTodos.length : posts.length}</span>
         </div>
         </div>
 
-        {/* Navigation + toggle */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
-          <div>
-            <h2 style={{ margin: "0 0 3px", fontSize: 20, fontWeight: 900, color: "#042E7B" }}>{tituloPeriodo()}</h2>
-            <p style={{ margin: 0, fontSize: 13, color: "#64748B", textTransform: "capitalize" }}>{fmtRange()}</p>
+        {/* Navigation + toggle — se oculta en modo filtro (que muestra todas las fechas) */}
+        {hayFiltro ? (
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ margin: "0 0 3px", fontSize: 20, fontWeight: 900, color: "#042E7B" }}>Resultados del filtro</h2>
+            <p style={{ margin: 0, fontSize: 13, color: "#64748B" }}>
+              {postsFiltrados.length} {postsFiltrados.length === 1 ? "publicación" : "publicaciones"} · todas las fechas, ordenadas por fecha
+            </p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Toggle semana/mes */}
-            <div data-tour="toggle" style={{ display: "flex", background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 3 }}>
-              {(["semana", "mes"] as const).map(v => (
-                <button key={v} onClick={() => cambiarVista(v)}
-                  style={{ padding: "6px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, textTransform: "capitalize",
-                    background: vista === v ? "#042E7B" : "transparent", color: vista === v ? "#fff" : "#64748B", transition: "all .15s" }}>
-                  {v}
-                </button>
-              ))}
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: "0 0 3px", fontSize: 20, fontWeight: 900, color: "#042E7B" }}>{tituloPeriodo()}</h2>
+              <p style={{ margin: 0, fontSize: 13, color: "#64748B", textTransform: "capitalize" }}>{fmtRange()}</p>
             </div>
-            {/* Navegación */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <button onClick={() => setPeriodOffset(w => w - 1)}
-                style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, color: "#042E7B", fontWeight: 700 }}>‹</button>
-              {periodOffset !== 0 && (
-                <button onClick={() => setPeriodOffset(0)}
-                  style={{ height: 36, padding: "0 14px", borderRadius: 10, background: "#042E7B", border: "none", cursor: "pointer", fontSize: 12, color: "#fff", fontWeight: 700 }}>Hoy</button>
-              )}
-              <button onClick={() => setPeriodOffset(w => w + 1)}
-                style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, color: "#042E7B", fontWeight: 700 }}>›</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* Toggle semana/mes */}
+              <div data-tour="toggle" style={{ display: "flex", background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 3 }}>
+                {(["semana", "mes"] as const).map(v => (
+                  <button key={v} onClick={() => cambiarVista(v)}
+                    style={{ padding: "6px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, textTransform: "capitalize",
+                      background: vista === v ? "#042E7B" : "transparent", color: vista === v ? "#fff" : "#64748B", transition: "all .15s" }}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+              {/* Navegación */}
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <button onClick={() => setPeriodOffset(w => w - 1)}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, color: "#042E7B", fontWeight: 700 }}>‹</button>
+                {periodOffset !== 0 && (
+                  <button onClick={() => setPeriodOffset(0)}
+                    style={{ height: 36, padding: "0 14px", borderRadius: 10, background: "#042E7B", border: "none", cursor: "pointer", fontSize: 12, color: "#fff", fontWeight: 700 }}>Hoy</button>
+                )}
+                <button onClick={() => setPeriodOffset(w => w + 1)}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "1.5px solid #E2E8F0", cursor: "pointer", fontSize: 16, color: "#042E7B", fontWeight: 700 }}>›</button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Grid */}
         <div data-tour="grid">
@@ -1153,7 +1168,7 @@ export default function RevisorPage() {
                   style={{ marginTop: 16, background: "#042E7B", border: "none", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>✕ Limpiar filtros</button>
               )}
             </div>
-          ) : vista === "mes" ? (
+          ) : !hayFiltro && vista === "mes" ? (
             /* Calendario real del mes (dom→sáb, semanas por fila) */
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
               {DAYS_SUN.map((d) => (
