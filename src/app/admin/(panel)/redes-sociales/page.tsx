@@ -850,13 +850,17 @@ export default function RedesSocialesPage() {
       fetch("/api/admin/social/config"),
     ]);
     const [postsData, cfgData] = await Promise.all([postsRes.json(), cfgRes.json()]);
-    setPosts(Array.isArray(postsData) ? postsData : []);
+    const arr: Post[] = Array.isArray(postsData) ? postsData : [];
+    setPosts(arr);
+    // refrescar la publicación abierta en el modal con sus datos nuevos
+    setSelectedPost((prev) => (prev ? (arr.find((p) => p.id === prev.id) ?? prev) : prev));
     const fb = Array.isArray(cfgData) ? cfgData.find((c: PageConfig) => c.red_social === "facebook") : null;
     if (fb) {
       setConfig(fb);
       setConfigForm({ nombre_pagina: fb.nombre_pagina, avatar_url: fb.avatar_url ?? "" });
     }
     setLoading(false);
+    return arr;
   }, [queryDesde, queryHasta]);
 
   useEffect(() => { loadData(); }, [loadData]);
