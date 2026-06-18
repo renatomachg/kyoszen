@@ -1,35 +1,45 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-06-17
-**Cambios analizados:** 3 commits del día — `src/app/revisor/page.tsx` (filtros + tour de novedad), `src/components/social/StoryboardView.tsx`, `src/app/api/admin/social/importar-tiktok/route.ts`, `src/app/admin/(panel)/redes-sociales/page.tsx`. Archivos base Kyo: `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`.
+**Fecha:** 2026-06-18
+**Cambios analizados:** 4 commits del día — `src/app/revisor/page.tsx` (filtros multi-fecha + lista plana), `src/app/admin/(panel)/redes-sociales/page.tsx` (PropuestaEditor + drag entre meses + refresco de modal), `src/app/api/admin/social/posts/[id]/versions/route.ts` (PUT acepta storyboard). Archivos base Kyo: `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`.
 
 ---
 
 ## Cambios Recientes Detectados
 
-1. **Filtros en el revisor** (`/revisor`): las 4 píldoras de estado ahora filtran el grid en tiempo real; nueva fila de filtros por red (Facebook/TikTok); contador "X de Y" y "✕ Limpiar filtros"; empty state inteligente según si hay filtro activo.
-2. **Tour de novedad** (`NovedadFiltros`): coach-mark de 6 pasos con spotlight sobre las nuevas píldoras de filtro, activado una sola vez (localStorage `kyoszen_revisor_novedad_filtros_v1`). Lógica para que usuario que ya vio la guía vea directamente la novedad.
-3. **Distintivos de red en calendario** (`vista === "mes"`): chip `● FACEBOOK` / `● TIKTOK` con borde izquierdo de color y badge "✨ NUEVA" si hay corrección.
-4. **Importador de set TikTok** (3 documentos: Propuesta, Storyboard, Guía técnica): separación por audiencia — cliente ve solo `PropuestaView`, admin ve las 3 pestañas.
+1. **Revisor: modo filtro multi-fecha** (`src/app/revisor/page.tsx`): al activar cualquier filtro (estado o red), se carga un 4º fetch (`/api/revisor/posts` sin fechas) y se muestra lista plana ordenada por fecha. Se ocultan el toggle Semana/Mes y las flechas de navegación. Header cambia a "Resultados del filtro · N publicaciones · todas las fechas". `handleStatusChange` ahora sincroniza tanto `posts` como `postsTodos` para mantener consistencia entre modo filtro y calendario.
+
+2. **Admin: refresco del modal al guardar** (`src/app/admin/(panel)/redes-sociales/page.tsx`): `loadData` ahora refresca `selectedPost` con los datos actualizados, corrigiendo el bug donde el modal mostraba estado/versión desactualizados después de guardar.
+
+3. **Admin/TikTok: PropuestaEditor** (`src/app/admin/(panel)/redes-sociales/page.tsx` líneas 283-380): nuevo componente que permite editar la propuesta del cliente (título, subtítulo, por_qué, línea de diseño, copy, caption). **Dos rutas de guardado**: "Guardar" = PUT silencioso (actualiza sin notificar ni crear versión nueva) | "Guardar y avisar al cliente" = POST nueva versión + devuelve el post a `pendiente` + correo a revisores activos. La pestaña "📋 Propuesta" ahora siempre visible en TikTok (permite crear propuesta si no existía).
+
+4. **Admin: drag entre períodos** (`src/app/admin/(panel)/redes-sociales/page.tsx` función `moverPostPeriodo`): las flechas ‹ › se convierten en drop targets (resalte azul al arrastrar encima). Soltar una publicación sobre ellas la mueve al período anterior/siguiente, ajustando el día si el mes destino es más corto.
 
 ---
 
-## 🔴 BUGS CRÍTICOS ACUMULADOS — DÍA 6 SIN CORRECCIÓN
+## 🔴 BUGS CRÍTICOS — DÍA 7 SIN CORRECCIÓN
 
-> El flujo candidato → Kyo → vacante → aplicación sigue roto en producción. Estos bugs llevan 6 días sin atención.
+> El flujo candidato → Kyo → vacante → aplicación sigue roto en producción. Estos bugs llevan **7 días** sin atención y cada día que pasan afectan a candidatos reales usando el sitio.
 
-### BUG 1 — Kyo recomienda vacantes que no existen *(BLOQUEANTE — 6º día)*
+### BUG 1 — Kyo recomienda vacantes que no existen *(BLOQUEANTE — 7º día)*
 **Archivo:** `src/lib/assistant/knowledge.ts` línea 167
 
-`StaticKnowledgeProvider.listJobs()` lee de `src/lib/jobs.ts` (demo hardcodeado). Las vacantes reales de Supabase son invisibles para Kyo. En el Paso 5, Kyo presenta IDs de demo que generan 404 al hacer clic.
+`StaticKnowledgeProvider.listJobs()` lee de `src/lib/jobs.ts` (array demo hardcodeado). Las vacantes reales del panel admin (Supabase) son invisibles para Kyo. En el Paso 5, Kyo presenta IDs de demo que generan 404 al hacer clic. **Este es el bug de mayor impacto de todo el proyecto.**
 
-**Fix en `src/app/api/assistant/chat/route.ts`:** Antes del loop de herramientas, consultar vacantes activas de Supabase con `sbAdmin` y pasarlas a `buildSystemPrompt()` y `executeTool()`.
+**Fix en `src/app/api/assistant/chat/route.ts`:** Antes del loop de herramientas, consultar vacantes activas con `sbAdmin`:
+```ts
+const { data: vacantesBD } = await sbAdmin
+  .from("vacantes")
+  .select("id,titulo,empresa,categoria,ubicacion,contrato,jornada,salario,descripcion,tags")
+  .eq("activa", true);
+// Inyectar vacantesBD en el knowledge antes del loop de tool-use
+```
 
 ---
 
-### BUG 2 — Filtro "Marca" en `/vacantes` siempre devuelve 0 resultados *(6º día)*
+### BUG 2 — Filtro "Marca" en `/vacantes` siempre devuelve 0 resultados *(7º día)*
 **Archivo:** `src/app/vacantes/page.tsx` líneas 29 y 180
 
-Las marcas hardcodeadas (`"Grupo Corpora"`, `"Logística Norte"`, etc.) no coinciden con las empresas reales en Supabase.
+Las marcas hardcodeadas (`"Grupo Corpora"`, `"Logística Norte"`, etc.) no coinciden con las empresas reales en Supabase. Kyo navega con `?marca=Sigma Retail` y el candidato ve la página vacía.
 
 **Fix:**
 ```ts
@@ -41,35 +51,35 @@ const marcasDisponibles = useMemo(
 
 ---
 
-### BUG 3 — Vocabulario Contrato/Jornada incompatible entre BD, filtros y Kyo *(6º día)*
+### BUG 3 — Vocabulario Contrato/Jornada incompatible entre BD, filtros y Kyo *(7º día)*
 **Archivos:** `src/app/vacantes/page.tsx` líneas 30-31, `src/lib/assistant/system-prompt.ts` líneas 85-91
 
-Los tres sistemas usan valores distintos. Los filtros devuelven 0 resultados aunque existan vacantes compatibles.
+Los tres sistemas usan valores distintos para el mismo concepto. Los filtros devuelven 0 resultados aunque existan vacantes compatibles.
 
 ---
 
-### BUG 5 — MAX_TOOL_ITERATIONS demasiado bajo para el Paso 5 *(6º día)*
+### BUG 5 — MAX_TOOL_ITERATIONS demasiado bajo para el Paso 5 *(7º día)*
 **Archivo:** `src/app/api/assistant/chat/route.ts` línea 85
 
-Paso 5 requiere: `search_jobs` → `get_job_details` × 2 → `navigate_to` = 4 iteraciones mínimo. Con 5 como límite, Claude puede truncar la respuesta antes de navegar.
+Paso 5 requiere: `search_jobs` → `get_job_details` × 2 → `navigate_to` = 4 iteraciones mínimo. Con `MAX_TOOL_ITERATIONS = 5`, Claude puede truncar la respuesta antes de navegar.
 
 **Fix:** `const MAX_TOOL_ITERATIONS = 8;`
 
 ---
 
-### BUG 14 — FAQs editadas en el admin NUNCA llegan a Kyo *(6º día)*
+### BUG 14 — FAQs editadas en el admin NUNCA llegan a Kyo *(7º día)*
 **Archivos:** `src/lib/assistant/knowledge.ts` líneas 99-105, `src/app/api/assistant/chat/route.ts`
 
-`buildSystemPrompt()` usa `COMPANY.faqs` (hardcodeado), ignorando la tabla `kyo_faqs` de Supabase. El admin puede editar FAQs desde el panel sin ningún efecto.
+`buildSystemPrompt()` usa `COMPANY.faqs` (hardcodeado), ignorando la tabla `kyo_faqs` de Supabase. El admin puede editar FAQs desde el panel sin ningún efecto en Kyo.
 
 ---
 
-### BUG 16 — `rateLimitMap` crece sin límite (memory leak en VPS) *(6º día)*
+### BUG 16 — `rateLimitMap` crece sin límite (memory leak en VPS) *(7º día)*
 **Archivo:** `src/app/api/assistant/chat/route.ts` líneas 68-80
 
-El `Map` nunca se limpia. Con días de uptime, un bot puede agotar la RAM del VPS (4 GB).
+El `Map` nunca se limpia. Con días de uptime y tráfico de bots, puede agotar la RAM del VPS (4 GB).
 
-**Fix mínimo:**
+**Fix mínimo (añadir al inicio de `checkRateLimit`):**
 ```ts
 if (rateLimitMap.size > 10_000) {
   const now = Date.now();
@@ -81,28 +91,28 @@ if (rateLimitMap.size > 10_000) {
 
 ---
 
-### BUG 23 — `reset()` no regenera sessionId *(6º día)*
+### BUG 23 — `reset()` no regenera sessionId *(7º día)*
 **Archivo:** `src/components/assistant/useChat.ts` líneas 139-145
 
-"Nueva conversación" borra localStorage pero no regenera `kyo_session_id`. El nuevo chat sobreescribe la conversación anterior en Supabase.
+"Nueva conversación" borra localStorage pero no regenera `kyo_session_id`. El nuevo chat sobreescribe la conversación anterior en Supabase, perdiendo el historial del candidato.
 
-**Fix:** `sessionStorage.removeItem("kyo_session_id");`
+**Fix:** Añadir en `reset()`: `sessionStorage.removeItem("kyo_session_id");`
 
 ---
 
-### BUG 25 — Cursos del sitio público y Kyo ignoran la tabla de Supabase *(6º día)*
+### BUG 25 — Cursos del sitio público y Kyo ignoran la tabla de Supabase *(7º día)*
 **Archivos:** `src/app/cursos/page.tsx` línea 7, `src/lib/assistant/knowledge.ts` líneas 1-2
 
 La página `/cursos` y Kyo leen de `COURSES` (array estático). Los cambios del admin en `/admin/cursos` nunca se reflejan en el sitio público ni en Kyo.
 
 ---
 
-### BUG 26 — Markdown de Kyo renderiza asteriscos literales en el chat *(6º día)*
+### BUG 26 — Markdown de Kyo renderiza asteriscos literales en el chat *(7º día)*
 **Archivo:** `src/components/assistant/ChatWidget.tsx` líneas 211 y 227
 
-El Paso 5 usa `**texto**` y listas numeradas. Con `whitespace-pre-wrap` los saltos se preservan pero `**texto**` aparece con asteriscos literales.
+El Paso 5 usa `**texto**` y listas numeradas. Con `whitespace-pre-wrap` los saltos se preservan pero `**texto**` aparece con asteriscos literales en la burbuja.
 
-**Fix seguro (solo en burbujas de asistente):**
+**Fix seguro (solo en burbujas del asistente):**
 ```tsx
 function renderMarkdown(text: string) {
   return text
@@ -115,87 +125,100 @@ function renderMarkdown(text: string) {
 
 ---
 
-## 🟠 BUGS NUEVOS — DETECTADOS HOY (2026-06-17)
+### BUG 28 — Tour de novedad activa cuando el usuario está en la pestaña "📊 Análisis" *(2º día)*
+**Archivo:** `src/app/revisor/page.tsx` línea ~1235
 
-### BUG 28 — Tour de novedad activa cuando el usuario está en la pestaña "📊 Análisis"
-**Archivo:** `src/app/revisor/page.tsx` línea 1235
+`showNovedad` se renderiza sin importar el valor de `seccion`. Si el usuario está viendo "Análisis", los selectores `[data-fpill]` y `[data-fred]` no existen en el DOM. El tour muestra solo el overlay oscuro sin spotlight y el usuario queda bloqueado sin poder cerrar.
 
-`showNovedad` se renderiza sin importar el valor de `seccion`. Si el usuario está viendo "Análisis", los selectores `[data-fpill]` y `[data-fred]` no existen en el DOM (están en la pestaña "Publicaciones"). El tour muestra solo el overlay oscuro sin spotlight, y el usuario no puede actuar.
-
-**Fix:** Condicionar el render a la pestaña activa:
+**Fix:**
 ```tsx
 {showNovedad && seccion === "publicaciones" && <NovedadFiltros onClose={() => setShowNovedad(false)} />}
 ```
 
 ---
 
-### BUG 29 — Modal del revisor: grid 2 columnas se rompe en mobile (pantallas < 700px)
-**Archivo:** `src/app/revisor/page.tsx` línea 194
+### BUG 29 — Modal del revisor: grid 2 columnas se rompe en mobile *(2º día)*
+**Archivo:** `src/app/revisor/page.tsx` línea ~194
 
 ```tsx
 style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}
 ```
 
-No tiene fallback responsive. En mobile el mockup y el panel de acciones se comprimen a ~50% cada uno — el mockup es ilegible y los botones de acción quedan muy pequeños.
+No tiene fallback responsive. En mobile (< 700px) el mockup y el panel de acciones se comprimen a ~50% cada uno — mockup ilegible, botones de acción muy pequeños. Afecta directamente a Rosy y Monse que acceden desde el celular.
 
-**Fix:** Agregar en el `<style>` del componente:
+**Fix:** Añadir clase CSS `.post-modal-grid` y en `<style>`:
 ```css
 @media (max-width: 700px) {
   .post-modal-grid { grid-template-columns: 1fr !important; }
 }
 ```
-Y en el div del grid: `className="post-modal-grid"`.
 
 ---
 
-### BUG 30 — `loadPosts` hace fetch doble del mes cuando vista === "mes" y periodOffset === 0
-**Archivo:** `src/app/revisor/page.tsx` líneas 926-951
+### BUG 31 — "Ver propuesta aprobada" muestra vacío si no hay propuesta *(2º día)*
+**Archivo:** `src/app/revisor/page.tsx` líneas 393-401
 
-Cuando el usuario está en vista "mes" y en el mes actual, `desde/hasta` coinciden con `mesDesde/mesHasta`. Se hacen 2 fetches idénticos a `/api/revisor/posts`.
+El botón siempre se muestra en TikTok `fase === "video"`. Si el video se subió directamente sin storyboard o propuesta, el toggle no muestra nada al abrirse — experiencia confusa para el cliente.
 
-**Fix:** Detectar el caso y reutilizar el resultado:
-```ts
-const mismoPeriodo = vista === "mes" && periodOffset === 0;
-const [postsRes, configRes, mesRes] = await Promise.all([
-  fetch(`/api/revisor/posts?desde=${desde}&hasta=${hasta}`),
-  fetch("/api/admin/social/config"),
-  mismoPeriodo ? Promise.resolve(null) : fetch(`/api/revisor/posts?desde=${mesDesde}&hasta=${mesHasta}`),
-]);
-// Si mismoPeriodo, usar postsData para las stats también.
-```
+**Fix:** `{(version.storyboard?.propuesta || version.storyboard?.frames?.length) && <button>Ver propuesta aprobada ▼</button>}`
 
 ---
 
-### BUG 31 — Botón "Ver propuesta aprobada" en TikTok fase=video muestra contenido vacío si no hay propuesta
-**Archivo:** `src/app/revisor/page.tsx` líneas 393-401 (función `TikTokReview`)
+### BUG 32 — Sin confirmación de éxito al aprobar o solicitar cambios en el revisor *(2º día)*
+**Archivo:** `src/app/revisor/page.tsx` funciones `aprobar` y `enviarCambios`
 
-Cuando `fase === "video"`, el botón "Ver propuesta aprobada ▼" siempre se muestra. Si el video se subió directamente sin storyboard `propuesta` (e.g., storyboard null o sin campo `propuesta`), el toggle no muestra nada al abrirse.
+El estado del botón cambia de color pero no hay toast ni banner visible. El cliente no recibe confirmación clara de que su acción fue registrada — crítico en mobile donde la retroalimentación es la única señal.
 
-**Fix:** Solo mostrar el botón si hay propuesta o storyboard real:
+**Fix:** Añadir `exito: string | null` y mostrar banner temporal de 4 segundos:
 ```tsx
-{(version.storyboard?.propuesta || version.storyboard?.frames?.length) && (
-  <button ...>Ver propuesta aprobada ▼</button>
-)}
-```
-
----
-
-### BUG 32 — Sin confirmación de éxito al aprobar o solicitar cambios en el revisor
-**Archivo:** `src/app/revisor/page.tsx` líneas 125-159 (funciones `aprobar` y `enviarCambios`)
-
-Después de llamar la API, el estado del botón cambia de color pero no hay toast ni banner visible. El cliente no recibe confirmación clara de que su acción fue registrada — especialmente crítico en `enviarCambios` donde el cliente acaba de escribir texto.
-
-**Fix:** Mostrar un banner temporal al completar cada acción:
-```tsx
-const [exito, setExito] = useState<string | null>(null);
-// En aprobar():
 setExito("✅ Publicación aprobada. El equipo fue notificado.");
 setTimeout(() => setExito(null), 4000);
-// En enviarCambios():
-setExito("📬 Cambios enviados. Te avisamos cuando estén listos.");
-setTimeout(() => setExito(null), 4000);
-// Renderizar bajo los botones cuando exito !== null.
 ```
+
+---
+
+## 🟠 BUGS NUEVOS — DETECTADOS HOY (2026-06-18)
+
+### BUG 33 — `postsTodos` se refetch completo en cada cambio de período
+**Archivo:** `src/app/revisor/page.tsx` líneas 930-945
+
+`loadData` hace 4 fetches paralelos en cada llamada, incluyendo `/api/revisor/posts` sin fechas. Cada vez que el usuario navega entre semanas (cambiando `periodOffset`), este 4º fetch descarga todos los posts históricos sin importar si hay filtros activos o no.
+
+**Fix:** Cargar `postsTodos` solo una vez al montar con un `useEffect` separado:
+```ts
+useEffect(() => {
+  if (!user) return;
+  fetch("/api/revisor/posts")
+    .then(r => r.json())
+    .then(data => { if (Array.isArray(data)) setPostsTodos(data); });
+}, [user]); // solo al iniciar sesión, no en cada cambio de período
+```
+
+---
+
+### BUG 34 — Modo filtro: header no describe qué filtros están activos
+**Archivo:** `src/app/revisor/page.tsx` línea ~1108
+
+Cuando hay filtros activos, el header muestra "Resultados del filtro" sin indicar cuáles. Si el usuario scrolleó hacia abajo y las píldoras quedaron fuera de vista, no sabe qué está filtrando.
+
+**Fix:** Construir descripción dinámica:
+```tsx
+const descFiltro = [
+  filtroEstado !== "todos" ? ESTADO[filtroEstado]?.label : null,
+  filtroRed !== "todos" ? filtroRed.toUpperCase() : null,
+].filter(Boolean).join(" · ");
+
+<p style={{ ... }}>Filtro: {descFiltro} · {postsFiltrados.length} publicaciones · todas las fechas</p>
+```
+
+---
+
+### BUG 35 — Drag entre meses no tiene alternativa en mobile/tablet
+**Archivo:** `src/app/admin/(panel)/redes-sociales/page.tsx` función `moverPostPeriodo`
+
+El drag-and-drop usa HTML5 Drag API (`draggable`, `onDragStart`, `onDrop`). En mobile/tablet esta API no funciona. Un admin desde iPad no puede usar drag entre meses ni intercambio de fechas.
+
+**Fix provisional:** Añadir botón "📅" en cada post del calendario que abra un date picker simple como alternativa touch-friendly al drag, sin reemplazar el comportamiento de escritorio.
 
 ---
 
@@ -203,39 +226,24 @@ setTimeout(() => setExito(null), 4000);
 
 ### Alta prioridad
 
-- **Modal del revisor: grid 2 columnas en mobile** — ver BUG 29. Afecta a Rosy y Monse al revisar desde el celular.
+- **CTA fijo en mobile para aplicar a vacante** — `src/app/vacantes/[id]/_content.tsx`. El sidebar sticky con el botón "Aplicar ahora" solo aparece en `lg:`. En mobile el candidato tiene que hacer scroll completo por la descripción para llegar al CTA. Agregar barra fija inferior en mobile con el botón de aplicar.
 
-- **Stats del mes no reflejan el período visible** — `src/app/revisor/page.tsx` líneas 1056-1077. Los contadores de las píldoras siempre muestran el mes completo aunque el usuario esté viendo "Esta semana". Cuando el usuario activa el filtro "Pendientes" y ve "3 de 5", no está claro que "5" es del período visible y "Pendientes: 8" es del mes. Agregar una nota visual sutil: al estar en vista semana, los pills podrían mostrar un superíndice con el total del período:
-  ```tsx
-  <span style={{ opacity: 0.55, fontSize: 10 }}>/{postsDelPeriodo.length}</span>
-  ```
+- **Empty state de vacantes sin salida** — `src/app/vacantes/page.tsx`. Cuando no hay resultados, no hay botón "Limpiar filtros" ni sugerencia de WhatsApp. El candidato frustrado abandona sin alternativa. Agregar ambos.
 
-- **CTA de aplicar no visible en mobile en detalle de vacante** — `src/app/vacantes/[id]/_content.tsx` líneas 214-232. El sidebar sticky solo aparece en `lg:`. El candidato en mobile tiene que hacer scroll por toda la vacante para llegar al botón.
-
-  **Fix:** Barra fija inferior en mobile:
-  ```tsx
-  <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t px-5 py-3 flex gap-3 z-40">
-    <button onClick={() => setModalOpen(true)} className="flex-1 bg-navy text-white rounded-full py-3 text-sm font-extrabold">
-      Aplicar ahora
-    </button>
-  </div>
-  ```
+- **Confirmación de acciones en el revisor (BUG 32)** — Crítico para Rosy y Monse en mobile.
 
 ### Media prioridad
 
-- **Texto del card TikTok sin guion es genérico** — `src/app/revisor/page.tsx` línea 454. Cuando no hay `storyboard.frames[0].overlay` ni `titulo_interno`, muestra "Storyboard TikTok". Cambiar a "Guion en preparación" para que el cliente entienda que el contenido aún se está definiendo.
+- **Stats del mes vs. período visible son ambiguos** — `src/app/revisor/page.tsx` líneas 1056-1077. Las píldoras siempre muestran el mes completo aunque la vista sea "Esta semana". Agregar nota visual sutil con el total del período visible como referencia.
 
-- **Tour de novedad ignora si hay publicaciones visibles** — `src/app/revisor/page.tsx` líneas 897-912. El tour de novedad aparece aunque el revisor no tenga publicaciones en el período. El usuario ve el tour de filtros pero el grid está vacío. Fix: `if (posts.length > 0 && !novedadVista) setShowNovedad(true);`
+- **`PostCard` inconsistente entre vista semana y mes** — Vista semana usa chip simple `<RedLogo>`; vista mes usa pill `● FACEBOOK`/`● TIKTOK` con fondo de color. Unificar al pill de color en ambas vistas.
 
-- **`PostCard` vista semana no muestra chip de red de forma consistente** — `src/app/revisor/page.tsx` línea 489. La vista semana usa `<RedLogo red_social={post.red_social} height={11} />` (chip simple). La vista mes usa el pill `● FACEBOOK`/`● TIKTOK` con fondo de color. La inconsistencia es visible cuando el usuario alterna entre vistas. Unificar usando el mismo pill de color en ambas vistas.
-
-- **Empty state de vacantes públicas sin CTA de rescate** — `src/app/vacantes/page.tsx`. Cuando no hay resultados para los filtros activos, no hay botón "Limpiar filtros" ni enlace a WhatsApp. El candidato frustrado no tiene salida. Agregar ambos al empty state.
+- **Tour de novedad cuando el grid está vacío** — `src/app/revisor/page.tsx` líneas 897-912. El coach-mark de filtros aparece aunque no haya publicaciones visibles. Fix: `if (posts.length > 0 && !novedadVista) setShowNovedad(true);`
 
 ### Baja prioridad
 
-- **`aria-modal` y `role="dialog"` faltantes en PostModal** — `src/app/revisor/page.tsx` línea 165. Agregar `role="dialog" aria-label="Detalle de publicación" aria-modal="true"` al div del modal.
-
-- **Sin skeleton durante carga de publicaciones en el revisor** — Líneas 1137-1140. Se muestra solo un spinner. Mientras `loading === true`, mostrar 6 cards `animate-pulse` (altura fija, fondo gris) para dar sensación de velocidad.
+- **Falta `role="dialog"` y `aria-modal` en PostModal del revisor** — `src/app/revisor/page.tsx` línea ~165.
+- **Sin skeleton durante carga en el revisor** — Mostrar 6 cards `animate-pulse` mientras `loading === true` para dar sensación de velocidad.
 
 ---
 
@@ -243,60 +251,39 @@ setTimeout(() => setExito(null), 4000);
 
 ### Mejoras al flujo de conversación
 
-- **Paso 5 no maneja empresa vacía/confidencial** — `src/lib/assistant/system-prompt.ts` línea 44. Si la vacante tiene empresa vacía, el campo `[Empresa]` queda en blanco en la respuesta. Agregar instrucción al Paso 5: *"Si la empresa es null o vacía, mostrar 'empresa confidencial'."*
+- **Paso 5 no maneja empresa vacía** — `src/lib/assistant/system-prompt.ts` línea 44. Si la vacante tiene empresa vacía (confidencial), `[Empresa]` queda en blanco en la respuesta. Agregar instrucción: *"Si empresa es null o vacía, mostrar 'empresa confidencial'."*
 
-- **Paso 6 no maneja el rechazo del candidato** — `src/lib/assistant/system-prompt.ts` líneas 60-61. Si el candidato dice "ninguna me interesa", no hay instrucción de flujo. Agregar Paso 6b: *"Si el candidato rechaza todas las opciones: agradecer, ofrecer banco de talentos con `navigate_to('/contacto')` y sugerir `/cursos` si quiere mejorar su perfil."*
+- **Paso 6 no maneja el rechazo del candidato** — `src/lib/assistant/system-prompt.ts` líneas 60-61. Si el candidato dice "ninguna me interesa", no hay flujo. Agregar Paso 6b: *"Si el candidato rechaza todas las opciones: agradecer, ofrecer banco de talentos con `navigate_to('/contacto')` y sugerir `/cursos` si quiere mejorar su perfil."*
 
-- **Kyo no menciona el tiempo de respuesta de 24h al invitar a aplicar** — El stat más convincente para motivar la aplicación nunca aparece en el Paso 6. Agregar en el Paso 6: *"Al invitar a aplicar, mencionar que el equipo responde en menos de 24 horas hábiles."*
+- **Kyo nunca menciona las 24h de respuesta** — El stat más convincente para motivar la aplicación no aparece en el Paso 6. Agregar: *"Al invitar a aplicar, mencionar que el equipo responde en menos de 24 horas hábiles."*
 
-- **Resumen de perfil como ancla contra truncado del historial** — `src/app/api/assistant/chat/route.ts` línea 131. El historial se corta a 20 mensajes; si el perfil del candidato quedó en los primeros pasos, Kyo lo olvida. Agregar al Paso 3 del system-prompt: *"Al completar el perfil (pasos 0-4), sintetizar en UNA línea: 'Perfil registrado: [nombre], [puesto], [N] años, zona [X], [jornada].' Esto preserva el contexto si el historial se trunca."*
+- **Resumen de perfil como ancla contra truncado de historial** — `src/app/api/assistant/chat/route.ts` línea 131. El historial se corta a 20 mensajes. Agregar al Paso 3: *"Al completar pasos 0-4, sintetizar en una línea: 'Perfil: [nombre], [puesto], [N] años, zona [X], [jornada].' Preserva el contexto si el historial se trunca."*
 
-- **Pre-calificación de leads empresariales** — `src/lib/assistant/system-prompt.ts` línea 65. Cuando detecta intención de contratar, Kyo navega directo a `/contacto` sin información. Mejorar el flujo: preguntar primero *"¿El nombre de su empresa y qué tipo de perfil busca?"* antes de navegar, para que el lead llegue con contexto al inbox de contactos.
+- **Pre-calificación de leads empresariales** — `src/lib/assistant/system-prompt.ts` línea 65. Cuando detecta intención de contratar, Kyo navega directo a `/contacto` sin capturar datos. Mejorar: preguntar *"¿Nombre de su empresa y qué perfil busca?"* antes de navegar.
 
-### Nuevas tools o capacidades recomendadas
+### Nuevas tools recomendadas
 
-- **Agregar filtros `jornada` y `contrato` a `search_jobs`** — `src/lib/assistant/tools.ts` líneas 39-46. Kyo recoge la jornada preferida en el Paso 4 pero no puede usarla como filtro al buscar.
+- **Filtros `jornada` y `contrato` en `search_jobs`** — `src/lib/assistant/tools.ts` líneas 39-46. Kyo recoge la jornada preferida en el Paso 4 pero no puede usarla como filtro al buscar vacantes.
   ```ts
   jornada: { type: "string", description: "Filtra por jornada: Matutina, Vespertina, Mixta, Flexible" },
   contrato: { type: "string", description: "Filtra por contrato: Tiempo completo, Medio tiempo, Por proyecto" },
   ```
 
-- **Nueva tool: `register_talent_interest`** — Cuando no hay vacante compatible, el perfil del candidato se pierde al navegar a `/contacto`. Esta tool lo capturaría directamente en Supabase:
-  ```ts
-  {
-    name: "register_talent_interest",
-    description: "Registra el perfil del candidato en el banco de talentos cuando no hay vacante disponible.",
-    input_schema: {
-      type: "object",
-      properties: {
-        nombre: { type: "string" },
-        puesto: { type: "string" },
-        experiencia_anios: { type: "number" },
-        ubicacion: { type: "string" },
-        jornada: { type: "string" }
-      },
-      required: ["nombre", "puesto"]
-    }
-  }
-  ```
-  En `executeTool`: insertar en `contactos` con `origen: 'kyo_banco_talentos'` para que aparezca en el inbox del admin.
+- **Nueva tool `register_talent_interest`** — Cuando no hay vacante compatible, el perfil del candidato se pierde al navegar a `/contacto`. Esta tool lo capturaría directamente en Supabase con `origen: 'kyo_banco_talentos'` para diferenciarlo en el inbox del admin.
 
 ### Problemas detectados
 
-- **Fallback genérico cuando Kyo solo navega** — `src/app/api/assistant/chat/route.ts` línea 202.
+- **Fallback genérico cuando Kyo solo navega** — `src/app/api/assistant/chat/route.ts` línea 202. Cuando Claude solo llama `navigate_to` sin texto, la respuesta es "Entendido, ¿en que mas te puedo ayudar?" (sin acento). Fix:
   ```ts
-  // Actual (sin acento):
-  const replyContent = finalText || "Entendido, ¿en que mas te puedo ayudar?";
-  // Fix:
   const replyContent = finalText ||
     (navigations.length > 0 ? "Te llevo ahí ahora mismo." : "Entendido, ¿en qué más te puedo ayudar?");
   ```
 
-- **`max_tokens: 1024` puede truncar el Paso 5** — `src/app/api/assistant/chat/route.ts` línea 150. Presentar 2-3 vacantes con justificación y navegar consume ~700-900 tokens. Cambiar a `max_tokens: 1536`.
+- **`max_tokens: 1024` puede truncar el Paso 5** — `src/app/api/assistant/chat/route.ts` línea 150. El Paso 5 consume ~700-900 tokens. Con 1024 hay margen mínimo. **Fix:** `max_tokens: 1536`.
 
-- **`sessionId` inconsistente entre visitas** — `src/components/assistant/useChat.ts` líneas 45-53. `session_id` usa `sessionStorage` (efímero) pero el historial usa `localStorage` (persistente). Un candidato que regresa ve su conversación pero genera un `session_id` nuevo. Fix: mover `getSessionId()` a `localStorage`.
+- **`sessionId` inconsistente entre visitas** — `src/components/assistant/useChat.ts` líneas 45-53. `kyo_session_id` usa `sessionStorage` pero el historial usa `localStorage`. El candidato que regresa genera un `session_id` nuevo → upsert sobreescribe el chat anterior en Supabase. **Fix:** Mover `getSessionId()` a `localStorage`.
 
-- **`getStoredInstrucciones()` usa anon key en vez de service role** — `src/app/api/assistant/chat/route.ts` líneas 14-18. Si RLS de `kyo_config` se endurece, falla silenciosamente y cae al default sin avisar. Reemplazar el cliente local por `sbAdmin` (ya declarado en línea 36).
+- **`getStoredInstrucciones()` usa anon key** — `src/app/api/assistant/chat/route.ts` líneas 14-18. Si RLS de `kyo_config` se endurece, falla silenciosamente. Reemplazar con `sbAdmin` (ya declarado en línea 36).
 
 ---
 
@@ -304,10 +291,10 @@ setTimeout(() => setExito(null), 4000);
 
 - **Indicador de progreso del flujo de Kyo** — El candidato no sabe en qué paso está. Un texto sutil en el header del chat (ej. "Paso 2 de 5 — Experiencia") reduce abandonos. Implementar en `ChatWidget.tsx` contando mensajes del usuario para inferir el paso actual.
 
-- **Auto-apertura contextual de Kyo en `/vacantes`** — Un candidato que lleva 5 segundos filtrando sin encontrar lo que busca se beneficia de un bubble proactivo: *"¿Te ayudo a encontrar la vacante ideal?"*. Implementar con `useEffect` + `setTimeout(5000)` en la ruta `/vacantes`, una sola vez por sesión (flag en `sessionStorage`).
+- **Auto-apertura contextual de Kyo en `/vacantes`** — Un candidato que lleva 5 segundos filtrando sin resultados se beneficia de un bubble proactivo: *"¿Te ayudo a encontrar la vacante ideal?"*. Implementar con `useEffect` + `setTimeout(5000)` en la ruta `/vacantes`, una vez por sesión.
 
-- **Tracking del funnel Kyo → aplicación** — No hay evento analytics para cuando Kyo presenta recomendaciones. Agregar `logEvent("kyo_vacante_recomendada", vacante_id)` en `route.ts` cuando `navigations` incluya `/vacantes/[id]`. Sin este evento es imposible medir el ROI de Kyo.
+- **Tracking del funnel Kyo → aplicación** — No hay evento analytics cuando Kyo presenta recomendaciones. Agregar `logEvent("kyo_vacante_recomendada", vacante_id)` en `route.ts` cuando `navigations` incluya `/vacantes/[id]`. Sin este evento es imposible medir el ROI de Kyo.
 
-- **Confirmación de acciones en revisor** — Ver BUG 32. El cliente necesita saber que su aprobación o solicitud de cambios fue registrada, especialmente Rosy y Monse que acceden principalmente desde mobile.
+- **Discrepancias de estadísticas en el sitio** — `/contacto/page.tsx` dice "10 años"; `knowledge.ts` dice "3+". Unificar con el número correcto.
 
-- **Discrepancias de estadísticas en el sitio** — `/contacto/page.tsx` dice "10 años"; `knowledge.ts` dice "3+"; posiblemente `Hero.tsx` dice otro número. Elegir el número correcto y unificarlo en todos los archivos.
+- **Límite de resultados en `/api/revisor/posts` sin fechas** — Con meses de contenido acumulado, el endpoint sin fecha devolverá cientos de posts. Agregar filtro por año en curso antes de que el volumen crezca.
