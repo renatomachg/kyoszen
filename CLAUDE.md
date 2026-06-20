@@ -378,7 +378,12 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-06-17 (noche 5) — **Revisor: filtros multi-fecha + fix refresco de modal.**
+2026-06-20 — **Subida de videos TikTok: límites + compresión con ffmpeg.**
+- **Límites subidos (eran el bloqueo del 413 al subir video):** Nginx kyoszen `client_max_body_size 200M` (antes default 1MB, faltaba en el sitio — solo estaba en makerlab); bucket Supabase `media` `file_size_limit` 50MB (antes 10MB; **50MB es el tope global del plan**, no se puede más sin upgrade). Respaldo del nginx en el VPS (`kyoszen.bak.*`).
+- **Compresión en el VPS con ffmpeg** (`apt install ffmpeg`, 6.1.1): el endpoint `/api/admin/social/upload` ahora detecta video (mime `video/*` o ext mp4/mov/webm/m4v/avi/mkv) y lo transcodifica a MP4 web (`scale='min(1080,iw)':-2`, libx264 veryfast crf 28, aac 128k, +faststart) **antes** de subir a Storage → archivos chicos (~test 2.3MB→0.3MB, ~10s/clip 15s en 1 CPU). `runtime=nodejs`, `maxDuration=300`. **Fallback:** si ffmpeg no está (p.ej. Mac local) o falla, sube el original. Imágenes pasan sin tocar.
+- **PENDIENTE opcional:** al subir el video NO se manda correo al cliente (la PATCH de `posts/[id]` solo cambia fase/estado). Si se quiere avisar "🎬 tu video ya está listo", agregar notificación.
+
+2026-06-20 (noche 5) — **Revisor: filtros multi-fecha + fix refresco de modal.**
 - **Modo filtro (revisor):** al activar cualquier filtro (estado o red), el revisor carga TODAS las publicadas (`postsTodos`, fetch a `/api/revisor/posts` sin fechas) y muestra las coincidencias como **lista plana ordenada por fecha** (no atada a la semana/mes). Antes filtrar en vista Semana mostraba vacío si los pendientes estaban en otra semana. Se oculta el toggle Semana/Mes + flechas; header "Resultados del filtro · N · todas las fechas"; contador "X de {todas}". `handleStatusChange` sincroniza `postsTodos`. Sin filtro = calendario normal.
 - **Fix admin:** `loadData` ahora refresca `selectedPost` con los datos nuevos, así el modal refleja al instante los cambios (propuesta/versión/estado) en vez de mostrar datos viejos.
 
