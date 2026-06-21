@@ -1,87 +1,120 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-06-20
-**Cambios analizados:** `src/app/api/admin/social/upload/route.ts` (compresión ffmpeg de TikToks). Re-lectura de: `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`.
+**Fecha:** 2026-06-21
+**Cambios analizados:** `src/app/api/admin/social/upload/route.ts` (ffmpeg, commit 1c2590d). Re-lectura completa de: `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`, `src/app/vacantes/page.tsx`, `src/app/vacantes/[id]/_content.tsx`, `src/app/vacantes/[id]/page.tsx`.
 
 ---
 
 ## Cambios Recientes Detectados
 
-**1 commit de código desde ayer:** `1c2590d Redes: comprimir videos con ffmpeg al subir (TikTok)` — el endpoint `/api/admin/social/upload` ahora detecta video y lo transcodifica a MP4 H.264 vía `ffmpeg` antes de subirlo a Storage. Fallback automático si `ffmpeg` no está disponible. Implementación sólida con limpieza de tmp en `finally`.
-
-**Todos los bugs del reporte anterior (2026-06-19) siguen sin resolver** — es el **9º día** para la mayoría. Se mantienen en la tabla de prioridades al final.
+**Sin commits de código nuevo hoy.** El commit más reciente es `1c2590d` (compresión de video TikTok con ffmpeg), igual que ayer. Análisis de hoy agrega 7 bugs nuevos (BUG 46–52) encontrados en la lectura de `useChat.ts` y `_content.tsx`.
 
 ---
 
-## 🔴 BUGS CRÍTICOS — BLOQUEANTES (heredados)
+## 🔴 BUGS CRÍTICOS — BLOQUEANTES (heredados activos)
 
-> Los bugs 1, 2, 3, 14, 16, 23, 25, 26, 28, 29, 32, 33, 36, 37, 38, 39, 40 del reporte anterior siguen abiertos. Solo se documentan los nuevos detectados hoy.
+### BUG 1 — Kyo recomienda vacantes de demo, no de Supabase (10º día sin fix)
+**Archivo:** `src/lib/assistant/knowledge.ts` línea 167
+
+`StaticKnowledgeProvider` lee de `JOBS` importado de `@/lib/jobs` (datos hardcoded de demo). El Paso 5 del flujo — el más importante para conversión — recomienda IDs que generan 404 en producción porque las vacantes reales están en Supabase.
+
+**Fix:** Reemplazar la implementación de `listJobs()` y `getJob()` para leer de Supabase con service role. Estructura ya definida en la interfaz `KnowledgeProvider`.
 
 ---
 
-## 🟡 BUGS NUEVOS — DETECTADOS HOY (2026-06-20)
+## 🟡 BUGS NUEVOS — DETECTADOS HOY (2026-06-21)
 
-### BUG 41 — Sin limite de tamaño antes de intentar comprimir video
-**Archivo:** `src/app/api/admin/social/upload/route.ts` líneas 55-69
+### BUG 46 — Acento faltante en el saludo inicial de Kyo
+**Archivo:** `src/components/assistant/useChat.ts` línea 20
 
-El endpoint lee `file.arrayBuffer()` completo en memoria **antes** de llamar a `comprimirVideo`. Un archivo de 800 MB intentará cargarse en RAM y luego escribirse en `/tmp` antes de que ffmpeg lo rechace o el VPS se quede sin memoria. El límite de 50 MB de Storage solo aplica al archivo ya comprimido.
+```
+"Mi nombre es Kyo y estoy aqui para orientarte."
+```
+`"aqui"` debe ser `"aquí"`. Este es el primer texto que lee todo candidato. Un error ortográfico en el saludo daña la percepción de profesionalismo de la consultora.
 
-**Fix:** Añadir validación de tamaño antes del `arrayBuffer()`:
+**Fix:** Cambiar línea 20 a:
 ```ts
-const MAX_INPUT_MB = 500;
-if (file.size > MAX_INPUT_MB * 1024 * 1024) {
-  return NextResponse.json(
-    { error: `El archivo pesa más de ${MAX_INPUT_MB} MB. Comprime el video antes de subir.` },
-    { status: 413 }
-  );
-}
+content: "Bienvenido a Kyoszen. Mi nombre es Kyo y estoy aquí para orientarte. ¿Me permite saber su nombre?",
 ```
 
 ---
 
-### BUG 42 — Archivos tmp huérfanos si el proceso Next.js muere durante compresión
-**Archivo:** `src/app/api/admin/social/upload/route.ts` líneas 21-46
+### BUG 47 — `search_jobs` no incluye `salario_nota` — Kyo da salario sin contexto
+**Archivo:** `src/lib/assistant/knowledge.ts` líneas 38-42 (interfaz `JobSummary`)
 
-El bloque `finally` limpia `input` y `output` al terminar normalmente. Pero si PM2 reinicia el proceso durante la compresión (por deploy o watchdog), los archivos `kyo-{stamp}-in` y `kyo-{stamp}-out.mp4` quedan en `/tmp` indefinidamente. En un VPS de 50 GB esto puede acumularse con el tiempo.
+`JobSummary` no tiene el campo `salario_nota` (ej. "Neto · pago semanal"). Cuando Kyo menciona `"$10,500/mes"` sin contexto, el candidato puede asumir erróneamente que es bruto, neto o semanal. El campo existe en la tabla `vacantes` pero no llega al asistente.
 
-**Fix recomendado (bajo costo):** Añadir una tarea de limpieza de arranque en `upload/route.ts`:
+**Fix:** Añadir `salario_nota?: string` a `JobSummary` y mapearlo en `listJobs()`:
 ```ts
-// Al arrancar el módulo, limpiar tmp viejos (>1 hora) de sesiones previas
-import { readdir, stat } from "node:fs/promises";
-async function limpiarTmpViejos() {
-  const files = await readdir(tmpdir()).catch(() => [] as string[]);
-  const hora = Date.now() - 60 * 60 * 1000;
-  for (const f of files.filter(f => f.startsWith("kyo-"))) {
-    const s = await stat(join(tmpdir(), f)).catch(() => null);
-    if (s && s.mtimeMs < hora) unlink(join(tmpdir(), f)).catch(() => {});
-  }
-}
-limpiarTmpViejos();
+salario_nota: j.salario_nota ?? undefined,
+```
+Actualizar el system-prompt para que Kyo incluya la nota al mencionar salario: `"$10,500/mes (Neto · pago semanal)"`.
+
+---
+
+### BUG 48 — Chat widget sin ARIA live region — lectores de pantalla no anuncian respuestas de Kyo
+**Archivo:** `src/components/assistant/ChatWidget.tsx` línea 143
+
+El div de mensajes (`ref={scrollRef}`) no tiene `role="log"` ni `aria-live="polite"`. Los usuarios que navegan con lectores de pantalla no escuchan las respuestas de Kyo; tienen que explorar el DOM manualmente.
+
+**Fix:** Cambiar línea 143:
+```tsx
+<div ref={scrollRef} role="log" aria-live="polite" aria-label="Conversación con Kyo" className="flex-1 overflow-y-auto px-5 pb-3 space-y-4">
 ```
 
 ---
 
-### BUG 43 — Sin indicador de progreso durante la subida de video
-**Archivos:** `src/app/api/admin/social/upload/route.ts` + cualquier componente que llame al endpoint
+### BUG 49 — `reset()` no limpia `sessionStorage` — nueva conversación reutiliza el mismo `session_id`
+**Archivo:** `src/components/assistant/useChat.ts` líneas 139-145
 
-La compresión en el VPS toma ~10s por clip de 15s. El frontend no recibe ningún estado intermedio — la petición se queda `pending` sin feedback. Si el usuario ve que "no pasa nada", puede cancelar o resubir el mismo video.
+Al tocar "Nueva conversacion", `localStorage` se borra pero `sessionStorage` (`kyo_session_id`) no. Las siguientes interacciones se loguean bajo el mismo `session_id` en `kyo_conversaciones`, mezclando la sesión nueva con la anterior en el admin de Kyo.
 
-**Fix mínimo (sin streaming):** Antes de subir, devolver un `202 Accepted` con un `jobId` y agregar un endpoint `GET /api/admin/social/upload/status/[jobId]` que el cliente consulte cada 2s. Alternativa más simple: mostrar un banner fijo en el componente de subida: `"Comprimiendo y subiendo video, esto puede tomar hasta 30 segundos..."` con un spinner mientras la petición está en vuelo.
-
----
-
-### BUG 44 — El saludo inicial de Kyo usa "¿Me permite saber su nombre?" (usted) pero el sistema mezcla tuteo
-**Archivo:** `src/components/assistant/useChat.ts` línea 18 vs `src/lib/assistant/system-prompt.ts` líneas 8-97
-
-El saludo es `"¿Me permite saber su nombre?"` (usted formal). Las instrucciones de personalidad dicen `"Tono profesional y cercano"`. El Paso 1 dice `"Pregunta que tipo de trabajo busca"` (tú implícito). El Paso 5 dice `"Con base en lo que me comento"` (usted). El resultado es que Kyo mezcla "tú" y "usted" a lo largo de la conversación según qué parte del prompt activó cada respuesta.
-
-**Fix:** Decidir un registro y hacerlo consistente en TODO el prompt. Recomendación: **usted** (es el estándar en reclutamiento formal en México). Revisar cada paso y las instrucciones de personalidad para eliminar pronombres implícitos que puedan inferirse como tuteo.
+**Fix:** En la función `reset`, añadir:
+```ts
+sessionStorage.removeItem("kyo_session_id");
+```
 
 ---
 
-### BUG 45 — `knowledge.ts` lista 15 cursos en `listPages()` pero solo 10 están documentados en `docs/context/cursos.md`
-**Archivo:** `src/lib/assistant/knowledge.ts` línea 63
+### BUG 50 — `generateStaticParams()` en `/vacantes/[id]` usa `JOBS` hardcoded, no Supabase
+**Archivo:** `src/app/vacantes/[id]/page.tsx` línea 4-6
 
-`SITE_PAGES` dice: `"15 cursos con filtros por categoria"`. El archivo `docs/context/cursos.md` lista 10 cursos. Si Kyo menciona el número 15 y el usuario ve menos, pierde credibilidad. Verificar el número real en Supabase y actualizar el summary de la página.
+```ts
+import { JOBS } from "@/lib/jobs";
+export function generateStaticParams() {
+  return JOBS.map((j) => ({ id: String(j.id) }));
+}
+```
+Next.js pre-genera solo los IDs del archivo demo. Vacantes nuevas creadas desde el admin (IDs distintos a los hardcoded) se sirven correctamente en runtime vía ruta dinámica, pero si alguien añade `dynamicParams: false` o si el build se rompe, las nuevas vacantes desaparecen del sitio.
+
+**Fix:** Convertir `page.tsx` en async server component que lea de Supabase, o eliminar `generateStaticParams()` completamente (la ruta funciona igual en runtime con `dynamicParams: true` por defecto).
+
+---
+
+### BUG 51 — Fallback `"MXN bruto"` persiste en vacantes sin `salario_nota`
+**Archivo:** `src/app/vacantes/[id]/_content.tsx` línea 202
+
+```tsx
+<p className="text-[12px] text-muted">{job.salario_nota?.trim() ? job.salario_nota : "MXN bruto"}</p>
+```
+El campo `salario_nota` se introdujo explícitamente para reemplazar el texto fijo "MXN bruto". Vacantes existentes en Supabase sin ese campo migrado siguen mostrando "MXN bruto" — que puede ser incorrecto si el salario es neto o semanal.
+
+**Fix:** Cambiar el fallback a un texto neutro:
+```tsx
+{job.salario_nota?.trim() ? job.salario_nota : "mensual"}
+```
+O dejar el campo vacío (sin texto adicional) hasta que el admin complete la información.
+
+---
+
+### BUG 52 — `useChat` envía hasta 30 mensajes al API pero el servidor ya solo usa 20
+**Archivo:** `src/components/assistant/useChat.ts` línea 99 vs `src/app/api/assistant/chat/route.ts` línea 131
+
+`MAX_STORED = 30` (useChat) pero el route hace `body.messages.slice(-20)`. El cliente envía hasta 30 mensajes a través de la red aunque el servidor descarte los primeros 10. En conversaciones largas, se transmiten ~3-4 KB innecesarios por request.
+
+**Fix:** Pre-truncar en el cliente antes de hacer fetch:
+```ts
+messages: newMessages.slice(-20).map((m) => ({ role: m.role, content: m.content })),
+```
 
 ---
 
@@ -89,25 +122,43 @@ El saludo es `"¿Me permite saber su nombre?"` (usted formal). Las instrucciones
 
 ### Alta prioridad
 
-- **Barra sticky "Aplicar ahora" en mobile para `/vacantes/[id]`** — El sidebar con CTA solo aparece en `lg:`. En mobile el candidato tiene que hacer scroll completo. Añadir barra fija inferior en mobile (ver detalle en reporte 2026-06-19).
+- **Barra sticky "Aplicar ahora" en mobile** — `src/app/vacantes/[id]/_content.tsx`. El sidebar con CTA (`Aplicar ahora` + WhatsApp) es `sticky top-28` pero solo aparece en `lg:` (columna derecha). En mobile el candidato tiene que hacer scroll hasta el final de la página para encontrar el botón. Añadir una barra fija en el fondo en mobile:
+  ```tsx
+  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border p-4 flex gap-3 lg:hidden z-40">
+    <button onClick={() => setModalOpen(true)} className="flex-1 bg-navy text-white rounded-full py-3 font-bold text-sm">Aplicar ahora</button>
+    <a href="https://wa.link/5zv0ba" className="flex-1 bg-wa text-white rounded-full py-3 font-bold text-sm text-center">WhatsApp</a>
+  </div>
+  ```
 
-- **Markdown en burbujas de Kyo (BUG 26, 9º día)** — `src/components/assistant/ChatWidget.tsx` líneas 211 y 227. Los asteriscos de `**texto**` aparecen literales. Fix de 5 minutos con `dangerouslySetInnerHTML` y replace de `**` → `<strong>`.
+- **Markdown en burbujas de Kyo (BUG 26, 10º día)** — `src/components/assistant/ChatWidget.tsx` líneas 211 y 227. Los asteriscos `**texto**` aparecen literales en el chat. Fix de 5 minutos añadiendo un helper:
+  ```ts
+  function renderMarkdown(text: string) {
+    return { __html: text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>") };
+  }
+  ```
+  Y usar `<div dangerouslySetInnerHTML={renderMarkdown(message.content)} />` en `MessageBubble`.
 
-- **Feedback visual al aprobar/solicitar cambios en `/revisor` (BUG 32, 9º día)** — Rosy y Monse necesitan confirmación visual de que su acción fue registrada. Un toast verde de 4 segundos es suficiente.
+- **Empty state de vacantes sin CTA a Kyo** — `src/app/vacantes/page.tsx` línea 231. Cuando no hay resultados, solo aparece "Sin resultados. Intenta con otras combinaciones." No se ofrece ninguna salida. Añadir botón que abra el chat de Kyo:
+  ```tsx
+  <button onClick={() => window.dispatchEvent(new CustomEvent("kyo:open"))} className="mt-4 text-sm font-bold text-blue underline">
+    Pídele ayuda a Kyo
+  </button>
+  ```
+  Y escuchar `"kyo:open"` en `ChatWidget.tsx` para abrir el panel.
 
 ### Media prioridad
 
-- **Banner de "procesando video" durante la subida** — Contexto del BUG 43. Mientras la compresión corre (~10-30s), el admin no ve progreso. Una línea de texto `"Optimizando video para web..."` con spinner reduce la ansiedad de "¿se colgó?".
+- **Banner de progreso durante subida de video** — `src/app/api/admin/social/upload/route.ts`. La compresión ffmpeg tarda 10-30s sin feedback visual. Añadir en el componente que llama al endpoint un estado `"Optimizando video para web..."` con spinner mientras la petición está en vuelo.
 
-- **Notificación al cliente cuando el video TikTok está listo** — CLAUDE.md lo marca como pendiente. Al cambiar `fase` de `guion` a `video` en `PATCH /api/admin/social/posts/[id]`, enviar correo a revisores activos con asunto `"🎬 Tu video de TikTok está listo para revisar"`. El template ya existe en el módulo de correos de revisión.
+- **Acento faltante en "Nueva conversacion"** — `src/components/assistant/ChatWidget.tsx` línea 159. Debe ser `"Nueva conversación"`.
 
-- **Acento faltante en "Nueva conversacion"** — `src/components/assistant/ChatWidget.tsx` línea 159. Debe ser `"Nueva conversación"`. Fix de 5 segundos.
+- **Confirmación visual al aprobar en `/revisor` (BUG 32, 10º día)** — Rosy y Monse necesitan feedback inmediato cuando aprueban o piden cambios. Un toast verde/amarillo de 4 segundos en la esquina superior es suficiente.
 
 ### Baja prioridad
 
-- **Tour de novedad en pestaña "Análisis" bloquea UI (BUG 28, 9º día)** — Una sola línea en `src/app/revisor/page.tsx`: `{showNovedad && seccion === "publicaciones" && <NovedadFiltros ... />}`.
+- **Tour de novedad bloquea pestaña Análisis (BUG 28, 10º día)** — Una línea en `src/app/revisor/page.tsx`: mostrar `<NovedadFiltros />` solo cuando `seccion === "publicaciones"`.
 
-- **Sin skeleton durante carga en `/revisor`** — Mostrar 6 cards `animate-pulse` mientras `loading === true` mejora la percepción de velocidad.
+- **Skeleton de carga en `/revisor`** — Mostrar 6 `animate-pulse` cards mientras `loading === true` mejora la percepción de velocidad.
 
 ---
 
@@ -115,54 +166,60 @@ El saludo es `"¿Me permite saber su nombre?"` (usted formal). Las instrucciones
 
 ### Mejoras al flujo de conversación
 
-- **Resolver el registro usted/tú (BUG 44, nuevo)** — `src/lib/assistant/system-prompt.ts`. Elegir un registro y aplicarlo en los 7 pasos más las reglas críticas. La incoherencia percibida hace al bot sentir "máquina mal entrenada".
+- **Resolver registro usted/tú (BUG 44, 2º día)** — `src/lib/assistant/system-prompt.ts`. El saludo usa "usted" (`"¿Me permite saber su nombre?"`), el Paso 1 usa tú implícito, el Paso 5 usa usted (`"Con base en lo que me comento"`). El resultado es inconsistente. Elegir **usted** (estándar en reclutamiento formal mexicano) y revisar los 7 pasos y reglas críticas para eliminar tuteo implícito.
 
-- **Paso 6 sin manejo de rechazo (9º día)** — Si el candidato dice "ninguna me interesa", no hay instrucción definida. Añadir Paso 6b: ofrecer banco de talentos y navegar a `/contacto`.
+- **Paso 6 sin manejo de rechazo (10º día)** — Si en el Paso 6 el candidato dice "ninguna me interesa" o "no me convencen", no hay Paso 6b definido. Kyo queda sin instrucción y puede inventar. Añadir al Paso 6:
+  ```
+  Si el candidato rechaza las vacantes propuestas:
+  "Entiendo, [nombre]. Puedo registrar su perfil en nuestro banco de talentos para avisarle cuando surja una oportunidad más afín. ¿Le parece bien?"
+  Navegar a /contacto.
+  ```
 
-- **Mencionar las 24h de respuesta en Paso 6** — `src/lib/assistant/system-prompt.ts` línea 60. El dato más persuasivo para motivar la aplicación no se usa. Añadir: `"mencionar que el equipo responde en menos de 24 horas hábiles."`.
+- **Mencionar las 24h de respuesta en Paso 5** — `src/lib/assistant/system-prompt.ts` línea 42-58. El dato más persuasivo para motivar la aplicación (`"Candidatos colocados en menos de 72h"`) no se menciona. Añadir al formato del Paso 5: `"Nuestro equipo responde en menos de 24 horas hábiles."`.
 
-- **Resumen de perfil como ancla contra truncado de contexto** — `src/app/api/assistant/chat/route.ts` línea 131. El historial se corta a 20 mensajes. Añadir instrucción al Paso 3: `"Al completar pasos 0-4, sintetizar en una línea: 'Perfil: [nombre], [puesto], [N] años, zona [X], [jornada].' Esto preserva el contexto si el historial se trunca."`.
+- **Pre-calificación de leads empresariales** — Línea 65. Cuando detecta intención de contratar, Kyo navega directo a `/contacto` sin capturar datos. Mejorar a: preguntar nombre de empresa y perfil buscado antes de navegar, para que el equipo reciba contexto útil.
 
-- **Pre-calificación de leads empresariales** — `src/lib/assistant/system-prompt.ts` línea 65. Cuando detecta intención de contratar, Kyo navega directo a `/contacto` sin capturar datos. Mejorar: preguntar nombre de empresa y perfil buscado antes de navegar.
+- **Resumen de perfil en Paso 3 (ancla contra truncado de contexto)** — `src/app/api/assistant/chat/route.ts` línea 131. El historial se corta a 20 mensajes. Añadir instrucción: al completar Pasos 0-4, sintetizar: `"Perfil: [nombre], [puesto], [N años], zona [X], [jornada]."` Esto preserva el contexto si la ventana se trunca.
 
 ### Nuevas tools o capacidades recomendadas
 
-- **Filtros `jornada` y `contrato` en `search_jobs`** — `src/lib/assistant/tools.ts` líneas 39-46. Kyo recoge la jornada en el Paso 4 pero no puede filtrar por ella en la tool. Añadir:
+- **Filtros `jornada` y `contrato` en `search_jobs`** — `src/lib/assistant/tools.ts` líneas 39-46. Kyo recoge jornada en el Paso 4 pero no puede filtrar por ella. Añadir al schema de `search_jobs`:
   ```ts
   jornada: { type: "string", description: "Filtra por jornada: Matutina, Vespertina, Mixta, Flexible" },
   contrato: { type: "string", description: "Filtra por contrato: Tiempo completo, Medio tiempo, Por proyecto" },
   ```
-  Y en `executeTool` aplicar los filtros en `knowledge.listJobs()`.
+  Y en `knowledge.listJobs()` aplicar los filtros correspondientes. Sin esto, el Paso 4 recoge información que nunca se usa para filtrar.
 
-- **Tool `register_talent_interest`** — Cuando no hay vacante compatible, el perfil del candidato se pierde al navegar a `/contacto`. Esta tool lo capturaría directamente en Supabase (`origen: 'kyo_banco_talentos'`, puesto, experiencia, zona, jornada) sin que el candidato llene el formulario manualmente.
+- **Tool `register_talent_interest`** — Cuando no hay vacante compatible, el perfil del candidato se pierde al navegar a `/contacto`. Esta tool capturaría directamente en Supabase: puesto, experiencia, zona, jornada, con `origen: 'kyo_banco_talentos'`. El candidato no tendría que llenar el formulario manualmente.
 
 ### Problemas detectados
 
-- **Vacantes reales en Kyo (BUG 1, crítico, 9º día)** — `src/lib/assistant/knowledge.ts` línea 167. `StaticKnowledgeProvider` lee de `jobs.ts` (demo). El Paso 5 — el más importante del flujo — recomienda IDs que generan 404. Sin este fix, Kyo no puede funcionar como herramienta de conversión.
+- **Fallback genérico sin acentos cuando solo navega** — `src/app/api/assistant/chat/route.ts` línea 202. Cuando Claude solo llama `navigate_to` sin texto, el fallback es `"Entendido, ¿en que mas te puedo ayudar?"` (sin acentos, tono frío). Fix:
+  ```ts
+  const replyContent = finalText || (navigations.length > 0 ? "Te llevo ahí ahora mismo." : "Entendido, ¿en qué más te puedo ayudar?");
+  ```
 
-- **Fallback genérico sin acento ni contexto** — `src/app/api/assistant/chat/route.ts` línea 202. Cuando Claude solo llama `navigate_to` sin texto, el fallback es `"Entendido, ¿en que mas te puedo ayudar?"` (sin acentos). Fix: `const replyContent = finalText || (navigations.length > 0 ? "Te llevo ahí ahora mismo." : "Entendido, ¿en qué más te puedo ayudar?");`
+- **`max_tokens: 1024` puede truncar el Paso 5** — `src/app/api/assistant/chat/route.ts` línea 150. El Paso 5 genera 2-3 vacantes con justificación; puede acercarse al límite. Subir a `max_tokens: 1536`.
 
-- **`max_tokens: 1024` puede truncar el Paso 5** — `src/app/api/assistant/chat/route.ts` línea 150. El Paso 5 consume ~700-900 tokens listando 2-3 vacantes con justificación. El margen es mínimo. Subir a `max_tokens: 1536`.
+- **`MAX_TOOL_ITERATIONS = 5` deja margen de solo 1 error** — Línea 85. El Paso 5 óptimo requiere `search_jobs` + `get_job_details ×2` + `navigate_to` = 4 iteraciones. Con 5 hay margen de 1 sola falla extra. Subir a 8.
 
-- **`MAX_TOOL_ITERATIONS = 5` demasiado bajo** — `src/app/api/assistant/chat/route.ts` línea 85. El Paso 5 óptimo requiere `search_jobs` → `get_job_details × 2` → `navigate_to` = 4 iteraciones. Con 5 hay margen de solo 1 error. Subir a `MAX_TOOL_ITERATIONS = 8`.
+- **`getStoredInstrucciones()` usa anon key, no service role** — Líneas 14-18. Si RLS de `kyo_config` se endurece, falla silenciosamente. Usar `sbAdmin` ya declarado en línea 36 (service role).
 
-- **`getStoredInstrucciones()` usa anon key** — `src/app/api/assistant/chat/route.ts` líneas 14-18. Si RLS de `kyo_config` se endurece, falla silenciosamente y Kyo cae al DEFAULT_INSTRUCCIONES. Reemplazar con `sbAdmin` (ya declarado en línea 36).
-
-- **`rateLimitMap` memory leak (BUG 16, 9º día)** — `src/app/api/assistant/chat/route.ts` líneas 68-80. El Map nunca se limpia. Fix de 5 líneas para purgar entradas expiradas.
+- **`rateLimitMap` memory leak (BUG 16, 10º día)** — Líneas 68-80. El Map nunca se limpia. En VPS de 1 CPU con tráfico constante, crece indefinidamente.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **Indicador de progreso del flujo de Kyo** — El candidato no sabe en qué paso está. Un texto sutil en el header del chat (ej. "Paso 2 de 5") reduce abandonos. Contar mensajes del usuario en `useChat.ts` para inferir el paso.
+- **Indicador de paso en el flujo de Kyo** — El candidato no sabe en qué etapa está. Un texto sutil en el header (`"Paso 2 de 5"`) reduce abandonos. Se puede inferir contando mensajes del usuario en `useChat.ts`.
 
-- **Auto-apertura de Kyo en `/vacantes` sin resultados** — Candidato con 5s sin resultados + un bubble proactivo: *"¿Te ayudo a encontrar la vacante ideal?"*. `useEffect` + `setTimeout(5000)` en la ruta, una vez por sesión.
+- **Auto-apertura de Kyo en `/vacantes` sin resultados** — Candidato con 5s mirando "Sin resultados" + bubble proactivo: *"¿Te ayudo a encontrar la vacante ideal?"*. `useEffect` + `setTimeout(5000)` en la ruta, una vez por sesión (flag en sessionStorage).
 
 - **Tracking Kyo → aplicación** — No hay `logEvent` cuando Kyo recomienda una vacante. Sin este evento es imposible medir el ROI del asistente. Añadir `logEvent("kyo_vacante_recomendada", vacante_id)` en `route.ts` cuando `navigations` incluya `/vacantes/[id]`.
 
-- **Discrepancia de estadísticas** — `/contacto/page.tsx` dice "10 años de experiencia"; `knowledge.ts` línea 79 dice `"Años en el mercado": "3+"`. Actualizar con el número correcto y homologar en todo el sitio.
+- **Discrepancia de estadísticas** — `knowledge.ts` línea 79 dice `"Años en el mercado": "3+"`. Verificar si el dato del sitio público (`/nosotros`, `/contacto`) es coherente con este número.
 
-- **Notificación al cliente al publicar video TikTok** — Pendiente explícito en CLAUDE.md. Al hacer PATCH para cambiar `fase='video'` + `estado='pendiente'`, enviar correo a `social_reviewers` activos. El infrastructure de correos (IONOS SMTP) ya está lista.
+- **Notificación al cliente al publicar video TikTok** — Pendiente explícito en CLAUDE.md. Al hacer PATCH para cambiar `fase='video'` + `estado='pendiente'`, enviar correo a `social_reviewers` activos. La infraestructura IONOS SMTP ya está activa.
 
 ---
 
@@ -170,18 +227,23 @@ El saludo es `"¿Me permite saber su nombre?"` (usted formal). Las instrucciones
 
 | # | Bug/Mejora | Esfuerzo | Impacto |
 |---|-----------|----------|---------|
-| 1 | BUG 1 — Vacantes reales en Kyo | Alto | Crítico |
+| 1 | BUG 1 — Vacantes reales en Kyo (Supabase) | Alto | Crítico |
 | 2 | BUG 26 — Markdown asteriscos en Kyo | Bajo (5 min) | Alto |
-| 3 | BUG 44 — Usted/tú inconsistente en Kyo | Bajo (15 min) | Alto |
-| 4 | BUG 41 — Sin validación de tamaño en upload video | Bajo (5 min) | Alto |
-| 5 | BUG 29 — Modal responsive en mobile (revisor) | Bajo (CSS) | Alto |
-| 6 | BUG 32 — Confirmación visual al aprobar (revisor) | Bajo (30 min) | Alto |
-| 7 | BUG 23 + 36 — sessionId mal gestionado | Bajo (2 líneas) | Medio |
-| 8 | BUG 16 — Memory leak rateLimitMap | Bajo (5 min) | Medio |
-| 9 | BUG 43 — Sin progreso durante subida de video | Bajo (UI) | Medio |
-| 10 | BUG 2 + 37 — Filtros dinámicos en vacantes | Medio | Alto |
-| 11 | BUG 28 — Tour en pestaña Análisis | Bajo (1 línea) | Medio |
-| 12 | BUG 38 — Empty state vacantes sin CTA | Bajo (20 min) | Medio |
-| 13 | BUG 14 — FAQs dinámicas desde Supabase | Medio | Medio |
-| 14 | BUG 42 — Tmp huérfanos si PM2 muere | Bajo (cleanup) | Bajo |
-| 15 | Notificación cliente video TikTok listo | Bajo (30 min) | Medio |
+| 3 | BUG 46 — Acento "aquí" en saludo inicial Kyo | Bajo (1 min) | Alto |
+| 4 | BUG 44 — Registro usted/tú inconsistente en prompt | Bajo (15 min) | Alto |
+| 5 | BUG 41 — Sin validación de tamaño antes de comprimir video | Bajo (5 min) | Alto |
+| 6 | BUG 51 — Fallback "MXN bruto" en vacantes sin salario_nota | Bajo (1 min) | Alto |
+| 7 | BUG 32 — Confirmación visual al aprobar en /revisor | Bajo (30 min) | Alto |
+| 8 | BUG 49 — reset() no limpia sessionStorage | Bajo (1 línea) | Medio |
+| 9 | BUG 47 — salario_nota faltante en search_jobs | Bajo (20 min) | Medio |
+| 10 | BUG 48 — Sin ARIA live region en chat widget | Bajo (1 línea) | Medio |
+| 11 | BUG 52 — Cliente envía 30 msgs cuando servidor usa 20 | Bajo (1 línea) | Bajo |
+| 12 | BUG 43 — Sin progreso durante subida de video | Bajo (UI) | Medio |
+| 13 | BUG 16 — Memory leak rateLimitMap | Bajo (5 min) | Medio |
+| 14 | BUG 50 — generateStaticParams usa JOBS hardcoded | Medio | Bajo |
+| 15 | Barra CTA sticky en mobile (/vacantes/[id]) | Bajo (CSS) | Alto |
+| 16 | Empty state vacantes → CTA abrir Kyo | Bajo (30 min) | Medio |
+| 17 | Filtros jornada/contrato en search_jobs | Bajo (20 min) | Alto |
+| 18 | Tool register_talent_interest | Medio | Alto |
+| 19 | Notificación cliente video TikTok listo | Bajo (30 min) | Medio |
+| 20 | BUG 28 — Tour novedad en pestaña Análisis | Bajo (1 línea) | Medio |
