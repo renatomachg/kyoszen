@@ -1,38 +1,80 @@
 # Reporte de Dependencias — Kyoszen
-**Fecha:** 2026-06-15
+**Fecha:** 2026-06-22
 
 ## Vulnerabilidades de Seguridad
 
-### `next` 16.2.3 — CRÍTICO (múltiples CVEs HIGH/MODERATE)
+### CRÍTICO — HIGH (acción inmediata)
 
-| Advisory | Severidad | CVSS | Descripción | Fix |
-|----------|-----------|------|-------------|-----|
-| GHSA-8h8q-6873-q5fj | HIGH | 7.5 | Denial of Service con Server Components (CWE-770) | ≥16.2.5 |
-| GHSA-26hh-7cqf-hhc6 | HIGH | 7.5 | Middleware/Proxy bypass en App Router — fix incompleto (CWE-288) | ≥16.2.6 |
-| GHSA-mg66-mrh9-m8jx | HIGH | 7.5 | DoS vía agotamiento de conexiones con Cache Components (CWE-770) | ≥16.2.5 |
-| GHSA-gx5p-jg67-6x7h | MODERATE | 6.1 | XSS en scripts `beforeInteractive` con input no confiable (CWE-79) | ≥16.2.5 |
-| GHSA-h64f-5h5j-jqjh | MODERATE | 5.9 | DoS en Image Optimization API (CWE-770) | ≥16.2.5 |
-| GHSA-ffhc-5mcf-pf4q | MODERATE | 4.7 | XSS en App Router vía CSP nonces (CWE-79) | ≥16.2.5 |
-| GHSA-3g8h-86w9-wvmq | LOW | 3.7 | Cache poisoning vía Middleware/Proxy redirects (CWE-349) | ≥16.2.5 |
-| GHSA-vfv6-92ff-j949 | LOW | 3.7 | Cache poisoning vía React Server Component cache-busting (CWE-328) | ≥16.2.5 |
+#### `next` 16.2.3 → corregido en 16.2.9
 
-La versión instalada es 16.2.3; el **fix completo requiere 16.2.9** (latest al 2026-06-15).
+13 vulnerabilidades HIGH en el rango `9.3.4-canary.0 – 16.3.0-canary.5`. El fix es un **patch** sin breaking changes.
 
-### `@anthropic-ai/sdk` 0.89.0 — ADVERTENCIA (MODERATE)
+| Advisory | Descripción |
+|----------|-------------|
+| GHSA-8h8q-6873-q5fj | DoS con Server Components (CWE-770, CVSS 7.5) |
+| GHSA-26hh-7cqf-hhc6 | Middleware/Proxy bypass via segment-prefetch — fix incompleto (CWE-288) |
+| GHSA-267c-6grr-h53f | Middleware/Proxy bypass en App Router (CWE-288) |
+| GHSA-492v-c6pp-mqqv | Middleware bypass via inyección de parámetros de ruta dinámica |
+| GHSA-36qx-fr4f-26g5 | Middleware bypass en Pages Router con i18n |
+| GHSA-gx5p-jg67-6x7h | XSS en scripts `beforeInteractive` con input no confiable (CWE-79) |
+| GHSA-ffhc-5mcf-pf4q | XSS en App Router con CSP nonces (CWE-79) |
+| GHSA-vfv6-92ff-j949 | Cache poisoning en respuestas RSC (CWE-328) |
+| GHSA-wfc6-r584-vfw7 | Cache poisoning adicional en RSC |
+| GHSA-3g8h-86w9-wvmq | Cache poisoning vía Middleware/Proxy redirects |
+| GHSA-c4j6-fc7j-m34r | SSRF vía WebSocket upgrades |
+| GHSA-h64f-5h5j-jqjh | DoS en Image Optimization API |
+| GHSA-mg66-mrh9-m8jx | DoS vía agotamiento de conexiones con Cache Components |
 
-| Advisory | Severidad | Descripción | Fix |
-|----------|-----------|-------------|-----|
-| GHSA-p7fg-763f-g4gf | MODERATE | Permisos de archivo inseguros en la herramienta de memoria del filesystem local (CWE-732). Rango afectado: 0.79.0–0.91.0. | ≥0.91.1 |
+**Fix:** `npm install next@16.2.9 eslint-config-next@16.2.9` (patch, sin breaking changes)
 
-Nota: Kyoszen no usa la herramienta de Filesystem Memory local, por lo que el riesgo real en producción es bajo. Sin embargo, salir del rango vulnerable sigue siendo recomendable.
+---
 
-### Dependencias transitivas (MODERATE) — solo devDependencies
+#### `nodemailer` ≤9.0.0 → corregido en 9.0.1
 
-| Paquete | Advisory | CVSS | Descripción | Vía | Fix |
-|---------|----------|------|-------------|-----|-----|
-| `brace-expansion` 5.0.2–5.0.5 | GHSA-jxxr-4gwj-5jf2 | 6.5 | DoS por rango numérico grande que evita protección `max` (CWE-400) | `@typescript-eslint` | `npm audit fix` |
+8 vulnerabilidades HIGH. Kyoszen usa nodemailer para correos del revisor, notificaciones y alertas SMTP (IONOS).
 
-No afecta producción.
+| Advisory | Descripción |
+|----------|-------------|
+| GHSA-c7w3-x93f-qmm8 | SMTP command injection vía `envelope.size` sin sanitizar |
+| GHSA-vvjj-xcjg-gr5g | SMTP command injection vía CRLF en nombre de transporte (EHLO/HELO) |
+| GHSA-268h-hp4c-crq3 | CRLF injection en cabeceras `List-*` → inyección de headers |
+| GHSA-mm7p-fcc7-pg87 | Correo enviado a dominio no deseado (interpretation conflict) |
+| GHSA-rcmh-qjqh-p98v | DoS en `addressparser` por llamadas recursivas |
+| GHSA-wqvq-jvpq-h66f | `jsonTransport` bypassa `disableFileAccess`/`disableUrlAccess` |
+| GHSA-r7g4-qg5f-qqm2 | TLS incorrecto en OAuth2 token fetch — permite intercepción de credenciales |
+| GHSA-p6gq-j5cr-w38f | Opción `raw` bypassa acceso a archivos/URLs → SSRF + lectura de archivos |
+
+**Fix:** `npm install nodemailer@9.0.1` — **cambio mayor** (v6→v9); revisar API antes de actualizar.
+
+---
+
+#### `ws` (dependencia transitiva) → corregido vía `npm audit fix`
+
+| Advisory | Descripción |
+|----------|-------------|
+| GHSA-58qx-3vcg-4xpx | Divulgación de memoria no inicializada |
+| GHSA-96hv-2xvq-fx4p | Memory exhaustion DoS por fragmentos pequeños |
+
+**Fix:** `npm audit fix`
+
+---
+
+### ADVERTENCIA — MODERATE
+
+| Paquete | Advisory | Descripción | Fix |
+|---------|----------|-------------|-----|
+| `@anthropic-ai/sdk` 0.89.x | GHSA-p7fg-763f-g4gf | Permisos inseguros en Local Filesystem Memory Tool (CWE-732). Rango afectado: 0.79.0–0.91.0. | `npm install @anthropic-ai/sdk@0.105.0` (cambio mayor) |
+| `postcss` (transitiva) | GHSA-qx2v-qp2m-jg93 | XSS vía `</style>` sin escapar en CSS stringify | Se resuelve al actualizar `next@16.2.9` |
+| `brace-expansion` (transitiva) | GHSA-jxxr-4gwj-5jf2 | DoS por rango numérico grande (CWE-400) | `npm audit fix` |
+| `js-yaml` (transitiva) | GHSA-h67p-54hq-rp68 | DoS cuadrático en merge key handling (CWE-407) | `npm audit fix` |
+
+---
+
+### BAJA — LOW
+
+| Paquete | Advisory | Descripción | Fix |
+|---------|----------|-------------|-----|
+| `@babel/core` (transitiva) | GHSA-4x5r-pxfx-6jf8 | Lectura arbitraria de archivos vía `sourceMappingURL` (CWE-22/200) | `npm audit fix` |
 
 ---
 
@@ -40,76 +82,81 @@ No afecta producción.
 
 | Paquete | Instalado | Última versión | Severidad |
 |---------|-----------|----------------|-----------|
-| `next` | 16.2.3 | **16.2.9** | 🔴 CRÍTICO — 3 CVEs HIGH activos; patch sin breaking changes |
-| `@anthropic-ai/sdk` | 0.89.0 | **0.104.1** | 🟡 ADVERTENCIA — vulnerabilidad MODERATE; salto mayor de versión (0.89→0.104) |
-| `nodemailer` | ~6.10.1 | **9.0.0** | 🟡 ADVERTENCIA — 3 versiones mayores de atraso (v6→v9); sin CVE activo en npm audit hoy |
-| `lucide-react` | ~1.8.0 | 1.18.0 | ℹ️ INFO |
-| `react` | 19.2.4 | 19.2.7 | ℹ️ INFO |
-| `react-dom` | 19.2.4 | 19.2.7 | ℹ️ INFO |
-| `@supabase/supabase-js` | ~2.103.0 | 2.108.2 | ℹ️ INFO |
-| `framer-motion` | ~12.38.0 | 12.40.0 | ℹ️ INFO |
-| `marked` | ~18.0.3 | 18.0.5 | ℹ️ INFO |
+| `next` | 16.2.3 (pin exacto) | **16.2.9** | CRÍTICO — 13 vulns HIGH, patch sin breaking changes |
+| `nodemailer` | ~6.9.x | **9.0.1** | CRÍTICO — 8 vulns HIGH, cambio mayor (v6→v9) |
+| `@anthropic-ai/sdk` | ~0.89.x | **0.105.0** | ADVERTENCIA — vuln MODERATE, cambio mayor |
+| `@supabase/supabase-js` | ~2.103.x | 2.108.2 | INFO |
+| `framer-motion` | ~12.38.x | 12.40.0 | INFO |
+| `lucide-react` | ~1.8.x | 1.21.0 | INFO |
+| `react` | 19.2.4 | 19.2.7 | INFO |
+| `react-dom` | 19.2.4 | 19.2.7 | INFO |
+| `marked` | ~18.0.x | 18.0.5 | INFO |
 
 ---
 
 ## Resumen
 
-- **Total paquetes declarados:** 21 (9 dependencies · 12 devDependencies)
-- **Paquetes con vulnerabilidades activas:** 3 (`next`, `@anthropic-ai/sdk`, `brace-expansion` transitiva)
-- **Vulnerabilidades totales:** 10 (3 high · 4 moderate · 2 low · 1 moderate-transitiva)
-- **Paquetes desactualizados:** 9
+- Total paquetes instalados: 531 (41 producción · 455 dev · 84 opcionales)
+- Total paquetes directos declarados: 22 (10 deps + 12 devDeps)
+- **Vulnerabilidades detectadas: 8 paquetes afectados**
+  - Altas: 3 (next, nodemailer, ws transitiva)
+  - Moderadas: 4 (@anthropic-ai/sdk, postcss, brace-expansion, js-yaml)
+  - Bajas: 1 (@babel/core transitiva)
+  - Críticas: 0
+- Paquetes directos desactualizados con CVEs: 3 (next, nodemailer, @anthropic-ai/sdk)
 
 ---
 
 ## Recomendaciones
 
-### Acción 1 — URGENTE: Actualizar `next` a 16.2.9
+### Acción 1 — URGENTE: actualizar `next` a 16.2.9
 
 ```bash
-# Editar package.json: "next": "16.2.9" y "eslint-config-next": "16.2.9"
+# En package.json cambiar: "next": "16.2.9", "eslint-config-next": "16.2.9"
 npm install
 npm run build
-# Probar en local → aprobar → deploy a VPS
+# Probar en local (localhost:3002) → aprobar → deploy a VPS
 ```
 
-Patch update que corrige los 3 CVEs HIGH (DoS ×2, Middleware bypass) y todos los MODERATE/LOW adicionales. Bajo riesgo de regresión — el incremento es 16.2.3 → 16.2.9, misma serie menor. **Prioridad máxima.**
+Resuelve 13 vulns HIGH + postcss MODERATE. Riesgo de regresión mínimo (patch 16.2.3→16.2.9).
 
-### Acción 2 — ADVERTENCIA: Actualizar `@anthropic-ai/sdk` a ≥0.91.1
-
-```bash
-# Cambiar en package.json a "^0.104.0" (semver ^0.89.0 no actualiza a 0.90+ automáticamente)
-npm install @anthropic-ai/sdk@0.104.1
-```
-
-El salto 0.89 → 0.104 puede incluir cambios de API. Probar `/api/assistant/chat` (asistente Kyo) y el Estratega (streaming) en local antes de hacer deploy. Revisar el changelog de Anthropic SDK.
-
-### Acción 3 — ADVERTENCIA: Planificar actualización de `nodemailer` a v9
-
-```bash
-npm install nodemailer@9.0.0 @types/nodemailer@latest
-```
-
-Sin CVE activo detectado hoy, pero v6 está 3 versiones mayores atrás. La API de transporte cambió entre v6 y v9; revisar uso en `src/app/api/aplicar/route.ts` y `src/app/api/contacto/route.ts`. Probar flujo completo de correo (IONOS SMTP) en local antes de subir a producción.
-
-### Acción 4 — Transitivas: `npm audit fix`
+### Acción 2 — URGENTE: `npm audit fix` para transitivas
 
 ```bash
 npm audit fix
+# Resuelve: ws (2 HIGH), brace-expansion (MODERATE), js-yaml (MODERATE), @babel/core (LOW)
+# NO usar --force
 ```
 
-Resuelve `brace-expansion` (devDependency, no afecta producción). No usar `--force`.
+### Acción 3 — PRIORIDAD MEDIA: actualizar `nodemailer` a 9.0.1
 
-### Acción 5 — INFO: Parches menores
+```bash
+npm install nodemailer@9.0.1 @types/nodemailer@latest
+```
+
+Cambio mayor (v6→v9) — revisar API antes de actualizar. Archivos afectados:
+- `src/app/api/aplicar/route.ts`
+- `src/app/api/contacto/route.ts`
+- Todas las rutas en `src/app/api/admin/social/` que envíen correo
+- Configuración SMTP en `site_config` (IONOS, puerto 465)
+
+### Acción 4 — PRIORIDAD MEDIA: actualizar `@anthropic-ai/sdk` a 0.105.0
+
+```bash
+npm install @anthropic-ai/sdk@0.105.0
+```
+
+La vulnerabilidad (permisos en Filesystem Memory Tool) no impacta directamente el uso actual de Kyoszen (solo usa tool-use web), pero es buena práctica salir del rango vulnerable. Revisar changelog y probar `/api/assistant/chat` (Kyo), Estratega (streaming) e importadores de contenido en local antes de hacer deploy.
+
+### Acción 5 — INFO: parches menores (próximo ciclo de mantenimiento)
 
 ```bash
 npm install react@19.2.7 react-dom@19.2.7
 ```
 
-Sin breaking changes esperados.
-
 ### No hacer
 - No correr `npm audit fix --force` — puede degradar `next` a una versión antigua.
-- No actualizar `nodemailer` en producción sin probar el flujo de correo en local primero.
+- No actualizar `nodemailer` en producción sin probar flujo completo de correo SMTP en local primero.
 - No actualizar `@anthropic-ai/sdk` sin probar Kyo y el Estratega en local.
 
 ---
