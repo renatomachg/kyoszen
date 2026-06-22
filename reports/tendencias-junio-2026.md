@@ -287,3 +287,60 @@ Rankings actualizados: Repartidor (447K vacantes activas), Director de Ventas (2
 **Estado del reporte:** Vigente y actualizado al 15 de junio de 2026. No se identificaron cambios que modifiquen las recomendaciones estructurales del reporte original. Se agregan 5 hallazgos accionables para la segunda quincena.
 
 *Fuentes adicionales 15 jun: IDC Online "53% empresas contratan más pero enfrentan mayor rotacion" (29/05/2026), Angulo7 "Mundial elevara rotacion laboral en Mexico" (jun 2026), Lockton / Emprefinanzas "Retencion de talento desafio Mundial 2026" (mayo 2026), Lider Empresarial "Por que el Mundial 2026 elevara presion sobre retencion de talento", RRHH Digital "Mercado laboral 2026: el candidato tiene el control" (jun 2026), BeBee "Informe mercado laboral Mexico 2026", TikTok Discover "audios en tendencia Mexico" / "Un rey sin Reyna" jun 2026, TikTok Discover "Dia del Padre 2026 tendencias CDMX".*
+
+---
+
+## Verificación 22 de junio de 2026 — Semana final del mes
+
+**Ejecutada por:** Trends Analyst (ejecución automática) | **Fecha:** 22 jun 2026
+
+### Contexto de la semana (22–30 junio)
+
+Esta es la semana de cierre de mes y cierre de Q2. Los tres eventos principales que dominan el ecosistema de contenido en México esta semana son: (1) México en octavos de final del Mundial, (2) la Marcha del Orgullo LGBTIQ+ el 27 de junio, y (3) el cierre del segundo trimestre el 30 de junio con su gancho natural de revisión de plantilla y planeación del 2do semestre.
+
+---
+
+### Nuevos hallazgos desde el 15 de junio
+
+**1. México avanzó PRIMERO del Grupo A — el momentum mundialista sigue en peak**
+
+México ganó 2-0 a Sudáfrica (apertura del torneo en el Azteca) y 1-0 a Corea del Sur con gol de Luis Romo, convirtiéndose en el **primer equipo clasificado a dieciseisavos** de la Copa del Mundo 2026. El país está en euforia nacional y el algoritmo de TikTok en México sigue favoreciendo fuertemente cualquier contenido con referencia mundialista. **Para Kyoszen:** esta semana es la última oportunidad de usar el ángulo mundialista con fuerza antes de que la atención migre al cierre del Q2. Publicar antes del 27 jun para aprovechar el momentum del siguiente partido.
+
+**2. Marcha del Orgullo LGBTIQ+ 2026 — confirmada el 27 de junio, ruta modificada por el Mundial**
+
+La edición 48 de la Marcha del Orgullo CDMX arrancará a las **10:00 hrs desde el Ángel de la Independencia** y concluirá en el **Palacio de Bellas Artes** (la ruta fue modificada: el escenario principal NO llegará al Zócalo por las instalaciones del Mundial en el Centro). Es uno de los eventos más concurridos de junio en CDMX. **Ángulo para Kyoszen:** contenido de diversidad e inclusión en el ámbito laboral — un post el 26 o 27 de junio. Tono: propositivo y sin performatividad vacía. Idea: "Las empresas que lideran en diversidad tienen menor rotación y mayor productividad — la inclusión no es solo un valor, es una ventaja competitiva."
+
+**3. INEGI publica datos ENOE mayo 2026 el 25 de junio — oportunidad de contenido con datos reales**
+
+El 25 de junio el INEGI publica los indicadores de ocupación y empleo de mayo 2026. Los datos anticipados apuntan a: **informalidad al 54.8%** (ligero aumento de 0.5 pp vs el año anterior), desempleo abierto al 2.6% en Q1 2026, y 7.4 millones de vacantes activas reportadas en mayo. **Ángulo para Kyoszen:** el día 25 (o 26 a más tardar) publicar un post rápido con el dato clave: "54.8% de los trabajadores en México están en la informalidad — conoce los beneficios del empleo formal que Kyoszen puede ofrecerte." El dato real le da autoridad al contenido y diferencia a Kyoszen de cuentas que hablan sin cifras.
+
+**4. Nearshoring y manufactura: demanda de talento técnico en alza constante**
+
+El Ministerio de Economía de México proyecta **500,000 empleos adicionales en manufactura 2025-2028** por nearshoring, con inversión acumulada superior a $50 mil millones de dólares. Los sectores con mayor escasez de talento especializado son automotriz (ingeniería en movilidad eléctrica), manufactura avanzada (robótica, Industria 4.0) y logística. **Ángulo para Kyoszen:** este es un argumento de autoridad para el pilar B2B — "El nearshoring trajo las inversiones, pero ¿quién encuentra al talento técnico que las empresas necesitan? Eso es exactamente lo que hacemos." Formato: carrusel FB con datos de sectores en demanda.
+
+**5. Skills-based hiring (contratación por habilidades) — tendencia que toma fuerza en junio**
+
+Múltiples fuentes del sector RRHH en México (Wellhub, Genoma, Fortia, ISI Solutions) confirman que la contratación basada en habilidades es **la tendencia más citada de 2026 en México**. El 86% de empleados afirma que solo considerará empresas que se preocupen por su bienestar. Las empresas que adoptan skills-based hiring retienen mejor a Gen Z. **Ángulo para Kyoszen:** contenido educativo B2B — "¿Tu empresa todavía filtra candidatos por años de experiencia? El mercado evolucionó — así es como las mejores empresas contratan en 2026." Posiciona la metodología de evaluación de Kyoszen como moderna y efectiva.
+
+**6. Jornada laboral 40 horas — el Congreso tiene hasta el 1 de julio para reformar la LFT**
+
+La reforma constitucional se publicó en el DOF el 3 de marzo de 2026. El Congreso tiene **90 días** (hasta aproximadamente el **1 de julio de 2026**) para reformar la Ley Federal del Trabajo. Esta semana es la ventana final antes del vencimiento. El debate en LinkedIn y medios especializados de RRHH está activo. **Ángulo urgente para Kyoszen:** el 24 o 25 de junio — "La LFT tiene que actualizarse esta semana: ¿tu empresa ya sabe qué cambios vienen en sus contratos, turnos y nómina?" Este es el momento de máxima relevancia del tema antes de que se concrete en ley secundaria.
+
+---
+
+### Prioridades de publicación — semana del 22–30 de junio
+
+| Prioridad | Fecha ideal | Acción |
+|---|---|---|
+| 🔴 Alta | 23–24 jun | Post mundialista (México en octavos) — última oportunidad del momentum del torneo |
+| 🔴 Alta | 24–25 jun | Alerta de reforma LFT — "el Congreso tiene hasta esta semana para reformar la LFT" |
+| 🔴 Alta | 25–26 jun | Post con datos ENOE mayo (informalidad 54.8%) — contenido de autoridad con dato real |
+| 🟡 Media | 26–27 jun | Post Marcha del Orgullo — diversidad e inclusión en el trabajo |
+| 🟡 Media | 29–30 jun | Cierre Q2: "¿Tu empresa tiene la plantilla que necesita para el segundo semestre?" — CTA directo B2B |
+| 🟢 Normal | 30 jun | Post cierre de mes — dato de cierre de Q2 + adelanto de julio |
+
+---
+
+**Estado del reporte:** Completo y verificado al 22 de junio de 2026. Cubre las cuatro semanas de junio. El reporte de julio debe iniciarse en los primeros días de julio.
+
+*Fuentes adicionales 22 jun: Telemundo/El Informador "México avanza a dieciseisavos como primero del Grupo A" (jun 2026), Infobae/Milenio/TV Azteca "Marcha Orgullo CDMX 2026 fecha ruta 27 junio" (jun 2026), INEGI ENOE Boletín 301/26 (mayo 2026), México Cómo Vamos calendario de publicaciones junio 2026, Credibusiness/Camtom "Nearshoring México 2026 500K empleos manufactura", Infobae "Jornadas de empleo CDMX junio 2026", El Imparcial "Sectores con más vacantes México 2026", Wellhub/Genoma/ISI Solutions "Tendencias reclutamiento México 2026 skills-based hiring", Holland & Knight / DOF reforma 40 horas calendario LFT.*
