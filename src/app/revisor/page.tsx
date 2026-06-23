@@ -360,6 +360,7 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
 function TikTokReview({ post, version }: { post: Post; version: Version }) {
   const [verGuion, setVerGuion] = useState(false);
   const fase = post.fase ?? "guion";
+  const archivado = version?.storyboard?.archivado ?? null;
   const enVideo = fase === "video" && !!version?.video_url;
 
   const Step = ({ n, label, state }: { n: number; label: string; state: "done" | "active" | "todo" }) => (
@@ -379,7 +380,32 @@ function TikTokReview({ post, version }: { post: Post; version: Version }) {
         <Step n={2} label="Video" state={fase === "video" ? "active" : "todo"} />
       </div>
 
-      {enVideo ? (
+      {archivado ? (
+        <>
+          <div style={{ maxWidth: 264, margin: "0 auto 6px", position: "relative", borderRadius: 18, overflow: "hidden", background: "#0F172A", aspectRatio: "9/16", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
+            {archivado.poster_url
+              ? <img src={archivado.poster_url} alt="Carátula del video" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>🎬</div>}
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent,rgba(15,23,42,.9))", color: "#fff", fontSize: 11.5, fontWeight: 800, padding: "22px 12px 10px", textAlign: "center" }}>✅ Publicado en redes</div>
+          </div>
+          {version.caption && (
+            <div style={{ margin: "10px 0", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: "10px 12px" }}>
+              <span style={{ fontSize: 10, letterSpacing: ".07em", textTransform: "uppercase", color: "#1883FF", fontWeight: 800, display: "block", marginBottom: 4 }}>Caption</span>
+              <p style={{ margin: 0, fontSize: 13, color: "#0F172A", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{version.caption}</p>
+            </div>
+          )}
+          <button onClick={() => setVerGuion((v) => !v)} style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 14px", fontSize: 12.5, fontWeight: 700, color: "#042E7B", cursor: "pointer" }}>
+            {verGuion ? "Ocultar propuesta ▲" : "Ver propuesta aprobada ▼"}
+          </button>
+          {verGuion && (
+            <div style={{ marginTop: 12 }}>
+              {version.storyboard?.propuesta
+                ? <PropuestaView prop={version.storyboard.propuesta} />
+                : <StoryboardView sb={version.storyboard} />}
+            </div>
+          )}
+        </>
+      ) : enVideo ? (
         <>
           <div style={{ maxWidth: 264, margin: "0 auto 6px", borderRadius: 18, overflow: "hidden", background: "#000", aspectRatio: "9/16", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
             <video src={version.video_url!} controls playsInline style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000", display: "block" }} />
@@ -430,6 +456,7 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
   const ttFase = post.fase ?? "guion";
   const ttHook = active?.storyboard?.frames?.find((f) => f.tipo === "hook") ?? active?.storyboard?.frames?.[0];
   const ttVideo = active?.video_url;
+  const ttPoster = active?.storyboard?.archivado?.poster_url; // carátula si el video ya se archivó
 
   return (
     <div style={{ position: "relative", paddingTop: hayCorreccion ? 7 : 0 }}>
@@ -449,6 +476,8 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
         {isTiktok ? (
           ttVideo
             ? <video src={ttVideo} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#000" }} />
+            : ttPoster
+            ? <img src={ttPoster} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#000" }} />
             : <div style={{ width: "100%", height: "100%", background: "linear-gradient(160deg,#0F172A 0%,#1e293b 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 14, textAlign: "center", gap: 8 }}>
                 <span style={{ fontSize: 22 }}>🎬</span>
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", lineHeight: 1.3 }}>{ttHook?.overlay || post.titulo_interno || "Storyboard TikTok"}</span>

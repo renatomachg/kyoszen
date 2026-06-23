@@ -153,9 +153,20 @@ function PostModal({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
+    const arr = Array.from(files);
+    // Bloquea videos: aquí solo van imágenes. El video del TikTok se sube con su propio botón
+    // (si no, el .mp4 cae en imagenes[] y el sitio lo intenta mostrar como <img> → roto).
+    const esVideo = (f: File) => f.type.startsWith("video/") || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(f.name);
+    const imgs = arr.filter((f) => !esVideo(f));
+    if (imgs.length < arr.length) {
+      alert(
+        "Aquí solo van imágenes (JPG, PNG).\n\nPara subir el VIDEO del TikTok, cierra esta ventana y usa el botón \"Subir video\" en el detalle de la publicación."
+      );
+    }
+    if (imgs.length === 0) return;
     setUploading(true);
     const urls: string[] = [];
-    for (const file of Array.from(files)) {
+    for (const file of imgs) {
       try { urls.push(await uploadImage(file)); } catch { /* noop */ }
     }
     setImages((prev) => [...prev, ...urls]);
@@ -380,10 +391,27 @@ function PropuestaEditor({ post, version, onSaved, onCancel }: { post: Post; ver
   );
 }
 
+function PasoArchivo({ icon, titulo, texto }: { icon: string; titulo: string; texto: string }) {
+  return (
+    <div style={{ display: "flex", gap: 11, alignItems: "flex-start" }}>
+      <div style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{icon}</div>
+      <div>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#0F172A" }}>{titulo}</p>
+        <p style={{ margin: "1px 0 0", fontSize: 12, color: "#64748B", lineHeight: 1.4 }}>{texto}</p>
+      </div>
+    </div>
+  );
+}
+
 function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: Version; onUpdated: () => void }) {
   const fase = post.fase ?? "guion";
   const [uploading, setUploading] = useState(false);
+  const [archivando, setArchivando] = useState(false);
+  const [confirmarArchivo, setConfirmarArchivo] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const archivado = version.storyboard?.archivado ?? null;
+  // días desde la fecha programada (señal de "ya se publicó en redes")
+  const diasDesde = Math.floor((Date.now() - new Date(post.fecha_programada + "T00:00:00").getTime()) / 86_400_000);
   const guionAprobado = post.estado === "aprobado";
   const sb = version.storyboard;
   const tieneProp = !!sb?.propuesta;
@@ -412,6 +440,20 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
     setUploading(false);
   };
 
+  const archivarVideo = async () => {
+    setConfirmarArchivo(false);
+    setArchivando(true);
+    try {
+      const r = await fetch(`/api/admin/social/posts/${post.id}/archivar-video`, { method: "POST" });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "error");
+      onUpdated();
+    } catch (e) {
+      alert("No se pudo archivar el video: " + (e instanceof Error ? e.message : "intenta de nuevo"));
+    }
+    setArchivando(false);
+  };
+
   const Step = ({ n, label, state }: { n: number; label: string; state: "done" | "active" | "todo" }) => (
     <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 7, background: state === "active" ? "#EFF6FF" : state === "done" ? "#F0FDF4" : "#F8FAFC", border: `1.5px solid ${state === "active" ? "#BFDBFE" : state === "done" ? "#BBF7D0" : "#E2E8F0"}`, borderRadius: 10, padding: "6px 10px" }}>
       <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#fff", background: state === "done" ? "#16A34A" : state === "active" ? "#1883FF" : "#CBD5E1" }}>{state === "done" ? "✓" : n}</span>
@@ -426,9 +468,77 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
         <Step n={2} label="Video" state={fase === "video" ? "active" : "todo"} />
       </div>
 
-      {fase === "video" && version.video_url && (
-        <div style={{ maxWidth: 240, margin: "0 auto 14px", borderRadius: 16, overflow: "hidden", background: "#000", aspectRatio: "9/16", boxShadow: "0 6px 18px rgba(0,0,0,.18)" }}>
-          <video src={version.video_url} controls playsInline style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000", display: "block" }} />
+      {/* Video archivado: carátula + enlace a Drive (ya no ocupa espacio en el sitio) */}
+      {fase === "video" && archivado && (
+        <div style={{ maxWidth: 240, margin: "0 auto 14px" }}>
+          <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: "#0F172A", aspectRatio: "9/16", boxShadow: "0 6px 18px rgba(0,0,0,.18)" }}>
+            {archivado.poster_url
+              ? <img src={archivado.poster_url} alt="Carátula del video" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>🎬</div>}
+            <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(15,23,42,.82)", color: "#fff", fontSize: 10.5, fontWeight: 800, padding: "4px 9px", borderRadius: 999 }}>🗄️ Archivado</div>
+          </div>
+          <a href={archivado.drive_url} target="_blank" rel="noopener noreferrer"
+            style={{ display: "block", textAlign: "center", marginTop: 8, background: "#042E7B", color: "#fff", textDecoration: "none", fontSize: 12, fontWeight: 800, padding: "9px 12px", borderRadius: 10 }}>
+            🎬 Ver video en Google Drive
+          </a>
+          <p style={{ margin: "7px 0 0", textAlign: "center", fontSize: 10.5, color: "#94A3B8" }}>
+            Liberó {archivado.peso_mb ? `~${archivado.peso_mb} MB` : "espacio"} · respaldado el {new Date(archivado.archivado_en).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+          </p>
+        </div>
+      )}
+
+      {/* Video activo: reproductor + botón para liberar espacio */}
+      {fase === "video" && version.video_url && !archivado && (
+        <div style={{ maxWidth: 240, margin: "0 auto 14px" }}>
+          <div style={{ borderRadius: 16, overflow: "hidden", background: "#000", aspectRatio: "9/16", boxShadow: "0 6px 18px rgba(0,0,0,.18)" }}>
+            <video src={version.video_url} controls playsInline style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000", display: "block" }} />
+          </div>
+          {diasDesde >= 14 && (
+            <p style={{ margin: "8px 0 0", fontSize: 10.5, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 9, padding: "6px 9px", textAlign: "center" }}>
+              Este video lleva {diasDesde} días programado. Si ya está publicado en redes, puedes liberar el espacio.
+            </p>
+          )}
+          <button onClick={() => setConfirmarArchivo(true)} disabled={archivando}
+            style={{ display: "block", width: "100%", marginTop: 8, background: archivando ? "#CBD5E1" : "#fff", color: "#B45309", border: "1.5px solid #FDE68A", fontSize: 11.5, fontWeight: 800, padding: "9px 12px", borderRadius: 10, cursor: archivando ? "default" : "pointer" }}>
+            {archivando ? "Archivando…" : "🗄️ Liberar espacio (respaldar en Drive)"}
+          </button>
+        </div>
+      )}
+
+      {/* Modal de confirmación para archivar (CSS branded) */}
+      {confirmarArchivo && (
+        <div
+          onClick={() => setConfirmarArchivo(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(4,18,46,.55)", backdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "kyoFadeIn .15s ease" }}
+        >
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: 380, background: "#fff", borderRadius: 20, overflow: "hidden", boxShadow: "0 24px 60px rgba(4,18,46,.4)", animation: "kyoPopIn .2s cubic-bezier(.16,1,.3,1)" }}>
+            {/* Cabecera navy */}
+            <div style={{ background: "linear-gradient(135deg,#042E7B 0%,#0A4ECC 100%)", padding: "22px 24px 18px", textAlign: "center", position: "relative" }}>
+              <div style={{ width: 52, height: 52, margin: "0 auto 10px", borderRadius: 14, background: "rgba(255,255,255,.14)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>🗄️</div>
+              <h3 style={{ margin: 0, color: "#fff", fontSize: 16.5, fontWeight: 900, letterSpacing: "-.01em" }}>Liberar espacio</h3>
+              <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,.7)", fontSize: 12 }}>Respaldar en Google Drive</p>
+            </div>
+            {/* Cuerpo */}
+            <div style={{ padding: "20px 24px 22px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
+                <PasoArchivo icon="☁️" titulo="Se sube a tu Drive" texto="El video se respalda completo en tu Google Drive." />
+                <PasoArchivo icon="🖼️" titulo="Queda la carátula" texto="En el sitio se ve la miniatura, no queda vacío." />
+                <PasoArchivo icon="✨" titulo="Se libera el espacio" texto="El archivo pesado se borra del sitio." />
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setConfirmarArchivo(false)}
+                  style={{ flex: 1, padding: "12px", borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", color: "#475569", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+                  Cancelar
+                </button>
+                <button onClick={archivarVideo}
+                  style={{ flex: 1.4, padding: "12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#1883FF,#0A4ECC)", color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 14px rgba(24,131,255,.35)" }}>
+                  Sí, archivar
+                </button>
+              </div>
+            </div>
+          </div>
+          <style>{`@keyframes kyoFadeIn{from{opacity:0}to{opacity:1}}@keyframes kyoPopIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}`}</style>
         </div>
       )}
 

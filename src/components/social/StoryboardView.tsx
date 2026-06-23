@@ -33,6 +33,16 @@ export type Storyboard = {
   nota_produccion?: string;
   propuesta?: Propuesta | null;    // cliente
   guia_tecnica?: GuiaTecnica | null; // admin
+  archivado?: ArchivadoVideo | null; // video respaldado en Drive + carátula
+};
+
+// Metadata cuando el video ya se respaldó en Drive y se liberó de Storage
+export type ArchivadoVideo = {
+  drive_url: string;
+  drive_file_id: string;
+  poster_url: string | null;
+  archivado_en: string;
+  peso_mb?: number;
 };
 
 const TIPO: Record<string, { tc: string; tcText: string; screen: string; overlay: string }> = {
