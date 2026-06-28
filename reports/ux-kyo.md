@@ -1,7 +1,7 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-06-27
-**Cambios analizados:** Sin commits de código desde 2026-06-22 (5.º día sin cambios). Revisión completa de estado actual.
-Archivos revisados: `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`, `src/components/sections/Hero.tsx`, `src/components/ui/AplicarModal.tsx`, `src/app/vacantes/page.tsx`, `src/app/vacantes/[id]/_content.tsx`, `src/app/vacantes/[id]/page.tsx`, `src/app/revisor/page.tsx`, `src/app/api/admin/social/posts/[id]/archivar-video/route.ts`.
+**Fecha:** 2026-06-28
+**Cambios analizados:** Sin commits de código desde 2026-06-22 (6.º día sin cambios). Revisión profunda de estado actual.
+Archivos revisados: `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/tools.ts`, `src/lib/assistant/knowledge.ts`, `src/app/api/assistant/chat/route.ts`, `src/components/assistant/ChatWidget.tsx`, `src/components/assistant/useChat.ts`, `src/app/revisor/page.tsx`, `src/app/api/admin/social/posts/[id]/archivar-video/route.ts`, `src/lib/google-drive.ts`.
 
 ---
 
@@ -9,25 +9,25 @@ Archivos revisados: `src/lib/assistant/system-prompt.ts`, `src/lib/assistant/too
 
 Ningún commit de código nuevo desde el 2026-06-22. El último cambio funcional fue `b14f8f3`: archivado de videos a Google Drive + fix de video en `imagenes[]`.
 
-**Pendiente operativo crítico (configuración, no código):** Las 4 variables `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` y `GOOGLE_DRIVE_FOLDER_ID` siguen sin estar en el `ecosystem.config.js` del VPS. El botón "🗄️ Liberar espacio" devuelve 503 en producción.
+**Pendiente operativo crítico (configuración, no código):** Las 4 variables `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` y `GOOGLE_DRIVE_FOLDER_ID` siguen sin estar en el `ecosystem.config.js` del VPS. El botón "🗄️ Liberar espacio" devuelve 503 en producción (7.º día pendiente).
 
 ---
 
 ## 🔴 BUGS CRÍTICOS — BLOQUEANTES
 
-### BUG 1 — Kyo recomienda vacantes demo, no de Supabase (16.º día sin fix)
+### BUG 1 — Kyo recomienda vacantes demo, no de Supabase (17.º día sin fix)
 **Archivo:** `src/lib/assistant/knowledge.ts` línea 167
 
-`StaticKnowledgeProvider` lee de `JOBS` hardcoded en `@/lib/jobs`. El Paso 5 recomienda IDs que generan 404 en producción porque las vacantes reales están en Supabase. La interfaz `KnowledgeProvider` (línea 42) ya está definida y lista para el reemplazo.
+`StaticKnowledgeProvider` lee de `JOBS` hardcoded en `@/lib/jobs`. El Paso 5 recomienda IDs que generan 404 en producción porque las vacantes reales están en Supabase. Peor aún: el system prompt (línea 138 de `system-prompt.ts`) construye el listado de vacantes desde `knowledge.listJobs()` — si Supabase tiene 8 vacantes y `JOBS` tiene 3, Kyo le dice al candidato "hay 3 vacantes disponibles" cuando en realidad hay 8. La interfaz `KnowledgeProvider` (línea 42) ya está lista para el reemplazo.
 
-**Fix:** Crear `SupabaseKnowledgeProvider` que use `sbAdmin` para leer `vacantes` donde `activa = true`.
+**Fix:** Crear `SupabaseKnowledgeProvider` que use `sbAdmin` para leer `vacantes` donde `activa = true`. Registrar en línea 167 en lugar del provider estático.
 
 ---
 
-### BUG 56 — Endpoint `archivar-video` sin verificación de sesión admin (5.º día sin fix)
+### BUG 56 — Endpoint `archivar-video` sin verificación de sesión admin (6.º día sin fix)
 **Archivo:** `src/app/api/admin/social/posts/[id]/archivar-video/route.ts` línea 12
 
-La función `POST` no verifica sesión de Supabase. Cualquier request HTTP con un `id` válido puede descargar el MP4, subirlo al Drive del propietario y borrar el original de Storage.
+La función `POST` no verifica sesión de Supabase antes de actuar. Cualquier request HTTP con un `id` válido puede descargar el MP4, subirlo al Drive del propietario y borrar el original de Storage.
 
 **Fix:**
 ```ts
@@ -43,11 +43,11 @@ const sbSession = createServerClient(
 const { data: { session } } = await sbSession.auth.getSession();
 if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 ```
-Añadir como primeras instrucciones antes de `driveConfigurado()`.
+Añadir como primeras instrucciones del handler, antes de `driveConfigurado()`.
 
 ---
 
-### BUG 57 — `subirADrive()` sin timeout — bloquea hasta 5 min si Google falla (5.º día)
+### BUG 57 — `subirADrive()` sin timeout — bloquea hasta 5 min si Google falla (6.º día)
 **Archivo:** `src/lib/google-drive.ts` líneas 23 y 69
 
 `getAccessToken()` y `subirADrive()` usan `fetch` sin `AbortController`. Si Google OAuth o el upload responden lento, el endpoint bloquea un worker de PM2 durante `maxDuration: 300`.
@@ -67,7 +67,7 @@ const up = await fetch("https://www.googleapis.com/upload/...", {
 
 ---
 
-### BUG 60 — `fetch(version.video_url)` sin timeout (4.º día)
+### BUG 60 — `fetch(version.video_url)` sin timeout (5.º día)
 **Archivo:** `src/app/api/admin/social/posts/[id]/archivar-video/route.ts` línea 97
 
 ```ts
@@ -80,19 +80,19 @@ const res = await fetch(version.video_url, { signal: AbortSignal.timeout(60_000)
 
 ---
 
-### BUG 61 — Filtros de navegación en Kyo con acentos faltantes → filtros silenciosos (3.º día)
+### BUG 61 — Filtros de navegación en Kyo con acentos faltantes → filtros silenciosos (4.º día)
 **Archivo:** `src/lib/assistant/system-prompt.ts` líneas 85-86
 
-El system prompt instruye a Kyo con `"Estado de Mexico"` y `"Hibrido"`, pero `vacantes/page.tsx` línea 28 valida con exactitud contra `["Estado de México", "Híbrido"]`. El filtro se ignora silenciosamente.
+El system prompt instruye a Kyo con `"Estado de Mexico"` y `"Hibrido"`, pero `vacantes/page.tsx` valida contra `["Estado de México", "Híbrido"]` (con acentos). El filtro se ignora silenciosamente: Kyo navega a `/vacantes?ubicacion=Estado de Mexico` y la página no muestra filtro aplicado.
 
 **Fix en `system-prompt.ts` línea 85:**
-```ts
+```
 - /vacantes?ubicacion=CDMX (valores: CDMX, Estado de México, Híbrido, Remoto)
 ```
 
 ---
 
-### BUG 62 — `Hero.tsx` usa `next/image` — viola regla de CLAUDE.md (2.º día)
+### BUG 62 — `Hero.tsx` usa `next/image` — viola regla de CLAUDE.md (3.º día)
 **Archivo:** `src/components/sections/Hero.tsx` líneas 5, 122, 129
 
 ```ts
@@ -102,11 +102,10 @@ import Image from "next/image";
 <Image src="/images/Hero.jpg" ... />
 ```
 
-CLAUDE.md establece explícitamente: **"No usar `next/image` — usar `<img>` nativo"**. Las mismas fotos se pueden servir con `<img>` nativo + `unoptimized: true` configurado en `next.config.ts`.
+CLAUDE.md: **"No usar `next/image` — usar `<img>` nativo"**. Las mismas fotos se sirven con `<img>` nativo + `unoptimized: true` configurado en `next.config.ts`.
 
 **Fix:**
 ```tsx
-// Reemplazar los dos bloques <Image>:
 <img src="/images/Hero2.jpg" alt="Trabajo operativo Kyoszen" className="object-cover w-full h-full" />
 <img src="/images/Hero.jpg" alt="Equipo profesional Kyoszen" className="object-cover w-full h-full" />
 ```
@@ -114,27 +113,25 @@ Eliminar el import de `next/image` (línea 5).
 
 ---
 
-### BUG 63 — Estadística Hero "+7000 colocados" vs knowledge.ts "687+" — contradicción visible (2.º día)
+### BUG 63 — Estadística Hero "+7000 colocados" vs knowledge.ts "687+" — contradicción visible (3.º día)
 **Archivos:** `src/components/sections/Hero.tsx` línea ~108 y `src/lib/assistant/knowledge.ts` línea 78
 
-El Hero muestra **"+7000 candidatos colocados"** y el sidebar del Hero muestra **"7000+"**. Pero el `knowledge.ts` que Kyo usa como base de respuestas dice **"687+ candidatos colocados"** y `company.stats` tiene `"Candidatos colocados": "687+"`.
+El Hero muestra **"+7000 candidatos colocados"**. El `knowledge.ts` que Kyo usa como base de respuestas dice **"687+ candidatos colocados"**. Si un candidato le pregunta a Kyo cuántos han colocado, responde 687+, pero el hero visual dice 7000+. Contradicción que daña la credibilidad.
 
-Si un candidato le pregunta a Kyo "¿cuántas personas han colocado?" responderá 687+, pero el hero visual dice 7000+. Esta contradicción daña la credibilidad.
-
-**Fix:** Unificar el número en ambos archivos con el dato real que el cliente haya aprobado.
+**Fix:** Unificar el número en ambos archivos con el dato real aprobado por el cliente.
 
 ---
 
-### BUG 64 — Filtro "Marca" en `/vacantes` usa nombres demo ficticios (2.º día)
+### BUG 64 — Filtro "Marca" en `/vacantes` usa nombres demo ficticios (3.º día)
 **Archivo:** `src/app/vacantes/page.tsx` línea 29
 
 ```ts
-const MARCAS = ["Todas", "Grupo Corpora", "Logística Norte", "Sigma Retail", "Clínica Vitalis", "Finanzas MX", "Contact Nova"];
+const MARCAS = ["Todas", "Grupo Corpora", "Logística Norte", "Sigma Retail", ...];
 ```
 
-Estos son nombres de empresa de prueba. Si las vacantes reales en Supabase tienen empresas diferentes, el filtro de Marca no retorna resultados y confunde al candidato. El system prompt de Kyo (línea 88) también referencia estos nombres para la navegación URL, por lo que los filtros generados por Kyo también fallan.
+Nombres de empresa ficticios de prueba. Si las vacantes reales en Supabase tienen empresas distintas, el filtro retorna 0 resultados y confunde al candidato. El system prompt de Kyo (línea 88) también referencia estos nombres hardcoded para construir filtros URL, que también fallan.
 
-**Fix dinámico:** Cargar las marcas únicas desde Supabase al cargar la página:
+**Fix dinámico:**
 ```ts
 useEffect(() => {
   supabase.from("vacantes").select("empresa").eq("activa", true)
@@ -144,18 +141,39 @@ useEffect(() => {
     });
 }, []);
 ```
-Actualizar también la instrucción de Kyo en `system-prompt.ts` para no referenciar marcas hardcoded.
+Actualizar también `system-prompt.ts` para no referenciar marcas hardcoded.
+
+---
+
+### BUG 65 — URL de WhatsApp no es clickeable en burbujas de Kyo (NUEVO — día 1)
+**Archivos:** `src/lib/assistant/knowledge.ts` línea 85 y `src/components/assistant/ChatWidget.tsx` línea 227
+
+`COMPANY.contact.whatsapp = "https://wa.link/5zv0ba"`. Cuando Kyo responde con el link de WhatsApp (por ejemplo: "puede contactarnos por WhatsApp: https://wa.link/5zv0ba"), la burbuja usa `whitespace-pre-wrap` sin renderizado de markdown — la URL aparece como texto plano, no como enlace. WhatsApp es la conversión principal de Kyoszen y el candidato no puede hacer clic.
+
+**Fix combinado (resuelve también BUG 26):**
+```ts
+// En ChatWidget.tsx, reemplazar el contenido del MessageBubble de assistant:
+function renderContent(text: string) {
+  return {
+    __html: text
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:#1883FF;text-decoration:underline">$1</a>')
+      .replace(/\n/g, "<br/>"),
+  };
+}
+// Usar: <div dangerouslySetInnerHTML={renderContent(message.content)} />
+```
 
 ---
 
 ## 🟠 BUGS — PENDIENTES SIN RESOLVER (heredados)
 
-### BUG 58 — `rutaDeStorage` falla silenciosamente → video no se borra de Storage (5.º día)
+### BUG 58 — `rutaDeStorage` falla silenciosamente → video no se borra de Storage (6.º día)
 **Archivo:** `src/app/api/admin/social/posts/[id]/archivar-video/route.ts` líneas 56-58 y 154-155
 
 El regex no hace match si hay query params o CDN personalizado. El `.catch(() => {})` oculta el fallo.
 
-**Fix rápido:** Loguear cuando no se extrae la ruta:
+**Fix rápido — loguear cuando no se extrae la ruta:**
 ```ts
 const ruta = rutaDeStorage(version.video_url);
 if (!ruta) console.warn(`[archivar-video] No se extrajo ruta de Storage: ${version.video_url}`);
@@ -164,7 +182,7 @@ if (ruta) await sb.storage.from("media").remove([ruta]).catch(() => {});
 
 ---
 
-### BUG 59 — `StoryboardView` no renderiza el estado de video archivado (5.º día)
+### BUG 59 — `StoryboardView` no renderiza el estado de video archivado (6.º día)
 **Archivo:** `src/components/social/StoryboardView.tsx` línea 63
 
 Cuando `storyboard.archivado` está presente, el admin ve un storyboard vacío. Añadir bloque antes del filmstrip:
@@ -185,27 +203,21 @@ Cuando `storyboard.archivado` está presente, el admin ve un storyboard vacío. 
 
 ---
 
-### BUG 26 — Markdown asteriscos aparecen literales en burbujas de Kyo (16.º día sin fix)
+### BUG 26 — Markdown asteriscos aparecen literales en burbujas de Kyo (17.º día sin fix)
 **Archivo:** `src/components/assistant/ChatWidget.tsx` líneas 210 y 227
 
-`whitespace-pre-wrap` muestra `**texto**` sin renderizar. Fix de 5 min:
-```ts
-function renderMd(t: string) {
-  return { __html: t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>") };
-}
-```
-Usar `<div dangerouslySetInnerHTML={renderMd(message.content)} />` en `MessageBubble`.
+`whitespace-pre-wrap` muestra `**texto**` sin renderizar. Fix unificado con BUG 65 (ver arriba).
 
 ---
 
-### BUG 46 — "aqui" sin acento en el saludo inicial de Kyo (16.º día)
+### BUG 46 — "aqui" sin acento en el saludo inicial de Kyo (17.º día)
 **Archivo:** `src/components/assistant/useChat.ts` línea 21
 
 `"estoy aqui para orientarte"` → `"estoy aquí para orientarte"`. Primer texto que lee cualquier candidato.
 
 ---
 
-### BUG 53 — 6 cadenas sin acento en AplicarModal (16.º día)
+### BUG 53 — 6 cadenas sin acento en AplicarModal (17.º día)
 **Archivo:** `src/components/ui/AplicarModal.tsx`
 
 | Línea | Actual | Corrección |
@@ -219,7 +231,7 @@ Usar `<div dangerouslySetInnerHTML={renderMd(message.content)} />` en `MessageBu
 
 ---
 
-### BUG 55 — `kyo_mensaje` graba datos personales en analytics (16.º día — LFPDPPP)
+### BUG 55 — `kyo_mensaje` graba datos personales en analytics (17.º día — LFPDPPP)
 **Archivo:** `src/components/assistant/useChat.ts` línea 81
 
 El nombre del candidato que escribe en el Paso 0 queda textual en `site_eventos.valor`. Fix de 1 línea:
@@ -229,28 +241,28 @@ logEvent("kyo_mensaje", `[${trimmed.length} chars]`);
 
 ---
 
-### BUG 44 — Inconsistencia usted/tú en system prompt de Kyo (10.º día)
+### BUG 44 — Inconsistencia usted/tú en system prompt de Kyo (11.º día)
 **Archivo:** `src/lib/assistant/system-prompt.ts` líneas 66-68
 
 Las reglas usan "usted" pero el manejo de otros temas tutea: `"te conecto"` (línea 66), `"¿te ayudo"` (línea 67). Unificar a **usted** en todo el prompt.
 
 ---
 
-### BUG 54 — "Mas de $20k" sin acento en filtro de salario (16.º día)
+### BUG 54 — "Mas de $20k" sin acento en filtro de salario (17.º día)
 **Archivo:** `src/app/vacantes/page.tsx` línea 32
 
-`"Mas de $20k"` → `"Más de $20k"`. Actualizar también la función `matchesSalario` (línea 42).
+`"Mas de $20k"` → `"Más de $20k"`. Actualizar también la función `matchesSalario`.
 
 ---
 
-### BUG 47 — `search_jobs` no incluye `salario_nota` (16.º día)
+### BUG 47 — `search_jobs` no incluye `salario_nota` (17.º día)
 **Archivo:** `src/lib/assistant/knowledge.ts` líneas 38-42 y 148-153
 
 Kyo puede decir "salario $12,000" sin aclarar si es neto o bruto. Añadir `salario_nota?: string` a `JobSummary` e incluirlo en el `.map()` de `listJobs()`.
 
 ---
 
-### BUG 48 — Sin ARIA live region en el chat widget (16.º día)
+### BUG 48 — Sin ARIA live region en el chat widget (17.º día)
 **Archivo:** `src/components/assistant/ChatWidget.tsx` línea 143
 
 Fix de 1 línea:
@@ -260,46 +272,44 @@ Fix de 1 línea:
 
 ---
 
-### BUG 49 — `reset()` no limpia `sessionStorage` (16.º día)
+### BUG 49 — `reset()` no limpia `sessionStorage` (17.º día)
 **Archivo:** `src/components/assistant/useChat.ts` líneas 139-145
 
-El bloque `reset` elimina `localStorage` pero no `sessionStorage`. La siguiente conversación queda vinculada al mismo `kyo_session_id`.
-
-Fix de 1 línea — añadir al bloque `reset`:
+El bloque `reset` elimina `localStorage` pero no `sessionStorage`. La siguiente conversación queda vinculada al mismo `kyo_session_id`. Fix de 1 línea:
 ```ts
 sessionStorage.removeItem("kyo_session_id");
 ```
 
 ---
 
-### BUG 51 — Fallback `"MXN bruto"` en vacantes sin `salario_nota` (16.º día)
+### BUG 51 — Fallback `"MXN bruto"` en vacantes sin `salario_nota` (17.º día)
 **Archivo:** `src/app/vacantes/[id]/_content.tsx` línea 201
 
 Cambiar el fallback de `"MXN bruto"` a `"mensual"` (neutro) hasta que el admin complete el campo.
 
 ---
 
-### BUG 52 — Cliente envía hasta 30 mensajes, servidor solo usa 20 (16.º día)
-**Archivo:** `src/components/assistant/useChat.ts` línea 99
+### BUG 52 — Efecto cascada: contexto de perfil se pierde en conversaciones largas (17.º día)
+**Archivos:** `src/components/assistant/useChat.ts` línea 99 y `src/app/api/assistant/chat/route.ts` línea 131
 
-Pre-truncar antes del fetch:
+El cliente almacena hasta 30 mensajes, el servidor trunca a 20. Los Pasos 0-4 usan ~10 mensajes (5 preguntas de Kyo + 5 respuestas del candidato). Una conversación con más de 20 mensajes en total pierde el nombre, puesto, experiencia, zona y jornada del candidato. Kyo puede volver a preguntar datos que ya recibió. Fix en `useChat.ts` línea 99:
 ```ts
 messages: newMessages.slice(-20).map(...)
 ```
 
 ---
 
-### BUG 50 — `generateStaticParams()` usa `JOBS` hardcoded (16.º día)
+### BUG 50 — `generateStaticParams()` usa `JOBS` hardcoded (17.º día)
 **Archivo:** `src/app/vacantes/[id]/page.tsx` líneas 4-6
 
 Eliminar `generateStaticParams()` completamente. La ruta dinámica funciona en runtime con `dynamicParams: true` por defecto en Next.js App Router.
 
 ---
 
-### BUG 16 — Memory leak en `rateLimitMap` (16.º día)
+### BUG 16 — Memory leak en `rateLimitMap` (17.º día)
 **Archivo:** `src/app/api/assistant/chat/route.ts` líneas 68-80
 
-El `Map` nunca se limpia. Añadir purga de entradas expiradas o migrar a Upstash Redis en producción multi-instancia.
+El `Map` nunca se limpia. Con el tiempo, acumula entradas expiradas y crece indefinidamente. Añadir purga de entradas expiradas en `checkRateLimit()` o migrar a Upstash Redis en producción multi-instancia.
 
 ---
 
@@ -321,15 +331,17 @@ El `Map` nunca se limpia. Añadir purga de entradas expiradas o migrar a Upstash
     Pídele ayuda a Kyo →
   </button>
   ```
-  Escuchar `"kyo:open"` en `ChatWidget.tsx` con `useEffect` para abrir el panel.
+  Escuchar `"kyo:open"` en `ChatWidget.tsx` con `useEffect` para abrir el panel. Actualmente no existe ese listener.
+
+- **Altura del widget demasiado pequeña en iPhone SE** — `src/components/assistant/ChatWidget.tsx` línea 120. `h-[min(60vh,560px)]` en un viewport de 568px (iPhone SE) da solo 341px de panel, y con header (~60px) e input (~60px) quedan apenas ~220px para mensajes. Cambiar a `h-[min(70vh,560px)]` para ganar espacio en pantallas pequeñas sin afectar pantallas normales.
 
 ### Media prioridad
 
-- **Avisar al candidato que puede seguir hablando con Kyo tras la navegación** — Cuando Paso 5 ejecuta `navigate_to('/vacantes?...')`, la página cambia pero el widget permanece. El candidato no sabe que el chat sigue activo. Añadir en `system-prompt.ts` al formato del Paso 5: `"Le abro las vacantes en pantalla. Podemos seguir hablando aquí si tiene dudas."` Y en `useChat.ts` línea 127: incrementar el delay de navegación de 700ms a 1400ms para que el candidato lea la respuesta antes de que cambie la página.
+- **Avisar al candidato que puede seguir hablando con Kyo tras la navegación** — Cuando el Paso 5 ejecuta `navigate_to('/vacantes?...')`, la página cambia pero el widget permanece. El candidato no sabe que el chat sigue activo. Añadir en `system-prompt.ts` al formato del Paso 5: `"Le abro las vacantes en pantalla. Podemos seguir hablando aquí si tiene dudas."` Y en `useChat.ts` línea 127: incrementar el delay de navegación de 700ms a 1400ms.
 
-- **"Nueva conversacion" sin acento y mal posicionado** — `ChatWidget.tsx` línea 161. Corregir a `"Nueva conversación"`. Mover el botón al header del widget (junto a "Kyo · Asistente") para que no requiera scroll.
+- **"Nueva conversacion" sin acento y mal posicionado** — `ChatWidget.tsx` línea 161. Corregir a `"Nueva conversación"`. Mover el botón al header del widget para que no requiera scroll para encontrarlo.
 
-- **Confirmación visual al aprobar en `/revisor`** — Rosy y Monse no tienen feedback inmediato. Añadir un toast de 4 s al hacer click en "Aprobar" / "Solicitar cambios".
+- **Confirmación visual al aprobar en `/revisor`** — Rosy y Monse no tienen feedback inmediato. Añadir un toast de 4 s al hacer clic en "Aprobar" / "Solicitar cambios".
 
 - **Banner de progreso durante archivado a Drive** — El archivado puede tardar 30-120 s. El botón "🗄️ Liberar espacio" no tiene indicador de progreso real. Añadir estado `"Archivando video..."` con spinner y deshabilitar el botón durante la operación.
 
@@ -369,7 +381,7 @@ El `Map` nunca se limpia. Añadir purga de entradas expiradas o migrar a Upstash
 
 - **Resumen de perfil en Paso 4 (ancla contra truncado de contexto)** — Con el historial cortado a 20 mensajes, una conversación larga puede perder el nombre del candidato. Añadir instrucción: al completar Pasos 0-4, sintetizar en una línea: `"Perfil capturado: [nombre], [puesto], [N años], zona [X], [jornada]."`
 
-- **Manejo de empresa confidencial en Paso 5** — El formato actual muestra `[Nombre del puesto] — [Empresa]`. Cuando `empresa` está vacío, Kyo podría mostrar "— undefined" o en blanco. Añadir en el system prompt: `"Si la empresa es confidencial, omite el nombre y pon 'Empresa confidencial'."`
+- **Manejo de empresa confidencial en Paso 5** — Si la empresa está vacía, Kyo podría mostrar "— undefined" o en blanco. Añadir en el system prompt: `"Si la empresa es confidencial, omite el nombre y pon 'Empresa confidencial'."`
 
 ### Nuevas tools o capacidades recomendadas
 
@@ -418,36 +430,38 @@ El `Map` nunca se limpia. Añadir purga de entradas expiradas o migrar a Upstash
 |---|-----------|----------|---------|
 | 1 | BUG 1 — Vacantes reales en Kyo (Supabase) | Alto | Crítico |
 | 2 | BUG 56 — Endpoint archivar-video sin auth | Bajo (15 min) | Crítico |
-| 3 | BUG 62 — Hero usa next/image | Bajo (5 min) | Alto |
-| 4 | BUG 63 — Estadísticas +7000 vs 687+ contradicción | Bajo (1 min) | Alto |
-| 5 | BUG 64 — Filtro Marca con nombres demo ficticios | Bajo (30 min) | Alto |
-| 6 | BUG 61 — Filtros ubicacion con acentos faltantes | Bajo (1 min) | Alto |
-| 7 | BUG 57 — `subirADrive` sin timeout | Bajo (5 min) | Alto |
-| 8 | BUG 60 — `fetch(video_url)` sin timeout | Bajo (1 línea) | Alto |
-| 9 | Variables `GOOGLE_*` en VPS (no es código) | Bajo (5 min) | Alto |
-| 10 | BUG 53 — 6 acentos faltantes en AplicarModal | Bajo (5 min) | Alto |
-| 11 | BUG 26 — Markdown asteriscos en Kyo | Bajo (5 min) | Alto |
-| 12 | BUG 55 — `kyo_mensaje` graba datos personales | Bajo (1 línea) | Alto |
-| 13 | BUG 46 — Acento "aquí" en saludo inicial Kyo | Bajo (1 min) | Alto |
-| 14 | BUG 44 — Registro usted/tú inconsistente en prompt | Bajo (15 min) | Alto |
-| 15 | BUG 51 — Fallback "MXN bruto" en vacantes sin salario_nota | Bajo (1 min) | Alto |
-| 16 | BUG 54 — "Mas de $20k" sin acento | Bajo (1 min) | Medio |
-| 17 | BUG 59 — StoryboardView no renderiza estado archivado | Bajo (20 min) | Medio |
-| 18 | Avisar a candidato que puede seguir chateando tras navegación | Bajo (10 min) | Alto |
-| 19 | BUG 49 — reset() no limpia sessionStorage | Bajo (1 línea) | Medio |
-| 20 | BUG 47 — salario_nota faltante en search_jobs | Bajo (20 min) | Medio |
-| 21 | BUG 58 — rutaDeStorage falla silenciosamente | Bajo (5 min) | Medio |
-| 22 | BUG 48 — Sin ARIA live region en chat widget | Bajo (1 línea) | Medio |
-| 23 | BUG 52 — Cliente envía 30 msgs cuando servidor usa 20 | Bajo (1 línea) | Bajo |
-| 24 | Auditoría auth endpoints /api/admin/ | Bajo (revisión) | Crítico |
-| 25 | Timeout en fetch del chat (useChat.ts) | Bajo (15 min) | Medio |
-| 26 | Barra CTA sticky en mobile (/vacantes/[id]) | Bajo (CSS) | Alto |
-| 27 | Empty state vacantes → CTA abrir Kyo | Bajo (30 min) | Medio |
-| 28 | Filtros jornada/contrato en search_jobs | Bajo (20 min) | Alto |
-| 29 | Notificación cliente video TikTok listo | Bajo (30 min) | Medio |
-| 30 | Banner progreso durante archivado a Drive | Bajo (UI) | Medio |
-| 31 | Tool register_talent_interest | Medio | Alto |
-| 32 | Tour novedad en pestaña Análisis | Bajo (1 línea) | Medio |
-| 33 | BUG 16 — Memory leak rateLimitMap | Bajo (5 min) | Medio |
-| 34 | BUG 50 — generateStaticParams usa JOBS hardcoded | Medio | Bajo |
-| 35 | Avatares externos (pravatar.cc) en Hero | Bajo (30 min) | Bajo |
+| 3 | BUG 65 — URL WhatsApp no clickeable en Kyo (NUEVO) | Bajo (10 min) | Crítico |
+| 4 | BUG 62 — Hero usa next/image | Bajo (5 min) | Alto |
+| 5 | BUG 63 — Estadísticas +7000 vs 687+ contradicción | Bajo (1 min) | Alto |
+| 6 | BUG 64 — Filtro Marca con nombres demo ficticios | Bajo (30 min) | Alto |
+| 7 | BUG 61 — Filtros ubicacion con acentos faltantes | Bajo (1 min) | Alto |
+| 8 | BUG 57 — `subirADrive` sin timeout | Bajo (5 min) | Alto |
+| 9 | BUG 60 — `fetch(video_url)` sin timeout | Bajo (1 línea) | Alto |
+| 10 | Variables `GOOGLE_*` en VPS (no es código) | Bajo (5 min) | Alto |
+| 11 | BUG 53 — 6 acentos faltantes en AplicarModal | Bajo (5 min) | Alto |
+| 12 | BUG 26 — Markdown asteriscos en Kyo | Bajo (10 min) | Alto |
+| 13 | BUG 55 — `kyo_mensaje` graba datos personales | Bajo (1 línea) | Alto |
+| 14 | BUG 46 — Acento "aquí" en saludo inicial Kyo | Bajo (1 min) | Alto |
+| 15 | BUG 44 — Registro usted/tú inconsistente en prompt | Bajo (15 min) | Alto |
+| 16 | BUG 51 — Fallback "MXN bruto" en vacantes sin salario_nota | Bajo (1 min) | Alto |
+| 17 | BUG 54 — "Mas de $20k" sin acento | Bajo (1 min) | Medio |
+| 18 | BUG 59 — StoryboardView no renderiza estado archivado | Bajo (20 min) | Medio |
+| 19 | Avisar a candidato que puede seguir chateando tras navegación | Bajo (10 min) | Alto |
+| 20 | BUG 49 — reset() no limpia sessionStorage | Bajo (1 línea) | Medio |
+| 21 | BUG 47 — salario_nota faltante en search_jobs | Bajo (20 min) | Medio |
+| 22 | BUG 58 — rutaDeStorage falla silenciosamente | Bajo (5 min) | Medio |
+| 23 | BUG 48 — Sin ARIA live region en chat widget | Bajo (1 línea) | Medio |
+| 24 | BUG 52 — Pérdida de perfil en conversaciones largas | Bajo (1 línea) | Medio |
+| 25 | Auditoría auth endpoints /api/admin/ | Bajo (revisión) | Crítico |
+| 26 | Timeout en fetch del chat (useChat.ts) | Bajo (15 min) | Medio |
+| 27 | Barra CTA sticky en mobile (/vacantes/[id]) | Bajo (CSS) | Alto |
+| 28 | Altura widget en iPhone SE | Bajo (1 min) | Medio |
+| 29 | Empty state vacantes → CTA abrir Kyo | Bajo (30 min) | Medio |
+| 30 | Filtros jornada/contrato en search_jobs | Bajo (20 min) | Alto |
+| 31 | Notificación cliente video TikTok listo | Bajo (30 min) | Medio |
+| 32 | Banner progreso durante archivado a Drive | Bajo (UI) | Medio |
+| 33 | Tool register_talent_interest | Medio | Alto |
+| 34 | Tour novedad en pestaña Análisis | Bajo (1 línea) | Medio |
+| 35 | BUG 16 — Memory leak rateLimitMap | Bajo (5 min) | Medio |
+| 36 | BUG 50 — generateStaticParams usa JOBS hardcoded | Medio | Bajo |
+| 37 | Avatares externos (pravatar.cc) en Hero | Bajo (30 min) | Bajo |
