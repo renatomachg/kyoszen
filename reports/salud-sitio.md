@@ -1,25 +1,27 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-07-04 08:20 UTC
+**Fecha:** 2026-07-04 08:41 UTC
 
 | Pagina | URL | HTTP | Tiempo | Estado |
 |--------|-----|------|--------|--------|
-| Home | / | 200 | 0.003878s | ✅ OK |
-| Vacantes | /vacantes | 200 | 0.005098s | ✅ OK |
-| Cursos | /cursos | 200 | 0.002848s | ✅ OK |
-| Nosotros | /nosotros | 200 | 0.002985s | ✅ OK |
-| Contacto | /contacto | 200 | 0.006836s | ✅ OK |
-| Servicios | /servicios | 200 | 0.003084s | ✅ OK |
-| Blog | /blog | 200 | 0.004177s | ✅ OK |
-| Admin Login | /admin/login | 200 | 0.003189s | ✅ OK |
+| Home | / | 200 | 0.002868s | ✅ OK |
+| Vacantes | /vacantes | 200 | 0.002230s | ✅ OK |
+| Cursos | /cursos | 200 | 0.002241s | ✅ OK |
+| Nosotros | /nosotros | 200 | 0.002734s | ✅ OK |
+| Contacto | /contacto | 200 | 0.002692s | ✅ OK |
+| Servicios | /servicios | 200 | 0.002445s | ✅ OK |
+| Blog | /blog | 200 | 0.002323s | ✅ OK |
+| Admin Login | /admin/login | 200 | 0.002311s | ✅ OK |
 
 ## Proceso PM2
 
 | Campo | Valor |
 |-------|-------|
 | Estado | online |
-| Uptime | 3m |
-| Reinicios totales | 938 |
-| Memoria | 68.9MB |
+| Uptime | 18m |
+| Memoria | 69.5MB |
+| Reinicios desde ultimo chequeo (~0h) | 0 |
+| Caidas recuperadas por watchdog hoy | 0 |
+| Reinicios totales (acumulado historico) | 939 |
 
 ## Resumen
 
