@@ -391,6 +391,212 @@ function PropuestaEditor({ post, version, onSaved, onCancel }: { post: Post; ver
   );
 }
 
+/* ─── Editor del Storyboard (guion, solo interno) ── */
+function StoryboardEditor({ post, version, onSaved, onCancel }: { post: Post; version: Version; onSaved: () => void; onCancel: () => void }) {
+  const sbActual: import("@/components/social/StoryboardView").Storyboard = version.storyboard ?? {};
+  const [audiencia, setAudiencia] = useState(sbActual.audiencia ?? "");
+  const [duracion, setDuracion] = useState(sbActual.duracion ?? "");
+  const [frames, setFrames] = useState<import("@/components/social/StoryboardView").Frame[]>(
+    sbActual.frames?.length ? sbActual.frames : [{ tc: "", tipo: "hook", overlay: "", escena: "", dice: "" }]
+  );
+  const [cta, setCta] = useState(sbActual.cta ?? "");
+  const [hashtags, setHashtags] = useState(sbActual.hashtags ?? "");
+  const [notaProduccion, setNotaProduccion] = useState(sbActual.nota_produccion ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const lab: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 5 };
+  const inp: React.CSSProperties = { width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "9px 11px", fontSize: 13, outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box" };
+
+  const setFrame = (i: number, patch: Partial<import("@/components/social/StoryboardView").Frame>) =>
+    setFrames(frames.map((f, j) => (j === i ? { ...f, ...patch } : f)));
+
+  const guardar = async () => {
+    setSaving(true);
+    const storyboard = {
+      ...sbActual,
+      audiencia: audiencia.trim(),
+      duracion: duracion.trim(),
+      frames: frames.filter((f) => f.tc || f.overlay || f.escena || f.dice),
+      cta: cta.trim(),
+      hashtags: hashtags.trim(),
+      nota_produccion: notaProduccion.trim(),
+    };
+    try {
+      const res = await fetch(`/api/admin/social/posts/${post.id}/versions`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storyboard }),
+      });
+      if (!res.ok) throw new Error();
+      onSaved();
+    } catch {
+      alert("Error al guardar. Intenta de nuevo.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+        <div style={{ flex: 1 }}>
+          <label style={lab}>Audiencia</label>
+          <input value={audiencia} onChange={(e) => setAudiencia(e.target.value)} placeholder="Ej. Candidatos operativos" style={inp} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={lab}>Duración</label>
+          <input value={duracion} onChange={(e) => setDuracion(e.target.value)} placeholder="Ej. 30 seg" style={inp} />
+        </div>
+      </div>
+
+      <label style={lab}>Cuadros</label>
+      {frames.map((f, i) => (
+        <div key={i} style={{ border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 12, marginBottom: 10 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
+            <input value={f.tc} onChange={(e) => setFrame(i, { tc: e.target.value })} placeholder="TC (ej. 0:00-0:03)" style={{ ...inp, flex: 1 }} />
+            <select value={f.tipo} onChange={(e) => setFrame(i, { tipo: e.target.value })} style={{ ...inp, flex: "0 0 110px" }}>
+              <option value="hook">Hook</option>
+              <option value="normal">Normal</option>
+              <option value="cta">CTA</option>
+            </select>
+            <button onClick={() => setFrames(frames.length > 1 ? frames.filter((_, j) => j !== i) : frames)} title="Quitar cuadro"
+              style={{ flexShrink: 0, width: 34, borderRadius: 9, border: "1.5px solid #FECACA", background: "#FEF2F2", color: "#DC2626", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>×</button>
+          </div>
+          <textarea value={f.overlay} onChange={(e) => setFrame(i, { overlay: e.target.value })} placeholder="Texto en pantalla (overlay)" rows={2} style={{ ...inp, resize: "vertical", marginBottom: 8 }} />
+          <input value={f.escena} onChange={(e) => setFrame(i, { escena: e.target.value })} placeholder="Descripción de la escena" style={{ ...inp, marginBottom: 8 }} />
+          <textarea value={f.dice} onChange={(e) => setFrame(i, { dice: e.target.value })} placeholder="Lo que dice (línea hablada)" rows={2} style={{ ...inp, resize: "vertical" }} />
+        </div>
+      ))}
+      <button onClick={() => setFrames([...frames, { tc: "", tipo: "normal", overlay: "", escena: "", dice: "" }])}
+        style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 8, padding: "5px 12px", fontSize: 11.5, fontWeight: 700, color: "#1E40AF", cursor: "pointer", marginBottom: 14 }}>+ Agregar cuadro</button>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>CTA</label>
+        <input value={cta} onChange={(e) => setCta(e.target.value)} style={inp} />
+      </div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>Hashtags</label>
+        <input value={hashtags} onChange={(e) => setHashtags(e.target.value)} style={inp} />
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <label style={lab}>Nota de producción (interno)</label>
+        <textarea value={notaProduccion} onChange={(e) => setNotaProduccion(e.target.value)} rows={3} placeholder="Notas para quien monta el video" style={{ ...inp, resize: "vertical" }} />
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={guardar} disabled={saving}
+          style={{ flex: 1, background: "#042E7B", border: "none", borderRadius: 10, padding: "10px 0", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+          {saving ? "Guardando..." : "Guardar"}
+        </button>
+        <button onClick={onCancel} disabled={saving}
+          style={{ background: "none", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "10px 16px", color: "#64748B", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+      </div>
+      <p style={{ margin: "10px 0 0", fontSize: 11, color: "#94A3B8", lineHeight: 1.5 }}>Esto es solo interno — el cliente nunca ve el storyboard.</p>
+    </div>
+  );
+}
+
+/* ─── Editor de la Guía técnica (solo interno) ── */
+function GuiaTecnicaEditor({ post, version, onSaved, onCancel }: { post: Post; version: Version; onSaved: () => void; onCancel: () => void }) {
+  const sbActual: import("@/components/social/StoryboardView").Storyboard = version.storyboard ?? {};
+  const guia: import("@/components/social/StoryboardView").GuiaTecnica = sbActual.guia_tecnica ?? {};
+  const [prompt, setPrompt] = useState(guia.prompt ?? "");
+  const [lineaHablada, setLineaHablada] = useState(guia.linea_hablada ?? "");
+  const [montaje, setMontaje] = useState<import("@/components/social/StoryboardView").MontajeBeat[]>(
+    guia.montaje?.length ? guia.montaje : [{ beat: "", texto: "", color: "", nota: "" }]
+  );
+  const [caption, setCaption] = useState(guia.caption ?? "");
+  const [hashtags, setHashtags] = useState(guia.hashtags ?? "");
+  const [ctaTecnica, setCtaTecnica] = useState(guia.cta_tecnica ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const lab: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 5 };
+  const inp: React.CSSProperties = { width: "100%", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "9px 11px", fontSize: 13, outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box" };
+
+  const setBeat = (i: number, patch: Partial<import("@/components/social/StoryboardView").MontajeBeat>) =>
+    setMontaje(montaje.map((m, j) => (j === i ? { ...m, ...patch } : m)));
+
+  const guardar = async () => {
+    setSaving(true);
+    const storyboard = {
+      ...sbActual,
+      guia_tecnica: {
+        ...guia,
+        prompt: prompt.trim(),
+        linea_hablada: lineaHablada.trim(),
+        montaje: montaje.filter((m) => m.beat || m.texto || m.color || m.nota),
+        caption: caption.trim(),
+        hashtags: hashtags.trim(),
+        cta_tecnica: ctaTecnica.trim(),
+      },
+    };
+    try {
+      const res = await fetch(`/api/admin/social/posts/${post.id}/versions`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storyboard }),
+      });
+      if (!res.ok) throw new Error();
+      onSaved();
+    } catch {
+      alert("Error al guardar. Intenta de nuevo.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>Prompt Higgsfield · clip principal</label>
+        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4}
+          style={{ ...inp, resize: "vertical", fontFamily: "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" }} />
+      </div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>Línea hablada</label>
+        <textarea value={lineaHablada} onChange={(e) => setLineaHablada(e.target.value)} rows={2} style={{ ...inp, resize: "vertical" }} />
+      </div>
+
+      <label style={lab}>Montaje · texto por beat (CapCut)</label>
+      {montaje.map((m, i) => (
+        <div key={i} style={{ border: "1.5px solid #E2E8F0", borderRadius: 10, padding: 12, marginBottom: 10 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <input value={m.beat ?? ""} onChange={(e) => setBeat(i, { beat: e.target.value })} placeholder="Beat (ej. 0:00-0:03)" style={{ ...inp, flex: 1 }} />
+            <input value={m.color ?? ""} onChange={(e) => setBeat(i, { color: e.target.value })} placeholder="#042E7B" style={{ ...inp, flex: "0 0 110px" }} />
+            <button onClick={() => setMontaje(montaje.length > 1 ? montaje.filter((_, j) => j !== i) : montaje)} title="Quitar beat"
+              style={{ flexShrink: 0, width: 34, borderRadius: 9, border: "1.5px solid #FECACA", background: "#FEF2F2", color: "#DC2626", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>×</button>
+          </div>
+          <input value={m.texto ?? ""} onChange={(e) => setBeat(i, { texto: e.target.value })} placeholder="Texto en pantalla" style={{ ...inp, marginBottom: 8 }} />
+          <input value={m.nota ?? ""} onChange={(e) => setBeat(i, { nota: e.target.value })} placeholder="Nota" style={inp} />
+        </div>
+      ))}
+      <button onClick={() => setMontaje([...montaje, { beat: "", texto: "", color: "", nota: "" }])}
+        style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 8, padding: "5px 12px", fontSize: 11.5, fontWeight: 700, color: "#1E40AF", cursor: "pointer", marginBottom: 14 }}>+ Agregar beat</button>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>Caption</label>
+        <textarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={2} style={{ ...inp, resize: "vertical" }} />
+      </div>
+      <div style={{ marginBottom: 14 }}>
+        <label style={lab}>Hashtags</label>
+        <input value={hashtags} onChange={(e) => setHashtags(e.target.value)} style={inp} />
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <label style={lab}>CTA técnica</label>
+        <input value={ctaTecnica} onChange={(e) => setCtaTecnica(e.target.value)} style={inp} />
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={guardar} disabled={saving}
+          style={{ flex: 1, background: "#042E7B", border: "none", borderRadius: 10, padding: "10px 0", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+          {saving ? "Guardando..." : "Guardar"}
+        </button>
+        <button onClick={onCancel} disabled={saving}
+          style={{ background: "none", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "10px 16px", color: "#64748B", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+      </div>
+      <p style={{ margin: "10px 0 0", fontSize: 11, color: "#94A3B8", lineHeight: 1.5 }}>Esto es solo interno — el cliente nunca ve la guía técnica.</p>
+    </div>
+  );
+}
+
 function PasoArchivo({ icon, titulo, texto }: { icon: string; titulo: string; texto: string }) {
   return (
     <div style={{ display: "flex", gap: 11, alignItems: "flex-start" }}>
@@ -418,6 +624,8 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
   const tieneTec = !!sb?.guia_tecnica;
   const [docTab, setDocTab] = useState<"propuesta" | "storyboard" | "tecnica">("propuesta");
   const [editandoProp, setEditandoProp] = useState(false);
+  const [editandoStoryboard, setEditandoStoryboard] = useState(false);
+  const [editandoTecnica, setEditandoTecnica] = useState(false);
 
   const subirVideo = async (file: File | null) => {
     if (!file) return;
@@ -548,16 +756,14 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
           style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "propuesta" ? "#fff" : "transparent", color: docTab === "propuesta" ? "#042E7B" : "#64748B", boxShadow: docTab === "propuesta" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
           📋 Propuesta <span style={{ fontSize: 9.5, color: "#16A34A" }}>· cliente</span>
         </button>
-        <button onClick={() => setDocTab("storyboard")}
+        <button onClick={() => { setDocTab("storyboard"); setEditandoStoryboard(false); }}
           style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "storyboard" ? "#fff" : "transparent", color: docTab === "storyboard" ? "#042E7B" : "#64748B", boxShadow: docTab === "storyboard" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
           🎬 Storyboard
         </button>
-        {tieneTec && (
-          <button onClick={() => setDocTab("tecnica")}
-            style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "tecnica" ? "#fff" : "transparent", color: docTab === "tecnica" ? "#042E7B" : "#64748B", boxShadow: docTab === "tecnica" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
-            🛠️ Guía técnica
-          </button>
-        )}
+        <button onClick={() => { setDocTab("tecnica"); setEditandoTecnica(false); }}
+          style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "tecnica" ? "#fff" : "transparent", color: docTab === "tecnica" ? "#042E7B" : "#64748B", boxShadow: docTab === "tecnica" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
+          🛠️ Guía técnica
+        </button>
       </div>
 
       {docTab === "propuesta" ? (
@@ -575,9 +781,33 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
               : <p style={{ margin: 0, fontSize: 13, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "12px 14px" }}>Esta publicación aún no tiene propuesta. Toca <b>✏️ Editar propuesta</b> para crear la que verá el cliente.</p>}
           </>
         )
-      ) : docTab === "tecnica" && tieneTec
-        ? <GuiaTecnicaView guia={sb?.guia_tecnica} />
-        : <StoryboardView sb={version.storyboard} caption={version.caption} showProduccion />}
+      ) : docTab === "storyboard" ? (
+        editandoStoryboard ? (
+          <StoryboardEditor post={post} version={version} onSaved={() => { setEditandoStoryboard(false); onUpdated(); }} onCancel={() => setEditandoStoryboard(false)} />
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 10 }}>
+              <button onClick={() => setEditandoStoryboard(true)}
+                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>✏️ Editar storyboard</button>
+            </div>
+            <StoryboardView sb={version.storyboard} caption={version.caption} showProduccion />
+          </>
+        )
+      ) : (
+        editandoTecnica ? (
+          <GuiaTecnicaEditor post={post} version={version} onSaved={() => { setEditandoTecnica(false); onUpdated(); }} onCancel={() => setEditandoTecnica(false)} />
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 10 }}>
+              <button onClick={() => setEditandoTecnica(true)}
+                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>✏️ Editar guía técnica</button>
+            </div>
+            {tieneTec
+              ? <GuiaTecnicaView guia={sb?.guia_tecnica} />
+              : <p style={{ margin: 0, fontSize: 13, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "12px 14px" }}>Esta publicación aún no tiene guía técnica. Toca <b>✏️ Editar guía técnica</b> para crearla.</p>}
+          </>
+        )
+      )}
 
       <input ref={fileRef} type="file" accept="video/*" style={{ display: "none" }} onChange={(e) => subirVideo(e.target.files?.[0] ?? null)} />
 
