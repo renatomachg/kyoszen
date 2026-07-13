@@ -1,6 +1,6 @@
 # 📊 REPORTE DE TENDENCIAS KYOSZEN — JULIO 2026
 
-**Generado:** 2 de julio de 2026 *(actualizado al 7 de julio — post México vs Inglaterra)*
+**Generado:** 2 de julio de 2026 *(actualizado al 13 de julio — datos IMSS H1, audio Bangladesh, semifinales Mundial)*
 **Preparado por:** Trends Analyst — ciclo mensual automático
 **Para:** Content Strategist · equipo de producción de contenido
 
@@ -217,8 +217,54 @@
 
 ---
 
-*Versión inicial: 2 de julio de 2026 · Actualización post-partido México vs Inglaterra: 7 de julio de 2026*
+---
+
+## 🔄 Actualización — 13 de julio de 2026
+
+### Datos IMSS H1 2026 (publicados 8-9 jul) — el dato B2B más potente de la quincena
+El IMSS publicó los números definitivos del primer semestre:
+- **262,628 empleos formales creados** en enero-junio 2026 (junio recuperó +61,023 tras el dip de mayo de -30,000)
+- **22.7 millones de afiliados** — máximo histórico para cualquier mes de junio
+- Salario promedio de cotización: **$669 pesos diarios** — también récord histórico
+- Sectores líderes: **transporte y comunicaciones (+15.8% AoA), manufactura/nearshoring, logística**
+- Estados que jalan: **EDOMEX, CDMX, Baja California**
+
+**Ángulo para Kyoszen:** Giro importante respecto al dato de Q1 — ahora hay narrativa positiva de recuperación. Para Facebook B2B: carrusel "El empleo formal se recupera: 22.7 millones de afiliados al IMSS — lo que significa para tu empresa en el segundo semestre". Para TikTok candidatos: "Si buscas empleo formal, este es el momento — el mercado se está reactivando en estos sectores."
+
+**Perspectiva ManpowerGroup Q3:** 45% de empleadores planea contratar julio-septiembre, aunque la confianza bajó -13 pp vs Q2 — espacio real para el servicio de Kyoszen como aliado de reclutamiento especializado.
+
+---
+
+### Nuevo audio TikTok — "Bangladesh" de Ian McConnell (identificado 13 jul)
+Audio absurdista/cómico que está explotando en el FYP global y tiene adopción activa en LATAM. Las marcas lo están usando para el formato "lo que los empleados realmente quieren / lo que el jefe escucha". Oportunidad directa para contenido de RRHH con humor.
+
+**Tipo de video sugerido:** "Lo que el candidato pide en la entrevista / vs lo que realmente necesita" o "Lo que dice el Director de RRHH en la junta vs lo que piensa el equipo." Formato cómico, 15–25 segundos. Bajo costo de producción, alto potencial orgánico.
+
+**Estado:** En ventana de oportunidad ahora — usar esta semana. [Verificar en TikTok Creative Center > Trends > México antes de publicar.]
+
+---
+
+### Copa Mundial — Semifinales y Final (ganchos vigentes)
+| Fecha | Partido | Gancho para Kyoszen |
+|---|---|---|
+| **Jul 14** | Francia vs. España — AT&T Stadium, Dallas | "Los mejores frente a los mejores — asi buscamos al talento para tu empresa: sin conformarse" |
+| **Jul 15** | Argentina vs. Inglaterra — Mercedes-Benz, Atlanta | "No importa de qué lado estés — lo que hace ganar a un equipo es la cultura y el talento correcto" |
+| **Jul 19** | Final — MetLife Stadium, NY/NJ (13:00 CDMX) | Cierre del ciclo mundialista — contenido de equipos de alto rendimiento, cierre de semestre |
+
+El Mundial sigue siendo el mayor amplificador orgánico de la semana. Los ganchos deportivos con ángulo de cultura organizacional y liderazgo tienen alcance orgánico superior en ambas plataformas.
+
+---
+
+### Normatividad adicional — Dos temas emergentes para contenido de autoridad
+1. **Brecha salarial de género — reforma de inspección:** El Senado está avanzando un refuerzo a los poderes de auditoría de la STPS para identificar y sancionar brechas salariales de género. Ángulo: "Las empresas que se adelanten a esta reforma tendrán ventaja competitiva en atracción de talento femenino."
+2. **Ley Silla:** La obligación de proporcionar asiento digno a trabajadores que permanecen de pie está consolidándose como tema de cumplimiento activo en 2026. Sectores: retail, manufactura, servicios. Ángulo: "¿Tu empresa ya cumple con la Ley Silla? Aqui lo que necesitas saber."
+
+---
+
+*Versión inicial: 2 de julio de 2026 · Actualización post-partido México vs Inglaterra: 7 de julio de 2026 · Actualización 13 de julio: datos IMSS H1, audio Bangladesh, semifinales*
 
 *Fuentes consultadas (versión inicial): CNN Español resultado México-Ecuador 1 jul 2026, Infobae/El Financiero/Mediotiempo México vs Inglaterra 5 jul fecha y sede, FIFA calendario Copa del Mundo 2026, INEGI ENOE/IOOE 2026, México Cómo Vamos empleo formal Q1 2026, Infobae México reforma laboral 40 horas, Gob.mx STPS reforma 40 horas LFT, Fortia tendencias RRHH 2026, Wellhub tendencias y retos RRHH 2026, iSmartRecruit tendencias reclutamiento 2026, Randstad mercado laboral México 2026, TikTok Newsroom Next Report 2026 LATAM, Marketing4Ecommerce tendencias TikTok México 2026.*
 
 *Fuentes adicionales (actualización 7 jul): ESPN Deportes resultado México vs Inglaterra 5 jul 2026, CNN en Español resultado México 2-3 Inglaterra, La Nacion AR crónica del partido, Tokchart Top Trending TikTok 7 jul 2026 (Summer Days #1 global), México Cómo Vamos empleo formal Q1 2026 (207,604 puestos IMSS — peor desde 2005), INEGI ENOE desocupación mayo 2026 (2.80%), Zety informe tendencias Gen Z 2026 (Job Hopping 55%, Quiet Quitting 47%, Act Your Wage 37%), Wellhub RRHH 2026, Fortia Tendencias RRHH México 2026.*
+
+*Fuentes adicionales (actualización 13 jul): El Informador/LatinUS IMSS H1 2026 (262,628 empleos formales, 22.7M afiliados — máximo histórico), Revista Fortuna perspectivas empleo Q3 2026 ManpowerGroup (45% empleadores planean contratar), Tokchart tendencias TikTok 13 jul 2026 ("Bangladesh" Ian McConnell en FYP), Buffer Trending Songs TikTok julio 2026, El Tiempo Latino/Prensa Libre semifinales Copa Mundial 2026 (fechas y sedes jul 14-15-19), aturnos.com/Wellhub/Littler reforma jornada laboral México 2026 (detalles graduales 2027-2030), Senado México reforma brecha salarial de género STPS.*
