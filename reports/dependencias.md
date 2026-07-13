@@ -1,5 +1,5 @@
 # Reporte de Dependencias — Kyoszen
-**Fecha:** 2026-07-06
+**Fecha:** 2026-07-13
 
 ## Vulnerabilidades de Seguridad
 
@@ -29,25 +29,41 @@
 
 #### `nodemailer` — instalado: 6.10.1 | Fix: 9.0.3 (breaking change — v6→v9)
 
-| Advisory | Severidad | CVSS | Descripción |
-|----------|-----------|------|-------------|
-| GHSA-rcmh-qjqh-p98v | HIGH | 7.5 | DoS por llamadas recursivas en el parser de direcciones |
-| GHSA-mm7p-fcc7-pg87 | MODERATE | — | Email enviado a dominio no deseado por conflicto de interpretación |
-| GHSA-c7w3-x93f-qmm8 | LOW | — | Inyección de comandos SMTP vía `envelope.size` no saneado |
+| Advisory | Severidad | Descripción |
+|----------|-----------|-------------|
+| — | HIGH | SMTP command injection vía `envelope.size` no saneado |
+| — | HIGH | SMTP command injection vía CRLF en Transport name (EHLO/HELO) |
+| — | HIGH | CRLF injection en encabezados List-* (message header injection) |
+| — | HIGH | Validación incorrecta de certificado TLS en OAuth2 Token Fetch (interception de credenciales) |
+| — | HIGH | Email enviado a dominio no intencionado por conflicto de interpretación |
+| — | HIGH | `jsonTransport` bypasses `disableFileAccess`/`disableUrlAccess` en normalización del mensaje |
+| — | HIGH | Opción `raw` a nivel mensaje permite lectura de archivos arbitrarios y SSRF |
+| — | HIGH | DoS por llamadas recursivas en `addressparser` |
 
 > Requiere salto a v9 (breaking change). Revisar changelog y probar flujo SMTP IONOS en local antes de hacer deploy.
 
 ---
 
+#### `ws` — versión indirecta (vía Next.js)
+
+| Advisory | Severidad | Descripción |
+|----------|-----------|-------------|
+| — | HIGH | Divulgación de memoria no inicializada |
+| — | HIGH | DoS por agotamiento de memoria via fragmentos y chunks pequeños |
+
+> Se resuelve actualizando `next` a 16.2.10.
+
+---
+
 ### MODERADO
 
-#### `@anthropic-ai/sdk` — instalado: 0.89.0 | Fix: 0.110.0
+#### `@anthropic-ai/sdk` — instalado: 0.89.0 | Fix: ≥0.91.1 (última: 0.111.0)
 
 | Advisory | Severidad | Descripción |
 |----------|-----------|-------------|
 | GHSA-p7fg-763f-g4gf | MODERATE | Permisos de archivo inseguros en la herramienta de memoria de sistema de archivos local (CWE-732). Rango afectado: 0.79.0–0.91.0. |
 
-> La herramienta vulnerable (Local Filesystem Memory) no se usa en Kyoszen, pero la versión instalada acumula 21 versiones de atraso. Actualizar es recomendable.
+> La herramienta vulnerable (Local Filesystem Memory) no se usa en Kyoszen, pero la versión instalada acumula 22 versiones de atraso (0.89→0.111). Actualizar recomendable.
 
 ---
 
@@ -57,6 +73,7 @@
 |---------|----------|-----------|-------------|
 | `brace-expansion` 5.0.2–5.0.5 | GHSA-jxxr-4gwj-5jf2 | MODERATE | DoS: rango numérico grande supera protección `max` |
 | `js-yaml` 4.0.0–4.1.1 | GHSA-h67p-54hq-rp68 | MODERATE | DoS por complejidad cuadrática en claves merge con alias repetidos |
+| `postcss` | — | MODERATE | XSS via `</style>` sin escapar en CSS Stringify Output |
 | `@babel/core` ≤7.29.0 | GHSA-4x5r-pxfx-6jf8 | LOW | Lectura arbitraria de archivos vía `sourceMappingURL` |
 
 ---
@@ -65,16 +82,16 @@
 
 | Paquete | Instalado | Última versión | Severidad |
 |---------|-----------|----------------|-----------|
-| `next` | 16.2.3 | **16.2.10** | CRITICO — 7 CVEs HIGH (SSRF CVSS 8.6, bypass auth, DoS), patch sin breaking changes |
-| `nodemailer` | 6.10.1 | **9.0.3** | CRITICO — HIGH DoS + inyección SMTP, salto de 3 versiones mayores |
-| `@anthropic-ai/sdk` | 0.89.0 | **0.110.0** | ADVERTENCIA — CVE moderado, 21 versiones de atraso |
+| `next` | 16.2.3 | **16.2.10** | CRITICO — 13+ CVEs (SSRF 8.6, bypass auth 8.1, DoS), patch sin breaking changes |
+| `nodemailer` | 6.10.1 | **9.0.3** | CRITICO — 8 CVEs HIGH incluyendo inyección SMTP y SSRF, salto de 3 versiones mayores |
+| `@anthropic-ai/sdk` | 0.89.0 | **0.111.0** | ADVERTENCIA — CVE moderado, 22 versiones de atraso |
 | `react` | 19.2.4 | 19.2.7 | INFO — parches menores |
 | `react-dom` | 19.2.4 | 19.2.7 | INFO — parches menores |
-| `@supabase/supabase-js` | ~2.103.x | 2.110.0 | INFO — actualización menor disponible |
-| `framer-motion` | ~12.38.x | 12.42.2 | INFO — parches menores |
-| `lucide-react` | ~1.8.x | 1.23.0 | INFO — nuevos íconos |
-| `marked` | ~18.0.x | 18.0.5 | INFO — parches menores |
-| `unpdf` | 1.6.2 | 1.6.2 | Al día |
+| `@supabase/supabase-js` | ✅ al día | 2.110.3 | OK |
+| `framer-motion` | ✅ al día | 12.42.2 | OK |
+| `lucide-react` | ✅ al día | 1.24.0 | OK |
+| `marked` | ✅ al día | 18.0.6 | OK |
+| `unpdf` | ✅ al día | 1.6.2 | OK |
 
 ---
 
@@ -82,13 +99,14 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Total paquetes instalados (incluyendo transitivos) | 531 |
-| Paquetes con vulnerabilidades | 8 (en 16 advisories) |
+| Total paquetes directos | 20 (10 deps + 10 devDeps) |
+| Paquetes con vulnerabilidades | 8 |
 | — Críticas | 0 |
-| — Altas | 3 paquetes (`next` ×7, `nodemailer` ×1, transitivas) |
-| — Moderadas | 4 |
-| — Bajas | 1 |
-| Paquetes directos desactualizados | 9 |
+| — Altas | 3 paquetes (`next`, `nodemailer`, `ws` indirecta) |
+| — Moderadas | 4 (`@anthropic-ai/sdk`, `brace-expansion`, `js-yaml`, `postcss`) |
+| — Bajas | 1 (`@babel/core`) |
+| CVEs de severidad alta activos | 17 (next: 7, nodemailer: 8, ws: 2) |
+| Paquetes directos desactualizados | 5 |
 | Paquetes directos con CVEs activos | 3 (`next`, `nodemailer`, `@anthropic-ai/sdk`) |
 
 ---
@@ -103,7 +121,7 @@ npm run build
 # Probar en local (localhost:3002) → aprobar → deploy a VPS
 ```
 
-Resuelve 13 advisories de un golpe, incluyendo SSRF (8.6) y bypass de autenticación (8.1). Sin riesgo de regresión (patch 16.2.3→16.2.10).
+Resuelve 13+ advisories de un golpe, incluyendo SSRF (8.6), bypass de autenticación (8.1) y DoS. Sin riesgo de regresión (patch 16.2.3→16.2.10). También cierra las 2 vulnerabilidades HIGH de `ws` que son indirectas vía Next.js.
 
 ### Acción 2 — URGENTE: actualizar `nodemailer` a v9
 
@@ -115,16 +133,17 @@ Revisar API de `createTransport` y opciones SMTP — hubo cambios en v7+. Archiv
 - `src/app/api/aplicar/route.ts`
 - `src/app/api/contacto/route.ts`
 - `src/app/api/admin/social/` (rutas que envíen correo)
+- `src/app/api/admin/resumen/route.ts`
 
 Probar flujo completo de correo IONOS en local antes de hacer deploy.
 
-### Acción 3 — URGENTE: actualizar `@anthropic-ai/sdk`
+### Acción 3 — RECOMENDADA: actualizar `@anthropic-ai/sdk`
 
 ```bash
 npm install @anthropic-ai/sdk@latest
 ```
 
-Probar Kyo (`/api/assistant/chat`) y el Estratega (streaming) en local antes de deploy. Verificar que los schemas de tool-use no hayan cambiado.
+Probar Kyo (`/api/assistant/chat`) y el Estratega (streaming) en local antes de deploy. Verificar que los schemas de tool-use no hayan cambiado con el salto de versión mayor.
 
 ### Acción 4 — INFO: parches menores (próximo ciclo de mantenimiento)
 
@@ -133,10 +152,10 @@ npm install react@19.2.7 react-dom@19.2.7
 ```
 
 ### No hacer
-- No correr `npm audit fix --force` — puede degradar `next` a una versión antigua.
+- No correr `npm audit fix --force` — puede degradar `next` a una versión antigua o introducir cambios no probados.
 - No actualizar `nodemailer` en producción sin probar el flujo SMTP IONOS en local primero.
 - No actualizar `@anthropic-ai/sdk` sin probar Kyo y el Estratega en local.
 
 ---
 
-*Generado automáticamente por el agente de mantenimiento. No modificar manualmente — regenerar con el mismo agente.*
+*Generado automáticamente por el agente de mantenimiento — 2026-07-13. No modificar manualmente.*
