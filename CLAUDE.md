@@ -378,6 +378,11 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
+2026-07-13 — **Mover publicaciones a cualquier fecha + cursos de la semana de julio llenados.**
+- **"📅 Mover a otra fecha"** en el modal de detalle del admin de redes: la fecha del header es botón → selector de fecha (min hoy en hora LOCAL, no UTC) → PUT `fecha_programada` con manejo de error (`res.ok`, alert del error del server, try/catch/finally) → `onMoved` cierra el modal y `seguirFecha(iso)` navega el calendario al mes/semana destino (calcula `weekOffset`; si el offset no cambia, `loadData()` directo). Resuelve mover borradores entre meses lejanos sin arrastrar mes por mes. Revisado con `/codex review` (2 hallazgos corregidos: response.ok + fecha UTC).
+- **Cursos de la semana de julio**: los posts 84 (NOM-035, 21 jul) y 85 (Atención al Cliente, 27 jul) estaban con caption/nota_visual VACÍOS en `social_post_versions` — se llenaron vía SQL con el formato estándar (card ámbar, constancia de participación, sin DC-3/STPS). El post 85 usa el curso real "El Poder de Saber Servir al Cliente". Siguen en borrador; falta imagen.
+- **Flujo de trabajo acordado**: Fable (Claude Code) piensa/analiza/construye → skill `/codex` revisa el diff como segunda opinión (el skill codex es read-only: review/challenge/consult, no construye).
+
 2026-06-22 (tarde) — **Archivado de videos a Google Drive (liberar espacio) + fix de video en imagenes[].**
 - **Liberar espacio de videos publicados:** botón "🗄️ Liberar espacio" en el detalle del TikTok admin → sube el MP4 a Google Drive, genera **carátula** (ffmpeg, frame ~1s, JPG ~50KB), borra el original de Supabase Storage. **Solo borra si la subida a Drive tuvo éxito.** Metadata en `storyboard.archivado` (drive_url, drive_file_id, poster_url, archivado_en, peso_mb) — **sin migración de BD**. Endpoint `POST /api/admin/social/posts/[id]/archivar-video`. Modal de confirmación con CSS branded (cabecera navy + 3 pasos). Aviso suave si el video lleva +14 días programado.
 - **Estado "archivado" en admin y cliente:** muestra la carátula + chip + link a Drive (admin) / "✅ Publicado en redes" (cliente, sin link interno). Tarjeta del grid del revisor usa el poster. Tipo `ArchivadoVideo` en `StoryboardView.tsx`.

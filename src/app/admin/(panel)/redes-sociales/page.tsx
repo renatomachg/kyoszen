@@ -834,7 +834,7 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
   );
 }
 
-function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: PageConfig; onClose: () => void; onUpdated: () => void }) {
+function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post; config: PageConfig; onClose: () => void; onUpdated: () => void; onMoved?: (iso: string) => void }) {
   const red = getRedSocial(post.red_social);
   const active = post.social_post_versions.find((v) => v.es_activa) ?? post.social_post_versions[0];
   const old = post.social_post_versions.filter((v) => !v.es_activa).sort((a, b) => b.version_num - a.version_num);
@@ -853,6 +853,39 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
   const [publicado, setPublicado] = useState(post.publicado);
   const [togglingPub, setTogglingPub] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showMove, setShowMove] = useState(false);
+  const [moveDate, setMoveDate] = useState(post.fecha_programada);
+  const [moving, setMoving] = useState(false);
+  // Fecha de hoy en hora LOCAL (toISOString daría la fecha UTC, que en CDMX ya es "mañana" por la tarde)
+  const hoyIsoDetail = (() => {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  })();
+
+  const moverAFecha = async () => {
+    if (!moveDate || moveDate === post.fecha_programada) { setShowMove(false); return; }
+    if (moveDate < hoyIsoDetail) { alert("No puedes mover una publicación a una fecha pasada."); return; }
+    setMoving(true);
+    try {
+      const res = await fetch(`/api/admin/social/posts/${post.id}/versions`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fecha_programada: moveDate }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        alert(data?.error || "No se pudo mover la publicación. Intenta de nuevo.");
+        return;
+      }
+      setShowMove(false);
+      onMoved?.(moveDate);
+      onClose();
+    } catch {
+      alert("No se pudo mover la publicación. Revisa tu conexión e intenta de nuevo.");
+    } finally {
+      setMoving(false);
+    }
+  };
 
   const deletePost = async () => {
     if (!confirm("¿Eliminar esta publicación y todo su historial?")) return;
@@ -891,7 +924,23 @@ function PostDetail({ post, config, onClose, onUpdated }: { post: Post; config: 
                     <img src={red.logo} alt={red.nombre} style={{ height: 10, display: "block" }} />
                   </span>
                 : <RedLogo red_social={post.red_social} height={12} />}
-              <span style={{ color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 700, letterSpacing: ".3px" }}>{post.fecha_programada}</span>
+              {showMove ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <input type="date" value={moveDate} min={hoyIsoDetail} onChange={(e) => setMoveDate(e.target.value)}
+                    style={{ background: "rgba(255,255,255,.95)", border: "none", borderRadius: 7, padding: "3px 7px", fontSize: 11, fontWeight: 700, color: "#042E7B" }} />
+                  <button onClick={moverAFecha} disabled={moving}
+                    style={{ background: "#FFCC00", border: "none", borderRadius: 7, padding: "4px 9px", fontSize: 11, fontWeight: 800, color: "#042E7B", cursor: "pointer", opacity: moving ? 0.6 : 1 }}>
+                    {moving ? "..." : "✓ Mover"}
+                  </button>
+                  <button onClick={() => setShowMove(false)}
+                    style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 7, padding: "4px 8px", fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer" }}>✕</button>
+                </span>
+              ) : (
+                <button onClick={() => { setMoveDate(post.fecha_programada); setShowMove(true); }} title="Mover a otra fecha (cualquier mes)"
+                  style={{ background: "none", border: "1px solid rgba(255,255,255,.25)", borderRadius: 7, padding: "3px 9px", color: "rgba(255,255,255,.75)", fontSize: 11, fontWeight: 700, letterSpacing: ".3px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  {post.fecha_programada} <span style={{ opacity: 0.9 }}>📅 Mover</span>
+                </button>
+              )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <p style={{ margin: 0, color: "#fff", fontWeight: 900, fontSize: 16 }}>{post.titulo_interno || "Sin título interno"}</p>
@@ -1262,6 +1311,27 @@ export default function RedesSocialesPage() {
       body: JSON.stringify({ fecha_programada: nuevaIso }),
     });
     setWeekOffset((w) => w + dir); // seguir la publicación al nuevo periodo (dispara loadData)
+  };
+
+  // Navegar el calendario al periodo (mes o semana) que contiene la fecha dada
+  const seguirFecha = (iso: string) => {
+    const d = new Date(iso + "T12:00:00");
+    const now = new Date();
+    let off: number;
+    if (vista === "mes") {
+      off = (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth());
+    } else {
+      const lunesDe = (x: Date) => {
+        const m = new Date(x);
+        const day = m.getDay();
+        m.setDate(m.getDate() + (day === 0 ? -6 : 1 - day));
+        m.setHours(0, 0, 0, 0);
+        return m;
+      };
+      off = Math.round((lunesDe(d).getTime() - lunesDe(now).getTime()) / (7 * 24 * 3600 * 1000));
+    }
+    if (off === weekOffset) loadData();
+    else setWeekOffset(off);
   };
 
   const onCardDragStart = (e: RDragEvent, id: number) => {
@@ -1931,7 +2001,8 @@ export default function RedesSocialesPage() {
         <PostModal defaultDate={newPostDate} onClose={() => { setShowNewPost(false); setNewPostDate(undefined); }} onSaved={loadData} />
       )}
       {selectedPost && (
-        <PostDetail post={selectedPost} config={config} onClose={() => setSelectedPost(null)} onUpdated={loadData} />
+        <PostDetail post={selectedPost} config={config} onClose={() => setSelectedPost(null)} onUpdated={loadData}
+          onMoved={(iso) => { setSelectedPost(null); seguirFecha(iso); }} />
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
