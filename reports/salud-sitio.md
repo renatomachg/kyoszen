@@ -1,31 +1,19 @@
 # Reporte de Salud — Kyoszen
-**Fecha:** 2026-07-04 08:41 UTC
+**Fecha:** 2026-07-17 00:00 UTC
 
-| Pagina | URL | HTTP | Tiempo | Estado |
-|--------|-----|------|--------|--------|
-| Home | / | 200 | 0.002868s | ✅ OK |
-| Vacantes | /vacantes | 200 | 0.002230s | ✅ OK |
-| Cursos | /cursos | 200 | 0.002241s | ✅ OK |
-| Nosotros | /nosotros | 200 | 0.002734s | ✅ OK |
-| Contacto | /contacto | 200 | 0.002692s | ✅ OK |
-| Servicios | /servicios | 200 | 0.002445s | ✅ OK |
-| Blog | /blog | 200 | 0.002323s | ✅ OK |
-| Admin Login | /admin/login | 200 | 0.002311s | ✅ OK |
+| Página | URL | Estado |
+|--------|-----|--------|
+| Home | / | ⚠️ NO VERIFICADO |
+| Vacantes | /vacantes | ⚠️ NO VERIFICADO |
+| Cursos | /cursos | ⚠️ NO VERIFICADO |
+| Nosotros | /nosotros | ⚠️ NO VERIFICADO |
+| Contacto | /contacto | ⚠️ NO VERIFICADO |
+| Servicios | /servicios | ⚠️ NO VERIFICADO |
 
-## Proceso PM2
+**Resumen:** 0/6 páginas verificadas.
 
-| Campo | Valor |
-|-------|-------|
-| Estado | online |
-| Uptime | 18m |
-| Memoria | 69.5MB |
-| Reinicios desde ultimo chequeo (~0h) | 0 |
-| Caidas recuperadas por watchdog hoy | 0 |
-| Reinicios totales (acumulado historico) | 939 |
-
-## Resumen
-
-- **Paginas OK:** 8 / 8
-- **Advertencias (redirect):** 0
-- **Errores:** 0
-- **Estado general:** ✅ TODO OK
+> ⚠️ ALERTA DE MONITOREO: El entorno de ejecución remoto (Claude Code on the web) bloquea conexiones salientes a dominios externos mediante proxy (HTTP 403 Forbidden). Ni `kyoszen.vercel.app` ni `kyoszen.com` fueron alcanzables desde este entorno — el estado real del sitio es desconocido.
+>
+> **Acción recomendada:** Verificar manualmente en https://kyoszen.com, o configurar el monitoreo con un servicio externo como UptimeRobot o BetterUptime que no dependa del proxy de este entorno de ejecución.
+>
+> **Nota:** El deploy de producción está en el VPS Hostinger (kyoszen.com), no en Vercel.
