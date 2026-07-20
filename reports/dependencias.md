@@ -1,5 +1,5 @@
 # Reporte de Dependencias — Kyoszen
-**Fecha:** 2026-07-13
+**Fecha:** 2026-07-20
 
 ## Vulnerabilidades de Seguridad
 
@@ -57,7 +57,7 @@
 
 ### MODERADO
 
-#### `@anthropic-ai/sdk` — instalado: 0.89.0 | Fix: ≥0.91.1 (última: 0.111.0)
+#### `@anthropic-ai/sdk` — instalado: 0.89.0 | Fix: ≥0.91.1 (última: 0.112.3)
 
 | Advisory | Severidad | Descripción |
 |----------|-----------|-------------|
@@ -84,7 +84,7 @@
 |---------|-----------|----------------|-----------|
 | `next` | 16.2.3 | **16.2.10** | CRITICO — 13+ CVEs (SSRF 8.6, bypass auth 8.1, DoS), patch sin breaking changes |
 | `nodemailer` | 6.10.1 | **9.0.3** | CRITICO — 8 CVEs HIGH incluyendo inyección SMTP y SSRF, salto de 3 versiones mayores |
-| `@anthropic-ai/sdk` | 0.89.0 | **0.111.0** | ADVERTENCIA — CVE moderado, 22 versiones de atraso |
+| `@anthropic-ai/sdk` | 0.89.0 | **0.112.3** | ADVERTENCIA — CVE moderado, 23+ versiones de atraso |
 | `react` | 19.2.4 | 19.2.7 | INFO — parches menores |
 | `react-dom` | 19.2.4 | 19.2.7 | INFO — parches menores |
 | `@supabase/supabase-js` | ✅ al día | 2.110.3 | OK |
@@ -140,7 +140,7 @@ Probar flujo completo de correo IONOS en local antes de hacer deploy.
 ### Acción 3 — RECOMENDADA: actualizar `@anthropic-ai/sdk`
 
 ```bash
-npm install @anthropic-ai/sdk@latest
+npm install @anthropic-ai/sdk@0.112.3
 ```
 
 Probar Kyo (`/api/assistant/chat`) y el Estratega (streaming) en local antes de deploy. Verificar que los schemas de tool-use no hayan cambiado con el salto de versión mayor.
@@ -158,4 +158,4 @@ npm install react@19.2.7 react-dom@19.2.7
 
 ---
 
-*Generado automáticamente por el agente de mantenimiento — 2026-07-13. No modificar manualmente.*
+*Generado automáticamente por el agente de mantenimiento — 2026-07-20. No modificar manualmente.*
