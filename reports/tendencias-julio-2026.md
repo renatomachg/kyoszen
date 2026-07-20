@@ -1,6 +1,6 @@
 # 📊 REPORTE DE TENDENCIAS KYOSZEN — JULIO 2026
 
-**Generado:** 2 de julio de 2026 *(actualizado al 13 de julio — datos IMSS H1, audio Bangladesh, semifinales Mundial)*
+**Generado:** 2 de julio de 2026 *(actualizado al 20 de julio — Final Mundial España-Argentina, reforma laboral checklist, audios semana 4)*
 **Preparado por:** Trends Analyst — ciclo mensual automático
 **Para:** Content Strategist · equipo de producción de contenido
 
@@ -261,10 +261,73 @@ El Mundial sigue siendo el mayor amplificador orgánico de la semana. Los gancho
 
 ---
 
-*Versión inicial: 2 de julio de 2026 · Actualización post-partido México vs Inglaterra: 7 de julio de 2026 · Actualización 13 de julio: datos IMSS H1, audio Bangladesh, semifinales*
+---
+
+## 🔄 Actualización — 20 de julio de 2026
+
+### ⚽ España campeón del Mundial 2026 — cierre del ciclo mundialista
+
+España venció a Argentina **1-0 en tiempo extra** en la Final celebrada el 19 de julio en el MetLife Stadium (NY/NJ). El único gol fue de Ferrán Torres en el minuto 106'. España se corona campeón del mundo por segunda vez (la primera: Sudáfrica 2010). El show de medio tiempo reunió a **Shakira, BTS, Madonna y Justin Bieber** — el evento más visto en redes sociales de la semana.
+
+**Reacción en México:**
+- La presidenta Claudia Sheinbaum felicitó a España y destacó a México como "la mejor sede" del torneo.
+- Influencers mexicanos (Juanpa Zurita, Eugenio Derbez, Nicola Porcella) reaccionaron masivamente en redes.
+- Los memes de la Final en TikTok y X inundaron el FYP mexicano este lunes 20.
+
+**Ángulo para Kyoszen — cierre de semana:**
+El ciclo mundialista cierra definitivamente. El gancho deportivo ya no tiene relevancia editorial después del 22 de julio. Para la **semana 4 (21–25 julio)**, migrar completamente hacia contenido de reforma laboral, derechos digitales y mercado laboral de segundo semestre.
+
+> Copy sugerido: "El Mundial termino, pero el mercado de talento no para. ¿Tu empresa tiene al equipo que necesita para el segundo semestre?"
+
+---
+
+### 🚨 DATO URGENTE — La reforma laboral ya entró en vigor: ¿tu empresa se está preparando para enero 2027?
+
+La LFT fue publicada el **1 de mayo de 2026** y está en vigor. El primer escalón llega en **enero 2027** (46 horas semanales máximas). Las empresas tienen **5 meses** para ajustar turnos, nómina, reglamentos internos y contratos — y la STPS ya tiene activo el Programa de Cumplimiento Preventivo 2026, con inspecciones en curso.
+
+**Calendario confirmado (México — reforma gradual):**
+- **1 may 2026 (YA EN VIGOR):** Publicación LFT — empresas deben iniciar adaptaciones
+- **Ene 2027:** máximo **46 horas** semanales (primer escalón real)
+- **Ene 2028:** máximo **44 horas**
+- **Ene 2029:** máximo **42 horas**
+- **Ene 2030:** meta final de **40 horas** semanales
+
+**Ángulo para Kyoszen — el hook B2B más urgente de julio:**
+"Tienes 5 meses para adaptar tu empresa a la reforma laboral. En enero 2027 la jornada maxima baja a 46 horas — ¿ya ajustaste turnos, nomina y contratos? Aqui el checklist que todo director de RRHH necesita hoy." Posiciona a Kyoszen como aliado proactivo que acompaña la transición antes de que lleguen las inspecciones.
+
+**Formatos sugeridos:**
+- **TikTok:** Talking head educativo — "Tienes hasta enero 2027. Aqui lo que tu empresa debe hacer ahora para cumplir con la reforma laboral."
+- **Facebook carrusel:** "Checklist de cumplimiento: 5 cosas que tu empresa debe hacer antes de que entre la semana de 46 horas en Mexico."
+
+---
+
+### 🎵 Audio de la semana (20 julio)
+
+- **"Summer Days" — Emmit Fenn** sigue en el top de Tokchart (19 jul) — úsalo esta semana antes de que baje.
+- **"El Pasito EA EA" — Los Obligados:** trend de baile nuevo en ascenso en México, con tracción en comunidades operativas y jóvenes. Bajo costo de producción, ideal para contenido de vacantes con perfil operativo jovial.
+- **Corridos tumbados (Fuerza Regida / Junior H):** mantienen dominancia en el FYP mexicano — especialmente útiles en posts de vacantes de manufactura, retail y campo.
+- **[Verificar "Bangladesh" de Ian McConnell]:** documentado el 13 jul, confirmar si sigue en ventana o ya pasó su peak antes de publicar.
+
+---
+
+### 📋 Prioridades de contenido — semana 4 (21–25 julio)
+
+| Prioridad | Tema | Formato | Plataforma |
+|---|---|---|---|
+| 🔴 URGENTE | Reforma 42h ya vigente desde 15 jul | TikTok talking head + FB carrusel checklist | Ambas |
+| 🟡 ALTA | NOM-035: inspecciones STPS activas en 2026 | Carrusel educativo FB | Facebook |
+| 🟡 ALTA | Cierre mundialista → equipos de alto rendimiento | Post imagen o video corto | Ambas |
+| 🟢 MEDIA | Anticipar regreso a clases (31 ago) — candidatos con horario escolar | TikTok talking head | TikTok |
+| 🟢 MEDIA | Nearshoring + brecha técnica (contenido evergreen) | Carrusel FB | Facebook |
+
+---
+
+*Versión inicial: 2 de julio de 2026 · Actualización post-partido México vs Inglaterra: 7 de julio de 2026 · Actualización 13 de julio: datos IMSS H1, audio Bangladesh, semifinales · Actualización 20 de julio: Final España-Argentina, jornada 42h vigente, semana 4*
 
 *Fuentes consultadas (versión inicial): CNN Español resultado México-Ecuador 1 jul 2026, Infobae/El Financiero/Mediotiempo México vs Inglaterra 5 jul fecha y sede, FIFA calendario Copa del Mundo 2026, INEGI ENOE/IOOE 2026, México Cómo Vamos empleo formal Q1 2026, Infobae México reforma laboral 40 horas, Gob.mx STPS reforma 40 horas LFT, Fortia tendencias RRHH 2026, Wellhub tendencias y retos RRHH 2026, iSmartRecruit tendencias reclutamiento 2026, Randstad mercado laboral México 2026, TikTok Newsroom Next Report 2026 LATAM, Marketing4Ecommerce tendencias TikTok México 2026.*
 
 *Fuentes adicionales (actualización 7 jul): ESPN Deportes resultado México vs Inglaterra 5 jul 2026, CNN en Español resultado México 2-3 Inglaterra, La Nacion AR crónica del partido, Tokchart Top Trending TikTok 7 jul 2026 (Summer Days #1 global), México Cómo Vamos empleo formal Q1 2026 (207,604 puestos IMSS — peor desde 2005), INEGI ENOE desocupación mayo 2026 (2.80%), Zety informe tendencias Gen Z 2026 (Job Hopping 55%, Quiet Quitting 47%, Act Your Wage 37%), Wellhub RRHH 2026, Fortia Tendencias RRHH México 2026.*
 
 *Fuentes adicionales (actualización 13 jul): El Informador/LatinUS IMSS H1 2026 (262,628 empleos formales, 22.7M afiliados — máximo histórico), Revista Fortuna perspectivas empleo Q3 2026 ManpowerGroup (45% empleadores planean contratar), Tokchart tendencias TikTok 13 jul 2026 ("Bangladesh" Ian McConnell en FYP), Buffer Trending Songs TikTok julio 2026, El Tiempo Latino/Prensa Libre semifinales Copa Mundial 2026 (fechas y sedes jul 14-15-19), aturnos.com/Wellhub/Littler reforma jornada laboral México 2026 (detalles graduales 2027-2030), Senado México reforma brecha salarial de género STPS.*
+
+*Fuentes adicionales (actualización 20 jul): CNN Español/TUDN/Telemundo Final Mundial 2026 España 1-0 Argentina (gol Ferrán Torres min 106'), Infobae México reacción celebridades Final 2026 (Juanpa Zurita, Eugenio Derbez), El Tiempo Colombia jornada 42h vigente desde 15 jul 2026, Nota Tamaulipas capacitación empresarial reforma jornada jul 19, STPS reformalaboral.stps.gob.mx programa de cumplimiento preventivo 2026, Capacitación Inteligente inspecciones STPS NOM-035 2026, Tokchart Top Trending 19 jul 2026 (Summer Days sostenido), SocialPilot/Revid.ai TikTok trends jul 2026 (El Pasito EA EA Los Obligados, Fuerza Regida corridos).*
