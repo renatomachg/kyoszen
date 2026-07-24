@@ -1,0 +1,421 @@
+{
+  "version": 1,
+  "titulo": "Cuestionario de Cursos · Kyoszen",
+  "intro": {
+    "saludo": "Hola Rosy 👋",
+    "titulo": "Cuéntanos cómo son sus cursos",
+    "texto": "Con esto armamos la plataforma de Kyoszen a la medida de cómo ya trabajan, sin cambiarles su forma de dar los cursos.",
+    "chips": ["Unos 6–8 minutos", "Solo lo que aplica a ustedes", "Se guarda solo"],
+    "cta": "Empezar"
+  },
+  "flujo": [
+    {
+      "key": "modalidad",
+      "seccion": "Cursos",
+      "tipo": "multi",
+      "pregunta": "¿Cómo dan los cursos hoy?",
+      "ayuda": "Puedes elegir varias. Esto define cómo se arma la plataforma, así que si algo no aplica, no lo marques.",
+      "opciones": [
+        { "value": "presencial", "label": "Presencial", "desc": "En sede o en las oficinas del cliente" },
+        { "value": "envivo", "label": "En línea en vivo", "desc": "Por Zoom, Meet o similar" },
+        { "value": "grabados", "label": "Grabados · a su ritmo", "desc": "El alumno los ve cuando quiere" },
+        { "value": "mixto", "label": "Mixto", "desc": "Una combinación de las anteriores" }
+      ]
+    },
+    {
+      "key": "sede",
+      "seccion": "Cursos",
+      "tipo": "single",
+      "showIf": { "key": "modalidad", "includesAny": ["presencial", "mixto"] },
+      "pregunta": "En los presenciales, ¿dónde se imparten?",
+      "opciones": [
+        { "value": "propia", "label": "En sede propia de Kyoszen" },
+        { "value": "cliente", "label": "En las instalaciones del cliente" },
+        { "value": "ambas", "label": "En ambas" }
+      ]
+    },
+    {
+      "key": "presencial_material",
+      "seccion": "Cursos",
+      "tipo": "single",
+      "showIf": { "key": "modalidad", "includesAny": ["presencial", "mixto"] },
+      "pregunta": "Aunque sea presencial, ¿qué manejan en digital?",
+      "opciones": [
+        { "value": "asistencia_material", "label": "Control de asistencia y material digital" },
+        { "value": "asistencia", "label": "Solo control de asistencia" },
+        { "value": "material", "label": "Solo material de apoyo" },
+        { "value": "nada", "label": "Nada digital todavía" }
+      ]
+    },
+    {
+      "key": "plataforma_vivo",
+      "seccion": "Cursos",
+      "tipo": "single",
+      "showIf": { "key": "modalidad", "includesAny": ["envivo", "mixto"] },
+      "pregunta": "Para los cursos en vivo, ¿qué plataforma usan?",
+      "opciones": [
+        { "value": "zoom", "label": "Zoom" },
+        { "value": "meet", "label": "Google Meet" },
+        { "value": "teams", "label": "Microsoft Teams" },
+        { "value": "otra", "label": "Otra / aún no definimos" }
+      ]
+    },
+    {
+      "key": "graban_vivo",
+      "seccion": "Cursos",
+      "tipo": "single",
+      "showIf": { "key": "modalidad", "includesAny": ["envivo", "mixto"] },
+      "pregunta": "¿Graban las sesiones en vivo para verlas después?",
+      "opciones": [
+        { "value": "si", "label": "Sí, las grabamos" },
+        { "value": "no", "label": "No" },
+        { "value": "aveces", "label": "A veces" }
+      ]
+    },
+    {
+      "key": "quien_graba",
+      "seccion": "Cursos",
+      "tipo": "text",
+      "input": "line",
+      "opcional": true,
+      "showIf": { "key": "modalidad", "includesAny": ["grabados", "mixto"] },
+      "pregunta": "Para los cursos grabados, ¿quién los graba y edita?",
+      "ayuda": "Puede ser alguien del equipo, un proveedor externo, o aún nadie.",
+      "placeholder": "Ej. Lo edita un diseñador externo / lo hacemos internamente…"
+    },
+    {
+      "key": "volumen_video",
+      "seccion": "Cursos",
+      "tipo": "single",
+      "showIf": { "key": "modalidad", "includesAny": ["grabados", "mixto"] },
+      "pregunta": "Más o menos, ¿cuánto video tienen o planean tener?",
+      "ayuda": "Es solo para dimensionar dónde alojarlo. Un estimado está bien.",
+      "opciones": [
+        { "value": "pocos", "label": "Poco", "desc": "Menos de 10 videos" },
+        { "value": "medio", "label": "Medio", "desc": "Entre 10 y 50 videos" },
+        { "value": "muchos", "label": "Bastante", "desc": "Más de 50 videos" },
+        { "value": "nose", "label": "Aún no sé" }
+      ]
+    },
+    {
+      "key": "estructura",
+      "seccion": "Cursos",
+      "tipo": "single",
+      "pregunta": "Un curso típico, ¿es una sola sesión o varias lecciones?",
+      "ayuda": "Vimos que su catálogo ya trae cursos con módulos y horas por lección, confírmalo 🙂",
+      "opciones": [
+        { "value": "una", "label": "Una sola sesión" },
+        { "value": "varias", "label": "Varias lecciones o módulos" },
+        { "value": "depende", "label": "Depende del curso" }
+      ]
+    },
+    {
+      "key": "orden",
+      "seccion": "Cursos",
+      "tipo": "single",
+      "showIf": { "key": "estructura", "equals": ["varias", "depende"] },
+      "pregunta": "¿El alumno avanza en orden o puede saltar libremente?",
+      "opciones": [
+        { "value": "orden", "label": "En orden obligatorio", "desc": "Debe terminar una para abrir la siguiente" },
+        { "value": "libre", "label": "Libre", "desc": "Puede ver las lecciones en cualquier orden" }
+      ]
+    },
+    {
+      "key": "examen",
+      "seccion": "Cursos",
+      "tipo": "single",
+      "pregunta": "¿Los cursos llevan examen o evaluación?",
+      "opciones": [
+        { "value": "si", "label": "Sí" },
+        { "value": "no", "label": "No" },
+        { "value": "algunos", "label": "Solo algunos" }
+      ]
+    },
+    {
+      "key": "examen_detalle",
+      "seccion": "Cursos",
+      "tipo": "text",
+      "input": "area",
+      "opcional": true,
+      "showIf": { "key": "examen", "equals": ["si", "algunos"] },
+      "pregunta": "Cuéntanos rápido sobre la evaluación",
+      "ayuda": "¿Hay calificación mínima para aprobar? ¿Cuántos intentos tiene el alumno? ¿Aprobar el examen es requisito para dar la constancia?",
+      "placeholder": "Ej. Mínimo 80, dos intentos, y sí es requisito para la constancia…"
+    },
+    {
+      "key": "terminado",
+      "seccion": "Cursos",
+      "tipo": "multi",
+      "pregunta": "¿Qué marca que alguien ya terminó un curso?",
+      "ayuda": "Elige lo que aplique.",
+      "opciones": [
+        { "value": "asistencia", "label": "Haber asistido" },
+        { "value": "lecciones", "label": "Ver todas las lecciones" },
+        { "value": "examen", "label": "Aprobar el examen" },
+        { "value": "trabajo", "label": "Entregar un trabajo o práctica" }
+      ]
+    },
+    {
+      "key": "certificado",
+      "seccion": "Constancias",
+      "tipo": "single",
+      "pregunta": "Al terminar, ¿entregan un documento al alumno?",
+      "ayuda": "Nota: hablamos de constancia de participación, no de DC-3 ni validez oficial STPS.",
+      "opciones": [
+        { "value": "si", "label": "Sí, una constancia de participación" },
+        { "value": "no", "label": "No entregamos documento" }
+      ]
+    },
+    {
+      "key": "constancia_detalle",
+      "seccion": "Constancias",
+      "tipo": "text",
+      "input": "area",
+      "opcional": true,
+      "showIf": { "key": "certificado", "equals": ["si"] },
+      "pregunta": "Cuéntanos de la constancia",
+      "ayuda": "¿Ya tienen un diseño? ¿Lleva folio único? ¿Quién la firma (nombre y cargo)? ¿La emite Kyoszen a mano o la descarga el alumno?",
+      "placeholder": "Ej. Ya tenemos diseño, con folio, la firma la Lic. …, hoy la mandamos por correo a mano…"
+    },
+    {
+      "key": "quien",
+      "seccion": "Alumnos",
+      "tipo": "single",
+      "pregunta": "¿Quién toma los cursos?",
+      "opciones": [
+        { "value": "individuales", "label": "Personas individuales", "desc": "Cada quien se inscribe por su cuenta" },
+        { "value": "empresas", "label": "Empresas", "desc": "Inscriben a su personal en bloque" },
+        { "value": "ambos", "label": "Ambos" }
+      ]
+    },
+    {
+      "key": "rh_admin",
+      "seccion": "Alumnos",
+      "tipo": "single",
+      "showIf": { "key": "quien", "equals": ["empresas", "ambos"] },
+      "pregunta": "¿El área de RH de la empresa administra a su propio grupo?",
+      "ayuda": "Es decir, ellos dan de alta a su gente y ven quién va avanzando.",
+      "opciones": [
+        { "value": "si", "label": "Sí, la empresa se administra sola" },
+        { "value": "no", "label": "No, eso lo hace Kyoszen por ellos" },
+        { "value": "nose", "label": "No lo tenemos decidido" }
+      ]
+    },
+    {
+      "key": "rh_reporte",
+      "seccion": "Alumnos",
+      "tipo": "single",
+      "showIf": { "key": "quien", "equals": ["empresas", "ambos"] },
+      "pregunta": "¿La empresa necesita ver el avance de sus empleados?",
+      "opciones": [
+        { "value": "si", "label": "Sí, con su propio panel" },
+        { "value": "no", "label": "No hace falta" },
+        { "value": "nose", "label": "Tal vez más adelante" }
+      ]
+    },
+    {
+      "key": "cobro_empresa",
+      "seccion": "Alumnos",
+      "tipo": "single",
+      "showIf": { "key": "quien", "equals": ["empresas", "ambos"] },
+      "pregunta": "¿Cómo le cobran a la empresa?",
+      "ayuda": "Solo para entender el modelo, el cómo se cobra dentro de la plataforma lo vemos aparte.",
+      "opciones": [
+        { "value": "persona", "label": "Por persona / asiento" },
+        { "value": "curso", "label": "Por curso" },
+        { "value": "paquete", "label": "Paquete o mensualidad" },
+        { "value": "nose", "label": "Aún no lo definimos" }
+      ]
+    },
+    {
+      "key": "registro_individual",
+      "seccion": "Alumnos",
+      "tipo": "single",
+      "showIf": { "key": "quien", "equals": ["individuales", "ambos"] },
+      "pregunta": "La persona individual, ¿se registra sola en la plataforma?",
+      "opciones": [
+        { "value": "si", "label": "Sí, se registra sola" },
+        { "value": "no", "label": "No, Kyoszen la da de alta" }
+      ]
+    },
+    {
+      "key": "equipo",
+      "seccion": "Tu equipo",
+      "tipo": "text",
+      "input": "line",
+      "opcional": true,
+      "pregunta": "Además de ti, ¿quién más de Kyoszen administrará la plataforma?",
+      "ayuda": "Nombres o roles. Nos sirve para definir permisos y accesos.",
+      "placeholder": "Ej. Yo y la Lic. de capacitación / solo yo por ahora…"
+    },
+    {
+      "key": "alta_alumno",
+      "seccion": "Tu equipo",
+      "tipo": "single",
+      "pregunta": "En general, ¿cómo llegan los alumnos a la plataforma?",
+      "opciones": [
+        { "value": "solos", "label": "Se registran solos" },
+        { "value": "kyoszen", "label": "Kyoszen los da de alta" },
+        { "value": "rh", "label": "El RH de cada empresa los da de alta" },
+        { "value": "mixto", "label": "Una mezcla, según el caso" }
+      ]
+    },
+    {
+      "key": "datos_cert",
+      "seccion": "Tu equipo",
+      "tipo": "multi",
+      "pregunta": "¿Qué datos necesitan del alumno?",
+      "ayuda": "Sobre todo para que salgan bien en la constancia. Elige lo que aplique.",
+      "opciones": [
+        { "value": "nombre", "label": "Nombre completo" },
+        { "value": "empresa", "label": "Empresa donde trabaja" },
+        { "value": "puesto", "label": "Puesto" },
+        { "value": "correo", "label": "Correo" },
+        { "value": "tel", "label": "Teléfono" },
+        { "value": "curp", "label": "CURP / RFC" }
+      ]
+    },
+    {
+      "key": "reporte_interno",
+      "seccion": "Tu equipo",
+      "tipo": "multi",
+      "pregunta": "¿Qué te gustaría ver a ti de un vistazo?",
+      "ayuda": "Piensa en tu panel de control. Elige lo que más te sirva.",
+      "opciones": [
+        { "value": "terminaron", "label": "Quién terminó cada curso" },
+        { "value": "medias", "label": "Quién va a medias / se atoró" },
+        { "value": "empresa", "label": "Avance por empresa" },
+        { "value": "calif", "label": "Calificaciones" },
+        { "value": "constancias", "label": "Constancias emitidas" }
+      ]
+    },
+    {
+      "key": "catalogo",
+      "seccion": "Catálogo",
+      "tipo": "single",
+      "pregunta": "El catálogo de cursos, ¿es público o privado?",
+      "opciones": [
+        { "value": "publico", "label": "Público", "desc": "Cualquiera lo ve y puede inscribirse" },
+        { "value": "privado", "label": "Privado", "desc": "Solo clientes con acceso lo ven" },
+        { "value": "mixto", "label": "Un poco de ambos" }
+      ]
+    },
+    {
+      "key": "cuantos",
+      "seccion": "Catálogo",
+      "tipo": "text",
+      "input": "area",
+      "opcional": true,
+      "pregunta": "Hoy vemos 75 cursos en 11 áreas en su catálogo",
+      "ayuda": "¿Es correcto? ¿Con cuántos cursos quieren arrancar la plataforma y cuáles priorizamos?",
+      "placeholder": "Ej. Sí, son como 30. Arrancamos con los 8 de Recursos Humanos…"
+    },
+    {
+      "key": "cursos_nuevos_anio",
+      "seccion": "Su ritmo",
+      "tipo": "single",
+      "pregunta": "¿Cuántos cursos nuevos crean al año, más o menos?",
+      "ayuda": "Un estimado está perfecto. Nos ayuda a dimensionar la plataforma.",
+      "opciones": [
+        { "value": "1-3", "label": "Entre 1 y 3" },
+        { "value": "4-10", "label": "Entre 4 y 10" },
+        { "value": "10+", "label": "Más de 10" },
+        { "value": "nose", "label": "No estoy segura" }
+      ]
+    },
+    {
+      "key": "registros_mes",
+      "seccion": "Su ritmo",
+      "tipo": "single",
+      "pregunta": "¿Cuántas personas se inscriben a sus cursos al mes, más o menos?",
+      "ayuda": "Contando todas las empresas y personas juntas.",
+      "opciones": [
+        { "value": "<10", "label": "Menos de 10" },
+        { "value": "10-50", "label": "Entre 10 y 50" },
+        { "value": "50-200", "label": "Entre 50 y 200" },
+        { "value": "200+", "label": "Más de 200" },
+        { "value": "nose", "label": "No estoy segura" }
+      ]
+    },
+    {
+      "key": "cursos_mes",
+      "seccion": "Su ritmo",
+      "tipo": "single",
+      "pregunta": "¿Cuántos cursos imparten al mes, más o menos?",
+      "opciones": [
+        { "value": "1-3", "label": "Entre 1 y 3" },
+        { "value": "4-10", "label": "Entre 4 y 10" },
+        { "value": "10-20", "label": "Entre 10 y 20" },
+        { "value": "20+", "label": "Más de 20" },
+        { "value": "nose", "label": "No estoy segura" }
+      ]
+    },
+    {
+      "key": "futuro_video",
+      "seccion": "Catálogo",
+      "tipo": "single",
+      "pregunta": "De aquí a 6–12 meses, ¿quieren mover cursos a video grabado?",
+      "ayuda": "No hay que decidirlo hoy, solo para dejar la plataforma lista.",
+      "opciones": [
+        { "value": "si", "label": "Sí, es el plan" },
+        { "value": "talvez", "label": "Tal vez" },
+        { "value": "no", "label": "No por ahora" }
+      ]
+    },
+    {
+      "key": "importante",
+      "seccion": "Catálogo",
+      "tipo": "text",
+      "input": "area",
+      "opcional": true,
+      "pregunta": "En una frase: ¿qué es lo más importante que esta plataforma les resuelva primero?",
+      "placeholder": "Ej. Que dejemos de llevar el control de alumnos en Excel…"
+    },
+    {
+      "tipo": "transicion",
+      "titulo": "Terminamos con los cursos ✅",
+      "texto": "Ahora cambiamos de tema: te haremos solo 3 preguntas rápidas sobre vacantes y candidatos (la parte de CRM). Nada de cursos aquí, es para ir pensando ese otro producto."
+    },
+    {
+      "key": "crm_avisar",
+      "seccion": "Vacantes (rápido)",
+      "tipo": "single",
+      "pregunta": "Cuando abren una vacante, ¿avisan a candidatos anteriores que podrían servir?",
+      "ayuda": "Son solo 3 preguntas, muy rápidas.",
+      "opciones": [
+        { "value": "siempre", "label": "Sí, siempre que podemos" },
+        { "value": "aveces", "label": "A veces" },
+        { "value": "no", "label": "No, no llevamos ese seguimiento" },
+        { "value": "sinvacantes", "label": "Casi no tenemos vacantes aún" }
+      ]
+    },
+    {
+      "key": "crm_modelo",
+      "seccion": "Vacantes (rápido)",
+      "tipo": "single",
+      "pregunta": "Las empresas que buscan personal, ¿entrarían a la plataforma?",
+      "opciones": [
+        { "value": "entran", "label": "Sí, ellas tendrían acceso" },
+        { "value": "intermediario", "label": "No, Kyoszen es el intermediario" },
+        { "value": "nose", "label": "Aún no lo sabemos" }
+      ]
+    },
+    {
+      "key": "crm_volumen",
+      "seccion": "Vacantes (rápido)",
+      "tipo": "single",
+      "pregunta": "¿Cuántas vacantes manejan al mes, más o menos?",
+      "opciones": [
+        { "value": "pocas", "label": "Entre 0 y 5" },
+        { "value": "medias", "label": "Entre 6 y 15" },
+        { "value": "muchas", "label": "16 o más" },
+        { "value": "empezando", "label": "Apenas estamos empezando" }
+      ]
+    }
+  ],
+  "cierre": {
+    "titulo": "¡Listo, Rosy! 🙌",
+    "texto": "Gracias. Con esto Renato ya puede armar la plataforma de cursos a la medida de Kyoszen. Si algo cambia, siempre podemos ajustarlo.",
+    "cta_enviar": "Enviar respuestas"
+  }
+}

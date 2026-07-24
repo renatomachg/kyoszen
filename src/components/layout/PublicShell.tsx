@@ -9,8 +9,9 @@ export default function PublicShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const isRevisor = pathname.startsWith("/revisor");
+  const isCuestionario = pathname.startsWith("/cuestionario");
 
-  if (isAdmin || isRevisor) return <>{children}</>;
+  if (isAdmin || isRevisor || isCuestionario) return <>{children}</>;
 
   return (
     <>
