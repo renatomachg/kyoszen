@@ -29,6 +29,11 @@ const NAV = [
     icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
   },
   {
+    href: "/admin/crm",
+    label: "CRM",
+    icon: "M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H2v-2a4 4 0 014-4h3a4 4 0 014 4v2zm-2-8a4 4 0 100-8 4 4 0 000 8zm4-1a3 3 0 100-6",
+  },
+  {
     href: "/admin/contactos",
     label: "Contactos",
     badge: "contactos",
