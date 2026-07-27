@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type DragEvent,
   type FormEvent,
   type ReactNode,
 } from "react";
@@ -236,6 +237,30 @@ function ModalImportador({ onClose, onCreated }: {
   const [video, setVideo] = useState<ModoEtapa>("por_escena");
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState("");
+  const [arrastrando, setArrastrando] = useState(false);
+
+  const soltarArchivo = async (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setArrastrando(false);
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+
+    const nombre = file.name.toLowerCase();
+    if (file.type === "application/pdf" || nombre.endsWith(".pdf")) {
+      setError("");
+      setPdf(file);
+      return;
+    }
+    if (
+      file.type.startsWith("text/") ||
+      [".txt", ".md", ".markdown", ".html", ".rtf"].some((extension) => nombre.endsWith(extension))
+    ) {
+      setError("");
+      setTexto(await file.text());
+      return;
+    }
+    setError("Formato no soportado. Sube un PDF o pega/arrastra texto.");
+  };
 
   const analizar = async () => {
     if (!pdf && !texto.trim()) return;
@@ -285,13 +310,26 @@ function ModalImportador({ onClose, onCreated }: {
       <ModalHeader titulo="Importar guion" subtitulo={analizado ? "Paso 2 de 2 · Revisa las escenas" : "Paso 1 de 2 · Carga el contenido"} onClose={onClose} />
       {!analizado ? (
         <div className="space-y-5 p-6">
-          <label className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-[#1883FF]/30 bg-blue-50/40 px-5 py-8 text-center hover:border-[#1883FF]">
-            <span className="text-3xl">📄</span><span className="mt-2 text-sm font-black text-[#042E7B]">{pdf?.name ?? "Seleccionar PDF"}</span>
-            <span className="mt-1 text-xs text-slate-500">El archivo se procesa de forma segura.</span>
-            <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(event) => setPdf(event.target.files?.[0] ?? null)} />
-          </label>
-          <div className="flex items-center gap-3 text-xs font-bold text-slate-400"><span className="h-px flex-1 bg-slate-200" />O PEGA EL TEXTO<span className="h-px flex-1 bg-slate-200" /></div>
-          <textarea value={texto} onChange={(event) => setTexto(event.target.value)} rows={9} placeholder="Pega aquí el guion con sus escenas…" className={inputClass} />
+          <div
+            onDragOver={(event) => {
+              event.preventDefault();
+              setArrastrando(true);
+            }}
+            onDragLeave={() => setArrastrando(false)}
+            onDrop={(event) => void soltarArchivo(event)}
+            className={`space-y-5 rounded-2xl border-2 border-dashed p-2 transition-colors ${
+              arrastrando ? "border-[#1883FF] bg-blue-50" : "border-transparent"
+            }`}
+          >
+            {arrastrando && <p className="text-center text-sm font-black text-[#1883FF]">Suelta el archivo aquí</p>}
+            <label className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-[#1883FF]/30 bg-blue-50/40 px-5 py-8 text-center hover:border-[#1883FF]">
+              <span className="text-3xl">📄</span><span className="mt-2 text-sm font-black text-[#042E7B]">{pdf?.name ?? "Seleccionar PDF"}</span>
+              <span className="mt-1 text-xs text-slate-500">El archivo se procesa de forma segura.</span>
+              <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(event) => setPdf(event.target.files?.[0] ?? null)} />
+            </label>
+            <div className="flex items-center gap-3 text-xs font-bold text-slate-400"><span className="h-px flex-1 bg-slate-200" />O PEGA EL TEXTO<span className="h-px flex-1 bg-slate-200" /></div>
+            <textarea value={texto} onChange={(event) => setTexto(event.target.value)} rows={9} placeholder="Pega aquí el guion con sus escenas…" className={inputClass} />
+          </div>
           {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
           <div className="flex justify-end"><button type="button" onClick={() => void analizar()} disabled={procesando || (!pdf && !texto.trim())} className="cursor-pointer rounded-xl bg-[#FFCC00] px-5 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50">{procesando ? "Analizando…" : "Analizar"}</button></div>
         </div>
