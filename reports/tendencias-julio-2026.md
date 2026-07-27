@@ -322,7 +322,79 @@ La LFT fue publicada el **1 de mayo de 2026** y está en vigor. El primer escal�
 
 ---
 
-*Versión inicial: 2 de julio de 2026 · Actualización post-partido México vs Inglaterra: 7 de julio de 2026 · Actualización 13 de julio: datos IMSS H1, audio Bangladesh, semifinales · Actualización 20 de julio: Final España-Argentina, jornada 42h vigente, semana 4*
+---
+
+## 🔄 Actualización — 27 de julio de 2026
+
+### 🏭 IMMEX: 26 meses consecutivos de caída en empleo manufacturero exportador
+
+La Jornada reportó el **23 de julio** (con datos INEGI de mayo 2026) que el empleo en establecimientos con programa IMMEX (maquila y manufactura exportadora) sigue sin recuperarse:
+
+- **~120,000 puestos perdidos** en empresas IMMEX desde 2024 hasta mayo 2026
+- **26 meses consecutivos** de descenso anual en empleo maquilador
+- Horas trabajadas: **4.4% menos** que en mayo 2025
+- El sector no registró crecimiento mensual en mayo
+
+**Contexto:** La paradoja del nearshoring se vuelve más evidente — la inversión extranjera llegó pero el empleo técnico calificado no se recupera al ritmo esperado. Los sectores automotriz, electrónica y manufactura avanzada reportan rotación alta y dificultad para retener perfiles especializados.
+
+**Ángulo para Kyoszen:** Para empresas de manufactura y maquiladora que SÍ están contratando en este entorno complicado, el argumento del reclutamiento especializado se vuelve más fuerte, no más débil. Copy sugerido: "Cuando el mercado se complica, contratar bien vale el doble. Asi apoyamos a las empresas que no pueden darse el lujo de equivocarse en su siguiente contratacion." Formato: carrusel FB con datos del sector + diferenciador de servicio.
+
+---
+
+### 🔴 Semáforo de empleo H1 2026 cerró en rojo — ángulo de autoridad para Kyoszen
+
+México Cómo Vamos publicó que a pesar de la recuperación de junio (+61,023 empleos), **el primer semestre de 2026 cerró en rojo** como indicador de empleo formal. Los 262,628 puestos creados en H1 son históricamente bajos para un primer semestre.
+
+**Ángulo para Kyoszen:** Este dato cierra el ciclo narrativo del mes con una síntesis poderosa para audiencias B2B: el mercado laboral formal está bajo presión, y las empresas que contratan con estrategia —no con urgencia— salen adelante. Posicionar a Kyoszen como aliado para ese tipo de contratación inteligente es el mensaje de cierre de julio.
+
+> Copy sugerido (carrusel o talking head): "El primer semestre de 2026 cerro en rojo para el empleo formal en Mexico. 262 mil nuevos puestos IMSS en 6 meses — historicamente bajo. Para las empresas que si necesitan contratar: nunca fue tan importante hacerlo bien. Asi acompanamos a nuestros clientes."
+
+---
+
+### 🎉 Guelaguetza — hoy 27 de julio (Lunes del Cerro, Oaxaca)
+
+El gancho cultural de diversidad mexicana es hoy. Si hay publicación pendiente de este ángulo, publicarla hoy o mañana antes de que pierda vigencia.
+
+> Copy: "Hoy es el Lunes del Cerro — la Guelaguetza nos recuerda que el talento de Mexico viene de todos lados. En Kyoszen conectamos candidatos de toda la ZMVM con las empresas que los necesitan."
+
+---
+
+### 📅 Anticipar agosto — el mes de la reactivación
+
+| Fecha | Evento | Gancho para Kyoszen |
+|---|---|---|
+| **31 ago** | Regreso a clases SEP 2026-2027 | Candidatos con horario escolar regresan al mercado; padres con horario flexible buscan cambio de empleo |
+| **Todo ago** | Sin días festivos (21 días hábiles) | Mes de alta productividad — empresas reactivan contrataciones detenidas en verano |
+| **Sem 1–2 ago** | Cierre de vacaciones escalonadas | "¿Ya tienes el equipo completo para el regreso? Nosotros te ayudamos a cubrir las vacantes de agosto antes de que el mercado se reactive." |
+| **Aug general** | Temporada post-verano | Candidatos que pusieron la búsqueda en pausa en julio regresan activamente — buen momento para vacantes en TikTok |
+
+**Contenido sugerido para primera semana de agosto:**
+- **TikTok:** "Si pusiste en pausa tu busqueda de empleo en verano, agosto es el mejor momento para retomar — aqui por que." → conecta con el servicio de colocación para candidatos.
+- **Facebook carrusel:** "Checklist de contrataciones para el segundo semestre — lo que tu empresa debe revisar antes de que acabe julio." → B2B, acción inmediata.
+
+---
+
+### 🎵 Audio recomendado — semana 5 (27–31 julio)
+
+- **"Summer Days" — Emmit Fenn:** Puede estar llegando a su punto de bajada (lleva 3 semanas en top). Úsalo solo si ya está calendarizado — si no, esperar el audio de la próxima semana para no publicar en caída.
+- **Corridos tumbados (Fuerza Regida / Junior H):** Siguen como formato seguro para vacantes operativas — no tienen ventana de oportunidad, son formato evergreen.
+- **[Verificar TikTok Creative Center > Trending Sounds > México]** el 28–29 de julio para identificar el audio de la semana 1 de agosto antes de publicar.
+
+---
+
+### 📋 Prioridades de contenido — semana 5 / cierre de julio (28–31 jul)
+
+| Prioridad | Tema | Formato | Plataforma |
+|---|---|---|---|
+| 🔴 URGENTE | Cierre de julio — semáforo rojo H1 2026 → ángulo diferenciador Kyoszen | Carrusel o imagen navy | Facebook |
+| 🟡 ALTA | IMMEX en caída → reclutamiento especializado es más valioso que nunca | Carrusel B2B | Facebook |
+| 🟡 ALTA | Anticipar agosto — "el mercado se reactiva" para candidatos | TikTok talking head | TikTok |
+| 🟢 MEDIA | Guelaguetza / diversidad del talento mexicano (hoy 27 jul) | Post imagen o story | Ambas |
+| 🟢 MEDIA | Regreso a clases 31 ago — anticipa el gancho 4 días antes | Story/reel corto | TikTok |
+
+---
+
+*Versión inicial: 2 de julio de 2026 · Actualización post-partido México vs Inglaterra: 7 de julio de 2026 · Actualización 13 de julio: datos IMSS H1, audio Bangladesh, semifinales · Actualización 20 de julio: Final España-Argentina, jornada 42h vigente, semana 4 · Actualización 27 de julio: IMMEX 26 meses en caída, semáforo H1 rojo, anticipación agosto, cierre de mes*
 
 *Fuentes consultadas (versión inicial): CNN Español resultado México-Ecuador 1 jul 2026, Infobae/El Financiero/Mediotiempo México vs Inglaterra 5 jul fecha y sede, FIFA calendario Copa del Mundo 2026, INEGI ENOE/IOOE 2026, México Cómo Vamos empleo formal Q1 2026, Infobae México reforma laboral 40 horas, Gob.mx STPS reforma 40 horas LFT, Fortia tendencias RRHH 2026, Wellhub tendencias y retos RRHH 2026, iSmartRecruit tendencias reclutamiento 2026, Randstad mercado laboral México 2026, TikTok Newsroom Next Report 2026 LATAM, Marketing4Ecommerce tendencias TikTok México 2026.*
 
@@ -331,3 +403,5 @@ La LFT fue publicada el **1 de mayo de 2026** y está en vigor. El primer escal�
 *Fuentes adicionales (actualización 13 jul): El Informador/LatinUS IMSS H1 2026 (262,628 empleos formales, 22.7M afiliados — máximo histórico), Revista Fortuna perspectivas empleo Q3 2026 ManpowerGroup (45% empleadores planean contratar), Tokchart tendencias TikTok 13 jul 2026 ("Bangladesh" Ian McConnell en FYP), Buffer Trending Songs TikTok julio 2026, El Tiempo Latino/Prensa Libre semifinales Copa Mundial 2026 (fechas y sedes jul 14-15-19), aturnos.com/Wellhub/Littler reforma jornada laboral México 2026 (detalles graduales 2027-2030), Senado México reforma brecha salarial de género STPS.*
 
 *Fuentes adicionales (actualización 20 jul): CNN Español/TUDN/Telemundo Final Mundial 2026 España 1-0 Argentina (gol Ferrán Torres min 106'), Infobae México reacción celebridades Final 2026 (Juanpa Zurita, Eugenio Derbez), El Tiempo Colombia jornada 42h vigente desde 15 jul 2026, Nota Tamaulipas capacitación empresarial reforma jornada jul 19, STPS reformalaboral.stps.gob.mx programa de cumplimiento preventivo 2026, Capacitación Inteligente inspecciones STPS NOM-035 2026, Tokchart Top Trending 19 jul 2026 (Summer Days sostenido), SocialPilot/Revid.ai TikTok trends jul 2026 (El Pasito EA EA Los Obligados, Fuerza Regida corridos).*
+
+*Fuentes adicionales (actualización 27 jul): La Jornada empleo IMMEX julio 2026 (26 meses descenso anual, ~120k puestos perdidos desde 2024), INCOMEX/Economex/Agenda QR empleo maquiladora 2026, México Cómo Vamos semáforo empleo formal H1 2026 (cerró en rojo), LatinUS IMSS empleos formales H1 2026, calendariodemexico.com efemérides agosto 2026 (sin días festivos), Pluxee.mx/Milenio regreso a clases SEP 2026-2027 (31 ago).*
