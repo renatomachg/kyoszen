@@ -5,6 +5,7 @@ export type ModoEtapa = "por_escena" | "entregable_unico";
 export type EstadoEtapa = "bloqueada" | "pendiente" | "aprobado" | "cambios";
 export type EstadoBloque = "pendiente" | "aprobado" | "cambios";
 export type RolAutor = "admin" | "cliente";
+export type TipoEspacio = "aprobacion" | "archivos" | "tablero";
 
 export interface Archivo {
   url: string;
@@ -15,6 +16,7 @@ export interface Archivo {
 
 export interface Proyecto {
   id: string;
+  espacio_id: string | null;
   tipo: TipoProyecto;
   folio: string | null;
   titulo: string;
@@ -25,6 +27,62 @@ export interface Proyecto {
   publicado: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface Espacio {
+  id: string;
+  nombre: string;
+  tipo: TipoEspacio;
+  descripcion: string | null;
+  icono: string | null;
+  color: string | null;
+  cuestionario_token: string | null;
+  orden: number;
+  publicado: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EspacioArchivo {
+  id: string;
+  espacio_id: string;
+  nombre: string;
+  url: string;
+  tipo: string | null;
+  peso: number | null;
+  nota: string | null;
+  estado: EstadoBloque;
+  orden: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EspacioColumna {
+  id: string;
+  espacio_id: string;
+  nombre: string;
+  orden: number;
+  created_at: string;
+}
+
+export interface EspacioTarjeta {
+  id: string;
+  columna_id: string;
+  titulo: string;
+  descripcion: string | null;
+  orden: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EspacioComentario {
+  id: string;
+  archivo_id: string | null;
+  tarjeta_id: string | null;
+  autor_nombre: string | null;
+  autor_rol: RolAutor | null;
+  contenido: string;
+  created_at: string;
 }
 
 export interface ProyectoEtapa {

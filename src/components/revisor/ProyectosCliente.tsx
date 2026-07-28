@@ -14,12 +14,16 @@ import {
   ESTADO_BLOQUE_UI,
   ESTADO_ETAPA_UI,
   type Archivo,
+  type Espacio,
+  type EspacioArchivo,
+  type EspacioComentario,
   type Proyecto,
   type ProyectoBloque,
   type ProyectoComentario,
   type ProyectoEscena,
   type ProyectoEtapa,
 } from "@/lib/proyectos";
+import TableroCliente from "@/components/revisor/TableroCliente";
 
 type Progreso = {
   total: number;
@@ -32,6 +36,18 @@ type EtapaListado = ProyectoEtapa & { progreso: Progreso };
 type ProyectoListado = Proyecto & {
   proyecto_escenas: { count: number }[];
   proyecto_etapas: EtapaListado[];
+};
+type EspacioListado = Espacio & {
+  proyectos_count: number;
+  archivos_count: number;
+  tarjetas_count: number;
+  cuestionario: {
+    token: string;
+    invitado_nombre: string;
+    respondidas: number;
+    total: number;
+    completado: boolean;
+  } | null;
 };
 type BloqueDetalle = ProyectoBloque & {
   proyecto_comentarios: ProyectoComentario[];
@@ -637,21 +653,390 @@ function DetalleProyecto({
   );
 }
 
+function estadoArchivoUI(estado: EspacioArchivo["estado"]) {
+  return ESTADO_BLOQUE_UI[estado];
+}
+
+function DetalleArchivo({
+  espacio,
+  archivo,
+  userName,
+  onClose,
+  onUpdated,
+}: {
+  espacio: Espacio;
+  archivo: EspacioArchivo;
+  userName: string;
+  onClose: () => void;
+  onUpdated: () => Promise<void>;
+}) {
+  const [comentarios, setComentarios] = useState<EspacioComentario[]>([]);
+  const [comentario, setComentario] = useState("");
+  const [pidiendoCambios, setPidiendoCambios] = useState(false);
+  const [cargando, setCargando] = useState(true);
+  const [accion, setAccion] = useState<"aprobar" | "cambios" | "comentar" | null>(null);
+  const [error, setError] = useState("");
+  const ui = estadoArchivoUI(archivo.estado);
+
+  const cargarComentarios = useCallback(async () => {
+    setCargando(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/revisor/proyectos/espacios/${espacio.id}/archivos/${archivo.id}/comments`);
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudieron cargar los comentarios."));
+      const data = await response.json() as { comentarios?: EspacioComentario[] };
+      setComentarios(Array.isArray(data.comentarios) ? data.comentarios : []);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudieron cargar los comentarios.");
+    } finally {
+      setCargando(false);
+    }
+  }, [archivo.id, espacio.id]);
+
+  useEffect(() => { void cargarComentarios(); }, [cargarComentarios]);
+
+  const actualizarEstado = async (estado: "aprobado" | "cambios") => {
+    const response = await fetch(`/api/revisor/proyectos/espacios/${espacio.id}/archivos/${archivo.id}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estado, autor_nombre: userName }),
+    });
+    if (!response.ok) throw new Error(await mensajeError(response, "No se pudo actualizar el estado."));
+  };
+
+  const aprobar = async () => {
+    setAccion("aprobar");
+    setError("");
+    try {
+      await actualizarEstado("aprobado");
+      await onUpdated();
+      onClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo aprobar el archivo.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
+  const guardarComentario = async (contenido: string) => {
+    const response = await fetch(`/api/revisor/proyectos/espacios/${espacio.id}/archivos/${archivo.id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contenido, autor_nombre: userName, autor_rol: "cliente" }),
+    });
+    if (!response.ok) throw new Error(await mensajeError(response, "No se pudo guardar el comentario."));
+  };
+
+  const solicitarCambios = async () => {
+    if (!comentario.trim()) return;
+    setAccion("cambios");
+    setError("");
+    try {
+      await guardarComentario(comentario.trim());
+      await actualizarEstado("cambios");
+      setComentario("");
+      setPidiendoCambios(false);
+      await onUpdated();
+      onClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudieron solicitar los cambios.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
+  const comentar = async () => {
+    if (!comentario.trim()) return;
+    setAccion("comentar");
+    setError("");
+    try {
+      await guardarComentario(comentario.trim());
+      setComentario("");
+      await cargarComentarios();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo guardar el comentario.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
+  const esImagen = archivo.tipo?.startsWith("image/");
+  const esPdf = archivo.tipo === "application/pdf" || archivo.nombre.toLowerCase().endsWith(".pdf");
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`Revisar ${archivo.nombre}`} onMouseDown={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(15, 23, 42, .62)", padding: 16 }}>
+      <div onMouseDown={(event) => event.stopPropagation()} style={{ width: "min(920px, 100%)", maxHeight: "94vh", overflowY: "auto", borderRadius: 18, background: C.white, boxShadow: "0 24px 80px rgba(2, 16, 43, .32)" }}>
+        <header style={{ position: "sticky", top: 0, zIndex: 2, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, borderBottom: `1px solid ${C.border}`, background: C.white, padding: "18px 22px" }}>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: "0 0 5px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: "1px", textTransform: "uppercase" }}>{espacio.nombre}</p>
+            <h3 style={{ margin: 0, color: C.navy, fontSize: 18, fontWeight: 900, overflowWrap: "anywhere" }}>{archivo.nombre}</h3>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ border: 0, background: "transparent", color: C.muted, padding: 0, fontSize: 28, lineHeight: 1, cursor: "pointer" }}>×</button>
+        </header>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 22, padding: 22 }}>
+          <div>
+            <div style={{ display: "flex", minHeight: 280, alignItems: "center", justifyContent: "center", overflow: "hidden", border: `1px solid ${C.border}`, borderRadius: 14, background: C.surface }}>
+              {esImagen ? (
+                <img src={archivo.url} alt={archivo.nombre} style={{ width: "100%", maxHeight: 560, objectFit: "contain" }} />
+              ) : (
+                <div style={{ padding: "52px 24px", textAlign: "center" }}>
+                  <span aria-hidden="true" style={{ display: "block", fontSize: 58 }}>{esPdf ? "📄" : "📎"}</span>
+                  <a href={archivo.url} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginTop: 14, borderRadius: 11, background: C.blue, padding: "10px 15px", color: C.white, fontSize: 12.5, fontWeight: 850, textDecoration: "none" }}>
+                    {esPdf ? "Abrir PDF" : "Abrir archivo"} ↗
+                  </a>
+                </div>
+              )}
+            </div>
+            {esImagen && <a href={archivo.url} target="_blank" rel="noreferrer" style={{ display: "block", marginTop: 9, color: C.blue, fontSize: 11.5, fontWeight: 750, textAlign: "center", textDecoration: "none" }}>Abrir imagen en tamaño completo ↗</a>}
+            {archivo.nota && (
+              <div style={{ marginTop: 16, borderLeft: `3px solid ${C.blue}`, borderRadius: "0 10px 10px 0", background: "#EFF6FF", padding: "12px 14px" }}>
+                <p style={{ margin: "0 0 4px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: ".8px", textTransform: "uppercase" }}>Nota de Kyoszen</p>
+                <p style={{ margin: 0, color: C.body, fontSize: 12.5, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{archivo.nota}</p>
+              </div>
+            )}
+          </div>
+          <div>
+            <span style={{ display: "inline-block", borderRadius: 999, background: ui.colorSuave, padding: "6px 10px", color: ui.color, fontSize: 10.5, fontWeight: 850 }}>{ui.label}</span>
+            <div style={{ display: "flex", gap: 9, marginTop: 15, flexWrap: "wrap" }}>
+              <Boton onClick={() => void aprobar()} disabled={accion !== null}>✅ {accion === "aprobar" ? "Aprobando…" : "Aprobar"}</Boton>
+              <Boton onClick={() => { setPidiendoCambios(true); setComentario(""); }} disabled={accion !== null} secundario>Necesito cambios</Boton>
+            </div>
+            {pidiendoCambios && (
+              <div style={{ marginTop: 13, border: "1px solid #FECACA", borderRadius: 12, background: "#FEF2F2", padding: 12 }}>
+                <label style={{ display: "block", marginBottom: 7, color: C.danger, fontSize: 11.5, fontWeight: 800 }}>¿Qué necesitas que ajustemos?</label>
+                <textarea value={comentario} onChange={(event) => setComentario(event.target.value)} rows={4} autoFocus placeholder="Describe los cambios con el mayor detalle posible…" style={{ width: "100%", resize: "vertical", border: "1px solid #FCA5A5", borderRadius: 10, background: C.white, padding: "10px 11px", color: C.ink, font: "inherit", fontSize: 12.5, outline: "none" }} />
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 9 }}>
+                  <button type="button" onClick={() => { setPidiendoCambios(false); setComentario(""); }} style={{ border: 0, background: "transparent", color: C.muted, padding: "8px 10px", fontSize: 12, fontWeight: 750, cursor: "pointer" }}>Cancelar</button>
+                  <button type="button" onClick={() => void solicitarCambios()} disabled={!comentario.trim() || accion !== null} style={{ border: 0, borderRadius: 10, background: C.danger, padding: "8px 11px", color: C.white, fontSize: 12, fontWeight: 850, cursor: !comentario.trim() || accion !== null ? "not-allowed" : "pointer", opacity: !comentario.trim() || accion !== null ? .55 : 1 }}>{accion === "cambios" ? "Enviando…" : "Enviar solicitud"}</button>
+                </div>
+              </div>
+            )}
+            {error && <p role="alert" style={{ margin: "13px 0 0", borderRadius: 10, background: "#FEF2F2", padding: "9px 11px", color: C.danger, fontSize: 12, fontWeight: 700 }}>{error}</p>}
+            <div style={{ marginTop: 22, borderTop: `1px solid ${C.border}`, paddingTop: 17 }}>
+              <h4 style={{ margin: 0, color: C.navy, fontSize: 13, fontWeight: 900 }}>Comentarios ({comentarios.length})</h4>
+              {cargando ? <p style={{ color: C.muted, fontSize: 12 }}>Cargando comentarios…</p> : comentarios.length === 0 ? (
+                <p style={{ color: C.faint, fontSize: 12 }}>Aún no hay comentarios en este archivo.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 11 }}>
+                  {comentarios.map((item) => (
+                    <article key={item.id} style={{ border: `1px solid ${C.border}`, borderRadius: 11, background: C.surface, padding: "10px 12px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                        <strong style={{ color: C.navy, fontSize: 11.5 }}>{item.autor_nombre || (item.autor_rol === "admin" ? "Kyoszen" : "Cliente")}</strong>
+                        <time style={{ color: C.faint, fontSize: 9.5 }}>{fechaComentario(item.created_at)}</time>
+                      </div>
+                      <p style={{ margin: "5px 0 0", color: C.body, fontSize: 12, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{item.contenido}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+              {!pidiendoCambios && (
+                <div style={{ marginTop: 12 }}>
+                  <textarea value={comentario} onChange={(event) => setComentario(event.target.value)} rows={3} placeholder="Escribe un comentario…" style={{ width: "100%", resize: "vertical", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 11px", color: C.ink, font: "inherit", fontSize: 12.5, outline: "none" }} />
+                  <button type="button" onClick={() => void comentar()} disabled={!comentario.trim() || accion !== null} style={{ marginTop: 8, border: 0, borderRadius: 10, background: C.navy, padding: "9px 12px", color: C.white, fontSize: 12, fontWeight: 850, cursor: !comentario.trim() || accion !== null ? "not-allowed" : "pointer", opacity: !comentario.trim() || accion !== null ? .55 : 1 }}>{accion === "comentar" ? "Publicando…" : "Publicar comentario"}</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ArchivosCliente({ espacio, userName, onConteosUpdated }: {
+  espacio: Espacio;
+  userName: string;
+  onConteosUpdated: () => Promise<void>;
+}) {
+  const [archivos, setArchivos] = useState<EspacioArchivo[]>([]);
+  const [archivoId, setArchivoId] = useState<string | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  const cargar = useCallback(async () => {
+    setCargando(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/revisor/proyectos/espacios/${espacio.id}/archivos`);
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudieron cargar los archivos."));
+      const data = await response.json() as { archivos?: EspacioArchivo[] };
+      setArchivos(Array.isArray(data.archivos) ? data.archivos : []);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudieron cargar los archivos.");
+    } finally {
+      setCargando(false);
+    }
+  }, [espacio.id]);
+
+  useEffect(() => { void cargar(); }, [cargar]);
+  const archivo = archivos.find(({ id }) => id === archivoId) ?? null;
+  const actualizar = async () => {
+    await Promise.all([cargar(), onConteosUpdated()]);
+  };
+
+  if (cargando) return <Spinner texto="Cargando archivos…" />;
+  if (error && archivos.length === 0) {
+    return <div style={{ border: "1px solid #FECACA", borderRadius: 14, background: "#FEF2F2", padding: "28px 24px", textAlign: "center" }}><p role="alert" style={{ margin: "0 0 13px", color: C.danger, fontSize: 13 }}>{error}</p><Boton onClick={() => void cargar()} secundario>Volver a intentar</Boton></div>;
+  }
+  if (archivos.length === 0) {
+    return <div style={{ border: `1px dashed ${C.border}`, borderRadius: 16, background: C.white, padding: "54px 24px", textAlign: "center" }}><span aria-hidden="true" style={{ fontSize: 36 }}>🎨</span><h3 style={{ margin: "13px 0 6px", color: C.navy, fontSize: 16, fontWeight: 900 }}>Aún no hay archivos en este espacio.</h3><p style={{ margin: 0, color: C.muted, fontSize: 13 }}>Cuando haya entregables listos, aparecerán aquí.</p></div>;
+  }
+
+  return (
+    <>
+      {error && <p role="alert" style={{ margin: "0 0 13px", borderRadius: 10, background: "#FEF2F2", padding: "9px 11px", color: C.danger, fontSize: 12 }}>{error}</p>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 230px), 1fr))", gap: 15 }}>
+        {archivos.map((item) => {
+          const ui = estadoArchivoUI(item.estado);
+          const esImagen = item.tipo?.startsWith("image/");
+          const esPdf = item.tipo === "application/pdf" || item.nombre.toLowerCase().endsWith(".pdf");
+          return (
+            <button key={item.id} type="button" onClick={() => setArchivoId(item.id)} style={{ overflow: "hidden", border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: 0, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 4px 18px rgba(4, 46, 123, .06)" }}>
+              <div style={{ display: "flex", height: 170, alignItems: "center", justifyContent: "center", overflow: "hidden", background: C.surface }}>
+                {esImagen ? <img src={item.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span aria-hidden="true" style={{ fontSize: 50 }}>{esPdf ? "📄" : "📎"}</span>}
+              </div>
+              <div style={{ padding: 14 }}>
+                <span style={{ display: "inline-block", borderRadius: 999, background: ui.colorSuave, padding: "5px 8px", color: ui.color, fontSize: 9.5, fontWeight: 850 }}>{ui.label}</span>
+                <h3 style={{ margin: "10px 0 0", color: C.navy, fontSize: 13.5, fontWeight: 900, lineHeight: 1.35, overflowWrap: "anywhere" }}>{item.nombre}</h3>
+                {item.nota && <p style={{ margin: "7px 0 0", color: C.muted, fontSize: 11.5, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{item.nota}</p>}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {archivo && <DetalleArchivo espacio={espacio} archivo={archivo} userName={userName} onClose={() => setArchivoId(null)} onUpdated={actualizar} />}
+    </>
+  );
+}
+
+function TarjetaCuestionario({
+  cuestionario,
+}: {
+  cuestionario: NonNullable<EspacioListado["cuestionario"]>;
+}) {
+  const estado = cuestionario.completado
+    ? {
+        texto: "Completado ✓",
+        color: "#15803D",
+        fondo: "#DCFCE7",
+        boton: "Ver respuestas",
+      }
+    : cuestionario.respondidas > 0
+      ? {
+          texto: `En progreso · ${cuestionario.respondidas} de ${cuestionario.total}`,
+          color: C.blue,
+          fondo: "#EAF4FF",
+          boton: "Continuar",
+        }
+      : {
+          texto: "Aún no lo has contestado",
+          color: C.muted,
+          fondo: C.surface,
+          boton: "Contestar ahora",
+        };
+
+  return (
+    <section
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 18,
+        marginBottom: 22,
+        border: `1px solid ${C.blue}33`,
+        borderRadius: 16,
+        background: C.white,
+        padding: 18,
+        boxShadow: "0 8px 24px rgba(4, 46, 123, .08)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+        <span
+          aria-hidden="true"
+          style={{
+            display: "grid",
+            width: 46,
+            height: 46,
+            flexShrink: 0,
+            placeItems: "center",
+            borderRadius: 13,
+            background: "#EAF4FF",
+            fontSize: 23,
+          }}
+        >
+          📋
+        </span>
+        <div style={{ minWidth: 0 }}>
+          <h3 style={{ margin: 0, color: C.navy, fontSize: 15, fontWeight: 900 }}>
+            Cuestionario de onboarding
+          </h3>
+          <span
+            style={{
+              display: "inline-block",
+              marginTop: 7,
+              borderRadius: 999,
+              background: estado.fondo,
+              padding: "5px 9px",
+              color: estado.color,
+              fontSize: 11,
+              fontWeight: 850,
+            }}
+          >
+            {estado.texto}
+          </span>
+        </div>
+      </div>
+      <a
+        href={`/cuestionario/${encodeURIComponent(cuestionario.token)}`}
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          flexShrink: 0,
+          borderRadius: 11,
+          background: C.blue,
+          padding: "10px 14px",
+          color: C.white,
+          fontSize: 12,
+          fontWeight: 850,
+          textDecoration: "none",
+        }}
+      >
+        {estado.boton}
+      </a>
+    </section>
+  );
+}
+
 export default function ProyectosCliente({ userName }: { userName: string }) {
   const [proyectos, setProyectos] = useState<ProyectoListado[]>([]);
+  const [espacios, setEspacios] = useState<EspacioListado[]>([]);
+  const [espacioId, setEspacioId] = useState<string | null>(null);
   const [proyectoId, setProyectoId] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
   const cargarProyectos = useCallback(async () => {
+    setCargando(true);
     setError("");
     try {
-      const response = await fetch("/api/revisor/proyectos");
-      if (!response.ok) throw new Error(await mensajeError(response, "No se pudieron cargar los proyectos."));
-      const data: unknown = await response.json();
-      setProyectos(Array.isArray(data) ? data as ProyectoListado[] : []);
+      const [proyectosResponse, espaciosResponse] = await Promise.all([
+        fetch("/api/revisor/proyectos"),
+        fetch("/api/revisor/proyectos/espacios"),
+      ]);
+      if (!proyectosResponse.ok) {
+        throw new Error(await mensajeError(proyectosResponse, "No se pudieron cargar los proyectos."));
+      }
+      if (!espaciosResponse.ok) {
+        throw new Error(await mensajeError(espaciosResponse, "No se pudieron cargar los espacios."));
+      }
+      const [proyectosData, espaciosData] = await Promise.all([
+        proyectosResponse.json() as Promise<unknown>,
+        espaciosResponse.json() as Promise<{ espacios?: EspacioListado[] }>,
+      ]);
+      setProyectos(Array.isArray(proyectosData) ? proyectosData as ProyectoListado[] : []);
+      setEspacios(Array.isArray(espaciosData.espacios) ? espaciosData.espacios : []);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudieron cargar los proyectos.");
+      setError(cause instanceof Error ? cause.message : "No se pudo cargar el Centro de Proyectos.");
     } finally {
       setCargando(false);
     }
@@ -661,52 +1046,129 @@ export default function ProyectosCliente({ userName }: { userName: string }) {
     void cargarProyectos();
   }, [cargarProyectos]);
 
+  const espacio = espacios.find(({ id }) => id === espacioId) ?? null;
+  const proyectosDelEspacio = espacio
+    ? proyectos.filter(({ espacio_id }) => espacio_id === espacio.id)
+    : [];
+  const etiquetaTipo = (tipo: Espacio["tipo"]) => ({
+    aprobacion: "Aprobación",
+    archivos: "Archivos",
+    tablero: "Tablero",
+  })[tipo];
+  const resumenEspacio = (item: EspacioListado) => {
+    if (item.tipo === "aprobacion") {
+      return `${item.proyectos_count} ${item.proyectos_count === 1 ? "proyecto" : "proyectos"}`;
+    }
+    if (item.tipo === "archivos") {
+      return `${item.archivos_count} ${item.archivos_count === 1 ? "archivo" : "archivos"}`;
+    }
+    return `${item.tarjetas_count} ${item.tarjetas_count === 1 ? "tarjeta" : "tarjetas"}`;
+  };
+
+  const tarjetasProyectos = (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: 16 }}>
+      {proyectosDelEspacio.map((proyecto) => (
+        <button
+          key={proyecto.id}
+          type="button"
+          onClick={() => setProyectoId(proyecto.id)}
+          style={{ width: "100%", minHeight: 190, border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: 20, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 4px 18px rgba(4, 46, 123, .06)" }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: "0 0 7px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: "1.1px", textTransform: "uppercase" }}>{proyecto.folio || "Proyecto"}</p>
+              <h2 style={{ margin: 0, color: C.navy, fontSize: 16, fontWeight: 900, lineHeight: 1.3 }}>{proyecto.titulo}</h2>
+              <p style={{ margin: "7px 0 0", color: C.muted, fontSize: 12.5 }}>{proyecto.area || "Sin área asignada"}</p>
+            </div>
+            <span aria-hidden="true" style={{ color: C.blue, fontSize: 20, lineHeight: 1 }}>→</span>
+          </div>
+          <div style={{ display: "flex", gap: 7, marginTop: 18, overflowX: "auto", paddingBottom: 2 }}>
+            {proyecto.proyecto_etapas.map((etapa) => {
+              const ui = ESTADO_ETAPA_UI[etapa.estado];
+              return (
+                <span key={etapa.id} style={{ flexShrink: 0, border: `1px solid ${ui.color}44`, borderRadius: 999, background: ui.colorSuave, padding: "6px 9px", color: ui.color, fontSize: 10.5, fontWeight: 800 }}>
+                  {etapa.estado === "bloqueada" ? "🔒 " : ""}{etapa.nombre} · {etapa.progreso.aprobado}/{etapa.progreso.total}
+                </span>
+              );
+            })}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", color: C.ink }}>
       <style>{`@keyframes proyectos-spin { to { transform: rotate(360deg); } }`}</style>
 
       {cargando ? (
-        <Spinner />
-      ) : error && proyectos.length === 0 ? (
+        <Spinner texto="Cargando espacios…" />
+      ) : error && espacios.length === 0 ? (
         <div style={{ border: "1px solid #FECACA", borderRadius: 14, background: "#FEF2F2", padding: "28px 24px", textAlign: "center" }}>
           <p role="alert" style={{ margin: "0 0 14px", color: C.danger, fontSize: 13.5, fontWeight: 700 }}>{error}</p>
           <Boton onClick={() => void cargarProyectos()} secundario>Volver a intentar</Boton>
         </div>
-      ) : proyectos.length === 0 ? (
+      ) : espacios.length === 0 ? (
         <div style={{ maxWidth: 760, margin: "0 auto", border: `1px solid ${C.border}`, borderRadius: 16, background: C.white, padding: "64px 24px", textAlign: "center" }}>
           <span aria-hidden="true" style={{ fontSize: 38 }}>📁</span>
-          <h2 style={{ margin: "16px 0 7px", color: C.navy, fontSize: 17, fontWeight: 900 }}>Aún no hay proyectos para revisar</h2>
-          <p style={{ margin: 0, color: C.muted, fontSize: 13 }}>Cuando haya nuevas escenas listas, aparecerán aquí.</p>
+          <h2 style={{ margin: "16px 0 7px", color: C.navy, fontSize: 17, fontWeight: 900 }}>Aún no hay espacios disponibles</h2>
+          <p style={{ margin: 0, color: C.muted, fontSize: 13 }}>Cuando haya entregables listos, aparecerán aquí.</p>
         </div>
+      ) : espacio ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setEspacioId(null)}
+            style={{ marginBottom: 18, border: 0, background: "transparent", padding: 0, color: C.blue, fontSize: 13, fontWeight: 850, cursor: "pointer" }}
+          >
+            ← Espacios
+          </button>
+          <header style={{ marginBottom: 22 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span aria-hidden="true" style={{ fontSize: 34 }}>{espacio.icono || "📁"}</span>
+              <div>
+                <p style={{ margin: "0 0 3px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: "1px", textTransform: "uppercase" }}>{etiquetaTipo(espacio.tipo)}</p>
+                <h2 style={{ margin: 0, color: C.navy, fontSize: 22, fontWeight: 900 }}>{espacio.nombre}</h2>
+              </div>
+            </div>
+            {espacio.descripcion && <p style={{ margin: "10px 0 0", color: C.muted, fontSize: 13.5, lineHeight: 1.6 }}>{espacio.descripcion}</p>}
+          </header>
+          {error && <p role="alert" style={{ margin: "0 0 14px", borderRadius: 10, background: "#FEF2F2", padding: "10px 12px", color: C.danger, fontSize: 12.5 }}>{error}</p>}
+          {espacio.cuestionario && (
+            <TarjetaCuestionario cuestionario={espacio.cuestionario} />
+          )}
+          {espacio.tipo === "aprobacion" ? (
+            proyectosDelEspacio.length > 0 ? tarjetasProyectos : (
+              <div style={{ border: `1px dashed ${C.border}`, borderRadius: 16, background: C.white, padding: "52px 24px", textAlign: "center" }}>
+                <span aria-hidden="true" style={{ fontSize: 34 }}>🎬</span>
+                <h3 style={{ margin: "13px 0 6px", color: C.navy, fontSize: 16, fontWeight: 900 }}>Aún no hay proyectos para revisar</h3>
+                <p style={{ margin: 0, color: C.muted, fontSize: 13 }}>Cuando haya nuevas escenas listas, aparecerán aquí.</p>
+              </div>
+            )
+          ) : espacio.tipo === "archivos" ? (
+            <ArchivosCliente espacio={espacio} userName={userName} onConteosUpdated={cargarProyectos} />
+          ) : (
+            <TableroCliente espacio={espacio} userName={userName} />
+          )}
+        </>
       ) : (
         <>
           {error && <p role="alert" style={{ margin: "0 0 14px", borderRadius: 10, background: "#FEF2F2", padding: "10px 12px", color: C.danger, fontSize: 12.5 }}>{error}</p>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: 16 }}>
-            {proyectos.map((proyecto) => (
+            {espacios.map((item) => (
               <button
-                key={proyecto.id}
+                key={item.id}
                 type="button"
-                onClick={() => setProyectoId(proyecto.id)}
-                style={{ width: "100%", minHeight: 190, border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: 20, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 4px 18px rgba(4, 46, 123, .06)" }}
+                onClick={() => setEspacioId(item.id)}
+                style={{ width: "100%", minHeight: 210, border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: 22, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 4px 18px rgba(4, 46, 123, .06)", borderTop: `4px solid ${item.color || C.blue}` }}
               >
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: "0 0 7px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: "1.1px", textTransform: "uppercase" }}>{proyecto.folio || "Proyecto"}</p>
-                    <h2 style={{ margin: 0, color: C.navy, fontSize: 16, fontWeight: 900, lineHeight: 1.3 }}>{proyecto.titulo}</h2>
-                    <p style={{ margin: "7px 0 0", color: C.muted, fontSize: 12.5 }}>{proyecto.area || "Sin área asignada"}</p>
-                  </div>
+                  <span aria-hidden="true" style={{ fontSize: 42, lineHeight: 1 }}>{item.icono || "📁"}</span>
                   <span aria-hidden="true" style={{ color: C.blue, fontSize: 20, lineHeight: 1 }}>→</span>
                 </div>
-                <div style={{ display: "flex", gap: 7, marginTop: 18, overflowX: "auto", paddingBottom: 2 }}>
-                  {proyecto.proyecto_etapas.map((etapa) => {
-                    const ui = ESTADO_ETAPA_UI[etapa.estado];
-                    return (
-                      <span key={etapa.id} style={{ flexShrink: 0, border: `1px solid ${ui.color}44`, borderRadius: 999, background: ui.colorSuave, padding: "6px 9px", color: ui.color, fontSize: 10.5, fontWeight: 800 }}>
-                        {etapa.estado === "bloqueada" ? "🔒 " : ""}{etapa.nombre} · {etapa.progreso.aprobado}/{etapa.progreso.total}
-                      </span>
-                    );
-                  })}
-                </div>
+                <p style={{ margin: "18px 0 6px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: "1px", textTransform: "uppercase" }}>{etiquetaTipo(item.tipo)}</p>
+                <h2 style={{ margin: 0, color: C.navy, fontSize: 18, fontWeight: 900, lineHeight: 1.3 }}>{item.nombre}</h2>
+                <p style={{ margin: "12px 0 0", color: C.muted, fontSize: 12.5, fontWeight: 700 }}>{resumenEspacio(item)}</p>
               </button>
             ))}
           </div>

@@ -13,19 +13,33 @@ import {
   ESTADO_BLOQUE_UI,
   ESTADO_ETAPA_UI,
   type Archivo,
+  type Espacio,
+  type EspacioArchivo,
+  type EspacioComentario,
   type ModoEtapa,
   type Proyecto,
   type ProyectoBloque,
   type ProyectoComentario,
   type ProyectoEscena,
   type ProyectoEtapa,
+  type TipoEspacio,
 } from "@/lib/proyectos";
+import TableroAdmin from "@/components/admin/TableroAdmin";
 
 type Progreso = { total: number; aprobado: number; cambios: number; pendiente: number };
 type EtapaListado = ProyectoEtapa & { progreso: Progreso };
 type ProyectoListado = Proyecto & {
   escenas_count: number;
   proyecto_etapas: EtapaListado[];
+};
+type EspacioListado = Espacio & {
+  proyectos_count: number;
+  archivos_count: number;
+  tarjetas_count: number;
+};
+type InvitacionCuestionario = {
+  token: string;
+  invitado_nombre: string;
 };
 type BloqueDetalle = ProyectoBloque & { proyecto_comentarios: ProyectoComentario[] };
 type EtapaDetalle = ProyectoEtapa & { proyecto_bloques: BloqueDetalle[] };
@@ -511,36 +525,503 @@ function ModalDetalle({ proyectoId, onClose }: { proyectoId: string; onClose: ()
 
 function Spinner() { return <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1883FF] border-t-transparent" />; }
 
+function pesoLegible(peso: number | null) {
+  if (peso === null) return "Peso no disponible";
+  if (peso < 1024) return `${peso} B`;
+  if (peso < 1024 * 1024) return `${(peso / 1024).toFixed(1)} KB`;
+  return `${(peso / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function GestorArchivos({ espacio, onClose, onUpdated }: {
+  espacio: EspacioListado;
+  onClose: () => void;
+  onUpdated: () => Promise<void>;
+}) {
+  const [archivos, setArchivos] = useState<EspacioArchivo[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [subiendo, setSubiendo] = useState(false);
+  const [arrastrando, setArrastrando] = useState(false);
+  const [error, setError] = useState("");
+  const [archivoAbierto, setArchivoAbierto] = useState<string | null>(null);
+  const [comentarios, setComentarios] = useState<EspacioComentario[]>([]);
+  const [comentario, setComentario] = useState("");
+  const [accion, setAccion] = useState<string | null>(null);
+
+  const cargarArchivos = useCallback(async () => {
+    setCargando(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos`);
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudieron cargar los archivos."));
+      const data = await response.json() as { archivos?: EspacioArchivo[] };
+      setArchivos(Array.isArray(data.archivos) ? data.archivos : []);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudieron cargar los archivos.");
+    } finally {
+      setCargando(false);
+    }
+  }, [espacio.id]);
+
+  useEffect(() => { void cargarArchivos(); }, [cargarArchivos]);
+
+  const subir = async (lista: FileList | File[]) => {
+    const files = Array.from(lista);
+    if (files.length === 0) return;
+    setSubiendo(true);
+    setError("");
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) throw new Error(await mensajeError(response, `No se pudo subir ${file.name}.`));
+      }
+      await Promise.all([cargarArchivos(), onUpdated()]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudieron subir los archivos.");
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
+  const guardarNota = async (archivo: EspacioArchivo, nota: string) => {
+    setAccion(archivo.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nota }),
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo guardar la nota."));
+      await cargarArchivos();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo guardar la nota.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
+  const eliminar = async (archivo: EspacioArchivo) => {
+    if (!confirm(`¿Eliminar “${archivo.nombre}”? Esta acción no se puede deshacer.`)) return;
+    setAccion(archivo.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo eliminar el archivo."));
+      if (archivoAbierto === archivo.id) setArchivoAbierto(null);
+      await Promise.all([cargarArchivos(), onUpdated()]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo eliminar el archivo.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
+  const cargarComentarios = async (archivoId: string) => {
+    setArchivoAbierto(archivoId);
+    setComentarios([]);
+    setComentario("");
+    setError("");
+    const response = await fetch(`/api/revisor/proyectos/espacios/${espacio.id}/archivos/${archivoId}/comments`);
+    if (!response.ok) {
+      setError(await mensajeError(response, "No se pudieron cargar los comentarios."));
+      return;
+    }
+    const data = await response.json() as { comentarios?: EspacioComentario[] };
+    setComentarios(Array.isArray(data.comentarios) ? data.comentarios : []);
+  };
+
+  const publicarComentario = async () => {
+    if (!archivoAbierto || !comentario.trim()) return;
+    setAccion(`comentario-${archivoAbierto}`);
+    setError("");
+    try {
+      const response = await fetch(`/api/revisor/proyectos/espacios/${espacio.id}/archivos/${archivoAbierto}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contenido: comentario.trim(), autor_nombre: "Kyoszen", autor_rol: "admin" }),
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo publicar el comentario."));
+      setComentario("");
+      await cargarComentarios(archivoAbierto);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo publicar el comentario.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
+  return (
+    <ModalBase onClose={onClose} ancho="max-w-6xl">
+      <ModalHeader titulo={`${espacio.icono || "🎨"} ${espacio.nombre}`} subtitulo="Sube, organiza y consulta la revisión de los entregables." onClose={onClose} />
+      <div className="space-y-5 p-6">
+        <label
+          onDragOver={(event) => { event.preventDefault(); setArrastrando(true); }}
+          onDragLeave={() => setArrastrando(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setArrastrando(false);
+            void subir(event.dataTransfer.files);
+          }}
+          className={`flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed px-5 py-8 text-center transition ${arrastrando ? "border-[#1883FF] bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-[#1883FF]"}`}
+        >
+          <span className="text-3xl">☁️</span>
+          <span className="mt-2 text-sm font-black text-[#042E7B]">{subiendo ? "Subiendo archivos…" : "Arrastra archivos aquí o haz clic para seleccionar"}</span>
+          <span className="mt-1 text-xs text-slate-500">Imágenes, PDF y otros entregables se guardan sin compresión.</span>
+          <input type="file" multiple disabled={subiendo} className="hidden" onChange={(event) => event.target.files && void subir(event.target.files)} />
+        </label>
+        {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
+        {cargando ? <div className="flex min-h-48 items-center justify-center"><Spinner /></div> : archivos.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-slate-300 py-14 text-center text-sm text-slate-500">Aún no hay archivos en este espacio.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {archivos.map((archivo) => {
+              const ui = ESTADO_BLOQUE_UI[archivo.estado];
+              return (
+                <article key={archivo.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <a href={archivo.url} target="_blank" rel="noreferrer" className="flex h-40 items-center justify-center bg-slate-100">
+                    {archivo.tipo?.startsWith("image/") ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={archivo.url} alt={archivo.nombre} className="h-full w-full object-cover" />
+                    ) : <span className="text-5xl" aria-hidden="true">{archivo.tipo === "application/pdf" ? "📄" : "📎"}</span>}
+                  </a>
+                  <div className="space-y-3 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0"><p className="truncate text-sm font-black text-[#042E7B]" title={archivo.nombre}>{archivo.nombre}</p><p className="mt-0.5 text-[10px] font-semibold text-slate-400">{pesoLegible(archivo.peso)}</p></div>
+                      <span className="shrink-0 rounded-full px-2 py-1 text-[10px] font-extrabold" style={{ color: ui.color, background: ui.colorSuave }}>{ui.label}</span>
+                    </div>
+                    <textarea
+                      key={`${archivo.id}-${archivo.nota}`}
+                      defaultValue={archivo.nota ?? ""}
+                      rows={2}
+                      placeholder="Agrega una nota: qué es, versión, indicaciones…"
+                      className={inputClass}
+                      onBlur={(event) => {
+                        if (event.target.value.trim() !== (archivo.nota ?? "")) void guardarNota(archivo, event.target.value);
+                      }}
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <button type="button" onClick={() => void cargarComentarios(archivo.id)} className="cursor-pointer text-xs font-bold text-[#1883FF] hover:underline">💬 Ver comentarios</button>
+                      <button type="button" disabled={accion === archivo.id} onClick={() => void eliminar(archivo)} className="cursor-pointer text-xs font-bold text-red-600 disabled:opacity-50">Eliminar</button>
+                    </div>
+                    {archivoAbierto === archivo.id && (
+                      <div className="space-y-2 border-t border-slate-100 pt-3">
+                        {comentarios.length === 0 ? <p className="text-xs text-slate-400">Aún no hay comentarios.</p> : comentarios.map((item) => (
+                          <div key={item.id} className="rounded-xl bg-slate-50 p-2.5 text-xs">
+                            <p className="font-black text-[#042E7B]">{item.autor_nombre || (item.autor_rol === "admin" ? "Kyoszen" : "Cliente")}</p>
+                            <p className="mt-1 whitespace-pre-wrap text-slate-600">{item.contenido}</p>
+                          </div>
+                        ))}
+                        <textarea value={comentario} onChange={(event) => setComentario(event.target.value)} rows={2} placeholder="Responder al cliente…" className={inputClass} />
+                        <button type="button" onClick={() => void publicarComentario()} disabled={!comentario.trim() || accion === `comentario-${archivo.id}`} className="cursor-pointer rounded-lg bg-[#1883FF] px-3 py-2 text-xs font-black text-white disabled:opacity-50">Publicar comentario</button>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </ModalBase>
+  );
+}
+
+function TarjetaEspacioAdmin({ espacio, invitaciones, cargandoInvitaciones, onUpdated, onOpenArchivos, onOpenTablero }: {
+  espacio: EspacioListado;
+  invitaciones: InvitacionCuestionario[];
+  cargandoInvitaciones: boolean;
+  onUpdated: () => Promise<void>;
+  onOpenArchivos: (espacio: EspacioListado) => void;
+  onOpenTablero: (espacio: EspacioListado) => void;
+}) {
+  const [nombre, setNombre] = useState(espacio.nombre);
+  const [descripcion, setDescripcion] = useState(espacio.descripcion ?? "");
+  const [icono, setIcono] = useState(espacio.icono ?? "");
+  const [color, setColor] = useState(espacio.color ?? "#1883FF");
+  const [orden, setOrden] = useState(espacio.orden);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+
+  const guardar = async (patch: Record<string, unknown>) => {
+    setGuardando(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo actualizar el espacio."));
+      await onUpdated();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo actualizar el espacio.");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const eliminar = async () => {
+    if (!confirm(`¿Eliminar el espacio “${espacio.nombre}”? Sus proyectos quedarán sin espacio.`)) return;
+    setGuardando(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo eliminar el espacio."));
+      await onUpdated();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo eliminar el espacio.");
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" style={{ borderTopColor: espacio.color || "#1883FF", borderTopWidth: 4 }}>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl" aria-hidden="true">{espacio.icono || "📁"}</span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#1883FF]">{espacio.tipo}</p>
+            <p className="text-xs font-semibold text-slate-500">
+              {espacio.proyectos_count} proyectos · {espacio.archivos_count} archivos · {espacio.tarjetas_count} tarjetas
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={guardando}
+          onClick={() => void guardar({ publicado: !espacio.publicado })}
+          className={`cursor-pointer rounded-full px-2.5 py-1 text-[10px] font-extrabold disabled:opacity-50 ${espacio.publicado ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
+        >
+          {espacio.publicado ? "Publicado" : "Borrador"}
+        </button>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="sm:col-span-2"><Etiqueta texto="Nombre" /><input value={nombre} onChange={(event) => setNombre(event.target.value)} className={inputClass} /></label>
+        <label className="sm:col-span-2"><Etiqueta texto="Descripción" /><textarea rows={2} value={descripcion} onChange={(event) => setDescripcion(event.target.value)} className={inputClass} /></label>
+        <label><Etiqueta texto="Ícono" /><input value={icono} onChange={(event) => setIcono(event.target.value)} className={inputClass} /></label>
+        <label><Etiqueta texto="Color" /><input type="color" value={color} onChange={(event) => setColor(event.target.value)} className="h-[42px] w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-1" /></label>
+        <label><Etiqueta texto="Orden" /><input type="number" value={orden} onChange={(event) => setOrden(Number(event.target.value) || 0)} className={inputClass} /></label>
+        <label className="sm:col-span-2">
+          <Etiqueta texto="Cuestionario de onboarding" />
+          <select
+            value={espacio.cuestionario_token ?? ""}
+            disabled={guardando || cargandoInvitaciones}
+            onChange={(event) => void guardar({ cuestionario_token: event.target.value || null })}
+            className={inputClass}
+          >
+            <option value="">{cargandoInvitaciones ? "Cargando cuestionarios…" : "Ninguno"}</option>
+            {invitaciones.map((invitacion) => (
+              <option key={invitacion.token} value={invitacion.token}>
+                {invitacion.invitado_nombre} · {invitacion.token}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{error}</p>}
+      <div className="mt-4 flex justify-between gap-2 border-t border-slate-100 pt-4">
+        <button type="button" disabled={guardando} onClick={() => void eliminar()} className="cursor-pointer rounded-xl px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">Eliminar</button>
+        <div className="flex gap-2">
+          {espacio.tipo === "archivos" && <button type="button" onClick={() => onOpenArchivos(espacio)} className="cursor-pointer rounded-xl border border-[#1883FF]/25 px-3 py-2 text-xs font-black text-[#1883FF]">Gestionar archivos</button>}
+          {espacio.tipo === "tablero" && <button type="button" onClick={() => onOpenTablero(espacio)} className="cursor-pointer rounded-xl border border-[#1883FF]/25 px-3 py-2 text-xs font-black text-[#1883FF]">Abrir tablero</button>}
+          <button
+            type="button"
+            disabled={guardando || !nombre.trim()}
+            onClick={() => void guardar({ nombre: nombre.trim(), descripcion: descripcion.trim() || null, icono: icono.trim() || null, color, orden })}
+            className="cursor-pointer rounded-xl bg-[#1883FF] px-4 py-2 text-xs font-black text-white disabled:opacity-50"
+          >
+            {guardando ? "Guardando…" : "Guardar cambios"}
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function GestionEspacios({ espacios, onUpdated, onOpenArchivos, onOpenTablero }: {
+  espacios: EspacioListado[];
+  onUpdated: () => Promise<void>;
+  onOpenArchivos: (espacio: EspacioListado) => void;
+  onOpenTablero: (espacio: EspacioListado) => void;
+}) {
+  const [nombre, setNombre] = useState("");
+  const [tipo, setTipo] = useState<TipoEspacio>("aprobacion");
+  const [icono, setIcono] = useState("🎬");
+  const [color, setColor] = useState("#1883FF");
+  const [publicado, setPublicado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+  const [invitaciones, setInvitaciones] = useState<InvitacionCuestionario[]>([]);
+  const [cargandoInvitaciones, setCargandoInvitaciones] = useState(true);
+  const [errorInvitaciones, setErrorInvitaciones] = useState("");
+
+  useEffect(() => {
+    let vigente = true;
+
+    const cargarInvitaciones = async () => {
+      setCargandoInvitaciones(true);
+      setErrorInvitaciones("");
+      try {
+        const response = await fetch("/api/admin/cuestionario");
+        if (!response.ok) {
+          throw new Error(await mensajeError(response, "No se pudieron cargar los cuestionarios."));
+        }
+        const data = await response.json() as { invitaciones?: InvitacionCuestionario[] };
+        if (vigente) {
+          setInvitaciones(Array.isArray(data.invitaciones) ? data.invitaciones : []);
+        }
+      } catch (cause) {
+        if (vigente) {
+          setErrorInvitaciones(
+            cause instanceof Error ? cause.message : "No se pudieron cargar los cuestionarios."
+          );
+        }
+      } finally {
+        if (vigente) setCargandoInvitaciones(false);
+      }
+    };
+
+    void cargarInvitaciones();
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  const crear = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setGuardando(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/proyectos/espacios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: nombre.trim(), tipo, icono: icono.trim() || null, color, publicado }),
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo crear el espacio."));
+      setNombre("");
+      setPublicado(false);
+      await onUpdated();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo crear el espacio.");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={crear} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="font-black text-[#042E7B]">Nuevo espacio</h2>
+        <p className="mt-1 text-xs text-slate-500">Organiza los entregables según su forma de trabajo.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <label className="lg:col-span-2"><Etiqueta texto="Nombre *" /><input required value={nombre} onChange={(event) => setNombre(event.target.value)} className={inputClass} placeholder="Videos de inducción" /></label>
+          <label><Etiqueta texto="Tipo" /><select value={tipo} onChange={(event) => setTipo(event.target.value as TipoEspacio)} className={inputClass}><option value="aprobacion">Aprobación</option><option value="archivos">Archivos</option><option value="tablero">Tablero</option></select></label>
+          <label><Etiqueta texto="Ícono" /><input value={icono} onChange={(event) => setIcono(event.target.value)} className={inputClass} /></label>
+          <label><Etiqueta texto="Color" /><input type="color" value={color} onChange={(event) => setColor(event.target.value)} className="h-[42px] w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-1" /></label>
+        </div>
+        {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-[#042E7B]"><input type="checkbox" checked={publicado} onChange={(event) => setPublicado(event.target.checked)} className="h-4 w-4 accent-[#1883FF]" />Publicar al crear</label>
+          <button type="submit" disabled={guardando || !nombre.trim()} className="cursor-pointer rounded-xl bg-[#FFCC00] px-5 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50">{guardando ? "Creando…" : "+ Crear espacio"}</button>
+        </div>
+      </form>
+      {errorInvitaciones && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          Los espacios siguen disponibles, pero no se pudo cargar el selector de cuestionarios: {errorInvitaciones}
+        </p>
+      )}
+      {espacios.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-sm text-slate-500">Aún no hay espacios.</div>
+      ) : (
+        <div className="grid gap-5 xl:grid-cols-2">
+          {espacios.map((espacio) => (
+            <TarjetaEspacioAdmin
+              key={espacio.id}
+              espacio={espacio}
+              invitaciones={invitaciones}
+              cargandoInvitaciones={cargandoInvitaciones}
+              onUpdated={onUpdated}
+              onOpenArchivos={onOpenArchivos}
+              onOpenTablero={onOpenTablero}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProyectosPage() {
   const [proyectos, setProyectos] = useState<ProyectoListado[]>([]);
+  const [espacios, setEspacios] = useState<EspacioListado[]>([]);
   const [pendientes, setPendientes] = useState<Pendiente[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [seccion, setSeccion] = useState<"proyectos" | "espacios">("proyectos");
   const [bandejaAbierta, setBandejaAbierta] = useState(true);
   const [modal, setModal] = useState<"manual" | "importar" | null>(null);
   const [proyectoAbierto, setProyectoAbierto] = useState<string | null>(null);
+  const [espacioArchivos, setEspacioArchivos] = useState<EspacioListado | null>(null);
+  const [espacioTablero, setEspacioTablero] = useState<EspacioListado | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true); setError("");
     try {
-      const [proyectosResponse, pendientesResponse] = await Promise.all([fetch("/api/admin/proyectos"), fetch("/api/admin/proyectos/pendientes")]);
+      const [proyectosResponse, pendientesResponse, espaciosResponse] = await Promise.all([
+        fetch("/api/admin/proyectos"),
+        fetch("/api/admin/proyectos/pendientes"),
+        fetch("/api/admin/proyectos/espacios"),
+      ]);
       if (!proyectosResponse.ok) throw new Error(await mensajeError(proyectosResponse, "No se pudieron cargar los proyectos."));
       if (!pendientesResponse.ok) throw new Error(await mensajeError(pendientesResponse, "No se pudo cargar la bandeja de pendientes."));
-      const [lista, bandeja] = await Promise.all([proyectosResponse.json() as Promise<ProyectoListado[]>, pendientesResponse.json() as Promise<Pendiente[]>]);
-      setProyectos(lista); setPendientes(bandeja);
+      if (!espaciosResponse.ok) throw new Error(await mensajeError(espaciosResponse, "No se pudieron cargar los espacios."));
+      const [lista, bandeja, espaciosData] = await Promise.all([
+        proyectosResponse.json() as Promise<ProyectoListado[]>,
+        pendientesResponse.json() as Promise<Pendiente[]>,
+        espaciosResponse.json() as Promise<{ espacios: EspacioListado[] }>,
+      ]);
+      setProyectos(lista);
+      setPendientes(bandeja);
+      setEspacios(espaciosData.espacios ?? []);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo cargar el Centro de Proyectos."); }
     finally { setCargando(false); }
   }, []);
   useEffect(() => { void cargar(); }, [cargar]);
   const creado = async (id: string) => { setModal(null); await cargar(); setProyectoAbierto(id); };
   const cerrarDetalle = () => { setProyectoAbierto(null); void cargar(); };
+  const asignarEspacio = async (proyectoId: string, espacioId: string | null) => {
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/${proyectoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ espacio_id: espacioId }),
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo asignar el espacio."));
+      await cargar();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo asignar el espacio.");
+    }
+  };
 
   return (
     <div className="min-h-full bg-[#F8FAFC] p-6 lg:p-8"><div className="mx-auto max-w-7xl">
-      <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-2xl font-black tracking-tight text-[#042E7B] sm:text-3xl">Centro de Proyectos</h1><p className="mt-1.5 text-sm text-slate-500">Gestiona guion, arte y video con aprobación granular por escena.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => setModal("importar")} className="cursor-pointer rounded-xl border border-[#1883FF]/25 bg-white px-4 py-2.5 text-sm font-black text-[#1883FF] hover:bg-blue-50">📥 Importar guion</button><button type="button" onClick={() => setModal("manual")} className="cursor-pointer rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B]">+ Nuevo proyecto</button></div></header>
+      <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-2xl font-black tracking-tight text-[#042E7B] sm:text-3xl">Centro de Proyectos</h1><p className="mt-1.5 text-sm text-slate-500">Gestiona espacios y la aprobación granular por escena.</p></div>{seccion === "proyectos" && <div className="flex flex-wrap gap-2"><button type="button" onClick={() => setModal("importar")} className="cursor-pointer rounded-xl border border-[#1883FF]/25 bg-white px-4 py-2.5 text-sm font-black text-[#1883FF] hover:bg-blue-50">📥 Importar guion</button><button type="button" onClick={() => setModal("manual")} className="cursor-pointer rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B]">+ Nuevo proyecto</button></div>}</header>
+      <nav className="mb-7 flex gap-2 border-b border-slate-200" aria-label="Secciones del Centro de Proyectos">
+        {([["proyectos", "🎬 Proyectos"], ["espacios", "📁 Espacios"]] as const).map(([id, label]) => <button key={id} type="button" onClick={() => setSeccion(id)} className={`cursor-pointer border-b-2 px-4 py-3 text-sm font-black transition ${seccion === id ? "border-[#1883FF] text-[#042E7B]" : "border-transparent text-slate-500 hover:text-[#1883FF]"}`}>{label}</button>)}
+      </nav>
       {error && <p className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
-      {!cargando && <section className="mb-7 overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm"><button type="button" onClick={() => setBandejaAbierta((abierta) => !abierta)} className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left"><span className="font-black text-[#042E7B]">🔴 Por corregir <span className="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600">{pendientes.length}</span></span><span className="text-sm text-slate-400">{bandejaAbierta ? "Ocultar" : "Mostrar"}</span></button>{bandejaAbierta && (pendientes.length ? <div className="divide-y divide-slate-100 border-t border-slate-100">{pendientes.map((pendiente) => <button key={pendiente.id} type="button" onClick={() => setProyectoAbierto(pendiente.proyecto.id)} className="block w-full cursor-pointer px-5 py-4 text-left hover:bg-red-50/40"><p className="text-sm font-black text-[#042E7B]">{pendiente.proyecto.titulo} <span className="font-semibold text-slate-400">· {pendiente.etapa.nombre} · {pendiente.escena ? `Escena ${pendiente.escena.numero}: ${pendiente.escena.titulo}` : "Entregable único"}</span></p>{pendiente.ultimo_comentario ? <p className="mt-1 line-clamp-2 text-sm text-slate-600"><strong>{pendiente.ultimo_comentario.autor_nombre}:</strong> {pendiente.ultimo_comentario.contenido}</p> : <p className="mt-1 text-xs italic text-slate-400">Sin comentario asociado.</p>}</button>)}</div> : <p className="border-t border-slate-100 px-5 py-4 text-sm font-semibold text-emerald-700">Sin cambios pendientes ✔</p>)}</section>}
-      {cargando ? <div className="flex min-h-64 items-center justify-center"><Spinner /></div> : proyectos.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><div className="text-3xl">🎬</div><h2 className="mt-3 font-black text-[#042E7B]">Aún no hay proyectos</h2><p className="mt-1 text-sm text-slate-500">Crea uno manualmente o importa un guion.</p></div> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{proyectos.map((proyecto) => <button key={proyecto.id} type="button" onClick={() => setProyectoAbierto(proyecto.id)} className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#1883FF]/40 hover:shadow-md"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="truncate font-black text-[#042E7B] group-hover:text-[#1883FF]">{proyecto.titulo}</h2>{proyecto.folio && <p className="mt-1 text-xs font-bold text-slate-400">{proyecto.folio}</p>}{proyecto.area && <p className="mt-1 truncate text-xs font-semibold text-slate-500">{proyecto.area}</p>}</div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold ${proyecto.publicado ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{proyecto.publicado ? "Publicado" : "Borrador"}</span></div><div className="my-5 flex flex-wrap gap-2">{proyecto.proyecto_etapas.map((etapa) => { const ui = ESTADO_ETAPA_UI[etapa.estado]; return <span key={etapa.id} className="rounded-full border px-2.5 py-1 text-[10px] font-extrabold" style={{ color: ui.color, backgroundColor: ui.colorSuave, borderColor: ui.color }}>{etapa.nombre}{etapa.progreso.total > 0 ? ` ${etapa.progreso.aprobado}/${etapa.progreso.total}` : ""}</span>; })}</div><div className="flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xs text-slate-400">{proyecto.escenas_count} {proyecto.escenas_count === 1 ? "escena" : "escenas"}</span><span className="text-xs font-bold text-[#1883FF]">Ver detalle →</span></div></button>)}</div>}
-    </div>{modal === "manual" && <ModalManual onClose={() => setModal(null)} onCreated={creado} />}{modal === "importar" && <ModalImportador onClose={() => setModal(null)} onCreated={creado} />}{proyectoAbierto && <ModalDetalle proyectoId={proyectoAbierto} onClose={cerrarDetalle} />}</div>
+      {cargando ? <div className="flex min-h-64 items-center justify-center"><Spinner /></div> : seccion === "espacios" ? <GestionEspacios espacios={espacios} onUpdated={cargar} onOpenArchivos={setEspacioArchivos} onOpenTablero={setEspacioTablero} /> : <>
+        <section className="mb-7 overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm"><button type="button" onClick={() => setBandejaAbierta((abierta) => !abierta)} className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left"><span className="font-black text-[#042E7B]">🔴 Por corregir <span className="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600">{pendientes.length}</span></span><span className="text-sm text-slate-400">{bandejaAbierta ? "Ocultar" : "Mostrar"}</span></button>{bandejaAbierta && (pendientes.length ? <div className="divide-y divide-slate-100 border-t border-slate-100">{pendientes.map((pendiente) => <button key={pendiente.id} type="button" onClick={() => setProyectoAbierto(pendiente.proyecto.id)} className="block w-full cursor-pointer px-5 py-4 text-left hover:bg-red-50/40"><p className="text-sm font-black text-[#042E7B]">{pendiente.proyecto.titulo} <span className="font-semibold text-slate-400">· {pendiente.etapa.nombre} · {pendiente.escena ? `Escena ${pendiente.escena.numero}: ${pendiente.escena.titulo}` : "Entregable único"}</span></p>{pendiente.ultimo_comentario ? <p className="mt-1 line-clamp-2 text-sm text-slate-600"><strong>{pendiente.ultimo_comentario.autor_nombre}:</strong> {pendiente.ultimo_comentario.contenido}</p> : <p className="mt-1 text-xs italic text-slate-400">Sin comentario asociado.</p>}</button>)}</div> : <p className="border-t border-slate-100 px-5 py-4 text-sm font-semibold text-emerald-700">Sin cambios pendientes ✔</p>)}</section>
+        {proyectos.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><div className="text-3xl">🎬</div><h2 className="mt-3 font-black text-[#042E7B]">Aún no hay proyectos</h2><p className="mt-1 text-sm text-slate-500">Crea uno manualmente o importa un guion.</p></div> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{proyectos.map((proyecto) => <article key={proyecto.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-[#1883FF]/40 hover:shadow-md"><button type="button" onClick={() => setProyectoAbierto(proyecto.id)} className="group block w-full cursor-pointer p-5 text-left"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="truncate font-black text-[#042E7B] group-hover:text-[#1883FF]">{proyecto.titulo}</h2>{proyecto.folio && <p className="mt-1 text-xs font-bold text-slate-400">{proyecto.folio}</p>}{proyecto.area && <p className="mt-1 truncate text-xs font-semibold text-slate-500">{proyecto.area}</p>}</div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold ${proyecto.publicado ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{proyecto.publicado ? "Publicado" : "Borrador"}</span></div><div className="my-5 flex flex-wrap gap-2">{proyecto.proyecto_etapas.map((etapa) => { const ui = ESTADO_ETAPA_UI[etapa.estado]; return <span key={etapa.id} className="rounded-full border px-2.5 py-1 text-[10px] font-extrabold" style={{ color: ui.color, backgroundColor: ui.colorSuave, borderColor: ui.color }}>{etapa.nombre}{etapa.progreso.total > 0 ? ` ${etapa.progreso.aprobado}/${etapa.progreso.total}` : ""}</span>; })}</div><div className="flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xs text-slate-400">{proyecto.escenas_count} {proyecto.escenas_count === 1 ? "escena" : "escenas"}</span><span className="text-xs font-bold text-[#1883FF]">Ver detalle →</span></div></button><label className="block border-t border-slate-100 bg-slate-50 px-5 py-3"><span className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">Espacio</span><select value={proyecto.espacio_id ?? ""} onChange={(event) => void asignarEspacio(proyecto.id, event.target.value || null)} className="w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-[#042E7B] outline-none focus:border-[#1883FF]"><option value="">Sin espacio</option>{espacios.filter(({ tipo }) => tipo === "aprobacion").map((espacio) => <option key={espacio.id} value={espacio.id}>{espacio.icono || "📁"} {espacio.nombre}</option>)}</select></label></article>)}</div>}
+      </>}
+    </div>{modal === "manual" && <ModalManual onClose={() => setModal(null)} onCreated={creado} />}{modal === "importar" && <ModalImportador onClose={() => setModal(null)} onCreated={creado} />}{proyectoAbierto && <ModalDetalle proyectoId={proyectoAbierto} onClose={cerrarDetalle} />}{espacioArchivos && <GestorArchivos espacio={espacioArchivos} onClose={() => setEspacioArchivos(null)} onUpdated={cargar} />}{espacioTablero && <TableroAdmin espacio={espacioTablero} onClose={() => setEspacioTablero(null)} onUpdated={cargar} />}</div>
   );
 }

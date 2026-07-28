@@ -7,6 +7,8 @@ import type {
   ProyectoEtapa,
 } from "@/lib/proyectos";
 
+export const runtime = "nodejs";
+
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -84,8 +86,8 @@ export async function GET(
   });
 }
 
-// PUT — edición parcial de metadatos del proyecto.
-export async function PUT(
+// PUT/PATCH — edición parcial de metadatos del proyecto.
+async function actualizarProyecto(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -111,6 +113,9 @@ export async function PUT(
   if (typeof body.folio === "string" || body.folio === null) patch.folio = body.folio;
   if (typeof body.estado === "string") patch.estado = body.estado;
   if (typeof body.publicado === "boolean") patch.publicado = body.publicado;
+  if (typeof body.espacio_id === "string" || body.espacio_id === null) {
+    patch.espacio_id = body.espacio_id;
+  }
 
   const { data, error } = await sb
     .from("proyectos")
@@ -122,6 +127,9 @@ export async function PUT(
   if (!data) return NextResponse.json({ error: "Proyecto no encontrado" }, { status: 404 });
   return NextResponse.json(data);
 }
+
+export const PUT = actualizarProyecto;
+export const PATCH = actualizarProyecto;
 
 // DELETE — el cascade de la base elimina etapas, escenas, bloques y comentarios.
 export async function DELETE(
