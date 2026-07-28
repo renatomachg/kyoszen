@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Dot, IconUI } from "@/components/ui/IconUI";
 
 interface ContentField {
   key: string;
@@ -103,10 +104,11 @@ export default function AdminContenido() {
 
           <div className="flex items-center gap-3">
             <button type="submit" disabled={saving || !dirty}
-              className="bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50">
-              {saving ? "Guardando..." : ok ? "✓ Guardado" : "Guardar contenido"}
+              className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50">
+              {ok ? <IconUI name="check" size={15} /> : <IconUI name="save" size={15} />}
+              {saving ? "Guardando..." : ok ? "Guardado" : "Guardar contenido"}
             </button>
-            {dirty && <span className="text-[12px] text-yellow-600 font-medium">· Cambios sin guardar</span>}
+            {dirty && <span className="inline-flex items-center gap-1.5 text-[12px] text-yellow-600 font-medium"><Dot color="#D97706" size={6} /> Cambios sin guardar</span>}
           </div>
 
           <p className="text-[11.5px] text-muted">

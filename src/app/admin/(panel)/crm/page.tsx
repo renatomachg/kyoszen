@@ -9,6 +9,7 @@ import {
   type Nota,
 } from "@/lib/crm";
 import MatchingPanel from "./MatchingPanel";
+import { Dot, IconUI } from "@/components/ui/IconUI";
 
 interface CandidatoLista extends Candidato {
   aplicaciones_count: number;
@@ -65,6 +66,15 @@ function inicial(nombre: string | null): string {
 function etiquetaEstado(estado: EstadoPipeline) {
   return ESTADOS.find((item) => item.value === estado) ?? ESTADOS[0];
 }
+
+const COLOR_ESTADO: Record<EstadoPipeline, string> = {
+  nuevo: "#2563EB",
+  contactado: "#0284C7",
+  entrevista: "#4F46E5",
+  enviado: "#0891B2",
+  contratado: "#16A34A",
+  descartado: "#64748B",
+};
 
 export default function AdminCRM() {
   const [pestana, setPestana] = useState<"candidatos" | "matching">(
@@ -315,24 +325,24 @@ export default function AdminCRM() {
         <button
           type="button"
           onClick={() => setPestana("candidatos")}
-          className={`rounded-lg px-4 py-2 text-[12px] font-bold transition-colors ${
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-[12px] font-bold transition-colors ${
             pestana === "candidatos"
               ? "bg-navy text-white"
               : "text-muted hover:bg-bg hover:text-navy"
           }`}
         >
-          Candidatos
+          <IconUI name="users" size={14} /> Candidatos
         </button>
         <button
           type="button"
           onClick={() => setPestana("matching")}
-          className={`rounded-lg px-4 py-2 text-[12px] font-bold transition-colors ${
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-[12px] font-bold transition-colors ${
             pestana === "matching"
               ? "bg-navy text-white"
               : "text-muted hover:bg-bg hover:text-navy"
           }`}
         >
-          🎯 Matching por vacante
+          <IconUI name="target" size={14} /> Matching por vacante
         </button>
       </div>
 
@@ -355,18 +365,17 @@ export default function AdminCRM() {
             type="button"
             onClick={() => void sincronizar()}
             disabled={sincronizando}
-            className="rounded-xl border border-border bg-white px-4 py-2.5 text-[12px] font-bold text-navy transition-colors hover:bg-blue-soft disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-2.5 text-[12px] font-bold text-navy transition-colors hover:bg-blue-soft disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {sincronizando
-              ? "Sincronizando…"
-              : "🔄 Sincronizar desde aplicaciones"}
+            <IconUI name="refresh" size={14} className={sincronizando ? "animate-spin" : ""} />
+            {sincronizando ? "Sincronizando…" : "Sincronizar desde aplicaciones"}
           </button>
           <button
             type="button"
             onClick={() => setMostrarNuevo((value) => !value)}
-            className="rounded-xl bg-navy px-4 py-2.5 text-[12px] font-bold text-white transition-colors hover:bg-blue-dark"
+            className="inline-flex items-center gap-2 rounded-xl bg-navy px-4 py-2.5 text-[12px] font-bold text-white transition-colors hover:bg-blue-dark"
           >
-            ＋ Nuevo candidato
+            <IconUI name="plus" size={14} /> Nuevo candidato
           </button>
         </div>
       </div>
@@ -391,7 +400,7 @@ export default function AdminCRM() {
               className="text-xl leading-none text-muted hover:text-navy"
               aria-label="Cerrar formulario"
             >
-              ×
+              <IconUI name="x" size={16} />
             </button>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -501,8 +510,9 @@ export default function AdminCRM() {
                           {candidato.nombre || "Sin nombre"}
                         </span>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${estado.color}`}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${estado.color}`}
                         >
+                          <Dot color={COLOR_ESTADO[candidato.estado]} size={5} />
                           {estado.label}
                         </span>
                       </span>
@@ -512,7 +522,7 @@ export default function AdminCRM() {
                           .join(" · ") || "Sin datos de contacto"}
                       </span>
                       <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted">
-                        <span>📍 {candidato.ubicacion || "Sin ubicación"}</span>
+                        <span className="inline-flex items-center gap-1"><IconUI name="location" size={11} /> {candidato.ubicacion || "Sin ubicación"}</span>
                         <span>
                           {candidato.aplicaciones_count}{" "}
                           {candidato.aplicaciones_count === 1
@@ -535,8 +545,8 @@ export default function AdminCRM() {
               </div>
             ) : !detalle ? (
               <div className="px-6 py-14 text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-soft text-lg">
-                  👤
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-soft text-blue">
+                  <IconUI name="user" size={18} />
                 </div>
                 <p className="text-[13px] font-bold text-navy">
                   Selecciona un candidato
@@ -682,9 +692,9 @@ function Detalle({
               href={candidato.cv_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[12px] font-bold text-blue no-underline hover:underline"
+              className="inline-flex items-center gap-1 text-[12px] font-bold text-blue no-underline hover:underline"
             >
-              Ver CV del candidato ↗
+              Ver CV del candidato <IconUI name="external-link" size={12} />
             </a>
           )}
         </div>
@@ -708,12 +718,13 @@ function Detalle({
                 key={estado.value}
                 onClick={() => onCambiarEstado(estado.value)}
                 disabled={actualizandoEstado}
-                className={`rounded-lg border px-2.5 py-2 text-left text-[10px] font-bold transition-colors disabled:cursor-wait ${
+              className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-[10px] font-bold transition-colors disabled:cursor-wait ${
                   activo
                     ? `${estado.color} border-current`
                     : "border-border bg-white text-muted hover:bg-bg hover:text-navy"
                 }`}
               >
+                <Dot color={COLOR_ESTADO[estado.value]} size={6} />
                 {estado.orden}. {estado.label}
               </button>
             );
@@ -756,9 +767,9 @@ function Detalle({
                     href={aplicacion.cv_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-block text-[10px] font-bold text-blue no-underline hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-blue no-underline hover:underline"
                   >
-                    Ver CV ↗
+                    Ver CV <IconUI name="external-link" size={11} />
                   </a>
                 )}
               </div>
@@ -783,9 +794,9 @@ function Detalle({
             <button
               type="submit"
               disabled={guardandoNota || !nota.trim()}
-              className="rounded-lg bg-navy px-4 py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-navy px-4 py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             >
-              {guardandoNota ? "Guardando…" : "Agregar nota"}
+              <IconUI name="plus" size={13} /> {guardandoNota ? "Guardando…" : "Agregar nota"}
             </button>
           </div>
         </form>
@@ -814,9 +825,9 @@ function Detalle({
             type="button"
             onClick={onBorrar}
             disabled={borrando}
-            className="text-[11px] font-bold text-red-600 transition-opacity hover:opacity-70 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-red-600 transition-opacity hover:opacity-70 disabled:opacity-40"
           >
-            {borrando ? "Borrando…" : "Borrar candidato"}
+            <IconUI name="trash" size={13} /> {borrando ? "Borrando…" : "Borrar candidato"}
           </button>
         </div>
       </section>

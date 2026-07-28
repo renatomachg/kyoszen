@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { logAdminClient } from "@/lib/admin-log-client";
+import { Dot, IconUI } from "@/components/ui/IconUI";
 
 const field =
   "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-blue transition-colors bg-white font-mono";
@@ -223,10 +224,11 @@ export default function AdminCorreos() {
 
             <div className="flex items-center gap-3 pt-1">
               <button type="submit" disabled={savingEmails || !emailsDirty}
-                className="bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50">
-                {savingEmails ? "Guardando..." : emailsOk ? "✓ Guardado" : "Guardar correos"}
+                className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50">
+                {emailsOk ? <IconUI name="check" size={15} /> : <IconUI name="save" size={15} />}
+                {savingEmails ? "Guardando..." : emailsOk ? "Guardado" : "Guardar correos"}
               </button>
-              {emailsDirty && <span className="text-[12px] text-yellow-600 font-medium">· Cambios sin guardar</span>}
+              {emailsDirty && <span className="inline-flex items-center gap-1.5 text-[12px] text-yellow-600 font-medium"><Dot color="#D97706" size={6} /> Cambios sin guardar</span>}
             </div>
           </form>
         )}
@@ -271,8 +273,8 @@ export default function AdminCorreos() {
               <label className={lbl}>
                 Contrasena
                 {smtpPassSet && !smtp.pass && (
-                  <span className="ml-2 text-[10px] font-semibold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full normal-case tracking-normal">
-                    ✓ Configurada
+                  <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full normal-case tracking-normal">
+                    <IconUI name="check" size={11} /> Configurada
                   </span>
                 )}
               </label>
@@ -298,14 +300,15 @@ export default function AdminCorreos() {
               </div>
             )}
             {smtpOk && (
-              <div className="bg-green-50 border border-green-200 text-green-700 text-[13px] px-4 py-3 rounded-xl">
-                ✓ {smtpOk}
+              <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-[13px] px-4 py-3 rounded-xl">
+                <IconUI name="check" size={15} /> {smtpOk}
               </div>
             )}
 
             <div className="flex items-center gap-3 pt-1 flex-wrap">
               <button type="submit" disabled={savingSmtp}
-                className="bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50">
+                className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50">
+                <IconUI name="save" size={15} />
                 {savingSmtp ? "Guardando..." : "Guardar SMTP"}
               </button>
               <button type="button" onClick={handleTestSmtp} disabled={testingSmtp}
@@ -313,10 +316,10 @@ export default function AdminCorreos() {
                 {testingSmtp ? (
                   <><span className="w-3.5 h-3.5 border-2 border-navy border-t-transparent rounded-full animate-spin inline-block" /> Probando...</>
                 ) : (
-                  <><span>⚡</span> Probar conexion</>
+                  <><IconUI name="refresh" size={15} /> Probar conexion</>
                 )}
               </button>
-              {smtpDirty && <span className="text-[12px] text-yellow-600 font-medium">· Cambios sin guardar</span>}
+              {smtpDirty && <span className="inline-flex items-center gap-1.5 text-[12px] text-yellow-600 font-medium"><Dot color="#D97706" size={6} /> Cambios sin guardar</span>}
             </div>
 
             <p className="text-[11.5px] text-muted pt-1">

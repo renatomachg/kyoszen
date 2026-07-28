@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { IconUI } from "@/components/ui/IconUI";
 
 interface Vacante {
   id: number;
@@ -49,8 +50,8 @@ export default function AdminVacantes() {
           <p className="text-[13px] text-muted">{vacantes.filter((v) => v.activa).length} activas · {vacantes.length} total</p>
         </div>
         <Link href="/admin/vacantes/nueva"
-          className="bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors">
-          + Nueva vacante
+          className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors">
+          <IconUI name="plus" size={15} /> Nueva vacante
         </Link>
       </div>
 
@@ -61,8 +62,8 @@ export default function AdminVacantes() {
       ) : vacantes.length === 0 ? (
         <div className="bg-white rounded-2xl border border-border p-12 text-center">
           <p className="text-muted text-[14px] mb-4">No hay vacantes creadas aun</p>
-          <Link href="/admin/vacantes/nueva" className="text-blue font-semibold text-[13px] hover:underline">
-            Crear la primera vacante →
+          <Link href="/admin/vacantes/nueva" className="inline-flex items-center gap-1 text-blue font-semibold text-[13px] hover:underline">
+            Crear la primera vacante <IconUI name="arrow-right" size={14} />
           </Link>
         </div>
       ) : (
@@ -93,6 +94,7 @@ export default function AdminVacantes() {
                   <td className="px-5 py-4">
                     <button
                       onClick={() => toggleActiva(v.id, v.activa)}
+                      aria-label={v.activa ? "Desactivar vacante" : "Activar vacante"}
                       className={`relative w-9 h-5 rounded-full transition-colors ${v.activa ? "bg-blue" : "bg-border"}`}
                     >
                       <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${v.activa ? "translate-x-4" : ""}`} />
@@ -100,14 +102,14 @@ export default function AdminVacantes() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3 justify-end">
-                      <a href={`/vacantes/${v.id}`} target="_blank" rel="noopener noreferrer" className="text-[12px] text-navy font-semibold hover:underline">
-                        Ver
+                      <a href={`/vacantes/${v.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] text-navy font-semibold hover:underline">
+                        <IconUI name="eye" size={13} /> Ver
                       </a>
-                      <Link href={`/admin/vacantes/${v.id}`} className="text-[12px] text-blue font-semibold hover:underline">
-                        Editar
+                      <Link href={`/admin/vacantes/${v.id}`} className="inline-flex items-center gap-1 text-[12px] text-blue font-semibold hover:underline">
+                        <IconUI name="pencil" size={13} /> Editar
                       </Link>
-                      <button onClick={() => eliminar(v.id)} className="text-[12px] text-red-500 font-semibold hover:underline cursor-pointer">
-                        Eliminar
+                      <button onClick={() => eliminar(v.id)} className="inline-flex items-center gap-1 text-[12px] text-red-500 font-semibold hover:underline cursor-pointer">
+                        <IconUI name="trash" size={13} /> Eliminar
                       </button>
                     </div>
                   </td>

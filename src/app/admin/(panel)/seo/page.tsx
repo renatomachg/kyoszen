@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Dot, IconUI } from "@/components/ui/IconUI";
 
 const PAGES = [
   { pagina: "home",      label: "Inicio",    ruta: "/" },
@@ -96,8 +97,10 @@ export default function AdminSeo() {
     <div className="max-w-3xl">
       <div className="mb-6">
         <h1 className="text-2xl font-black text-navy mb-1">SEO por pagina</h1>
-        <p className="text-[13px] text-muted">
-          Edita el titulo y descripcion que aparecen en Google. Usa ✨ para que la IA genere una propuesta optimizada.
+        <p className="flex flex-wrap items-center gap-1 text-[13px] text-muted">
+          Edita el titulo y descripcion que aparecen en Google. Usa
+          <IconUI name="sparkle-off" size={13} className="text-blue" />
+          para que la IA genere una propuesta optimizada.
         </p>
       </div>
 
@@ -125,7 +128,7 @@ export default function AdminSeo() {
                   <span className="text-[13px] font-black text-navy">{label}</span>
                   <span className="text-[11px] text-muted font-mono bg-bg border border-border px-2 py-0.5 rounded-lg">{ruta}</span>
                   <div className="ml-auto flex items-center gap-2">
-                    {dirty && <span className="text-[10px] text-yellow-600 font-bold">· Sin guardar</span>}
+                    {dirty && <span className="inline-flex items-center gap-1.5 text-[10px] text-yellow-600 font-bold"><Dot color="#D97706" size={6} /> Sin guardar</span>}
                     <button
                       type="button"
                       onClick={() => suggest(pagina)}
@@ -138,7 +141,7 @@ export default function AdminSeo() {
                           Analizando...
                         </>
                       ) : (
-                        <><span>✨</span> Sugerir con IA</>
+                        <><IconUI name="sparkle-off" size={14} /> Sugerir con IA</>
                       )}
                     </button>
                   </div>
@@ -203,9 +206,10 @@ export default function AdminSeo() {
                     <button
                       onClick={() => save(pagina)}
                       disabled={saving === pagina || !dirty}
-                      className="bg-navy text-white rounded-xl px-5 py-2 text-[13px] font-bold hover:bg-blue-dark transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-5 py-2 text-[13px] font-bold hover:bg-blue-dark transition-colors disabled:opacity-50"
                     >
-                      {saving === pagina ? "Guardando..." : ok === pagina ? "✓ Guardado" : "Guardar"}
+                      {ok === pagina ? <IconUI name="check" size={14} /> : <IconUI name="save" size={14} />}
+                      {saving === pagina ? "Guardando..." : ok === pagina ? "Guardado" : "Guardar"}
                     </button>
                   </div>
                 </div>

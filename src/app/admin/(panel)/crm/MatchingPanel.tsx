@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ESTADOS, type EstadoPipeline } from "@/lib/crm";
 import { supabase } from "@/lib/supabase";
+import { Dot, IconUI } from "@/components/ui/IconUI";
 
 interface VacanteOpcion {
   id: number;
@@ -35,6 +36,15 @@ function colorScore(score: number): string {
 function etiquetaEstado(estado: EstadoPipeline) {
   return ESTADOS.find((item) => item.value === estado) ?? ESTADOS[0];
 }
+
+const COLOR_ESTADO: Record<EstadoPipeline, string> = {
+  nuevo: "#2563EB",
+  contactado: "#0284C7",
+  entrevista: "#4F46E5",
+  enviado: "#0891B2",
+  contratado: "#16A34A",
+  descartado: "#64748B",
+};
 
 async function leerRespuesta<T>(response: Response): Promise<T> {
   const data = (await response.json()) as T & { error?: string };
@@ -195,8 +205,8 @@ export default function MatchingPanel({
 
           {ranking.resultados.length === 0 ? (
             <div className="rounded-2xl border border-border bg-white px-6 py-14 text-center">
-              <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-blue-soft text-xl">
-                🎯
+              <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-blue-soft text-blue">
+                <IconUI name="target" size={20} />
               </div>
               <p className="text-[14px] font-bold text-navy">
                 Ningún candidato anterior embona con esta vacante todavía.
@@ -222,13 +232,14 @@ export default function MatchingPanel({
                               {resultado.nombre || "Sin nombre"}
                             </h3>
                             <span
-                              className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${estado.color}`}
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${estado.color}`}
                             >
+                              <Dot color={COLOR_ESTADO[resultado.estado]} size={5} />
                               {estado.label}
                             </span>
                           </div>
-                          <p className="mt-1 text-[11px] text-muted">
-                            📍 {resultado.ubicacion || "Sin ubicación"} ·{" "}
+                          <p className="mt-1 flex items-center gap-1 text-[11px] text-muted">
+                            <IconUI name="location" size={11} /> {resultado.ubicacion || "Sin ubicación"} ·{" "}
                             {resultado.aplicaciones_count}{" "}
                             {resultado.aplicaciones_count === 1
                               ? "aplicación"
@@ -249,9 +260,9 @@ export default function MatchingPanel({
                           onClick={() =>
                             onVerCandidato(resultado.candidatoId)
                           }
-                          className="text-[10px] font-bold text-blue hover:underline"
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-blue hover:underline"
                         >
-                          Ver en candidatos →
+                          Ver en candidatos <IconUI name="arrow-right" size={12} />
                         </button>
                       </div>
                     </div>

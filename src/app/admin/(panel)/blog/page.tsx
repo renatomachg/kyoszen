@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { BLOG_POSTS } from "@/lib/blog";
+import { IconUI } from "@/components/ui/IconUI";
 
 interface Post {
   id: number;
@@ -132,16 +133,18 @@ export default function AdminBlog() {
             <button
               onClick={importarDesdeLocal}
               disabled={importing}
-              className="bg-yellow text-navy rounded-xl px-4 py-2.5 text-[13px] font-bold hover:bg-yellow/80 transition-colors disabled:opacity-60"
+              className="inline-flex items-center gap-2 bg-yellow text-navy rounded-xl px-4 py-2.5 text-[13px] font-bold hover:bg-yellow/80 transition-colors disabled:opacity-60"
             >
-              {importing ? "Importando..." : `⬇ Importar ${BLOG_POSTS.length} articulos del catalogo`}
+              <IconUI name="download" size={15} />
+              {importing ? "Importando..." : `Importar ${BLOG_POSTS.length} articulos del catalogo`}
             </button>
           )}
           <Link
             href="/admin/blog/nuevo"
-            className="bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors"
+            className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors"
           >
-            + Nuevo articulo
+            <IconUI name="plus" size={15} />
+            Nuevo articulo
           </Link>
         </div>
       </div>
@@ -199,6 +202,7 @@ export default function AdminBlog() {
                   <td className="px-4 py-3 text-center">
                     <button
                       onClick={() => togglePublicado(post.id, post.publicado)}
+                      aria-label={post.publicado ? "Despublicar articulo" : "Publicar articulo"}
                       className={`relative w-9 h-5 rounded-full transition-colors ${post.publicado ? "bg-blue" : "bg-border"}`}
                     >
                       <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${post.publicado ? "translate-x-4" : ""}`} />
@@ -207,18 +211,18 @@ export default function AdminBlog() {
                   <td className="px-4 py-3">
                     <div className="flex gap-2 justify-end items-center">
                       {post.publicado && (
-                        <Link href={`/blog/${post.slug}`} target="_blank" className="text-[12px] font-semibold text-muted hover:text-navy">
-                          Ver
+                        <Link href={`/blog/${post.slug}`} target="_blank" className="inline-flex items-center gap-1 text-[12px] font-semibold text-muted hover:text-navy">
+                          <IconUI name="eye" size={13} /> Ver
                         </Link>
                       )}
-                      <button onClick={() => duplicar(post.id)} className="text-[12px] font-semibold text-muted hover:text-navy">
-                        Duplicar
+                      <button onClick={() => duplicar(post.id)} className="inline-flex items-center gap-1 text-[12px] font-semibold text-muted hover:text-navy">
+                        <IconUI name="duplicate" size={13} /> Duplicar
                       </button>
-                      <Link href={`/admin/blog/${post.id}`} className="text-[12px] font-semibold text-blue hover:underline">
-                        Editar
+                      <Link href={`/admin/blog/${post.id}`} className="inline-flex items-center gap-1 text-[12px] font-semibold text-blue hover:underline">
+                        <IconUI name="pencil" size={13} /> Editar
                       </Link>
-                      <button onClick={() => eliminar(post.id, post.titulo)} className="text-[12px] font-semibold text-red-500 hover:underline">
-                        Eliminar
+                      <button onClick={() => eliminar(post.id, post.titulo)} className="inline-flex items-center gap-1 text-[12px] font-semibold text-red-500 hover:underline">
+                        <IconUI name="trash" size={13} /> Eliminar
                       </button>
                     </div>
                   </td>

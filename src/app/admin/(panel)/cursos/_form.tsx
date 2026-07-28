@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/courses";
 import { logAdminClient } from "@/lib/admin-log-client";
+import { IconUI } from "@/components/ui/IconUI";
 
 const MODALIDADES = ["En vivo", "Online", "Hibrido"];
 const NIVELES = ["Basico", "Intermedio", "Avanzado"];
@@ -126,13 +127,15 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
           className="w-full flex items-center justify-between px-5 py-4 text-left"
         >
           <div className="flex items-center gap-2.5">
-            <span className="text-lg">✨</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-blue/20 bg-white text-blue">
+              <IconUI name="sparkle-off" size={17} />
+            </span>
             <div>
               <p className="text-[13px] font-black text-navy">Completar con IA</p>
               <p className="text-[11px] text-muted">Pega la informacion en bruto y la IA rellena el formulario</p>
             </div>
           </div>
-          <span className="text-muted text-sm">{parseOpen ? "▲" : "▼"}</span>
+          <IconUI name={parseOpen ? "chevron-up" : "chevron-down"} size={16} className="text-muted" />
         </button>
         {parseOpen && (
           <div className="px-5 pb-5 space-y-3">
@@ -152,7 +155,7 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
               {parsing ? (
                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" /> Interpretando...</>
               ) : (
-                <><span>✨</span> Interpretar con IA</>
+                <><IconUI name="sparkle-off" size={16} /> Interpretar con IA</>
               )}
             </button>
           </div>
@@ -223,7 +226,8 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
 
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={saving}
-          className="bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-60">
+          className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-60">
+          <IconUI name="save" size={15} />
           {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear curso"}
         </button>
         <button type="button" onClick={() => router.push("/admin/cursos")}

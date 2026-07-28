@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { COURSES, CATEGORIES } from "@/lib/courses";
+import { IconUI } from "@/components/ui/IconUI";
 
 interface Curso {
   id: number;
@@ -87,13 +88,14 @@ export default function AdminCursos() {
         <div className="flex gap-2 flex-wrap">
           {cursos.length === 0 && (
             <button onClick={importarDesdeCatalogo} disabled={importing}
-              className="bg-yellow text-navy rounded-xl px-4 py-2.5 text-[13px] font-bold hover:bg-yellow/80 transition-colors disabled:opacity-60">
-              {importing ? "Importando..." : `⬇ Importar ${COURSES.length} cursos del catalogo`}
+              className="inline-flex items-center gap-2 bg-yellow text-navy rounded-xl px-4 py-2.5 text-[13px] font-bold hover:bg-yellow/80 transition-colors disabled:opacity-60">
+              <IconUI name="download" size={15} />
+              {importing ? "Importando..." : `Importar ${COURSES.length} cursos del catalogo`}
             </button>
           )}
           <Link href="/admin/cursos/nuevo"
-            className="bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors">
-            + Nuevo curso
+            className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors">
+            <IconUI name="plus" size={15} /> Nuevo curso
           </Link>
         </div>
       </div>
@@ -157,6 +159,7 @@ export default function AdminCursos() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => toggleActivo(curso.id, curso.activo)}
+                      aria-label={curso.activo ? "Ocultar curso" : "Mostrar curso"}
                       className={`relative w-9 h-5 rounded-full transition-colors ${curso.activo ? "bg-blue" : "bg-border"}`}>
                       <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${curso.activo ? "translate-x-4" : ""}`} />
                     </button>
@@ -164,12 +167,12 @@ export default function AdminCursos() {
                   <td className="px-4 py-3">
                     <div className="flex gap-2 justify-end">
                       <Link href={`/admin/cursos/${curso.id}`}
-                        className="text-[12px] font-semibold text-blue hover:underline">
-                        Editar
+                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-blue hover:underline">
+                        <IconUI name="pencil" size={13} /> Editar
                       </Link>
                       <button onClick={() => eliminar(curso.id, curso.titulo)}
-                        className="text-[12px] font-semibold text-red-500 hover:underline">
-                        Eliminar
+                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-red-500 hover:underline">
+                        <IconUI name="trash" size={13} /> Eliminar
                       </button>
                     </div>
                   </td>

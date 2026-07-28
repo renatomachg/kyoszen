@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { marked } from "marked";
 import { supabase } from "@/lib/supabase";
+import { IconUI } from "@/components/ui/IconUI";
 
 const CATEGORIAS = ["General", "RRHH", "Reclutamiento", "Capacitacion", "Liderazgo", "Tecnologia", "Noticias"];
 
@@ -223,8 +224,9 @@ export default function BlogForm({ initial }: { initial?: BlogFormData }) {
               onChange={(e) => setForm((f) => ({ ...f, imagen_url: e.target.value }))}
               placeholder="https://images.unsplash.com/..." />
             <button type="button" onClick={() => setShowImgPicker((v) => !v)}
-              className="shrink-0 border border-border rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-navy hover:bg-bg transition-colors whitespace-nowrap">
-              {showImgPicker ? "Cerrar" : "✦ Sugerir"}
+              className="inline-flex shrink-0 items-center gap-2 border border-border rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-navy hover:bg-bg transition-colors whitespace-nowrap">
+              <IconUI name={showImgPicker ? "x" : "image"} size={14} />
+              {showImgPicker ? "Cerrar" : "Sugerir"}
             </button>
           </div>
 
@@ -248,8 +250,8 @@ export default function BlogForm({ initial }: { initial?: BlogFormData }) {
                 </p>
                 <a href={`https://unsplash.com/s/photos/${encodeURIComponent(form.categoria + " recursos humanos oficina")}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="text-[11.5px] font-semibold text-blue hover:underline">
-                  Buscar mas en Unsplash →
+                  className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-blue hover:underline">
+                  Buscar mas en Unsplash <IconUI name="external-link" size={12} />
                 </a>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -306,12 +308,12 @@ export default function BlogForm({ initial }: { initial?: BlogFormData }) {
           <h2 className="text-[14px] font-black text-navy">Contenido</h2>
           <div className="flex gap-1 bg-bg border border-border rounded-lg p-0.5">
             <button type="button" onClick={() => setPreview(false)}
-              className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${!preview ? "bg-white text-navy shadow-sm" : "text-muted hover:text-navy"}`}>
-              Editar
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${!preview ? "bg-white text-navy shadow-sm" : "text-muted hover:text-navy"}`}>
+              <IconUI name="pencil" size={13} /> Editar
             </button>
             <button type="button" onClick={() => setPreview(true)}
-              className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${preview ? "bg-white text-navy shadow-sm" : "text-muted hover:text-navy"}`}>
-              Vista previa
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${preview ? "bg-white text-navy shadow-sm" : "text-muted hover:text-navy"}`}>
+              <IconUI name="eye" size={13} /> Vista previa
             </button>
           </div>
         </div>
@@ -337,7 +339,8 @@ export default function BlogForm({ initial }: { initial?: BlogFormData }) {
 
       <div className="flex gap-3">
         <button type="submit" disabled={saving}
-          className="bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-60">
+          className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-60">
+          <IconUI name="save" size={15} />
           {saving ? "Guardando..." : isEditing ? "Guardar cambios" : form.publicado ? "Publicar articulo" : "Guardar borrador"}
         </button>
         <button type="button" onClick={() => router.push("/admin/blog")}

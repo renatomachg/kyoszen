@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { getRedSocial, REDES_SOCIALES as REDES } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
 import InformeAdmin from "@/components/admin/InformeAdmin";
-import StoryboardView, { PropuestaView, GuiaTecnicaView } from "@/components/social/StoryboardView";
+import StoryboardView, { PropuestaView, GuiaTecnicaView, IconUI, type IconUIName } from "@/components/social/StoryboardView";
 
 /* ─── Types ──────────────────────────────────────────── */
 interface Version {
@@ -234,7 +234,7 @@ function PostModal({
                       <button key={r.id} type="button" onClick={() => setRedSocial(r.id)}
                         style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: `1.5px solid ${redSocial === r.id ? r.color : "#E2E8F0"}`, cursor: "pointer", fontSize: 12, fontWeight: 700,
                           background: redSocial === r.id ? r.color : "#fff", color: redSocial === r.id ? "#fff" : "#64748B", transition: "all .15s" }}>
-                        {r.icono} {r.nombre}
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", marginRight: 5 }}><RedLogo red_social={r.id} height={10} /></span>{r.nombre}
                       </button>
                     ))}
                   </div>
@@ -378,7 +378,7 @@ function PropuestaEditor({ post, version, onSaved, onCancel }: { post: Post; ver
           </button>
           <button onClick={() => guardar(true)} disabled={!!saving}
             style={{ flex: 1.4, background: "#042E7B", border: "none", borderRadius: 10, padding: "10px 0", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
-            {saving === "avisar" ? "Guardando y avisando..." : "📨 Guardar y avisar al cliente"}
+            {saving === "avisar" ? "Guardando y avisando..." : <><IconUI name="envelope" size={15} /> Guardar y avisar al cliente</>}
           </button>
         </div>
         <button onClick={onCancel} disabled={!!saving}
@@ -597,10 +597,10 @@ function GuiaTecnicaEditor({ post, version, onSaved, onCancel }: { post: Post; v
   );
 }
 
-function PasoArchivo({ icon, titulo, texto }: { icon: string; titulo: string; texto: string }) {
+function PasoArchivo({ icon, titulo, texto }: { icon: IconUIName; titulo: string; texto: string }) {
   return (
     <div style={{ display: "flex", gap: 11, alignItems: "flex-start" }}>
-      <div style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{icon}</div>
+      <div style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: "#EFF6FF", color: "#042E7B", display: "flex", alignItems: "center", justifyContent: "center" }}><IconUI name={icon} size={17} /></div>
       <div>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#0F172A" }}>{titulo}</p>
         <p style={{ margin: "1px 0 0", fontSize: 12, color: "#64748B", lineHeight: 1.4 }}>{texto}</p>
@@ -664,7 +664,7 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
 
   const Step = ({ n, label, state }: { n: number; label: string; state: "done" | "active" | "todo" }) => (
     <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 7, background: state === "active" ? "#EFF6FF" : state === "done" ? "#F0FDF4" : "#F8FAFC", border: `1.5px solid ${state === "active" ? "#BFDBFE" : state === "done" ? "#BBF7D0" : "#E2E8F0"}`, borderRadius: 10, padding: "6px 10px" }}>
-      <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#fff", background: state === "done" ? "#16A34A" : state === "active" ? "#1883FF" : "#CBD5E1" }}>{state === "done" ? "✓" : n}</span>
+      <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#fff", background: state === "done" ? "#16A34A" : state === "active" ? "#1883FF" : "#CBD5E1" }}>{state === "done" ? <IconUI name="check" size={12} /> : n}</span>
       <span style={{ fontSize: 11.5, fontWeight: 800, color: state === "todo" ? "#94A3B8" : "#0F172A" }}>{label}</span>
     </div>
   );
@@ -682,12 +682,12 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: "#0F172A", aspectRatio: "9/16", boxShadow: "0 6px 18px rgba(0,0,0,.18)" }}>
             {archivado.poster_url
               ? <img src={archivado.poster_url} alt="Carátula del video" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>🎬</div>}
-            <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(15,23,42,.82)", color: "#fff", fontSize: 10.5, fontWeight: 800, padding: "4px 9px", borderRadius: 999 }}>🗄️ Archivado</div>
+              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#CBD5E1" }}><IconUI name="video" size={40} /></div>}
+            <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(15,23,42,.82)", color: "#fff", fontSize: 10.5, fontWeight: 800, padding: "4px 9px", borderRadius: 999, display: "flex", alignItems: "center", gap: 4 }}><IconUI name="archive" size={12} /> Archivado</div>
           </div>
           <a href={archivado.drive_url} target="_blank" rel="noopener noreferrer"
             style={{ display: "block", textAlign: "center", marginTop: 8, background: "#042E7B", color: "#fff", textDecoration: "none", fontSize: 12, fontWeight: 800, padding: "9px 12px", borderRadius: 10 }}>
-            🎬 Ver video en Google Drive
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="video" size={14} /> Ver video en Google Drive</span>
           </a>
           <p style={{ margin: "7px 0 0", textAlign: "center", fontSize: 10.5, color: "#94A3B8" }}>
             Liberó {archivado.peso_mb ? `~${archivado.peso_mb} MB` : "espacio"} · respaldado el {new Date(archivado.archivado_en).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
@@ -708,7 +708,7 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
           )}
           <button onClick={() => setConfirmarArchivo(true)} disabled={archivando}
             style={{ display: "block", width: "100%", marginTop: 8, background: archivando ? "#CBD5E1" : "#fff", color: "#B45309", border: "1.5px solid #FDE68A", fontSize: 11.5, fontWeight: 800, padding: "9px 12px", borderRadius: 10, cursor: archivando ? "default" : "pointer" }}>
-            {archivando ? "Archivando…" : "🗄️ Liberar espacio (respaldar en Drive)"}
+            {archivando ? "Archivando…" : <><IconUI name="archive" size={14} /> Liberar espacio (respaldar en Drive)</>}
           </button>
         </div>
       )}
@@ -723,16 +723,16 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
             style={{ width: "100%", maxWidth: 380, background: "#fff", borderRadius: 20, overflow: "hidden", boxShadow: "0 24px 60px rgba(4,18,46,.4)", animation: "kyoPopIn .2s cubic-bezier(.16,1,.3,1)" }}>
             {/* Cabecera navy */}
             <div style={{ background: "linear-gradient(135deg,#042E7B 0%,#0A4ECC 100%)", padding: "22px 24px 18px", textAlign: "center", position: "relative" }}>
-              <div style={{ width: 52, height: 52, margin: "0 auto 10px", borderRadius: 14, background: "rgba(255,255,255,.14)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>🗄️</div>
+              <div style={{ width: 52, height: 52, margin: "0 auto 10px", borderRadius: 14, background: "rgba(255,255,255,.14)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><IconUI name="archive" size={26} /></div>
               <h3 style={{ margin: 0, color: "#fff", fontSize: 16.5, fontWeight: 900, letterSpacing: "-.01em" }}>Liberar espacio</h3>
               <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,.7)", fontSize: 12 }}>Respaldar en Google Drive</p>
             </div>
             {/* Cuerpo */}
             <div style={{ padding: "20px 24px 22px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
-                <PasoArchivo icon="☁️" titulo="Se sube a tu Drive" texto="El video se respalda completo en tu Google Drive." />
-                <PasoArchivo icon="🖼️" titulo="Queda la carátula" texto="En el sitio se ve la miniatura, no queda vacío." />
-                <PasoArchivo icon="✨" titulo="Se libera el espacio" texto="El archivo pesado se borra del sitio." />
+                <PasoArchivo icon="cloud" titulo="Se sube a tu Drive" texto="El video se respalda completo en tu Google Drive." />
+                <PasoArchivo icon="image" titulo="Queda la carátula" texto="En el sitio se ve la miniatura, no queda vacío." />
+                <PasoArchivo icon="archive" titulo="Se libera el espacio" texto="El archivo pesado se borra del sitio." />
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setConfirmarArchivo(false)}
@@ -754,15 +754,15 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
       <div style={{ display: "flex", gap: 6, marginBottom: 12, background: "#F1F5F9", padding: 4, borderRadius: 11 }}>
         <button onClick={() => { setDocTab("propuesta"); setEditandoProp(false); }}
           style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "propuesta" ? "#fff" : "transparent", color: docTab === "propuesta" ? "#042E7B" : "#64748B", boxShadow: docTab === "propuesta" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
-          📋 Propuesta <span style={{ fontSize: 9.5, color: "#16A34A" }}>· cliente</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="clipboard" size={13} /> Propuesta <span style={{ fontSize: 9.5, color: "#16A34A" }}>· cliente</span></span>
         </button>
         <button onClick={() => { setDocTab("storyboard"); setEditandoStoryboard(false); }}
           style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "storyboard" ? "#fff" : "transparent", color: docTab === "storyboard" ? "#042E7B" : "#64748B", boxShadow: docTab === "storyboard" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
-          🎬 Storyboard
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="video" size={13} /> Storyboard</span>
         </button>
         <button onClick={() => { setDocTab("tecnica"); setEditandoTecnica(false); }}
           style={{ flex: 1, padding: "7px 8px", borderRadius: 8, border: "none", fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: docTab === "tecnica" ? "#fff" : "transparent", color: docTab === "tecnica" ? "#042E7B" : "#64748B", boxShadow: docTab === "tecnica" ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
-          🛠️ Guía técnica
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="tool" size={13} /> Guía técnica</span>
         </button>
       </div>
 
@@ -774,11 +774,11 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 11.5, color: "#64748B" }}>Esto es lo que ve y aprueba el cliente.</span>
               <button onClick={() => setEditandoProp(true)}
-                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>✏️ Editar propuesta</button>
+                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="pencil" size={13} /> Editar propuesta</button>
             </div>
             {tieneProp
               ? <PropuestaView prop={sb?.propuesta} caption={version.caption} />
-              : <p style={{ margin: 0, fontSize: 13, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "12px 14px" }}>Esta publicación aún no tiene propuesta. Toca <b>✏️ Editar propuesta</b> para crear la que verá el cliente.</p>}
+              : <p style={{ margin: 0, fontSize: 13, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "12px 14px" }}>Esta publicación aún no tiene propuesta. Toca <b>Editar propuesta</b> para crear la que verá el cliente.</p>}
           </>
         )
       ) : docTab === "storyboard" ? (
@@ -788,7 +788,7 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
           <>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 10 }}>
               <button onClick={() => setEditandoStoryboard(true)}
-                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>✏️ Editar storyboard</button>
+                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="pencil" size={13} /> Editar storyboard</button>
             </div>
             <StoryboardView sb={version.storyboard} caption={version.caption} showProduccion />
           </>
@@ -800,11 +800,11 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
           <>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 10 }}>
               <button onClick={() => setEditandoTecnica(true)}
-                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap" }}>✏️ Editar guía técnica</button>
+                style={{ background: "#042E7B", border: "none", borderRadius: 9, padding: "7px 13px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="pencil" size={13} /> Editar guía técnica</button>
             </div>
             {tieneTec
               ? <GuiaTecnicaView guia={sb?.guia_tecnica} />
-              : <p style={{ margin: 0, fontSize: 13, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "12px 14px" }}>Esta publicación aún no tiene guía técnica. Toca <b>✏️ Editar guía técnica</b> para crearla.</p>}
+              : <p style={{ margin: 0, fontSize: 13, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "12px 14px" }}>Esta publicación aún no tiene guía técnica. Toca <b>Editar guía técnica</b> para crearla.</p>}
           </>
         )
       )}
@@ -816,11 +816,11 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
           guionAprobado ? (
             <button onClick={() => fileRef.current?.click()} disabled={uploading}
               style={{ width: "100%", padding: "11px 0", borderRadius: 12, border: "none", background: "#042E7B", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
-              {uploading ? "Subiendo video..." : "📹 Subir video generado"}
+              {uploading ? "Subiendo video..." : <><IconUI name="upload" size={15} /> Subir video generado</>}
             </button>
           ) : (
             <p style={{ margin: 0, fontSize: 12.5, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "10px 12px" }}>
-              🎬 Cuando el cliente <b>apruebe el guion</b>, aquí podrás subir el video generado y pasará a revisión de video.
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconUI name="video" size={15} /> Cuando el cliente <b>apruebe el guion</b>, aquí podrás subir el video generado y pasará a revisión de video.</span>
             </p>
           )
         ) : (
@@ -930,22 +930,23 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
                     style={{ background: "rgba(255,255,255,.95)", border: "none", borderRadius: 7, padding: "3px 7px", fontSize: 11, fontWeight: 700, color: "#042E7B" }} />
                   <button onClick={moverAFecha} disabled={moving}
                     style={{ background: "#FFCC00", border: "none", borderRadius: 7, padding: "4px 9px", fontSize: 11, fontWeight: 800, color: "#042E7B", cursor: "pointer", opacity: moving ? 0.6 : 1 }}>
-                    {moving ? "..." : "✓ Mover"}
+                    {moving ? "..." : <><IconUI name="check" size={12} /> Mover</>}
                   </button>
                   <button onClick={() => setShowMove(false)}
-                    style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 7, padding: "4px 8px", fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer" }}>✕</button>
+                    style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 7, padding: "4px 8px", fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer" }}>×</button>
                 </span>
               ) : (
                 <button onClick={() => { setMoveDate(post.fecha_programada); setShowMove(true); }} title="Mover a otra fecha (cualquier mes)"
                   style={{ background: "none", border: "1px solid rgba(255,255,255,.25)", borderRadius: 7, padding: "3px 9px", color: "rgba(255,255,255,.75)", fontSize: 11, fontWeight: 700, letterSpacing: ".3px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}>
-                  {post.fecha_programada} <span style={{ opacity: 0.9 }}>📅 Mover</span>
+                  {post.fecha_programada} <span style={{ opacity: 0.9, display: "inline-flex", alignItems: "center", gap: 4 }}><IconUI name="calendar" size={12} /> Mover</span>
                 </button>
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <p style={{ margin: 0, color: "#fff", fontWeight: 900, fontSize: 16 }}>{post.titulo_interno || "Sin título interno"}</p>
-              <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 20, background: publicado ? "rgba(34,197,94,.2)" : "rgba(255,255,255,.15)", color: publicado ? "#86EFAC" : "rgba(255,255,255,.7)" }}>
-                {publicado ? "● Visible para el cliente" : "● Borrador (solo tú)"}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 20, background: publicado ? "rgba(34,197,94,.2)" : "rgba(255,255,255,.15)", color: publicado ? "#86EFAC" : "rgba(255,255,255,.7)" }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: publicado ? "#16A34A" : "#94A3B8" }} />
+                {publicado ? "Visible para el cliente" : "Borrador (solo tú)"}
               </span>
             </div>
           </div>
@@ -958,11 +959,11 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
             )}
             <button onClick={() => setShowEdit(true)}
               style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 10, padding: "7px 14px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer" }}>
-              ✏️ Editar
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="pencil" size={13} /> Editar</span>
             </button>
             <button onClick={togglePublicado} disabled={togglingPub}
               style={{ background: publicado ? "rgba(255,255,255,.15)" : "#22C55E", border: "none", borderRadius: 10, padding: "7px 14px", fontSize: 12, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: togglingPub ? 0.6 : 1 }}>
-              {togglingPub ? "..." : publicado ? "Ocultar al cliente" : "📤 Publicar al cliente"}
+              {togglingPub ? "..." : publicado ? "Ocultar al cliente" : <><IconUI name="upload" size={13} /> Publicar al cliente</>}
             </button>
             <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 10, width: 34, height: 34, color: "#fff", fontSize: 18, cursor: "pointer" }}>×</button>
           </div>
@@ -975,9 +976,9 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
             {hayCorreccion && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                 {viendoAnterior ? (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#F1F5F9", color: "#64748B", fontSize: 11, fontWeight: 800, padding: "5px 10px", borderRadius: 20 }}>↩️ Versión anterior (v{anterior.version_num})</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#F1F5F9", color: "#64748B", fontSize: 11, fontWeight: 800, padding: "5px 10px", borderRadius: 20 }}><IconUI name="refresh" size={12} /> Versión anterior (v{anterior.version_num})</span>
                 ) : (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#DCFCE7", color: "#166534", fontSize: 11, fontWeight: 800, padding: "5px 10px", borderRadius: 20 }}>✨ Nueva propuesta (v{active.version_num})</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#EFF6FF", color: "#1E40AF", fontSize: 11, fontWeight: 800, padding: "5px 10px", borderRadius: 20 }}>NUEVA · Propuesta (v{active.version_num})</span>
                 )}
                 <button onClick={() => { setViendoAnterior(!viendoAnterior); setSlide(0); }}
                   style={{ background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "5px 10px", fontSize: 11, fontWeight: 700, color: "#042E7B", cursor: "pointer" }}>
@@ -1009,7 +1010,7 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
                     </div>
                     <div>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>{config.nombre_pagina}</p>
-                      <p style={{ margin: 0, fontSize: 11, color: "#65676B" }}>Hoy · 🌐</p>
+                      <p style={{ margin: 0, fontSize: 11, color: "#65676B", display: "flex", alignItems: "center", gap: 4 }}>Hoy · <IconUI name="globe" size={11} /></p>
                     </div>
                   </div>
                   {mostrada.caption && <p style={{ margin: "0 14px 10px", fontSize: 13, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{mostrada.caption}</p>}
@@ -1030,7 +1031,7 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
                     </div>
                   )}
                   <div style={{ padding: "8px 14px", borderTop: "1px solid #E4E6EB", display: "flex" }}>
-                    {["👍", "💬", "↗"].map((a) => <div key={a} style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#65676B" }}>{a}</div>)}
+                    {(["check", "chat", "share"] as const).map((a) => <div key={a} style={{ flex: 1, color: "#65676B", display: "flex", justifyContent: "center" }}><IconUI name={a} size={14} /></div>)}
                   </div>
                 </div>
               </div>
@@ -1042,7 +1043,7 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
             {/* Dirección visual / qué diseñar */}
             {active?.nota_visual && (
               <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "12px 14px", marginBottom: 16 }}>
-                <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 800, color: "#92400E", textTransform: "uppercase", letterSpacing: ".4px" }}>🎨 Qué diseñar</p>
+                <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 800, color: "#92400E", textTransform: "uppercase", letterSpacing: ".4px", display: "flex", alignItems: "center", gap: 5 }}><IconUI name="image" size={13} /> Qué diseñar</p>
                 <p style={{ margin: 0, fontSize: 12.5, color: "#78350F", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{active.nota_visual}</p>
               </div>
             )}
@@ -1211,9 +1212,9 @@ export default function RedesSocialesPage() {
         setVista("mes");
         setWeekOffset(monthOffset);
         setTab("calendario");
-        setImportMsg(`✅ Se crearon ${data.creadas} TikToks (borrador): ${fechasLabel}. Te llevamos al calendario.`);
+        setImportMsg(`Éxito: se crearon ${data.creadas} TikToks (borrador): ${fechasLabel}. Te llevamos al calendario.`);
       } else {
-        setImportMsg(`✅ Se crearon ${data.creadas} TikToks (borrador).`);
+        setImportMsg(`Éxito: se crearon ${data.creadas} TikToks (borrador).`);
         loadData();
       }
     } catch { setImportMsg("Error de conexión al crear."); }
@@ -1408,7 +1409,7 @@ export default function RedesSocialesPage() {
       const data = await res.json();
       if (!res.ok) { setImportMsg(data.error ?? "Error al crear."); setImportCreando(false); return; }
       const omit = data.omitidas ? ` ${data.omitidas} ya existían y se respetaron.` : "";
-      setImportMsg(`✅ Se crearon ${data.creadas} publicaciones nuevas.${omit}${data.errores?.length ? ` (${data.errores.length} con error)` : ""}`);
+      setImportMsg(`Éxito: se crearon ${data.creadas} publicaciones nuevas.${omit}${data.errores?.length ? ` (${data.errores.length} con error)` : ""}`);
       setImportPiezas(null);
       setImportTexto("");
       loadData();
@@ -1471,8 +1472,8 @@ export default function RedesSocialesPage() {
           <p style={{ margin: 0, fontSize: 13, color: "#64748B" }}>Calendario de publicaciones · aprobación de clientes</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <a href="/revisor" target="_blank" style={{ background: "#F1F5F9", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#64748B", textDecoration: "none" }}>
-            👁 Vista cliente
+          <a href="/revisor" target="_blank" style={{ background: "#F1F5F9", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#64748B", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <IconUI name="eye" size={14} /> Vista cliente
           </a>
           <button onClick={() => setShowNewPost(true)}
             style={{ background: "#042E7B", border: "none", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
@@ -1485,16 +1486,17 @@ export default function RedesSocialesPage() {
       <div style={{ display: "flex", gap: 2, marginBottom: 24, background: "#F1F5F9", borderRadius: 12, padding: 4, width: "fit-content" }}>
         {(["calendario", "importar", "informe", "config"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            style={{ padding: "8px 18px", borderRadius: 9, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s", background: tab === t ? "#fff" : "transparent", color: tab === t ? "#042E7B" : "#64748B", boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,.08)" : "none" }}>
-            {t === "calendario" ? "📅 Calendario" : t === "importar" ? "📥 Importar plan" : t === "informe" ? "📊 Informe mensual" : "⚙️ Configuración"}
+            style={{ padding: "8px 18px", borderRadius: 9, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s", background: tab === t ? "#fff" : "transparent", color: tab === t ? "#042E7B" : "#64748B", boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,.08)" : "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <IconUI name={t === "calendario" ? "calendar" : t === "importar" ? "download" : t === "informe" ? "bars" : "gear"} size={15} />
+            {t === "calendario" ? "Calendario" : t === "importar" ? "Importar plan" : t === "informe" ? "Informe mensual" : "Configuración"}
           </button>
         ))}
       </div>
 
       {/* Banner de éxito global (visible al cambiar de tab tras crear) */}
-      {importMsg.startsWith("✅") && (
+      {importMsg.startsWith("Éxito:") && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 12, padding: "11px 16px", marginBottom: 18 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#166534" }}>{importMsg}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#166534", display: "inline-flex", alignItems: "center", gap: 6 }}><IconUI name="check" size={15} />{importMsg.replace(/^Éxito:\s*/, "")}</span>
           <button onClick={() => setImportMsg("")} style={{ background: "none", border: "none", color: "#166534", fontSize: 16, cursor: "pointer", lineHeight: 1, padding: 0 }}>×</button>
         </div>
       )}
@@ -1507,14 +1509,14 @@ export default function RedesSocialesPage() {
             {(["facebook", "tiktok"] as const).map((t) => (
               <button key={t} onClick={() => { setImportTipo(t); setImportPiezas(null); resetTT(); setImportTexto(""); setImportMsg(""); setImportFileName(""); }}
                 style={{ flex: 1, padding: "10px 14px", borderRadius: 11, border: `1.5px solid ${importTipo === t ? "#042E7B" : "#E2E8F0"}`, background: importTipo === t ? "#042E7B" : "#fff", color: importTipo === t ? "#fff" : "#64748B", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-                {t === "facebook" ? "📘 Plan de Facebook" : "🎬 Storyboards de TikTok"}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><IconUI name={t === "facebook" ? "document" : "video"} size={15} />{t === "facebook" ? "Plan de Facebook" : "Storyboards de TikTok"}</span>
               </button>
             ))}
           </div>
 
           {importTipo === "facebook" && (<>
           <div style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 14, padding: "16px 18px", marginBottom: 20 }}>
-            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#1E40AF" }}>📥 Importa un plan de contenido completo</p>
+            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#1E40AF", display: "flex", alignItems: "center", gap: 6 }}><IconUI name="download" size={15} /> Importa un plan de contenido completo</p>
             <p style={{ margin: 0, fontSize: 12.5, color: "#3B5BA5", lineHeight: 1.6 }}>
               Pega aquí el plan que generaste (texto o HTML). El sistema detecta cada publicación y crea los borradores en el calendario con su fecha, texto, hashtags y la nota de qué diseñar. Las imágenes las subes tú después.
             </p>
@@ -1529,7 +1531,7 @@ export default function RedesSocialesPage() {
                 onDrop={e => { e.preventDefault(); handleImportFile(e.dataTransfer.files?.[0] ?? null); }}
                 style={{ border: "2px dashed #BFDBFE", background: "#F8FBFF", borderRadius: 14, padding: "18px", textAlign: "center", cursor: "pointer", marginBottom: 14 }}
               >
-                <span style={{ fontSize: 24 }}>📎</span>
+                <span style={{ color: "#1883FF", display: "inline-flex" }}><IconUI name="paperclip" size={24} /></span>
                 <p style={{ margin: "6px 0 2px", fontSize: 13, fontWeight: 700, color: "#042E7B" }}>
                   {importFileName ? `Archivo cargado: ${importFileName}` : "Sube el archivo que descargaste"}
                 </p>
@@ -1550,9 +1552,9 @@ export default function RedesSocialesPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <button onClick={analizarPlan} disabled={importLoading || importTexto.trim().length < 30}
                   style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importLoading || importTexto.trim().length < 30 ? 0.5 : 1, display: "flex", alignItems: "center", gap: 8 }}>
-                  {importLoading ? "Analizando plan..." : "Analizar plan ✨"}
+                  {importLoading ? "Analizando plan..." : "Analizar plan"}
                 </button>
-                {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
+                {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("Éxito:") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
               </div>
               {importLoading && (
                 <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 10 }}>Esto puede tomar 10-20 segundos mientras la IA lee el plan completo...</p>
@@ -1591,7 +1593,7 @@ export default function RedesSocialesPage() {
                       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                         <button onClick={() => setTodasSeleccion(true)}
                           style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#1E40AF", cursor: "pointer" }}>
-                          ✓ Seleccionar todas
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="check" size={13} /> Seleccionar todas</span>
                         </button>
                         <button onClick={() => setTodasSeleccion(false)}
                           style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#64748B", cursor: "pointer" }}>
@@ -1621,9 +1623,9 @@ export default function RedesSocialesPage() {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
                               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1E293B" }}>{p.titulo_interno || "Sin título"}</p>
-                              {p.ya_existe && <span style={{ fontSize: 10, fontWeight: 800, color: "#64748B", background: "#E2E8F0", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}>✓ Ya en calendario</span>}
-                              {p.fecha_pasada && !p.ya_existe && <span style={{ fontSize: 10, fontWeight: 800, color: "#DC2626", background: "#FEE2E2", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}>✕ Fecha pasada</span>}
-                              {finde && <span title="Cae en fin de semana — mejor entre semana" style={{ fontSize: 10, fontWeight: 800, color: "#B45309", background: "#FEF3C7", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}>⚠ Fin de semana</span>}
+                              {p.ya_existe && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: "#64748B", background: "#E2E8F0", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: "#64748B" }} /> Ya en calendario</span>}
+                              {p.fecha_pasada && !p.ya_existe && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: "#DC2626", background: "#FEE2E2", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: "#DC2626" }} /> Fecha pasada</span>}
+                              {finde && <span title="Cae en fin de semana — mejor entre semana" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: "#B45309", background: "#FEF3C7", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}><IconUI name="warning" size={11} /> Fin de semana</span>}
                             </div>
                             <p style={{ margin: 0, fontSize: 11.5, color: "#64748B", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.45 }}>{p.caption}</p>
                             <span style={{ display: "inline-block", marginTop: 5, fontSize: 10, fontWeight: 700, color: "#64748B", background: "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{p.formato}</span>
@@ -1638,7 +1640,7 @@ export default function RedesSocialesPage() {
                         style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importCreando || seleccionadasCount === 0 ? 0.5 : 1 }}>
                         {importCreando ? "Creando publicaciones..." : `Crear ${seleccionadasCount} publicaciones seleccionadas`}
                       </button>
-                      {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
+                      {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("Éxito:") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
                     </div>
                   </>
                 );
@@ -1650,7 +1652,7 @@ export default function RedesSocialesPage() {
           {/* ── Importador de storyboards TikTok ── */}
           {importTipo === "tiktok" && (<>
           <div style={{ background: "#FFF1F5", border: "1.5px solid #FBCFE8", borderRadius: 14, padding: "16px 18px", marginBottom: 18 }}>
-            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#9D174D" }}>🎬 Importa el set de TikTok (3 documentos)</p>
+            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#9D174D", display: "flex", alignItems: "center", gap: 6 }}><IconUI name="video" size={15} /> Importa el set de TikTok (3 documentos)</p>
             <p style={{ margin: 0, fontSize: 12.5, color: "#9F5476", lineHeight: 1.6 }}>
               Sube los 3 documentos del set (HTML o PDF). El sistema empata cada video y separa por audiencia: el cliente verá solo la <b>Propuesta</b>; tú verás el <b>Storyboard</b> y la <b>Guía técnica</b>. Con uno solo basta para empezar — los demás los puedes dejar vacíos.
             </p>
@@ -1659,27 +1661,27 @@ export default function RedesSocialesPage() {
           {!ttPiezas ? (
             <>
               {([
-                { key: "prop", emoji: "📋", label: "Propuesta del cliente", hint: "Lo que el cliente ve y aprueba", doc: ttProp, accent: "#16A34A", border: "#BBF7D0" },
-                { key: "story", emoji: "🎬", label: "Storyboard", hint: "Guion cuadro por cuadro · para generar el video", doc: ttStory, accent: "#042E7B", border: "#BFDBFE" },
-                { key: "tec", emoji: "🛠️", label: "Guía técnica", hint: "Prompts Higgsfield + montaje · interno", doc: ttTec, accent: "#92400E", border: "#FDE68A" },
+                { key: "prop", icon: "clipboard", label: "Propuesta del cliente", hint: "Lo que el cliente ve y aprueba", doc: ttProp, accent: "#16A34A", border: "#BBF7D0" },
+                { key: "story", icon: "video", label: "Storyboard", hint: "Guion cuadro por cuadro · para generar el video", doc: ttStory, accent: "#042E7B", border: "#BFDBFE" },
+                { key: "tec", icon: "tool", label: "Guía técnica", hint: "Prompts Higgsfield + montaje · interno", doc: ttTec, accent: "#92400E", border: "#FDE68A" },
               ] as const).map((z) => (
                 <div key={z.key} style={{ border: `1.5px solid ${z.border}`, borderRadius: 14, padding: 14, marginBottom: 12, background: "#fff" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
                     <div>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: z.accent }}>{z.emoji} {z.label}</p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: z.accent, display: "flex", alignItems: "center", gap: 6 }}><IconUI name={z.icon} size={14} />{z.label}</p>
                       <p style={{ margin: "2px 0 0", fontSize: 11, color: "#64748B" }}>{z.hint}</p>
                     </div>
                     {z.doc.cargando
                       ? <span style={{ fontSize: 11, color: "#94A3B8", whiteSpace: "nowrap" }}>leyendo…</span>
                       : z.doc.texto
-                      ? <span style={{ fontSize: 11, fontWeight: 800, color: "#16A34A", whiteSpace: "nowrap" }}>✓ {z.doc.nombre || "pegado"}</span>
+                      ? <span style={{ fontSize: 11, fontWeight: 800, color: "#16A34A", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}><IconUI name="check" size={12} />{z.doc.nombre || "pegado"}</span>
                       : <span style={{ fontSize: 11, color: "#CBD5E1", whiteSpace: "nowrap" }}>opcional</span>}
                   </div>
                   <label
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => { e.preventDefault(); cargarDocTT(z.key, e.dataTransfer.files?.[0] ?? null); }}
                     style={{ display: "block", border: `2px dashed ${z.border}`, borderRadius: 10, padding: "9px", textAlign: "center", cursor: "pointer", background: "#FAFBFC", fontSize: 11.5, fontWeight: 700, color: z.accent }}>
-                    📎 Subir archivo (.html, .txt, .pdf) o arrástralo
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="paperclip" size={13} /> Subir archivo (.html, .txt, .pdf) o arrástralo</span>
                     <input type="file" accept=".html,.htm,.txt,.pdf,text/html,application/pdf" style={{ display: "none" }}
                       onChange={(e) => cargarDocTT(z.key, e.target.files?.[0] ?? null)} />
                   </label>
@@ -1696,9 +1698,9 @@ export default function RedesSocialesPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 4 }}>
                 <button onClick={analizarSetTiktok} disabled={importLoading || (ttStory.texto.trim().length < 40 && ttProp.texto.trim().length < 40)}
                   style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importLoading || (ttStory.texto.trim().length < 40 && ttProp.texto.trim().length < 40) ? 0.5 : 1, display: "flex", alignItems: "center", gap: 8 }}>
-                  {importLoading ? "Analizando documentos..." : "Analizar set ✨"}
+                  {importLoading ? "Analizando documentos..." : "Analizar set"}
                 </button>
-                {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
+                {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("Éxito:") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
               </div>
               {importLoading && <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 10 }}>Esto puede tomar ~10-30 segundos mientras la IA lee los documentos...</p>}
             </>
@@ -1719,7 +1721,7 @@ export default function RedesSocialesPage() {
 
                     <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                       <button onClick={() => setTtPiezas(prev => prev?.map(p => ({ ...p, seleccionada: true })) ?? null)}
-                        style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#1E40AF", cursor: "pointer" }}>✓ Seleccionar todos</button>
+                        style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#1E40AF", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}><IconUI name="check" size={13} /> Seleccionar todos</button>
                       <button onClick={() => setTtPiezas(prev => prev?.map(p => ({ ...p, seleccionada: false })) ?? null)}
                         style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 9, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: "#64748B", cursor: "pointer" }}>Quitar todos</button>
                     </div>
@@ -1740,11 +1742,11 @@ export default function RedesSocialesPage() {
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ margin: "0 0 3px", fontSize: 13, fontWeight: 700, color: "#1E293B" }}>{p.titulo || "Sin título"}</p>
-                              {hook?.overlay && <p style={{ margin: "0 0 4px", fontSize: 11.5, color: "#64748B", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.45 }}>🎯 {hook.overlay}</p>}
+                              {hook?.overlay && <p style={{ margin: "0 0 4px", fontSize: 11.5, color: "#64748B", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.45 }}><IconUI name="target" size={13} /> {hook.overlay}</p>}
                               <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                                 <span style={{ fontSize: 10, fontWeight: 700, color: "#64748B", background: "#F1F5F9", padding: "2px 8px", borderRadius: 6 }}>{frames} cuadros · {p.storyboard?.duracion || "TikTok"}</span>
-                                {p.storyboard?.propuesta && <span style={{ fontSize: 10, fontWeight: 700, color: "#166534", background: "#F0FDF4", padding: "2px 8px", borderRadius: 6 }}>📋 Propuesta</span>}
-                                {p.storyboard?.guia_tecnica && <span style={{ fontSize: 10, fontWeight: 700, color: "#92400E", background: "#FFFBEB", padding: "2px 8px", borderRadius: 6 }}>🛠️ Guía técnica</span>}
+                                {p.storyboard?.propuesta && <span style={{ fontSize: 10, fontWeight: 700, color: "#166534", background: "#F0FDF4", padding: "2px 8px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 4 }}><IconUI name="clipboard" size={11} /> Propuesta</span>}
+                                {p.storyboard?.guia_tecnica && <span style={{ fontSize: 10, fontWeight: 700, color: "#92400E", background: "#FFFBEB", padding: "2px 8px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 4 }}><IconUI name="tool" size={11} /> Guía técnica</span>}
                               </div>
                             </div>
                           </div>
@@ -1757,7 +1759,7 @@ export default function RedesSocialesPage() {
                         style={{ background: "#042E7B", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, color: "#fff", cursor: "pointer", opacity: importCreando || sel === 0 ? 0.5 : 1 }}>
                         {importCreando ? "Creando guiones..." : `Crear ${sel} guiones de TikTok`}
                       </button>
-                      {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("✅") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
+                      {importMsg && <span style={{ fontSize: 13, fontWeight: 600, color: importMsg.startsWith("Éxito:") ? "#166534" : "#DC2626" }}>{importMsg}</span>}
                     </div>
                   </>
                 );
@@ -1813,7 +1815,7 @@ export default function RedesSocialesPage() {
           </div>
 
           <p style={{ margin: "0 0 12px", fontSize: 12, color: "#94A3B8", display: "flex", alignItems: "center", gap: 6 }}>
-            <span>✋</span> Arrastra una publicación a otro día para moverla, suéltala sobre otra para intercambiar fechas, o suéltala sobre <b>‹ ›</b> para pasarla al {vista === "mes" ? "mes" : "semana"} anterior/siguiente.
+            <IconUI name="hand" size={14} /> Arrastra una publicación a otro día para moverla, suéltala sobre otra para intercambiar fechas, o suéltala sobre <b>‹ ›</b> para pasarla al {vista === "mes" ? "mes" : "semana"} anterior/siguiente.
           </p>
 
           {/* Calendar grid */}
@@ -1874,7 +1876,7 @@ export default function RedesSocialesPage() {
                           <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                             {v?.imagenes?.[0]
                               ? <img src={v.imagenes[0]} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0, display: "block" }} />
-                              : <div style={{ width: 28, height: 28, borderRadius: 6, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>{p.red_social === "tiktok" ? "🎬" : "📝"}</div>}
+                              : <div style={{ width: 28, height: 28, borderRadius: 6, background: "#F1F5F9", color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><IconUI name={p.red_social === "tiktok" ? "video" : "document"} size={14} /></div>}
                             <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 600, color: "#475569", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
                               {p.titulo_interno || v?.caption || "Sin título"}
                             </span>
@@ -1935,7 +1937,7 @@ export default function RedesSocialesPage() {
                             </div>
                             {!p.publicado && <span style={{ fontSize: 9, fontWeight: 800, color: "#854D0E", background: "#FEF9C3", padding: "1px 6px", borderRadius: 10, display: "inline-block", marginBottom: 3 }}>Borrador</span>}
                             {v?.caption && <p style={{ margin: 0, fontSize: 10, color: "#64748B", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{v.caption}</p>}
-                            {commentCount > 0 && <p style={{ margin: "3px 0 0", fontSize: 10, color: "#94A3B8" }}>💬 {commentCount}</p>}
+                            {commentCount > 0 && <p style={{ margin: "3px 0 0", fontSize: 10, color: "#94A3B8", display: "flex", alignItems: "center", gap: 4 }}><IconUI name="chat" size={11} />{commentCount}</p>}
                           </div>
                         </button>
                       );
@@ -1990,7 +1992,7 @@ export default function RedesSocialesPage() {
             {configError && <p style={{ margin: 0, fontSize: 12, color: "#DC2626", fontWeight: 600 }}>{configError}</p>}
             <button onClick={saveConfig} disabled={savingConfig}
               style={{ background: configOk ? "#166534" : "#042E7B", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", opacity: savingConfig ? 0.6 : 1, transition: "background .3s" }}>
-              {savingConfig ? "Subiendo imagen..." : configOk ? "✓ Guardado" : "Guardar configuración"}
+              {savingConfig ? "Subiendo imagen..." : configOk ? <><IconUI name="check" size={14} /> Guardado</> : "Guardar configuración"}
             </button>
           </div>
         </div>

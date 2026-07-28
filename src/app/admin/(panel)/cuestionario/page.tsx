@@ -7,6 +7,7 @@ import {
   resumenPorSeccion,
 } from "@/lib/cuestionario";
 import type { Respuestas } from "@/lib/cuestionario/tipos";
+import { Dot, IconUI } from "@/components/ui/IconUI";
 
 type Invitacion = {
   token: string;
@@ -47,11 +48,17 @@ function EstadoPill({ invitacion }: { invitacion: Invitacion }) {
     progreso: "En progreso",
     "sin-empezar": "Sin empezar",
   };
+  const colores = {
+    completado: "#059669",
+    progreso: "#D97706",
+    "sin-empezar": "#64748B",
+  };
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${estilos[estado]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${estilos[estado]}`}
     >
+      <Dot color={colores[estado]} size={6} />
       {etiquetas[estado]}
     </span>
   );
@@ -232,9 +239,9 @@ export default function AdminCuestionarios() {
             setMostrarFormulario((visible) => !visible);
             setCreada(null);
           }}
-          className="cursor-pointer rounded-xl bg-navy px-4 py-2.5 text-[12px] font-bold text-white transition-colors hover:bg-blue-dark"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-navy px-4 py-2.5 text-[12px] font-bold text-white transition-colors hover:bg-blue-dark"
         >
-          ＋ Nueva invitación
+          <IconUI name="plus" size={15} /> Nueva invitación
         </button>
       </div>
 
@@ -274,9 +281,9 @@ export default function AdminCuestionarios() {
             <button
               type="submit"
               disabled={guardando}
-              className="cursor-pointer rounded-xl bg-yellow px-5 py-2.5 text-[12px] font-black text-navy transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-yellow px-5 py-2.5 text-[12px] font-black text-navy transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {guardando ? "Creando…" : "Crear link"}
+              <IconUI name="link" size={15} /> {guardando ? "Creando…" : "Crear link"}
             </button>
           </div>
         </form>
@@ -297,8 +304,9 @@ export default function AdminCuestionarios() {
             <button
               type="button"
               onClick={() => void copiarLink(creada.token)}
-              className="cursor-pointer rounded-lg bg-emerald-700 px-4 py-2 text-[11px] font-bold text-white"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-[11px] font-bold text-white"
             >
+              <IconUI name={copiado === creada.token ? "check" : "copy"} size={13} />
               {copiado === creada.token ? "¡Copiado!" : "Copiar link"}
             </button>
           </div>
@@ -317,8 +325,8 @@ export default function AdminCuestionarios() {
         </div>
       ) : invitaciones.length === 0 ? (
         <div className="rounded-2xl border border-border bg-white p-12 text-center">
-          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-soft text-xl">
-            📋
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-soft text-blue">
+            <IconUI name="clipboard" size={20} />
           </div>
           <p className="text-[14px] font-bold text-navy">
             Aún no hay invitaciones
@@ -373,8 +381,9 @@ export default function AdminCuestionarios() {
                     <button
                       type="button"
                       onClick={() => void copiarLink(invitacion.token)}
-                      className="cursor-pointer rounded-lg border border-border px-3 py-2 text-[11px] font-bold text-navy transition-colors hover:bg-bg"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-[11px] font-bold text-navy transition-colors hover:bg-bg"
                     >
+                      <IconUI name={copiado === invitacion.token ? "check" : "copy"} size={13} />
                       {copiado === invitacion.token
                         ? "¡Copiado!"
                         : "Copiar link"}
@@ -382,9 +391,9 @@ export default function AdminCuestionarios() {
                     <button
                       type="button"
                       onClick={() => setSeleccionada(invitacion)}
-                      className="cursor-pointer rounded-lg bg-navy px-3 py-2 text-[11px] font-bold text-white transition-colors hover:bg-blue-dark"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-navy px-3 py-2 text-[11px] font-bold text-white transition-colors hover:bg-blue-dark"
                     >
-                      Ver respuestas
+                      <IconUI name="eye" size={13} /> Ver respuestas
                     </button>
                     <button
                       type="button"
@@ -394,18 +403,7 @@ export default function AdminCuestionarios() {
                       title="Borrar invitación"
                       className="cursor-pointer rounded-lg border border-red-100 p-2 text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5" />
-                      </svg>
+                      <IconUI name="trash" size={15} />
                     </button>
                   </div>
                 </div>
@@ -450,7 +448,7 @@ export default function AdminCuestionarios() {
                   aria-label="Cerrar detalle"
                   className="cursor-pointer rounded-lg border border-border px-3 py-2 text-lg leading-none text-muted transition-colors hover:bg-bg hover:text-navy"
                 >
-                  ×
+                  <IconUI name="x" size={17} />
                 </button>
               </div>
             </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { Dot, IconUI, type IconUIName } from "@/components/ui/IconUI";
 
 // Use service role on admin side for unrestricted read
 const sb = createClient(
@@ -23,16 +24,16 @@ interface TopRow {
 }
 
 const TIPOS = [
-  { key: "kyo_mensaje", label: "Mensajes a Kyo", color: "bg-blue", icon: "💬" },
-  { key: "kyo_navegacion", label: "Navegaciones de Kyo", color: "bg-navy", icon: "🧭" },
-  { key: "busqueda_vacantes", label: "Busquedas en Vacantes", color: "bg-yellow", icon: "🔍" },
-  { key: "ver_categoria_curso", label: "Categorias de Cursos", color: "bg-green-500", icon: "📚" },
-  { key: "vacante_vista", label: "Vistas de Vacantes", color: "bg-blue", icon: "👁️" },
-  { key: "vacante_aplicar_click", label: "Clicks Aplicar", color: "bg-navy", icon: "🖱️" },
-  { key: "vacante_aplicacion_enviada", label: "Aplicaciones Enviadas", color: "bg-green-500", icon: "✅" },
-  { key: "curso_informes_click", label: "Clicks Informes Curso", color: "bg-yellow", icon: "📋" },
-  { key: "whatsapp_click", label: "Clicks WhatsApp", color: "bg-green-500", icon: "📱" },
-  { key: "contacto_enviado", label: "Formularios Contacto", color: "bg-blue", icon: "✉️" },
+  { key: "kyo_mensaje", label: "Mensajes a Kyo", color: "bg-blue", icon: "comment" },
+  { key: "kyo_navegacion", label: "Navegaciones de Kyo", color: "bg-navy", icon: "navigation" },
+  { key: "busqueda_vacantes", label: "Busquedas en Vacantes", color: "bg-yellow", icon: "search" },
+  { key: "ver_categoria_curso", label: "Categorias de Cursos", color: "bg-green-500", icon: "book-open" },
+  { key: "vacante_vista", label: "Vistas de Vacantes", color: "bg-blue", icon: "eye" },
+  { key: "vacante_aplicar_click", label: "Clicks Aplicar", color: "bg-navy", icon: "mouse-pointer" },
+  { key: "vacante_aplicacion_enviada", label: "Aplicaciones Enviadas", color: "bg-green-500", icon: "check" },
+  { key: "curso_informes_click", label: "Clicks Informes Curso", color: "bg-yellow", icon: "clipboard" },
+  { key: "whatsapp_click", label: "Clicks WhatsApp", color: "bg-green-500", icon: "phone" },
+  { key: "contacto_enviado", label: "Formularios Contacto", color: "bg-blue", icon: "mail" },
 ];
 
 const RANGOS = [
@@ -51,11 +52,26 @@ function formatDate(iso: string) {
   });
 }
 
-function StatCard({ label, value, icon, sub }: { label: string; value: number; icon: string; sub?: string }) {
+function StatCard({
+  label,
+  value,
+  icon,
+  sub,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: IconUIName;
+  sub?: string;
+  tone: string;
+}) {
   return (
-    <div className="bg-white rounded-2xl border border-border p-5">
+    <div className="bg-white rounded-2xl border border-border p-5 shadow-[0_8px_24px_rgba(4,46,123,0.04)]">
       <div className="flex items-start justify-between mb-3">
-        <span className="text-2xl">{icon}</span>
+        <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${tone}`}>
+          <IconUI name={icon} size={19} />
+        </span>
+        <Dot color="#FFCC00" size={6} />
       </div>
       <p className="text-3xl font-black text-navy">{value.toLocaleString()}</p>
       <p className="text-[12px] font-semibold text-navy mt-1">{label}</p>
@@ -66,8 +82,13 @@ function StatCard({ label, value, icon, sub }: { label: string; value: number; i
 
 function TopList({ title, rows, emptyMsg }: { title: string; rows: TopRow[]; emptyMsg: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-border p-5">
-      <h3 className="text-[13px] font-black text-navy mb-4">{title}</h3>
+    <div className="bg-white rounded-2xl border border-border p-5 shadow-[0_8px_24px_rgba(4,46,123,0.04)]">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="w-7 h-7 rounded-lg bg-blue/10 text-blue flex items-center justify-center">
+          <IconUI name="trophy" size={14} />
+        </span>
+        <h3 className="text-[13px] font-black text-navy">{title}</h3>
+      </div>
       {rows.length === 0 ? (
         <p className="text-[12px] text-muted py-4 text-center">{emptyMsg}</p>
       ) : (
@@ -140,7 +161,7 @@ export default function AdminAnalytics() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, periodicidad: periodo }),
     });
-    if (!res.ok) { setReportMsg("❌ Error al generar el archivo."); return; }
+    if (!res.ok) { setReportMsg("Error al generar el archivo."); return; }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -165,8 +186,8 @@ export default function AdminAnalytics() {
       body: JSON.stringify({ action: "send", email: reporteEmail, periodicidad: periodo }),
     });
     setSendingReport(false);
-    if (res.ok) setReportMsg("✅ Resumen enviado correctamente.");
-    else setReportMsg("❌ Error al enviar. Verifica la configuración SMTP.");
+    if (res.ok) setReportMsg("Resumen enviado correctamente.");
+    else setReportMsg("Error al enviar. Verifica la configuración SMTP.");
   };
 
   useEffect(() => {
@@ -251,12 +272,23 @@ export default function AdminAnalytics() {
     contacto_enviado: "bg-blue/10 text-blue",
   };
 
+  const tabIcon: Record<typeof tab, IconUIName> = {
+    resumen: "chart",
+    feed: "clock",
+    reportes: "document",
+  };
+
   return (
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-black text-navy mb-1">Analytics</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <span className="w-10 h-10 rounded-xl bg-navy text-yellow flex items-center justify-center">
+              <IconUI name="chart" size={20} />
+            </span>
+            <h1 className="text-2xl font-black text-navy">Analytics</h1>
+          </div>
           <p className="text-[13px] text-muted">Comportamiento de usuarios en el sitio y con el asistente Kyo</p>
         </div>
         {/* Rango */}
@@ -276,15 +308,16 @@ export default function AdminAnalytics() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-border">
+      <div className="flex gap-1 mb-6 border-b border-border overflow-x-auto">
         {(["resumen", "feed", "reportes"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-[13px] font-bold capitalize border-b-2 transition-colors ${
-              tab === t ? "border-blue text-blue" : "border-transparent text-muted hover:text-navy"
+            className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-bold capitalize border-b-2 transition-colors whitespace-nowrap ${
+              tab === t ? "border-navy text-navy" : "border-transparent text-muted hover:text-navy"
             }`}
           >
+            <IconUI name={tabIcon[t]} size={15} />
             {t === "resumen" ? "Resumen" : t === "feed" ? "Feed de eventos" : "Reportes"}
           </button>
         ))}
@@ -298,22 +331,27 @@ export default function AdminAnalytics() {
         <>
           {/* KPIs principales */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <StatCard label="Sesiones unicas" value={sessionesUnicas} icon="👥" sub="Visitantes distintos" />
-            <StatCard label="Vistas de vacantes" value={vacanteVistas} icon="👁️" sub="Paginas de vacante abiertas" />
-            <StatCard label="Aplicaciones enviadas" value={vacanteEnviadas} icon="✅" sub="Candidatos que aplicaron" />
-            <StatCard label="Solicitudes de cursos" value={conteo("curso_informes_enviada")} icon="📋" sub="Informes de curso enviados" />
+            <StatCard label="Sesiones unicas" value={sessionesUnicas} icon="users" tone="bg-blue/10 text-blue" sub="Visitantes distintos" />
+            <StatCard label="Vistas de vacantes" value={vacanteVistas} icon="eye" tone="bg-navy/10 text-navy" sub="Paginas de vacante abiertas" />
+            <StatCard label="Aplicaciones enviadas" value={vacanteEnviadas} icon="check" tone="bg-green-50 text-green-700" sub="Candidatos que aplicaron" />
+            <StatCard label="Solicitudes de cursos" value={conteo("curso_informes_enviada")} icon="clipboard" tone="bg-yellow/20 text-yellow-700" sub="Informes de curso enviados" />
           </div>
 
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5 mb-5">
 
             {/* Funnel vacantes */}
-            <div className="bg-white rounded-2xl border border-border p-5">
-              <h3 className="text-[13px] font-black text-navy mb-1">Funnel de vacantes</h3>
+            <div className="bg-white rounded-2xl border border-border p-5 shadow-[0_8px_24px_rgba(4,46,123,0.04)]">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-7 h-7 rounded-lg bg-yellow/20 text-navy flex items-center justify-center">
+                  <IconUI name="funnel" size={14} />
+                </span>
+                <h3 className="text-[13px] font-black text-navy">Funnel de vacantes</h3>
+              </div>
               <p className="text-[11px] text-muted mb-4">De cuantos ven a cuantos aplican</p>
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-[12px] font-semibold text-navy">👁️ Vieron la vacante</span>
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold text-navy"><IconUI name="eye" size={13} /> Vieron la vacante</span>
                     <span className="text-[12px] font-black text-navy">{vacanteVistas}</span>
                   </div>
                   <div className="h-2.5 bg-bg rounded-full overflow-hidden">
@@ -322,7 +360,7 @@ export default function AdminAnalytics() {
                 </div>
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-[12px] font-semibold text-navy">🖱️ Hicieron clic en Aplicar</span>
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold text-navy"><IconUI name="mouse-pointer" size={13} /> Hicieron clic en Aplicar</span>
                     <span className="text-[12px] font-black text-navy">{vacanteClicks} <span className="text-muted font-normal">({funnelPct1}%)</span></span>
                   </div>
                   <div className="h-2.5 bg-bg rounded-full overflow-hidden">
@@ -331,7 +369,7 @@ export default function AdminAnalytics() {
                 </div>
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-[12px] font-semibold text-navy">✅ Enviaron su solicitud</span>
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold text-navy"><IconUI name="check" size={13} /> Enviaron su solicitud</span>
                     <span className="text-[12px] font-black text-navy">{vacanteEnviadas} <span className="text-muted font-normal">({funnelPct2}%)</span></span>
                   </div>
                   <div className="h-2.5 bg-bg rounded-full overflow-hidden">
@@ -366,17 +404,24 @@ export default function AdminAnalytics() {
             />
 
             {/* WhatsApp + Kyo */}
-            <div className="bg-white rounded-2xl border border-border p-5">
-              <h3 className="text-[13px] font-black text-navy mb-4">Otros canales</h3>
+            <div className="bg-white rounded-2xl border border-border p-5 shadow-[0_8px_24px_rgba(4,46,123,0.04)]">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-7 h-7 rounded-lg bg-navy/10 text-navy flex items-center justify-center">
+                  <IconUI name="globe" size={14} />
+                </span>
+                <h3 className="text-[13px] font-black text-navy">Otros canales</h3>
+              </div>
               <div className="space-y-4">
-                {[
-                  { label: "Clicks a WhatsApp", value: conteo("whatsapp_click"), icon: "📱", color: "bg-green-500" },
-                  { label: "Mensajes a Kyo", value: conteo("kyo_mensaje"), icon: "💬", color: "bg-blue" },
-                  { label: "Navegaciones de Kyo", value: conteo("kyo_navegacion"), icon: "🧭", color: "bg-navy" },
-                  { label: "Busquedas en vacantes", value: conteo("busqueda_vacantes"), icon: "🔍", color: "bg-yellow" },
-                ].map((item) => (
+                {([
+                  { label: "Clicks a WhatsApp", value: conteo("whatsapp_click"), icon: "phone", color: "#16A34A" },
+                  { label: "Mensajes a Kyo", value: conteo("kyo_mensaje"), icon: "comment", color: "#1883FF" },
+                  { label: "Navegaciones de Kyo", value: conteo("kyo_navegacion"), icon: "navigation", color: "#042E7B" },
+                  { label: "Busquedas en vacantes", value: conteo("busqueda_vacantes"), icon: "search", color: "#D97706" },
+                ] as { label: string; value: number; icon: IconUIName; color: string }[]).map((item) => (
                   <div key={item.label} className="flex items-center gap-3">
-                    <span className="text-lg w-6">{item.icon}</span>
+                    <span className="w-7 h-7 rounded-lg bg-bg flex items-center justify-center" style={{ color: item.color }}>
+                      <IconUI name={item.icon} size={14} />
+                    </span>
                     <span className="flex-1 text-[12px] font-semibold text-navy">{item.label}</span>
                     <span className="text-[14px] font-black text-navy">{item.value}</span>
                   </div>
@@ -444,10 +489,15 @@ export default function AdminAnalytics() {
           ) : (
             <>
               {/* Config */}
-              <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-                <div>
-                  <h3 className="text-[14px] font-black text-navy mb-1">Reporte periódico</h3>
-                  <p className="text-[12.5px] text-muted">Recibe un resumen de actividad por correo de forma automática.</p>
+              <div className="bg-white border border-border rounded-2xl p-6 space-y-5 shadow-[0_8px_24px_rgba(4,46,123,0.04)]">
+                <div className="flex items-start gap-3">
+                  <span className="w-9 h-9 rounded-xl bg-navy/10 text-navy flex items-center justify-center shrink-0">
+                    <IconUI name="calendar" size={17} />
+                  </span>
+                  <div>
+                    <h3 className="text-[14px] font-black text-navy mb-1">Reporte periódico</h3>
+                    <p className="text-[12.5px] text-muted">Recibe un resumen de actividad por correo de forma automática.</p>
+                  </div>
                 </div>
 
                 <div>
@@ -490,27 +540,31 @@ export default function AdminAnalytics() {
                 <button
                   onClick={saveReporteConfig}
                   disabled={savingConfig}
-                  className="w-full bg-navy text-white rounded-xl py-2.5 text-[13px] font-bold hover:bg-blue transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 bg-yellow text-navy rounded-xl py-2.5 text-[13px] font-bold hover:bg-yellow/85 transition-colors disabled:opacity-50"
                 >
-                  {savingConfig ? "Guardando..." : configSaved ? "✓ Guardado" : "Guardar configuración"}
+                  {configSaved && <IconUI name="check" size={15} />}
+                  {savingConfig ? "Guardando..." : configSaved ? "Guardado" : "Guardar configuración"}
                 </button>
               </div>
 
               {/* Acciones manuales */}
-              <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
-                <div>
-                  <h3 className="text-[14px] font-black text-navy mb-1">Generar resumen ahora</h3>
-                  <p className="text-[12.5px] text-muted">Genera el resumen del período seleccionado y descárgalo o envíalo al correo configurado.</p>
+              <div className="bg-white border border-border rounded-2xl p-6 space-y-4 shadow-[0_8px_24px_rgba(4,46,123,0.04)]">
+                <div className="flex items-start gap-3">
+                  <span className="w-9 h-9 rounded-xl bg-blue/10 text-blue flex items-center justify-center shrink-0">
+                    <IconUI name="document" size={17} />
+                  </span>
+                  <div>
+                    <h3 className="text-[14px] font-black text-navy mb-1">Generar resumen ahora</h3>
+                    <p className="text-[12.5px] text-muted">Genera el resumen del período seleccionado y descárgalo o envíalo al correo configurado.</p>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={downloadPdf}
-                    className="w-full flex items-center justify-center gap-2 bg-navy text-white rounded-xl py-2.5 text-[13px] font-bold hover:bg-blue transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-yellow text-navy rounded-xl py-2.5 text-[13px] font-bold hover:bg-yellow/85 transition-colors"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
-                    </svg>
+                    <IconUI name="download" size={15} />
                     Descargar PDF con diseño
                   </button>
                   <div className="flex gap-2">
@@ -518,9 +572,7 @@ export default function AdminAnalytics() {
                       onClick={downloadReport}
                       className="flex-1 flex items-center justify-center gap-2 border border-border rounded-xl py-2.5 text-[13px] font-semibold text-navy hover:bg-bg transition-colors"
                     >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                      </svg>
+                      <IconUI name="download" size={14} />
                       Descargar .txt
                     </button>
                     <button
@@ -528,16 +580,22 @@ export default function AdminAnalytics() {
                       disabled={sendingReport}
                       className="flex-1 flex items-center justify-center gap-2 border border-blue/30 text-blue rounded-xl py-2.5 text-[13px] font-semibold hover:bg-blue/5 transition-colors disabled:opacity-50"
                     >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                      </svg>
+                      <IconUI name="mail" size={14} />
                       {sendingReport ? "Enviando..." : "Enviar correo"}
                     </button>
                   </div>
                 </div>
 
                 {reportMsg && (
-                  <p className="text-[12.5px] font-semibold text-center">{reportMsg}</p>
+                  <p className={`flex items-center justify-center gap-2 text-[12.5px] font-semibold ${
+                    reportMsg.startsWith("Error") ? "text-red-600" : reportMsg.includes("correctamente") ? "text-green-700" : "text-navy"
+                  }`}>
+                    <IconUI
+                      name={reportMsg.startsWith("Error") ? "x" : reportMsg.includes("correctamente") ? "check" : "clock"}
+                      size={14}
+                    />
+                    {reportMsg}
+                  </p>
                 )}
               </div>
             </>
@@ -547,4 +605,3 @@ export default function AdminAnalytics() {
     </div>
   );
 }
-

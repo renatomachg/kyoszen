@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Dot, IconUI, type IconUIName } from "@/components/ui/IconUI";
 
 interface Message {
   role: "user" | "assistant";
@@ -16,11 +17,11 @@ interface Chat {
 }
 
 const SUGERENCIAS = [
-  { icon: "📈", text: "Analiza los datos y dime qué servicios le puedo ofrecer a Kyoszen" },
-  { icon: "🔍", text: "¿Dónde está perdiendo conversiones el sitio?" },
-  { icon: "🎓", text: "¿Qué cursos debería promover más y por qué?" },
-  { icon: "💡", text: "Dame ideas de servicios digitales para venderle este mes" },
-];
+  { icon: "chart", color: "#1883FF", text: "Analiza los datos y dime qué servicios le puedo ofrecer a Kyoszen" },
+  { icon: "search", color: "#042E7B", text: "¿Dónde está perdiendo conversiones el sitio?" },
+  { icon: "book-open", color: "#D97706", text: "¿Qué cursos debería promover más y por qué?" },
+  { icon: "lightbulb", color: "#16A34A", text: "Dame ideas de servicios digitales para venderle este mes" },
+] satisfies { icon: IconUIName; color: string; text: string }[];
 
 function newChatId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -180,24 +181,24 @@ export default function EstrategaPage() {
   const isEmpty = messages.length === 0 && !streamText;
 
   return (
-    <div className="flex h-[calc(100vh-80px)] -m-6 overflow-hidden rounded-2xl border border-border bg-white">
+    <div className="flex h-[calc(100vh-80px)] -m-6 overflow-hidden rounded-2xl border border-border bg-white shadow-[0_12px_32px_rgba(4,46,123,0.06)]">
 
       {/* ── Sidebar ── */}
       <aside className={`${sidebarOpen ? "w-64" : "w-0"} transition-all duration-200 bg-navy flex flex-col shrink-0 overflow-hidden`}>
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-yellow flex items-center justify-center">
-              <span className="text-[13px]">📊</span>
+            <div className="w-8 h-8 rounded-lg bg-yellow text-navy flex items-center justify-center">
+              <IconUI name="chart" size={16} />
             </div>
-            <span className="text-white font-black text-[13px]">Estratega</span>
+            <div>
+              <span className="block text-white font-black text-[13px]">Estratega</span>
+            </div>
           </div>
           <button
             onClick={createNewChat}
-            className="w-full flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2.5 text-[12px] font-bold transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-yellow hover:bg-yellow/85 text-navy rounded-xl px-3 py-2.5 text-[12px] font-bold transition-colors"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <IconUI name="plus" size={14} />
             Nueva consulta
           </button>
         </div>
@@ -226,10 +227,9 @@ export default function EstrategaPage() {
                   <button
                     onClick={(e) => deleteChat(chat.id, e)}
                     className="opacity-0 group-hover:opacity-100 text-white/40 hover:text-red-400 transition-all shrink-0 mt-0.5"
+                    aria-label="Eliminar consulta"
                   >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
+                    <IconUI name="trash" size={12} />
                   </button>
                 </div>
                 <p className="text-[10px] text-white/30 mt-0.5">{formatDate(chat.updated_at)}</p>
@@ -251,16 +251,15 @@ export default function EstrategaPage() {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="w-8 h-8 rounded-lg hover:bg-bg flex items-center justify-center text-muted transition-colors"
+            aria-label={sidebarOpen ? "Ocultar historial" : "Mostrar historial"}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
+            <IconUI name="menu" size={17} />
           </button>
           <span className="text-[13px] font-bold text-navy truncate">
             {activeChat ? activeChat.title : "Nueva consulta"}
           </span>
           <span className="ml-auto flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+            <Dot color="#16A34A" size={6} />
             Datos en tiempo real
           </span>
         </div>
@@ -270,8 +269,8 @@ export default function EstrategaPage() {
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-8 max-w-lg mx-auto">
               <div>
-                <div className="w-14 h-14 rounded-2xl bg-navy flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">📊</span>
+                <div className="w-14 h-14 rounded-2xl bg-navy text-yellow flex items-center justify-center mx-auto mb-4 shadow-[0_10px_24px_rgba(4,46,123,0.18)]">
+                  <IconUI name="chart" size={26} />
                 </div>
                 <h2 className="text-2xl font-black text-navy mb-2">Bienvenido al Estratega</h2>
                 <p className="text-[13px] text-muted leading-relaxed">
@@ -285,7 +284,9 @@ export default function EstrategaPage() {
                     onClick={() => send(s.text)}
                     className="flex items-start gap-3 text-left bg-bg hover:bg-blue/5 border border-border hover:border-blue/30 rounded-xl px-4 py-3.5 transition-all group"
                   >
-                    <span className="text-lg shrink-0">{s.icon}</span>
+                    <span className="w-8 h-8 rounded-lg bg-white border border-border flex items-center justify-center shrink-0" style={{ color: s.color }}>
+                      <IconUI name={s.icon} size={16} />
+                    </span>
                     <span className="text-[12px] text-navy font-semibold leading-snug group-hover:text-blue transition-colors">{s.text}</span>
                   </button>
                 ))}
@@ -296,8 +297,8 @@ export default function EstrategaPage() {
               {messages.map((m, i) => (
                 <div key={i} className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                   {m.role === "assistant" && (
-                    <div className="w-8 h-8 rounded-full bg-navy flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="text-[13px]">📊</span>
+                    <div className="w-8 h-8 rounded-lg bg-navy text-yellow flex items-center justify-center shrink-0 mt-0.5">
+                      <IconUI name="chart" size={15} />
                     </div>
                   )}
                   <div className={`max-w-[85%] text-[13px] leading-relaxed whitespace-pre-wrap ${
@@ -312,8 +313,8 @@ export default function EstrategaPage() {
 
               {streamText && (
                 <div className="flex gap-3 justify-start">
-                  <div className="w-8 h-8 rounded-full bg-navy flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-[13px]">📊</span>
+                  <div className="w-8 h-8 rounded-lg bg-navy text-yellow flex items-center justify-center shrink-0 mt-0.5">
+                    <IconUI name="chart" size={15} />
                   </div>
                   <div className="max-w-[85%] text-[13px] leading-relaxed whitespace-pre-wrap text-navy">
                     {streamText}
@@ -324,8 +325,8 @@ export default function EstrategaPage() {
 
               {loading && !streamText && (
                 <div className="flex gap-3 justify-start">
-                  <div className="w-8 h-8 rounded-full bg-navy flex items-center justify-center shrink-0">
-                    <span className="text-[13px]">📊</span>
+                  <div className="w-8 h-8 rounded-lg bg-navy text-yellow flex items-center justify-center shrink-0">
+                    <IconUI name="chart" size={15} />
                   </div>
                   <div className="flex items-center gap-1.5 py-3">
                     {[0, 1, 2].map((i) => (
@@ -356,11 +357,10 @@ export default function EstrategaPage() {
               <button
                 onClick={() => send()}
                 disabled={!input.trim() || loading}
-                className="w-9 h-9 bg-navy rounded-xl flex items-center justify-center shrink-0 hover:bg-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-9 h-9 bg-yellow text-navy rounded-xl flex items-center justify-center shrink-0 hover:bg-yellow/85 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Enviar consulta"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
+                <IconUI name="send" size={15} />
               </button>
             </div>
             <p className="text-[10px] text-muted text-center mt-2">Enter para enviar · Shift+Enter para nueva línea</p>

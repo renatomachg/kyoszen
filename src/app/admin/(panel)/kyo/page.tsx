@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { DEFAULT_INSTRUCCIONES } from "@/lib/assistant/system-prompt";
+import { Dot, IconUI, type IconUIName } from "@/components/ui/IconUI";
 
 /* ─────────────────────────── Types ─────────────────────────── */
 
@@ -29,6 +30,11 @@ interface KyoConversacion {
 }
 
 const EMPTY_FAQ = { pregunta: "", respuesta: "", orden: 0, activo: true };
+const TAB_ICONS: Record<"prompt" | "faqs" | "conversaciones", IconUIName> = {
+  prompt: "document",
+  faqs: "comment",
+  conversaciones: "users",
+};
 
 /* ─────────────────────────── Styles ─────────────────────────── */
 
@@ -251,12 +257,13 @@ export default function AdminKyo() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
               tab === t
                 ? "bg-white text-navy shadow-sm"
                 : "text-muted hover:text-navy"
             }`}
           >
+            <IconUI name={TAB_ICONS[t]} size={14} />
             {t === "prompt" ? "Instrucciones" : t === "faqs" ? "Preguntas frecuentes" : "Conversaciones"}
           </button>
         ))}
@@ -294,9 +301,10 @@ export default function AdminKyo() {
                 <button
                   onClick={savePrompt}
                   disabled={savingPrompt || !promptDirty}
-                  className="bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50"
                 >
-                  {savingPrompt ? "Guardando..." : promptSaved ? "✓ Guardado" : "Guardar instrucciones"}
+                  {promptSaved ? <IconUI name="check" size={15} /> : <IconUI name="save" size={15} />}
+                  {savingPrompt ? "Guardando..." : promptSaved ? "Guardado" : "Guardar instrucciones"}
                 </button>
                 <button
                   onClick={resetPrompt}
@@ -305,8 +313,8 @@ export default function AdminKyo() {
                   Restaurar por defecto
                 </button>
                 {promptDirty && (
-                  <span className="text-[12px] text-yellow-600 font-medium">
-                    · Cambios sin guardar
+                  <span className="inline-flex items-center gap-1.5 text-[12px] text-yellow-600 font-medium">
+                    <Dot color="#D97706" size={6} /> Cambios sin guardar
                   </span>
                 )}
               </div>
@@ -327,9 +335,9 @@ export default function AdminKyo() {
               {testMessages.length > 0 && (
                 <button
                   onClick={() => setTestMessages([])}
-                  className="text-[12px] font-semibold text-muted hover:text-navy transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted hover:text-navy transition-colors"
                 >
-                  Nueva conversacion
+                  <IconUI name="plus" size={13} /> Nueva conversacion
                 </button>
               )}
             </div>
@@ -382,9 +390,9 @@ export default function AdminKyo() {
               <button
                 type="submit"
                 disabled={!testInput.trim() || testLoading}
-                className="bg-navy text-white rounded-xl px-4 py-2 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-4 py-2 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-50"
               >
-                Enviar
+                <IconUI name="send" size={15} /> Enviar
               </button>
             </form>
           </div>
@@ -400,9 +408,9 @@ export default function AdminKyo() {
             </p>
             <button
               onClick={openNew}
-              className="bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors"
+              className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-5 py-2.5 text-[13px] font-bold hover:bg-blue-dark transition-colors"
             >
-              + Nueva FAQ
+              <IconUI name="plus" size={15} /> Nueva FAQ
             </button>
           </div>
 
@@ -483,8 +491,9 @@ export default function AdminKyo() {
                   <button
                     type="submit"
                     disabled={savingFaq}
-                    className="bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-60"
+                    className="inline-flex items-center gap-2 bg-navy text-white rounded-xl px-6 py-2.5 text-sm font-bold hover:bg-blue-dark transition-colors disabled:opacity-60"
                   >
+                    <IconUI name="save" size={15} />
                     {savingFaq
                       ? "Guardando..."
                       : editing
@@ -545,15 +554,15 @@ export default function AdminKyo() {
                       </button>
                       <button
                         onClick={() => openEdit(faq)}
-                        className="text-[12px] font-semibold text-blue hover:underline"
+                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-blue hover:underline"
                       >
-                        Editar
+                        <IconUI name="pencil" size={13} /> Editar
                       </button>
                       <button
                         onClick={() => eliminarFaq(faq.id, faq.pregunta)}
-                        className="text-[12px] font-semibold text-red-500 hover:underline"
+                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-red-500 hover:underline"
                       >
-                        Eliminar
+                        <IconUI name="trash" size={13} /> Eliminar
                       </button>
                     </div>
                   </div>
@@ -571,9 +580,9 @@ export default function AdminKyo() {
             <p className="text-[13px] text-muted">Historial de conversaciones con el asistente Kyo. Se registran automáticamente.</p>
             <button
               onClick={loadConvs}
-              className="text-[12px] font-semibold text-blue hover:underline"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-blue hover:underline"
             >
-              Actualizar
+              <IconUI name="refresh" size={13} /> Actualizar
             </button>
           </div>
 
@@ -597,7 +606,7 @@ export default function AdminKyo() {
                       onClick={() => setExpandedConv(isOpen ? null : conv.id)}
                       className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-bg transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-navy/10 flex items-center justify-center shrink-0 text-[13px]">💬</div>
+                      <div className="w-8 h-8 rounded-full bg-navy/10 flex items-center justify-center shrink-0 text-navy"><IconUI name="comment" size={15} /></div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-semibold text-navy truncate">{preview || "Sin mensajes"}</p>
                         <p className="text-[11px] text-muted mt-0.5">
@@ -606,9 +615,7 @@ export default function AdminKyo() {
                           {conv.ip ? ` · IP: ${conv.ip}` : ""}
                         </p>
                       </div>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-muted transition-transform ${isOpen ? "rotate-180" : ""}`}>
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      <IconUI name="chevron-down" size={14} className={`shrink-0 text-muted transition-transform ${isOpen ? "rotate-180" : ""}`} />
                     </button>
 
                     {isOpen && (
