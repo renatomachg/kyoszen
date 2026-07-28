@@ -27,6 +27,32 @@ export async function PATCH(
   if (typeof body.orden === "number" && Number.isInteger(body.orden)) {
     patch.orden = body.orden;
   }
+  if (body.carpeta_id !== undefined) {
+    if (body.carpeta_id === null || body.carpeta_id === "root") {
+      patch.carpeta_id = null;
+    } else {
+      const carpetaId = typeof body.carpeta_id === "string" ? body.carpeta_id.trim() : "";
+      if (!carpetaId) {
+        return NextResponse.json({ error: "Carpeta de destino inválida" }, { status: 400 });
+      }
+      const { data: carpeta, error: carpetaError } = await sb
+        .from("espacio_carpetas")
+        .select("id")
+        .eq("id", carpetaId)
+        .eq("espacio_id", id)
+        .maybeSingle();
+      if (carpetaError) {
+        return NextResponse.json({ error: carpetaError.message }, { status: 500 });
+      }
+      if (!carpeta) {
+        return NextResponse.json(
+          { error: "La carpeta de destino no pertenece a este espacio" },
+          { status: 400 }
+        );
+      }
+      patch.carpeta_id = carpetaId;
+    }
+  }
   if (Object.keys(patch).length === 1) {
     return NextResponse.json({ error: "No hay cambios válidos" }, { status: 400 });
   }

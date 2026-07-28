@@ -95,6 +95,45 @@ const ESTADO: Record<string, { label: string; bg: string; color: string; dot: st
   cambios:   { label: "Cambios solicitados",bg: "#FEE2E2", color: "#991B1B", dot: "#EF4444" },
 };
 
+type IconoRevisorNombre =
+  | "publicaciones"
+  | "proyectos"
+  | "analisis"
+  | "ayuda"
+  | "check"
+  | "cambios"
+  | "video"
+  | "documento"
+  | "comentario"
+  | "clip"
+  | "buscar"
+  | "bandeja"
+  | "volver";
+
+function IconoRevisor({ name, size = 18 }: { name: IconoRevisorNombre; size?: number }) {
+  const paths: Record<IconoRevisorNombre, React.ReactNode> = {
+    publicaciones: <path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />,
+    proyectos: <path d="M3.75 3v18M20.25 3v18M3.75 7.5h16.5M3.75 12h16.5M3.75 16.5h16.5M7.5 3v18M16.5 3v18" />,
+    analisis: <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />,
+    ayuda: <><circle cx="12" cy="12" r="9" /><path d="M9.75 9a2.25 2.25 0 114.29.94c-.45.73-1.44 1.05-1.82 1.83-.14.28-.22.61-.22.98M12 16.25h.01" /></>,
+    check: <path d="M4.5 12.75l4.5 4.5 10.5-10.5" />,
+    cambios: <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zM19.5 7.125L16.875 4.5M18 14.25v4.125c0 .621-.504 1.125-1.125 1.125H5.625A1.125 1.125 0 014.5 18.375V7.125C4.5 6.504 5.004 6 5.625 6H9.75" />,
+    video: <><path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72" /><path d="M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" /></>,
+    documento: <path d="M14.25 2.25H6.375A1.875 1.875 0 004.5 4.125v15.75c0 1.036.84 1.875 1.875 1.875h11.25a1.875 1.875 0 001.875-1.875V7.5m-5.25-5.25L19.5 7.5m-5.25-5.25V7.5h5.25M8.25 12h7.5m-7.5 3.75h7.5" />,
+    comentario: <path d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm3.75 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm3.75 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM21 12c0 4.142-4.03 7.5-9 7.5a10.4 10.4 0 01-3.35-.55L3 20.25l1.56-4.16A6.54 6.54 0 013 12c0-4.142 4.03-7.5 9-7.5s9 3.358 9 7.5z" />,
+    clip: <path d="M18.375 12.739l-7.693 7.693a4.125 4.125 0 01-5.833-5.834l9.168-9.168a2.625 2.625 0 013.712 3.713l-9.17 9.168a1.125 1.125 0 01-1.59-1.59l7.692-7.693" />,
+    buscar: <path d="M21 21l-4.35-4.35m1.35-5.4a6.75 6.75 0 11-13.5 0 6.75 6.75 0 0113.5 0z" />,
+    bandeja: <path d="M3.75 9.75l2.79-5.58A.75.75 0 017.21 3.75h9.58a.75.75 0 01.67.42l2.79 5.58m-16.5 0v8.625c0 .621.504 1.125 1.125 1.125h14.25c.621 0 1.125-.504 1.125-1.125V9.75m-16.5 0h4.5l1.125 2.25h5.25l1.125-2.25h4.5" />,
+    volver: <path d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />,
+  };
+
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flexShrink: 0 }}>
+      {paths[name]}
+    </svg>
+  );
+}
+
 /* ─── Post Modal ─────────────────────────────────────── */
 function PostModal({ post, config, userName, onClose, onStatusChange }: {
   post: Post;
@@ -202,11 +241,11 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                   {viendoAnterior ? (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#F1F5F9", color: "#64748B", fontSize: 12, fontWeight: 800, padding: "6px 12px", borderRadius: 20 }}>
-                      ↩️ Versión anterior (v{anterior.version_num})
+                      <IconoRevisor name="volver" size={14} /> Versión anterior (v{anterior.version_num})
                     </span>
                   ) : (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#DCFCE7", color: "#166534", fontSize: 12, fontWeight: 800, padding: "6px 12px", borderRadius: 20 }}>
-                      ✨ Nueva propuesta (v{active.version_num})
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#EAF2FF", color: "#0A4ECC", border: "1px solid #BFD5FF", fontSize: 10.5, fontWeight: 800, padding: "6px 10px", borderRadius: 8, letterSpacing: ".06em" }}>
+                      NUEVA PROPUESTA · V{active.version_num}
                     </span>
                   )}
                   <button onClick={() => { setViendoAnterior(!viendoAnterior); setSlide(0); }}
@@ -286,23 +325,23 @@ function PostModal({ post, config, userName, onClose, onStatusChange }: {
               {!showCambiosForm ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <button onClick={aprobar} disabled={changingStatus !== null || enviandoCambios}
-                    style={{ width: "100%", padding: "14px 0", borderRadius: 14, border: "none", cursor: "pointer", fontWeight: 800, fontSize: 15,
-                      background: estado === "aprobado" ? "#166534" : "#DCFCE7", color: estado === "aprobado" ? "#fff" : "#166534",
+                    style={{ width: "100%", padding: "13px 16px", borderRadius: 12, border: "1px solid #16A34A", cursor: "pointer", fontWeight: 800, fontSize: 14,
+                      background: estado === "aprobado" ? "#15803D" : "#16A34A", color: "#fff",
                       opacity: changingStatus !== null ? 0.6 : 1, transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                    {changingStatus === "aprobado" ? "Guardando..." : estado === "aprobado" ? "✅ Aprobada" : "✅ Aprobar"}
+                    {changingStatus === "aprobado" ? "Guardando..." : <><IconoRevisor name="check" size={18} />{estado === "aprobado" ? "Aprobada" : "Aprobar"}</>}
                   </button>
                   <button onClick={() => setShowCambiosForm(true)} disabled={changingStatus !== null}
-                    style={{ width: "100%", padding: "14px 0", borderRadius: 14, border: "none", cursor: "pointer", fontWeight: 800, fontSize: 15,
-                      background: estado === "cambios" ? "#991B1B" : "#FEE2E2", color: estado === "cambios" ? "#fff" : "#991B1B",
+                    style={{ width: "100%", padding: "13px 16px", borderRadius: 12, border: `1px solid ${estado === "cambios" ? "#DC2626" : "#E6EBF5"}`, cursor: "pointer", fontWeight: 800, fontSize: 14,
+                      background: estado === "cambios" ? "#FEF2F2" : "#fff", color: estado === "cambios" ? "#B91C1C" : "#475569",
                       transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                    {estado === "cambios" ? "🔴 Cambios solicitados" : "✏️ Necesito cambios"}
+                    <IconoRevisor name="cambios" size={17} />{estado === "cambios" ? "Cambios solicitados" : "Necesito cambios"}
                   </button>
                 </div>
               ) : (
                 /* Formulario de cambios */
                 <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 14, padding: 16 }}>
                   <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 800, color: "#991B1B" }}>
-                    ✏️ ¿Qué necesitas cambiar?
+                    ¿Qué necesitas cambiar?
                   </p>
                   <p style={{ margin: "0 0 10px", fontSize: 12, color: "#B45454", lineHeight: 1.5 }}>
                     Escribe los cambios que quieres y los recibiremos al instante.
@@ -386,8 +425,8 @@ function TikTokReview({ post, version }: { post: Post; version: Version }) {
           <div style={{ maxWidth: 264, margin: "0 auto 6px", position: "relative", borderRadius: 18, overflow: "hidden", background: "#0F172A", aspectRatio: "9/16", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
             {archivado.poster_url
               ? <img src={archivado.poster_url} alt="Carátula del video" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>🎬</div>}
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent,rgba(15,23,42,.9))", color: "#fff", fontSize: 11.5, fontWeight: 800, padding: "22px 12px 10px", textAlign: "center" }}>✅ Publicado en redes</div>
+              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#BFDBFE" }}><IconoRevisor name="video" size={42} /></div>}
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent,rgba(15,23,42,.9))", color: "#fff", fontSize: 11.5, fontWeight: 800, padding: "22px 12px 10px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}><IconoRevisor name="check" size={14} /> Publicado en redes</div>
           </div>
           {version.caption && (
             <div style={{ margin: "10px 0", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: "10px 12px" }}>
@@ -433,8 +472,9 @@ function TikTokReview({ post, version }: { post: Post; version: Version }) {
           {version.storyboard?.propuesta
             ? <PropuestaView prop={version.storyboard.propuesta} caption={version.caption} />
             : <StoryboardView sb={version.storyboard} caption={version.caption} />}
-          <p style={{ margin: "14px 0 0", fontSize: 12.5, color: "#64748B", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "10px 12px" }}>
-            🎬 Primero apruebas esta <b>propuesta</b>. Cuando la apruebes, producimos el <b>video</b> y te avisamos para que también lo revises.
+          <p style={{ margin: "14px 0 0", fontSize: 12.5, color: "#64748B", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <span style={{ color: "#D97706", marginTop: 1 }}><IconoRevisor name="video" size={17} /></span>
+            <span>Primero apruebas esta <b>propuesta</b>. Cuando la apruebes, producimos el <b>video</b> y te avisamos para que también lo revises.</span>
           </p>
         </>
       )}
@@ -468,9 +508,9 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
           <div style={{ position: "absolute", top: 3.5, left: 4.5, right: 4.5, height: 26, background: "#E3EEFF", borderRadius: "16px 16px 0 0", zIndex: 0 }} />
         </>
       )}
-      <button onClick={onOpen} style={{ position: "relative", zIndex: 1, background: "#fff", border: hayCorreccion ? "1.5px solid #1883FF" : "1.5px solid #E2E8F0", borderRadius: 16, overflow: "hidden", cursor: "pointer", textAlign: "left", width: "100%", transition: "all .2s", boxShadow: hayCorreccion ? "0 4px 16px rgba(24,131,255,.18)" : "0 1px 4px rgba(0,0,0,.06)" }}
+      <button onClick={onOpen} style={{ position: "relative", zIndex: 1, background: "#fff", border: hayCorreccion ? "1px solid #1883FF" : "1px solid #E6EBF5", borderRadius: 16, overflow: "hidden", cursor: "pointer", textAlign: "left", width: "100%", transition: "all .16s", boxShadow: hayCorreccion ? "0 8px 24px rgba(24,131,255,.14)" : "0 1px 2px rgba(4,46,123,.05)" }}
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 20px rgba(4,46,123,.12)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; (e.currentTarget as HTMLButtonElement).style.boxShadow = hayCorreccion ? "0 4px 16px rgba(24,131,255,.18)" : "0 1px 4px rgba(0,0,0,.06)"; }}>
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; (e.currentTarget as HTMLButtonElement).style.boxShadow = hayCorreccion ? "0 8px 24px rgba(24,131,255,.14)" : "0 1px 2px rgba(4,46,123,.05)"; }}>
 
       {/* Image */}
       <div style={{ position: "relative", aspectRatio: "1/1", background: "#F1F5F9", overflow: "hidden" }}>
@@ -480,29 +520,29 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
             : ttPoster
             ? <img src={ttPoster} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#000" }} />
             : <div style={{ width: "100%", height: "100%", background: "linear-gradient(160deg,#0F172A 0%,#1e293b 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 14, textAlign: "center", gap: 8 }}>
-                <span style={{ fontSize: 22 }}>🎬</span>
+                <span style={{ color: "#BFDBFE" }}><IconoRevisor name="video" size={26} /></span>
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", lineHeight: 1.3 }}>{ttHook?.overlay || post.titulo_interno || "Storyboard TikTok"}</span>
               </div>
         ) : hasImage
           ? <img src={active!.imagenes[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 32 }}>📝</span>
+              <span style={{ width: 48, height: 48, borderRadius: 12, display: "grid", placeItems: "center", background: "#EAF2FF", color: "#042E7B" }}><IconoRevisor name="documento" size={25} /></span>
             </div>
         }
         {isTiktok && (
-          <span style={{ position: "absolute", top: 8, right: 8, background: ttVideo ? "rgba(0,0,0,.65)" : "rgba(24,131,255,.92)", color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 20 }}>
-            🎬 {ttFase === "video" ? "Video" : "Guion"}
+          <span style={{ position: "absolute", top: 8, right: 8, background: ttVideo ? "rgba(0,0,0,.72)" : "rgba(4,46,123,.92)", color: "#fff", fontSize: 10, fontWeight: 800, padding: "4px 9px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <IconoRevisor name="video" size={12} /> {ttFase === "video" ? "Video" : "Guion"}
           </span>
         )}
         {isCarrusel && !isTiktok && (
-          <span style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,.6)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 20 }}>
-            📎 {active!.imagenes.length}
+          <span style={{ position: "absolute", top: 8, right: 8, background: "rgba(4,46,123,.84)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "4px 7px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <IconoRevisor name="clip" size={11} /> {active!.imagenes.length}
           </span>
         )}
         {/* Status overlay */}
         <div style={{ position: "absolute", top: 8, left: 8, background: hayCorreccion ? "#DBEAFE" : est.bg, borderRadius: 20, padding: "3px 9px", display: "flex", alignItems: "center", gap: 5 }}>
           {hayCorreccion
-            ? <span style={{ fontSize: 10, fontWeight: 800, color: "#1E40AF" }}>✨ Nueva propuesta</span>
+            ? <span style={{ fontSize: 9.5, fontWeight: 800, color: "#1E40AF", letterSpacing: ".04em" }}>NUEVA PROPUESTA</span>
             : <>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
                 <span style={{ fontSize: 10, fontWeight: 700, color: est.color }}>{est.label}</span>
@@ -524,8 +564,8 @@ function PostCard({ post, onOpen }: { post: Post; onOpen: () => void }) {
           </p>
         )}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, color: "#94A3B8" }}>
-            {commentCount > 0 ? `💬 ${commentCount} comentario${commentCount > 1 ? "s" : ""}` : "Sin comentarios"}
+          <span style={{ fontSize: 11, color: "#94A3B8", display: "inline-flex", alignItems: "center", gap: 4 }}>
+            {commentCount > 0 ? <><IconoRevisor name="comentario" size={13} />{commentCount} comentario{commentCount > 1 ? "s" : ""}</> : "Sin comentarios"}
           </span>
           <span style={{ fontSize: 11, color: "#1883FF", fontWeight: 700 }}>Ver →</span>
         </div>
@@ -1062,8 +1102,8 @@ export default function RevisorPage() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button data-tour="guia" onClick={() => setShowGuia(true)} title="Ver guía de uso"
-              style={{ background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "#1883FF", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ fontSize: 13 }}>❔</span> Guía de uso
+              style={{ background: "#fff", border: "1px solid #E6EBF5", borderRadius: 9, padding: "6px 11px", fontSize: 12, color: "#0A4ECC", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 6, boxShadow: "0 1px 2px rgba(4,46,123,.04)" }}>
+              <IconoRevisor name="ayuda" size={15} /> Guía de uso
             </button>
             <span style={{ fontSize: 12, color: "#64748B" }}>Hola, <strong>{userName}</strong></span>
             <button onClick={logout} style={{ background: "none", border: "1.5px solid #E2E8F0", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "#64748B", cursor: "pointer", fontWeight: 600 }}>Salir</button>
@@ -1073,12 +1113,16 @@ export default function RevisorPage() {
 
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: "32px 32px" }}>
         {/* Pestañas de sección */}
-        <div style={{ display: "flex", gap: 2, marginBottom: 24, background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 12, padding: 4, width: "fit-content" }}>
-          {([["publicaciones", "📋 Publicaciones"], ["proyectos", "🎬 Proyectos"], ["resultados", "📊 Análisis"]] as const).map(([k, label]) => (
+        <div style={{ display: "flex", gap: 3, marginBottom: 24, background: "#F1F5F9", border: "1px solid #E6EBF5", borderRadius: 12, padding: 4, width: "fit-content" }}>
+          {([
+            ["publicaciones", "Publicaciones", "publicaciones"],
+            ["proyectos", "Proyectos", "proyectos"],
+            ["resultados", "Análisis", "analisis"],
+          ] as const).map(([k, label, icon]) => (
             <button key={k} onClick={() => setSeccion(k)}
-              style={{ padding: "8px 18px", borderRadius: 9, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s",
-                background: seccion === k ? "#042E7B" : "transparent", color: seccion === k ? "#fff" : "#64748B" }}>
-              {label}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s", display: "inline-flex", alignItems: "center", gap: 7,
+                background: seccion === k ? "#042E7B" : "transparent", color: seccion === k ? "#fff" : "#64748B", boxShadow: seccion === k ? "0 2px 5px rgba(4,46,123,.18)" : "none" }}>
+              <IconoRevisor name={icon} size={16} />{label}
             </button>
           ))}
         </div>
@@ -1093,18 +1137,18 @@ export default function RevisorPage() {
         {/* Stats del mes (clickeables = filtro por estado) */}
         <div data-tour="stats" style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
           {([
-            { label: "Total del mes", filtro: "todos", value: statsMonth.total, bg: "#F1F5F9", color: "#042E7B", emoji: "📅" },
-            { label: "Aprobados", filtro: "aprobado", value: statsMonth.aprobados, bg: "#DCFCE7", color: "#166534", emoji: "✅" },
-            { label: "Pendientes", filtro: "pendiente", value: statsMonth.pendientes, bg: "#FEF9C3", color: "#854D0E", emoji: "🕐" },
-            { label: "Con cambios", filtro: "cambios", value: statsMonth.cambios, bg: "#FEE2E2", color: "#991B1B", emoji: "🔴" },
+            { label: "Total del mes", filtro: "todos", value: statsMonth.total, dot: "#64748B", tint: "#F1F5F9", text: "#475569" },
+            { label: "Aprobados", filtro: "aprobado", value: statsMonth.aprobados, dot: "#16A34A", tint: "#F0FDF4", text: "#166534" },
+            { label: "Pendientes", filtro: "pendiente", value: statsMonth.pendientes, dot: "#D97706", tint: "#FFFBEB", text: "#92400E" },
+            { label: "Con cambios", filtro: "cambios", value: statsMonth.cambios, dot: "#DC2626", tint: "#FEF2F2", text: "#991B1B" },
           ] as const).map(s => {
             const activo = filtroEstado === s.filtro;
             return (
               <button key={s.label} data-fpill={s.filtro} onClick={() => setFiltroEstado(s.filtro)} title={`Filtrar: ${s.label}`}
-                style={{ background: s.bg, borderRadius: 50, padding: "8px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", border: `2px solid ${activo ? s.color : "transparent"}`, boxShadow: activo ? "0 1px 6px rgba(0,0,0,.1)" : "none", transition: "all .12s" }}>
-                <span style={{ fontSize: 14 }}>{s.emoji}</span>
-                <span style={{ fontSize: 13, fontWeight: 900, color: s.color }}>{s.value}</span>
-                <span style={{ fontSize: 12, color: s.color, opacity: .75 }}>{s.label}</span>
+                style={{ background: activo ? s.tint : "#fff", borderRadius: 50, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", border: `1px solid ${activo ? s.dot : "#E6EBF5"}`, boxShadow: activo ? `0 0 0 2px ${s.dot}12` : "0 1px 2px rgba(4,46,123,.04)", transition: "all .12s" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.dot, display: "inline-block", flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 900, color: "#042E7B" }}>{s.value}</span>
+                <span style={{ fontSize: 12, color: activo ? s.text : "#64748B", fontWeight: activo ? 700 : 500 }}>{s.label}</span>
               </button>
             );
           })}
@@ -1120,13 +1164,14 @@ export default function RevisorPage() {
           <span style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: ".05em", marginRight: 2 }}>Red</span>
           {([
             { key: "todos", label: "Todas", color: "#475569", bg: "#F1F5F9" },
-            { key: "facebook", label: "📘 Facebook", color: getRedSocial("facebook").color, bg: getRedSocial("facebook").colorSuave },
-            { key: "tiktok", label: "🎵 TikTok", color: getRedSocial("tiktok").color, bg: getRedSocial("tiktok").colorSuave },
+            { key: "facebook", label: "Facebook", color: getRedSocial("facebook").color, bg: getRedSocial("facebook").colorSuave },
+            { key: "tiktok", label: "TikTok", color: getRedSocial("tiktok").color, bg: getRedSocial("tiktok").colorSuave },
           ] as const).map(r => {
             const activo = filtroRed === r.key;
             return (
               <button key={r.key} data-fred={r.key} onClick={() => setFiltroRed(r.key)}
-                style={{ background: activo ? r.bg : "#fff", color: r.color, border: `1.5px solid ${activo ? r.color : "#E2E8F0"}`, borderRadius: 50, padding: "6px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", transition: "all .12s" }}>
+                style={{ background: activo ? r.bg : "#fff", color: r.color, border: `1px solid ${activo ? r.color : "#E6EBF5"}`, borderRadius: 50, padding: "7px 13px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", transition: "all .12s", display: "inline-flex", alignItems: "center", gap: 7, boxShadow: activo ? `0 0 0 2px ${r.color}10` : "none" }}>
+                {r.key !== "todos" && <RedLogo red_social={r.key} height={11} />}
                 {r.label}
               </button>
             );
@@ -1187,8 +1232,10 @@ export default function RevisorPage() {
               <p style={{ marginTop: 14, color: "#94A3B8", fontSize: 13 }}>Cargando publicaciones...</p>
             </div>
           ) : postsFiltrados.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "80px 24px", background: "#fff", borderRadius: 20, border: "1.5px dashed #E2E8F0" }}>
-              <span style={{ fontSize: 40 }}>{hayFiltro ? "🔍" : "📭"}</span>
+            <div style={{ textAlign: "center", padding: "80px 24px", background: "#fff", borderRadius: 16, border: "1px dashed #E6EBF5" }}>
+              <span style={{ width: 48, height: 48, borderRadius: 12, background: "#EAF2FF", color: "#042E7B", display: "grid", placeItems: "center", margin: "0 auto" }}>
+                <IconoRevisor name={hayFiltro ? "buscar" : "bandeja"} size={25} />
+              </span>
               <p style={{ margin: "16px 0 6px", fontWeight: 700, color: "#042E7B", fontSize: 16 }}>
                 {hayFiltro ? "Sin publicaciones con este filtro" : `Sin publicaciones ${vista === "semana" ? "esta semana" : "este mes"}`}
               </p>
@@ -1227,14 +1274,14 @@ export default function RevisorPage() {
                               <span style={{ width: 5, height: 5, borderRadius: "50%", background: red.color, display: "inline-block" }} />{red.nombre}
                             </span>
                             <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 3 }}>
-                              {hayCorreccion && <span title="Nueva propuesta" style={{ fontSize: 7.5, fontWeight: 800, color: "#1E40AF", background: "#DBEAFE", padding: "0 4px", borderRadius: 4 }}>✨ NUEVA</span>}
+                              {hayCorreccion && <span title="Nueva propuesta" style={{ fontSize: 7.5, fontWeight: 800, color: "#1E40AF", background: "#DBEAFE", padding: "1px 4px", borderRadius: 4, letterSpacing: ".04em" }}>NUEVA</span>}
                               <span title={est.label} style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot, display: "inline-block" }} />
                             </span>
                           </div>
                           <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                             {active?.imagenes?.[0]
                               ? <img src={active.imagenes[0]} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0, display: "block" }} />
-                              : <div style={{ width: 28, height: 28, borderRadius: 6, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>{post.red_social === "tiktok" ? "🎬" : "📝"}</div>}
+                              : <div style={{ width: 28, height: 28, borderRadius: 7, background: "#EAF2FF", color: "#042E7B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><IconoRevisor name={post.red_social === "tiktok" ? "video" : "documento"} size={15} /></div>}
                             <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 600, color: "#475569", lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
                               {active?.caption || "Publicación"}
                             </span>

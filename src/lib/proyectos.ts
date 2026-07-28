@@ -46,12 +46,23 @@ export interface Espacio {
 export interface EspacioArchivo {
   id: string;
   espacio_id: string;
+  carpeta_id: string | null;
   nombre: string;
   url: string;
   tipo: string | null;
   peso: number | null;
   nota: string | null;
   estado: EstadoBloque;
+  orden: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EspacioCarpeta {
+  id: string;
+  espacio_id: string;
+  parent_id: string | null;
+  nombre: string;
   orden: number;
   created_at: string;
   updated_at: string;

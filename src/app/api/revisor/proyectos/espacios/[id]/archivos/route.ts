@@ -27,12 +27,30 @@ export async function GET(
     return NextResponse.json({ error: "Espacio no encontrado" }, { status: 404 });
   }
 
-  const { data: archivos, error } = await sb
-    .from("espacio_archivos")
-    .select("*")
-    .eq("espacio_id", id)
-    .order("orden", { ascending: true })
-    .order("created_at", { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ espacio, archivos: archivos ?? [] });
+  // El revisor recibe el árbol completo y navega en memoria; el volumen por espacio es bajo.
+  const [archivosResult, carpetasResult] = await Promise.all([
+    sb
+      .from("espacio_archivos")
+      .select("*")
+      .eq("espacio_id", id)
+      .order("orden", { ascending: true })
+      .order("created_at", { ascending: false }),
+    sb
+      .from("espacio_carpetas")
+      .select("*")
+      .eq("espacio_id", id)
+      .order("orden", { ascending: true })
+      .order("nombre", { ascending: true }),
+  ]);
+  if (archivosResult.error) {
+    return NextResponse.json({ error: archivosResult.error.message }, { status: 500 });
+  }
+  if (carpetasResult.error) {
+    return NextResponse.json({ error: carpetasResult.error.message }, { status: 500 });
+  }
+  return NextResponse.json({
+    espacio,
+    carpetas: carpetasResult.data ?? [],
+    archivos: archivosResult.data ?? [],
+  });
 }

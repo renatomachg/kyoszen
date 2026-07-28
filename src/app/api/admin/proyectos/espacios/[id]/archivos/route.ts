@@ -27,17 +27,42 @@ async function validarEspacio(id: string) {
     .maybeSingle();
 }
 
+async function validarCarpeta(espacioId: string, carpetaId: string) {
+  return sb
+    .from("espacio_carpetas")
+    .select("id")
+    .eq("id", carpetaId)
+    .eq("espacio_id", espacioId)
+    .maybeSingle();
+}
+
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { data, error } = await sb
+  // Contrato de Entrega K: sin parámetro (o con "root") se consulta únicamente la raíz.
+  const carpetaParam = req.nextUrl.searchParams.get("carpeta");
+  const carpetaId = carpetaParam && carpetaParam !== "root" ? carpetaParam : null;
+
+  if (carpetaId) {
+    const { data: carpeta, error: carpetaError } = await validarCarpeta(id, carpetaId);
+    if (carpetaError) {
+      return NextResponse.json({ error: carpetaError.message }, { status: 500 });
+    }
+    if (!carpeta) {
+      return NextResponse.json({ error: "Carpeta no encontrada" }, { status: 404 });
+    }
+  }
+
+  let query = sb
     .from("espacio_archivos")
     .select("*")
     .eq("espacio_id", id)
     .order("orden", { ascending: true })
     .order("created_at", { ascending: false });
+  query = carpetaId ? query.eq("carpeta_id", carpetaId) : query.is("carpeta_id", null);
+  const { data, error } = await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ archivos: data ?? [] });
@@ -69,6 +94,22 @@ export async function POST(
   }
   const notaForm = formData.get("nota");
   const nota = typeof notaForm === "string" ? notaForm.trim() || null : null;
+  const carpetaForm = formData.get("carpeta_id");
+  const carpetaId = typeof carpetaForm === "string" && carpetaForm.trim() && carpetaForm !== "root"
+    ? carpetaForm.trim()
+    : null;
+  if (carpetaId) {
+    const { data: carpeta, error: carpetaError } = await validarCarpeta(id, carpetaId);
+    if (carpetaError) {
+      return NextResponse.json({ error: carpetaError.message }, { status: 500 });
+    }
+    if (!carpeta) {
+      return NextResponse.json(
+        { error: "La carpeta de destino no pertenece a este espacio" },
+        { status: 400 }
+      );
+    }
+  }
   const contentType = file.type || "application/octet-stream";
   const path = `proyectos/${id}/${Date.now()}-${sanitizarNombre(file.name)}`;
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -90,6 +131,7 @@ export async function POST(
       tipo: contentType,
       peso: file.size,
       nota,
+      carpeta_id: carpetaId,
     })
     .select()
     .single();

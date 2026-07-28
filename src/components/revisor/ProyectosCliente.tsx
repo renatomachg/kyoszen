@@ -16,6 +16,7 @@ import {
   type Archivo,
   type Espacio,
   type EspacioArchivo,
+  type EspacioCarpeta,
   type EspacioComentario,
   type Proyecto,
   type ProyectoBloque,
@@ -107,6 +108,84 @@ function fechaComentario(fecha: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function IconoEspacio({
+  tipo,
+  size = 24,
+}: {
+  tipo: Espacio["tipo"];
+  size?: number;
+}) {
+  const atributos = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (tipo === "aprobacion") {
+    return (
+      <svg {...atributos}>
+        <path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72" />
+        <path d="M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+      </svg>
+    );
+  }
+
+  if (tipo === "archivos") {
+    return (
+      <svg {...atributos}>
+        <path d="M2.25 12.75V12a2.25 2.25 0 012.25-2.25h15A2.25 2.25 0 0121.75 12v.75" />
+        <path d="M13.06 6.31l-2.12-2.12a1.5 1.5 0 00-1.06-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+      </svg>
+    );
+  }
+
+  if (tipo === "tablero") {
+    return (
+      <svg {...atributos}>
+        <path d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...atributos}>
+      <path d="M4.5 4.5h6v6h-6zm9 0h6v6h-6zm-9 9h6v6h-6zm9 0h6v6h-6z" />
+    </svg>
+  );
+}
+
+function MosaicoEspacio({
+  tipo,
+  grande = false,
+}: {
+  tipo: Espacio["tipo"];
+  grande?: boolean;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "grid",
+        width: grande ? 54 : 46,
+        height: grande ? 54 : 46,
+        flexShrink: 0,
+        placeItems: "center",
+        borderRadius: grande ? 14 : 12,
+        background: "#EAF2FF",
+        color: C.navy,
+      }}
+    >
+      <IconoEspacio tipo={tipo} size={grande ? 28 : 24} />
+    </span>
+  );
 }
 
 function Spinner({ texto = "Cargando proyectos…" }: { texto?: string }) {
@@ -657,6 +736,19 @@ function estadoArchivoUI(estado: EspacioArchivo["estado"]) {
   return ESTADO_BLOQUE_UI[estado];
 }
 
+function esPdfArchivo(archivo: Pick<EspacioArchivo, "tipo" | "nombre">) {
+  return archivo.tipo === "application/pdf" || archivo.nombre.toLowerCase().endsWith(".pdf");
+}
+
+function extensionArchivo(nombre: string) {
+  const extension = nombre.split(".").pop();
+  return extension && extension !== nombre ? extension.toUpperCase() : "ARCHIVO";
+}
+
+function urlMiniaturaPdf(url: string) {
+  return `${url.split("#")[0]}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`;
+}
+
 function DetalleArchivo({
   espacio,
   archivo,
@@ -694,6 +786,14 @@ function DetalleArchivo({
   }, [archivo.id, espacio.id]);
 
   useEffect(() => { void cargarComentarios(); }, [cargarComentarios]);
+
+  useEffect(() => {
+    const cerrarConEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", cerrarConEscape);
+    return () => window.removeEventListener("keydown", cerrarConEscape);
+  }, [onClose]);
 
   const actualizarEstado = async (estado: "aprobado" | "cambios") => {
     const response = await fetch(`/api/revisor/proyectos/espacios/${espacio.id}/archivos/${archivo.id}/status`, {
@@ -761,11 +861,11 @@ function DetalleArchivo({
   };
 
   const esImagen = archivo.tipo?.startsWith("image/");
-  const esPdf = archivo.tipo === "application/pdf" || archivo.nombre.toLowerCase().endsWith(".pdf");
+  const esPdf = esPdfArchivo(archivo);
 
   return (
     <div role="dialog" aria-modal="true" aria-label={`Revisar ${archivo.nombre}`} onMouseDown={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(15, 23, 42, .62)", padding: 16 }}>
-      <div onMouseDown={(event) => event.stopPropagation()} style={{ width: "min(920px, 100%)", maxHeight: "94vh", overflowY: "auto", borderRadius: 18, background: C.white, boxShadow: "0 24px 80px rgba(2, 16, 43, .32)" }}>
+      <div onMouseDown={(event) => event.stopPropagation()} style={{ width: "min(1120px, 100%)", maxHeight: "94vh", overflowY: "auto", borderRadius: 18, background: C.white, boxShadow: "0 24px 80px rgba(2, 16, 43, .32)" }}>
         <header style={{ position: "sticky", top: 0, zIndex: 2, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, borderBottom: `1px solid ${C.border}`, background: C.white, padding: "18px 22px" }}>
           <div style={{ minWidth: 0 }}>
             <p style={{ margin: "0 0 5px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: "1px", textTransform: "uppercase" }}>{espacio.nombre}</p>
@@ -773,21 +873,25 @@ function DetalleArchivo({
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" style={{ border: 0, background: "transparent", color: C.muted, padding: 0, fontSize: 28, lineHeight: 1, cursor: "pointer" }}>×</button>
         </header>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))", gap: 22, padding: 22 }}>
+        <div style={{ padding: 22 }}>
           <div>
-            <div style={{ display: "flex", minHeight: 280, alignItems: "center", justifyContent: "center", overflow: "hidden", border: `1px solid ${C.border}`, borderRadius: 14, background: C.surface }}>
+            <div className="h-[60vh] sm:h-[72vh]" style={{ display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", border: `1px solid ${C.border}`, borderRadius: 14, background: "#172033" }}>
               {esImagen ? (
-                <img src={archivo.url} alt={archivo.nombre} style={{ width: "100%", maxHeight: 560, objectFit: "contain" }} />
+                <img src={archivo.url} alt={archivo.nombre} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+              ) : esPdf ? (
+                <iframe src={archivo.url} title={archivo.nombre} className="h-full w-full border-0 bg-white" />
               ) : (
-                <div style={{ padding: "52px 24px", textAlign: "center" }}>
-                  <span aria-hidden="true" style={{ display: "block", fontSize: 58 }}>{esPdf ? "📄" : "📎"}</span>
-                  <a href={archivo.url} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginTop: 14, borderRadius: 11, background: C.blue, padding: "10px 15px", color: C.white, fontSize: 12.5, fontWeight: 850, textDecoration: "none" }}>
-                    {esPdf ? "Abrir PDF" : "Abrir archivo"} ↗
-                  </a>
+                <div style={{ padding: "52px 24px", color: C.white, textAlign: "center" }}>
+                  <span aria-hidden="true" style={{ display: "block", fontSize: 58 }}>📎</span>
+                  <p style={{ margin: "14px 0 0", fontSize: 14, fontWeight: 750 }}>Este tipo de archivo no se puede previsualizar.</p>
+                  <p style={{ margin: "6px 0 0", color: "#CBD5E1", fontSize: 11.5 }}>{extensionArchivo(archivo.nombre)}</p>
                 </div>
               )}
             </div>
-            {esImagen && <a href={archivo.url} target="_blank" rel="noreferrer" style={{ display: "block", marginTop: 9, color: C.blue, fontSize: 11.5, fontWeight: 750, textAlign: "center", textDecoration: "none" }}>Abrir imagen en tamaño completo ↗</a>}
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <a href={archivo.url} target="_blank" rel="noopener noreferrer" style={{ borderRadius: 11, background: C.blue, padding: "10px 15px", color: C.white, fontSize: 12.5, fontWeight: 850, textAlign: "center", textDecoration: "none" }}>Abrir en pestaña nueva ↗</a>
+              <a href={archivo.url} download style={{ border: `1px solid ${C.border}`, borderRadius: 11, background: C.white, padding: "10px 15px", color: C.navy, fontSize: 12.5, fontWeight: 850, textAlign: "center", textDecoration: "none" }}>Descargar ↓</a>
+            </div>
             {archivo.nota && (
               <div style={{ marginTop: 16, borderLeft: `3px solid ${C.blue}`, borderRadius: "0 10px 10px 0", background: "#EFF6FF", padding: "12px 14px" }}>
                 <p style={{ margin: "0 0 4px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: ".8px", textTransform: "uppercase" }}>Nota de Kyoszen</p>
@@ -795,7 +899,7 @@ function DetalleArchivo({
               </div>
             )}
           </div>
-          <div>
+          <div style={{ marginTop: 20 }}>
             <span style={{ display: "inline-block", borderRadius: 999, background: ui.colorSuave, padding: "6px 10px", color: ui.color, fontSize: 10.5, fontWeight: 850 }}>{ui.label}</span>
             <div style={{ display: "flex", gap: 9, marginTop: 15, flexWrap: "wrap" }}>
               <Boton onClick={() => void aprobar()} disabled={accion !== null}>✅ {accion === "aprobar" ? "Aprobando…" : "Aprobar"}</Boton>
@@ -849,6 +953,8 @@ function ArchivosCliente({ espacio, userName, onConteosUpdated }: {
   onConteosUpdated: () => Promise<void>;
 }) {
   const [archivos, setArchivos] = useState<EspacioArchivo[]>([]);
+  const [carpetas, setCarpetas] = useState<EspacioCarpeta[]>([]);
+  const [carpetaId, setCarpetaId] = useState<string | null>(null);
   const [archivoId, setArchivoId] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -859,8 +965,12 @@ function ArchivosCliente({ espacio, userName, onConteosUpdated }: {
     try {
       const response = await fetch(`/api/revisor/proyectos/espacios/${espacio.id}/archivos`);
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudieron cargar los archivos."));
-      const data = await response.json() as { archivos?: EspacioArchivo[] };
+      const data = await response.json() as {
+        archivos?: EspacioArchivo[];
+        carpetas?: EspacioCarpeta[];
+      };
       setArchivos(Array.isArray(data.archivos) ? data.archivos : []);
+      setCarpetas(Array.isArray(data.carpetas) ? data.carpetas : []);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudieron cargar los archivos.");
     } finally {
@@ -868,7 +978,35 @@ function ArchivosCliente({ espacio, userName, onConteosUpdated }: {
     }
   }, [espacio.id]);
 
-  useEffect(() => { void cargar(); }, [cargar]);
+  useEffect(() => {
+    setCarpetaId(null);
+    setArchivoId(null);
+    void cargar();
+  }, [cargar]);
+
+  const carpetasActuales = useMemo(
+    () => carpetas.filter(({ parent_id }) => parent_id === carpetaId),
+    [carpetaId, carpetas]
+  );
+  const archivosActuales = useMemo(
+    () => archivos.filter(({ carpeta_id }) => carpeta_id === carpetaId),
+    [archivos, carpetaId]
+  );
+  const breadcrumb = useMemo(() => {
+    const porId = new Map(carpetas.map((carpeta) => [carpeta.id, carpeta]));
+    const ruta: EspacioCarpeta[] = [];
+    const visitadas = new Set<string>();
+    let actual = carpetaId;
+    while (actual && !visitadas.has(actual)) {
+      visitadas.add(actual);
+      const carpeta = porId.get(actual);
+      if (!carpeta) break;
+      ruta.unshift(carpeta);
+      actual = carpeta.parent_id;
+    }
+    return ruta;
+  }, [carpetaId, carpetas]);
+
   const archivo = archivos.find(({ id }) => id === archivoId) ?? null;
   const actualizar = async () => {
     await Promise.all([cargar(), onConteosUpdated()]);
@@ -878,22 +1016,70 @@ function ArchivosCliente({ espacio, userName, onConteosUpdated }: {
   if (error && archivos.length === 0) {
     return <div style={{ border: "1px solid #FECACA", borderRadius: 14, background: "#FEF2F2", padding: "28px 24px", textAlign: "center" }}><p role="alert" style={{ margin: "0 0 13px", color: C.danger, fontSize: 13 }}>{error}</p><Boton onClick={() => void cargar()} secundario>Volver a intentar</Boton></div>;
   }
-  if (archivos.length === 0) {
-    return <div style={{ border: `1px dashed ${C.border}`, borderRadius: 16, background: C.white, padding: "54px 24px", textAlign: "center" }}><span aria-hidden="true" style={{ fontSize: 36 }}>🎨</span><h3 style={{ margin: "13px 0 6px", color: C.navy, fontSize: 16, fontWeight: 900 }}>Aún no hay archivos en este espacio.</h3><p style={{ margin: 0, color: C.muted, fontSize: 13 }}>Cuando haya entregables listos, aparecerán aquí.</p></div>;
-  }
 
   return (
     <>
       {error && <p role="alert" style={{ margin: "0 0 13px", borderRadius: 10, background: "#FEF2F2", padding: "9px 11px", color: C.danger, fontSize: 12 }}>{error}</p>}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 230px), 1fr))", gap: 15 }}>
-        {archivos.map((item) => {
+      <nav aria-label="Ruta de carpetas" style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 15, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => setCarpetaId(null)}
+          style={{ border: 0, borderRadius: 8, background: carpetaId === null ? "#EAF4FF" : "transparent", padding: "6px 8px", color: carpetaId === null ? C.navy : C.blue, fontSize: 12, fontWeight: 850, cursor: "pointer" }}
+        >
+          Raíz
+        </button>
+        {breadcrumb.map((carpeta) => (
+          <span key={carpeta.id} style={{ display: "flex", minWidth: 0, alignItems: "center", gap: 5 }}>
+            <span aria-hidden="true" style={{ color: C.faint }}>›</span>
+            <button
+              type="button"
+              onClick={() => setCarpetaId(carpeta.id)}
+              style={{ maxWidth: 190, overflow: "hidden", border: 0, borderRadius: 8, background: carpeta.id === carpetaId ? "#EAF4FF" : "transparent", padding: "6px 8px", color: carpeta.id === carpetaId ? C.navy : C.blue, fontSize: 12, fontWeight: 850, textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}
+            >
+              {carpeta.nombre}
+            </button>
+          </span>
+        ))}
+      </nav>
+      {carpetasActuales.length === 0 && archivosActuales.length === 0 ? (
+        <div style={{ border: `1px dashed ${C.border}`, borderRadius: 16, background: C.white, padding: "54px 24px", textAlign: "center" }}>
+          <span aria-hidden="true" style={{ fontSize: 36 }}>📂</span>
+          <h3 style={{ margin: "13px 0 6px", color: C.navy, fontSize: 16, fontWeight: 900 }}>Esta carpeta está vacía.</h3>
+          <p style={{ margin: 0, color: C.muted, fontSize: 13 }}>Cuando haya entregables listos, aparecerán aquí.</p>
+        </div>
+      ) : (
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 230px), 1fr))", alignItems: "start", gap: 15 }}>
+        {carpetasActuales.map((carpeta) => (
+          <button
+            key={carpeta.id}
+            type="button"
+            onClick={() => setCarpetaId(carpeta.id)}
+            style={{ display: "flex", minHeight: 132, alignItems: "center", gap: 14, border: "1px solid #BFDBFE", borderRadius: 14, background: "#F8FBFF", padding: 18, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 4px 18px rgba(4, 46, 123, .05)" }}
+          >
+            <span aria-hidden="true" style={{ fontSize: 46 }}>📁</span>
+            <span style={{ minWidth: 0 }}>
+              <strong style={{ display: "block", overflow: "hidden", color: C.navy, fontSize: 14, fontWeight: 900, textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{carpeta.nombre}</strong>
+              <span style={{ display: "block", marginTop: 5, color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: ".5px", textTransform: "uppercase" }}>Abrir carpeta</span>
+            </span>
+          </button>
+        ))}
+        {archivosActuales.map((item) => {
           const ui = estadoArchivoUI(item.estado);
           const esImagen = item.tipo?.startsWith("image/");
-          const esPdf = item.tipo === "application/pdf" || item.nombre.toLowerCase().endsWith(".pdf");
+          const esPdf = esPdfArchivo(item);
           return (
             <button key={item.id} type="button" onClick={() => setArchivoId(item.id)} style={{ overflow: "hidden", border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: 0, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 4px 18px rgba(4, 46, 123, .06)" }}>
-              <div style={{ display: "flex", height: 170, alignItems: "center", justifyContent: "center", overflow: "hidden", background: C.surface }}>
-                {esImagen ? <img src={item.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span aria-hidden="true" style={{ fontSize: 50 }}>{esPdf ? "📄" : "📎"}</span>}
+              <div style={{ display: "flex", width: "100%", aspectRatio: "1 / 1.294", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: 12, background: "#F1F5F9" }}>
+                {esImagen ? (
+                  <img src={item.url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center" }} />
+                ) : esPdf ? (
+                  <iframe src={urlMiniaturaPdf(item.url)} title={`Vista previa de ${item.nombre}`} loading="lazy" tabIndex={-1} style={{ width: "100%", height: "100%", border: 0, background: "#F1F5F9", pointerEvents: "none" }} />
+                ) : (
+                  <span aria-hidden="true" style={{ textAlign: "center" }}>
+                    <span style={{ display: "block", fontSize: 50 }}>📎</span>
+                    <span style={{ display: "block", marginTop: 7, color: C.muted, fontSize: 10, fontWeight: 850 }}>{extensionArchivo(item.nombre)}</span>
+                  </span>
+                )}
               </div>
               <div style={{ padding: 14 }}>
                 <span style={{ display: "inline-block", borderRadius: 999, background: ui.colorSuave, padding: "5px 8px", color: ui.color, fontSize: 9.5, fontWeight: 850 }}>{ui.label}</span>
@@ -904,6 +1090,7 @@ function ArchivosCliente({ espacio, userName, onConteosUpdated }: {
           );
         })}
       </div>
+      )}
       {archivo && <DetalleArchivo espacio={espacio} archivo={archivo} userName={userName} onClose={() => setArchivoId(null)} onUpdated={actualizar} />}
     </>
   );
@@ -1099,7 +1286,29 @@ export default function ProyectosCliente({ userName }: { userName: string }) {
 
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", color: C.ink }}>
-      <style>{`@keyframes proyectos-spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes proyectos-spin { to { transform: rotate(360deg); } }
+        .espacio-card {
+          transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+        }
+        .espacio-card:hover {
+          transform: translateY(-2px);
+          border-color: #BFD5FF !important;
+          box-shadow: 0 14px 30px -16px rgba(4, 46, 123, .22) !important;
+        }
+        .espacio-card:focus-visible {
+          outline: 3px solid rgba(24, 131, 255, .22);
+          outline-offset: 3px;
+        }
+        .espacio-card-arrow {
+          transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+        }
+        .espacio-card:hover .espacio-card-arrow {
+          border-color: #1883FF !important;
+          background: #1883FF !important;
+          color: #FFFFFF !important;
+        }
+      `}</style>
 
       {cargando ? (
         <Spinner texto="Cargando espacios…" />
@@ -1124,14 +1333,14 @@ export default function ProyectosCliente({ userName }: { userName: string }) {
             ← Espacios
           </button>
           <header style={{ marginBottom: 22 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span aria-hidden="true" style={{ fontSize: 34 }}>{espacio.icono || "📁"}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+              <MosaicoEspacio tipo={espacio.tipo} grande />
               <div>
-                <p style={{ margin: "0 0 3px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: "1px", textTransform: "uppercase" }}>{etiquetaTipo(espacio.tipo)}</p>
-                <h2 style={{ margin: 0, color: C.navy, fontSize: 22, fontWeight: 900 }}>{espacio.nombre}</h2>
+                <p style={{ margin: "0 0 4px", color: "#6B7A99", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>{etiquetaTipo(espacio.tipo)}</p>
+                <h2 style={{ margin: 0, color: C.navy, fontSize: 22, fontWeight: 900, letterSpacing: "-.01em" }}>{espacio.nombre}</h2>
               </div>
             </div>
-            {espacio.descripcion && <p style={{ margin: "10px 0 0", color: C.muted, fontSize: 13.5, lineHeight: 1.6 }}>{espacio.descripcion}</p>}
+            {espacio.descripcion && <p style={{ margin: "12px 0 0", color: C.muted, fontSize: 13.5, lineHeight: 1.6 }}>{espacio.descripcion}</p>}
           </header>
           {error && <p role="alert" style={{ margin: "0 0 14px", borderRadius: 10, background: "#FEF2F2", padding: "10px 12px", color: C.danger, fontSize: 12.5 }}>{error}</p>}
           {espacio.cuestionario && (
@@ -1154,21 +1363,28 @@ export default function ProyectosCliente({ userName }: { userName: string }) {
       ) : (
         <>
           {error && <p role="alert" style={{ margin: "0 0 14px", borderRadius: 10, background: "#FEF2F2", padding: "10px 12px", color: C.danger, fontSize: 12.5 }}>{error}</p>}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 18 }}>
             {espacios.map((item) => (
               <button
                 key={item.id}
+                className="espacio-card"
                 type="button"
                 onClick={() => setEspacioId(item.id)}
-                style={{ width: "100%", minHeight: 210, border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: 22, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 4px 18px rgba(4, 46, 123, .06)", borderTop: `4px solid ${item.color || C.blue}` }}
+                style={{ width: "100%", minHeight: 210, border: "1px solid #E6EBF5", borderRadius: 16, background: C.white, padding: 22, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 1px 2px rgba(4, 46, 123, .05)" }}
               >
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                  <span aria-hidden="true" style={{ fontSize: 42, lineHeight: 1 }}>{item.icono || "📁"}</span>
-                  <span aria-hidden="true" style={{ color: C.blue, fontSize: 20, lineHeight: 1 }}>→</span>
+                  <MosaicoEspacio tipo={item.tipo} />
+                  <span
+                    className="espacio-card-arrow"
+                    aria-hidden="true"
+                    style={{ display: "grid", width: 32, height: 32, flexShrink: 0, placeItems: "center", border: "1px solid #E6EBF5", borderRadius: "50%", color: C.muted, fontSize: 17, lineHeight: 1 }}
+                  >
+                    →
+                  </span>
                 </div>
-                <p style={{ margin: "18px 0 6px", color: C.blue, fontSize: 10, fontWeight: 850, letterSpacing: "1px", textTransform: "uppercase" }}>{etiquetaTipo(item.tipo)}</p>
-                <h2 style={{ margin: 0, color: C.navy, fontSize: 18, fontWeight: 900, lineHeight: 1.3 }}>{item.nombre}</h2>
-                <p style={{ margin: "12px 0 0", color: C.muted, fontSize: 12.5, fontWeight: 700 }}>{resumenEspacio(item)}</p>
+                <p style={{ margin: "18px 0 6px", color: "#6B7A99", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>{etiquetaTipo(item.tipo)}</p>
+                <h2 style={{ margin: 0, color: C.navy, fontSize: 19, fontWeight: 800, lineHeight: 1.3, letterSpacing: "-.01em" }}>{item.nombre}</h2>
+                <p style={{ margin: "12px 0 0", color: C.muted, fontSize: 13 }}>{resumenEspacio(item)}</p>
               </button>
             ))}
           </div>

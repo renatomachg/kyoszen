@@ -13,6 +13,22 @@ type ColumnaConTarjetas = EspacioColumna & { tarjetas: EspacioTarjeta[] };
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[#1883FF] focus:ring-2 focus:ring-[#1883FF]/10 disabled:bg-slate-100";
 
+function IconoTablero({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
+    </svg>
+  );
+}
+
+function IconoTarjeta({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M6.75 4.5h10.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25V6.75A2.25 2.25 0 016.75 4.5zM8.25 9h7.5m-7.5 3h5.25" />
+    </svg>
+  );
+}
+
 async function mensajeError(response: Response, respaldo: string) {
   const data: unknown = await response.json().catch(() => null);
   if (data && typeof data === "object" && "error" in data) {
@@ -131,7 +147,7 @@ function HiloComentarios({
         <button
           type="submit"
           disabled={publicando || !contenido.trim()}
-          className="cursor-pointer rounded-xl bg-[#1883FF] px-4 py-2.5 text-xs font-black text-white disabled:opacity-50"
+          className="cursor-pointer rounded-xl bg-[#FFCC00] px-4 py-2.5 text-xs font-black text-[#042E7B] disabled:opacity-50"
         >
           {publicando ? "Publicando…" : "Publicar comentario"}
         </button>
@@ -447,14 +463,16 @@ export default function TableroAdmin({
   return (
     <div className="fixed inset-0 z-50 bg-[#F8FAFC]">
       <div className="flex h-full flex-col">
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5">
-          <div>
-            <h2 className="text-xl font-black text-[#042E7B]">
-              {espacio.icono || "🧩"} {espacio.nombre}
-            </h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Organiza las tarjetas por etapa y abre una para editarla o comentar.
-            </p>
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[#E6EBF5] bg-white px-6 py-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#042E7B]"><IconoTablero className="h-7 w-7" /></span>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[.08em] text-[#6B7A99]">Tablero</p>
+              <h2 className="text-xl font-black text-[#042E7B]">{espacio.nombre}</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Organiza las tarjetas por etapa y abre una para editarla o comentar.
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -475,11 +493,11 @@ export default function TableroAdmin({
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1883FF] border-t-transparent" />
             </div>
           ) : (
-            <div className="flex min-h-[420px] items-start gap-4 overflow-x-auto pb-5">
+            <div className="flex min-h-[420px] items-start gap-[18px] overflow-x-auto pb-5">
               {columnas.map((columna) => (
                 <section
                   key={columna.id}
-                  className="w-[310px] shrink-0 rounded-2xl border border-slate-200 bg-slate-100/80 p-3"
+                  className="w-[310px] shrink-0 rounded-2xl border border-[#E6EBF5] bg-[#F3F6FB] p-3.5 shadow-[0_1px_2px_rgba(4,46,123,.05)]"
                 >
                   <div className="mb-3 flex items-center gap-2">
                     <input
@@ -508,7 +526,7 @@ export default function TableroAdmin({
                         key={item.id}
                         type="button"
                         onClick={() => setTarjetaId(item.id)}
-                        className="block w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-[#1883FF]/50 hover:shadow-md"
+                        className="group block w-full cursor-pointer rounded-xl border border-[#E6EBF5] bg-white p-3.5 text-left shadow-[0_1px_2px_rgba(4,46,123,.05)] transition duration-150 hover:-translate-y-0.5 hover:border-[#BFD5FF] hover:shadow-[0_10px_24px_-16px_rgba(4,46,123,.3)]"
                       >
                         <strong className="block text-sm leading-5 text-[#042E7B]">
                           {item.titulo}
@@ -518,8 +536,8 @@ export default function TableroAdmin({
                             {item.descripcion}
                           </span>
                         )}
-                        <span className="mt-2 block text-[10px] font-bold text-[#1883FF]">
-                          Abrir tarjeta →
+                        <span className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2.5 text-[10px] font-bold text-[#1883FF]">
+                          <IconoTarjeta />Abrir tarjeta
                         </span>
                       </button>
                     ))}
@@ -542,16 +560,16 @@ export default function TableroAdmin({
                     <button
                       type="submit"
                       disabled={accion || !nuevaTarjeta[columna.id]?.trim()}
-                      className="mt-2 w-full cursor-pointer rounded-xl border border-[#1883FF]/25 bg-white px-3 py-2.5 text-xs font-black text-[#1883FF] disabled:opacity-50"
+                      className="mt-2 w-full cursor-pointer rounded-xl border border-[#BFD5FF] bg-white px-3 py-2.5 text-xs font-black text-[#1883FF] hover:bg-blue-50 disabled:opacity-50"
                     >
-                      ＋ Añadir tarjeta
+                      + Añadir tarjeta
                     </button>
                   </form>
                 </section>
               ))}
               <form
                 onSubmit={crearColumna}
-                className="w-[290px] shrink-0 rounded-2xl border border-dashed border-[#1883FF]/40 bg-blue-50/50 p-3"
+                className="w-[290px] shrink-0 rounded-2xl border border-dashed border-[#BFD5FF] bg-[#EAF2FF]/50 p-3.5"
               >
                 <input
                   value={nuevaColumna}
@@ -562,9 +580,9 @@ export default function TableroAdmin({
                 <button
                   type="submit"
                   disabled={accion || !nuevaColumna.trim()}
-                  className="mt-2 w-full cursor-pointer rounded-xl bg-[#1883FF] px-3 py-2.5 text-xs font-black text-white disabled:opacity-50"
+                  className="mt-2 w-full cursor-pointer rounded-xl bg-[#FFCC00] px-3 py-2.5 text-xs font-black text-[#042E7B] disabled:opacity-50"
                 >
-                  ＋ Añadir columna
+                  + Añadir columna
                 </button>
               </form>
             </div>
