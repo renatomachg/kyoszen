@@ -27,6 +27,9 @@ export async function PATCH(
   if (typeof body.orden === "number" && Number.isInteger(body.orden)) {
     patch.orden = body.orden;
   }
+  if (typeof body.requiere_aprobacion === "boolean") {
+    patch.requiere_aprobacion = body.requiere_aprobacion;
+  }
   if (body.carpeta_id !== undefined) {
     if (body.carpeta_id === null || body.carpeta_id === "root") {
       patch.carpeta_id = null;

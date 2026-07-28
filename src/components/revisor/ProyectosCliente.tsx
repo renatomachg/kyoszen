@@ -769,6 +769,7 @@ function DetalleArchivo({
   const [accion, setAccion] = useState<"aprobar" | "cambios" | "comentar" | null>(null);
   const [error, setError] = useState("");
   const ui = estadoArchivoUI(archivo.estado);
+  const requiereAprobacion = archivo.requiere_aprobacion !== false;
 
   const cargarComentarios = useCallback(async () => {
     setCargando(true);
@@ -900,12 +901,20 @@ function DetalleArchivo({
             )}
           </div>
           <div style={{ marginTop: 20 }}>
-            <span style={{ display: "inline-block", borderRadius: 999, background: ui.colorSuave, padding: "6px 10px", color: ui.color, fontSize: 10.5, fontWeight: 850 }}>{ui.label}</span>
-            <div style={{ display: "flex", gap: 9, marginTop: 15, flexWrap: "wrap" }}>
-              <Boton onClick={() => void aprobar()} disabled={accion !== null}>✅ {accion === "aprobar" ? "Aprobando…" : "Aprobar"}</Boton>
-              <Boton onClick={() => { setPidiendoCambios(true); setComentario(""); }} disabled={accion !== null} secundario>Necesito cambios</Boton>
-            </div>
-            {pidiendoCambios && (
+            {requiereAprobacion ? (
+              <>
+                <span style={{ display: "inline-block", borderRadius: 999, background: ui.colorSuave, padding: "6px 10px", color: ui.color, fontSize: 10.5, fontWeight: 850 }}>{ui.label}</span>
+                <div style={{ display: "flex", gap: 9, marginTop: 15, flexWrap: "wrap" }}>
+                  <Boton onClick={() => void aprobar()} disabled={accion !== null}>✅ {accion === "aprobar" ? "Aprobando…" : "Aprobar"}</Boton>
+                  <Boton onClick={() => { setPidiendoCambios(true); setComentario(""); }} disabled={accion !== null} secundario>Necesito cambios</Boton>
+                </div>
+              </>
+            ) : (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: C.muted, fontSize: 11, fontWeight: 800 }}>
+                <span aria-hidden="true">—</span> Sin aprobación requerida
+              </span>
+            )}
+            {requiereAprobacion && pidiendoCambios && (
               <div style={{ marginTop: 13, border: "1px solid #FECACA", borderRadius: 12, background: "#FEF2F2", padding: 12 }}>
                 <label style={{ display: "block", marginBottom: 7, color: C.danger, fontSize: 11.5, fontWeight: 800 }}>¿Qué necesitas que ajustemos?</label>
                 <textarea value={comentario} onChange={(event) => setComentario(event.target.value)} rows={4} autoFocus placeholder="Describe los cambios con el mayor detalle posible…" style={{ width: "100%", resize: "vertical", border: "1px solid #FCA5A5", borderRadius: 10, background: C.white, padding: "10px 11px", color: C.ink, font: "inherit", fontSize: 12.5, outline: "none" }} />
@@ -1067,6 +1076,7 @@ function ArchivosCliente({ espacio, userName, onConteosUpdated }: {
           const ui = estadoArchivoUI(item.estado);
           const esImagen = item.tipo?.startsWith("image/");
           const esPdf = esPdfArchivo(item);
+          const requiereAprobacion = item.requiere_aprobacion !== false;
           return (
             <button key={item.id} type="button" onClick={() => setArchivoId(item.id)} style={{ overflow: "hidden", border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: 0, color: C.ink, textAlign: "left", cursor: "pointer", boxShadow: "0 4px 18px rgba(4, 46, 123, .06)" }}>
               <div style={{ display: "flex", width: "100%", aspectRatio: "1 / 1.294", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: 12, background: "#F1F5F9" }}>
@@ -1082,7 +1092,13 @@ function ArchivosCliente({ espacio, userName, onConteosUpdated }: {
                 )}
               </div>
               <div style={{ padding: 14 }}>
-                <span style={{ display: "inline-block", borderRadius: 999, background: ui.colorSuave, padding: "5px 8px", color: ui.color, fontSize: 9.5, fontWeight: 850 }}>{ui.label}</span>
+                {requiereAprobacion ? (
+                  <span style={{ display: "inline-block", borderRadius: 999, background: ui.colorSuave, padding: "5px 8px", color: ui.color, fontSize: 9.5, fontWeight: 850 }}>{ui.label}</span>
+                ) : (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.muted, fontSize: 9.5, fontWeight: 800 }}>
+                    <span aria-hidden="true">—</span> Sin aprobación requerida
+                  </span>
+                )}
                 <h3 style={{ margin: "10px 0 0", color: C.navy, fontSize: 13.5, fontWeight: 900, lineHeight: 1.35, overflowWrap: "anywhere" }}>{item.nombre}</h3>
                 {item.nota && <p style={{ margin: "7px 0 0", color: C.muted, fontSize: 11.5, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{item.nota}</p>}
               </div>

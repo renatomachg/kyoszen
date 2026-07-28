@@ -47,6 +47,7 @@ export interface EspacioArchivo {
   id: string;
   espacio_id: string;
   carpeta_id: string | null;
+  requiere_aprobacion: boolean;
   nombre: string;
   url: string;
   tipo: string | null;

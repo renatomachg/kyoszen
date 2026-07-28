@@ -64,7 +64,7 @@ export async function PUT(
 
   const { data: archivo, error: lecturaError } = await sb
     .from("espacio_archivos")
-    .select("id, nombre, proyecto_espacios!inner(id, nombre, publicado)")
+    .select("id, nombre, requiere_aprobacion, proyecto_espacios!inner(id, nombre, publicado)")
     .eq("id", archivoId)
     .eq("espacio_id", id)
     .eq("proyecto_espacios.publicado", true)
@@ -73,6 +73,12 @@ export async function PUT(
     return NextResponse.json({ error: lecturaError.message }, { status: 500 });
   }
   if (!archivo) return NextResponse.json({ error: "Archivo no encontrado" }, { status: 404 });
+  if (archivo.requiere_aprobacion === false) {
+    return NextResponse.json(
+      { error: "Este archivo no requiere aprobación" },
+      { status: 400 }
+    );
+  }
 
   const { data: actualizado, error } = await sb
     .from("espacio_archivos")

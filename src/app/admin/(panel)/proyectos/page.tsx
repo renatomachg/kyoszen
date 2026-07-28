@@ -606,6 +606,39 @@ function urlMiniaturaPdf(url: string) {
   return `${url.split("#")[0]}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`;
 }
 
+function SwitchAprobacion({
+  activo,
+  onChange,
+  disabled = false,
+  texto = "Requiere aprobación",
+}: {
+  activo: boolean;
+  onChange: (activo: boolean) => void;
+  disabled?: boolean;
+  texto?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={activo}
+      disabled={disabled}
+      onClick={() => onChange(!activo)}
+      className="group flex w-full cursor-pointer items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-55"
+    >
+      <span className="flex items-center gap-2 text-xs font-black text-[#042E7B]">
+        <IconUI name={activo ? "check" : "sparkle-off"} size={15} />
+        {texto}
+      </span>
+      <span className={`relative h-6 w-11 shrink-0 rounded-full border transition ${activo ? "border-[#E5B800] bg-[#FFCC00]" : "border-slate-300 bg-slate-200"}`}>
+        <span className={`absolute top-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white text-[#042E7B] shadow-sm transition-transform ${activo ? "translate-x-5" : "translate-x-0.5"}`}>
+          {activo && <IconUI name="check" size={11} />}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function GestorArchivos({ espacio, onClose, onUpdated }: {
   espacio: EspacioListado;
   onClose: () => void;
@@ -622,6 +655,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
   const [comentarios, setComentarios] = useState<EspacioComentario[]>([]);
   const [comentario, setComentario] = useState("");
   const [accion, setAccion] = useState<string | null>(null);
+  const [requiereAprobacionSubida, setRequiereAprobacionSubida] = useState(true);
 
   const cargarContenido = useCallback(async () => {
     setCargando(true);
@@ -748,6 +782,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
         const formData = new FormData();
         formData.append("file", file);
         if (carpetaId) formData.append("carpeta_id", carpetaId);
+        formData.append("requiere_aprobacion", String(requiereAprobacionSubida));
         const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos`, {
           method: "POST",
           body: formData,
@@ -852,6 +887,36 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     }
   };
 
+  const cambiarRequiereAprobacion = async (archivo: EspacioArchivo, activo: boolean) => {
+    const anterior = archivo.requiere_aprobacion !== false;
+    setArchivos((actuales) => actuales.map((item) => (
+      item.id === archivo.id ? { ...item, requiere_aprobacion: activo } : item
+    )));
+    setAccion(`aprobacion-${archivo.id}`);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requiere_aprobacion: activo }),
+      });
+      if (!response.ok) {
+        throw new Error(await mensajeError(response, "No se pudo cambiar la aprobación del archivo."));
+      }
+      const actualizado = await response.json() as EspacioArchivo;
+      setArchivos((actuales) => actuales.map((item) => (
+        item.id === archivo.id ? actualizado : item
+      )));
+    } catch (cause) {
+      setArchivos((actuales) => actuales.map((item) => (
+        item.id === archivo.id ? { ...item, requiere_aprobacion: anterior } : item
+      )));
+      setError(cause instanceof Error ? cause.message : "No se pudo cambiar la aprobación del archivo.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
   const archivoSeleccionado = archivos.find(({ id }) => id === archivoAbierto) ?? null;
 
   return (
@@ -870,7 +935,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
           </nav>
           <button type="button" onClick={() => void crearCarpeta()} disabled={accion === "crear-carpeta"} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50"><IconoLinea nombre="carpeta-mas" className="h-4 w-4" />Nueva carpeta</button>
         </div>
-        <label
+        <div
           onDragOver={(event) => { event.preventDefault(); setArrastrando(true); }}
           onDragLeave={() => setArrastrando(false)}
           onDrop={(event) => {
@@ -878,13 +943,23 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
             setArrastrando(false);
             void subir(event.dataTransfer.files);
           }}
-          className={`flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed px-5 py-8 text-center transition ${arrastrando ? "border-[#1883FF] bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-[#1883FF]"}`}
+          className={`rounded-2xl border-2 border-dashed px-5 py-6 transition ${arrastrando ? "border-[#1883FF] bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-[#1883FF]"}`}
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#042E7B]"><IconoLinea nombre="subir" className="h-6 w-6" /></span>
-          <span className="mt-2 text-sm font-black text-[#042E7B]">{subiendo ? "Subiendo archivos…" : "Arrastra archivos aquí o haz clic para seleccionar"}</span>
-          <span className="mt-1 text-xs text-slate-500">Se guardarán en {breadcrumb.at(-1)?.nombre ?? "Raíz"}, sin compresión.</span>
-          <input type="file" multiple disabled={subiendo} className="hidden" onChange={(event) => event.target.files && void subir(event.target.files)} />
-        </label>
+          <label className="flex cursor-pointer flex-col items-center text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#042E7B]"><IconoLinea nombre="subir" className="h-6 w-6" /></span>
+            <span className="mt-2 text-sm font-black text-[#042E7B]">{subiendo ? "Subiendo archivos…" : "Arrastra archivos aquí o haz clic para seleccionar"}</span>
+            <span className="mt-1 text-xs text-slate-500">Se guardarán en {breadcrumb.at(-1)?.nombre ?? "Raíz"}, sin compresión.</span>
+            <input type="file" multiple disabled={subiendo} className="hidden" onChange={(event) => event.target.files && void subir(event.target.files)} />
+          </label>
+          <div className="mx-auto mt-5 max-w-sm rounded-xl border border-[#DCE7FA] bg-white px-3.5 py-3 shadow-sm">
+            <SwitchAprobacion
+              activo={requiereAprobacionSubida}
+              onChange={setRequiereAprobacionSubida}
+              disabled={subiendo}
+              texto="Requiere aprobación del cliente"
+            />
+          </div>
+        </div>
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
         {cargando ? <div className="flex min-h-48 items-center justify-center"><Spinner /></div> : carpetasActuales.length === 0 && archivos.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-slate-300 py-14 text-center text-sm text-slate-500">Esta carpeta está vacía.</p>
@@ -908,6 +983,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
             {archivos.map((archivo) => {
               const ui = ESTADO_BLOQUE_UI[archivo.estado];
               const esPdf = esPdfEspacio(archivo);
+              const requiereAprobacion = archivo.requiere_aprobacion !== false;
               return (
                 <article key={archivo.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                   <button type="button" onClick={() => void cargarComentarios(archivo.id)} className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-slate-100" style={{ aspectRatio: "1 / 1.294" }}>
@@ -923,7 +999,18 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
                   <div className="space-y-3 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0"><p className="truncate text-sm font-black text-[#042E7B]" title={archivo.nombre}>{archivo.nombre}</p><p className="mt-0.5 text-[10px] font-semibold text-slate-400">{pesoLegible(archivo.peso)}</p></div>
-                      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-50 px-2 py-1 text-[10px] font-extrabold" style={{ color: ui.color }}><PuntoEstado color={ui.color} />{ui.label}</span>
+                      {requiereAprobacion ? (
+                        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-50 px-2 py-1 text-[10px] font-extrabold" style={{ color: ui.color }}><PuntoEstado color={ui.color} />{ui.label}</span>
+                      ) : (
+                        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-extrabold text-slate-500"><IconUI name="sparkle-off" size={12} />Sin aprobación</span>
+                      )}
+                    </div>
+                    <div className="rounded-xl border border-[#E6EBF5] bg-[#F8FAFC] px-3 py-2.5">
+                      <SwitchAprobacion
+                        activo={requiereAprobacion}
+                        onChange={(activo) => void cambiarRequiereAprobacion(archivo, activo)}
+                        disabled={accion === `aprobacion-${archivo.id}`}
+                      />
                     </div>
                     <textarea
                       key={`${archivo.id}-${archivo.nota}`}
@@ -990,8 +1077,19 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
               <div className="grid gap-5 lg:grid-cols-2">
                 <section className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <span className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-extrabold" style={{ color: ESTADO_BLOQUE_UI[archivoSeleccionado.estado].color }}><PuntoEstado color={ESTADO_BLOQUE_UI[archivoSeleccionado.estado].color} />{ESTADO_BLOQUE_UI[archivoSeleccionado.estado].label}</span>
+                    {archivoSeleccionado.requiere_aprobacion !== false ? (
+                      <span className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-extrabold" style={{ color: ESTADO_BLOQUE_UI[archivoSeleccionado.estado].color }}><PuntoEstado color={ESTADO_BLOQUE_UI[archivoSeleccionado.estado].color} />{ESTADO_BLOQUE_UI[archivoSeleccionado.estado].label}</span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-extrabold text-slate-500"><IconUI name="sparkle-off" size={12} />Sin aprobación</span>
+                    )}
                     <span className="text-xs font-semibold text-slate-400">{pesoLegible(archivoSeleccionado.peso)}</span>
+                  </div>
+                  <div className="rounded-xl border border-[#E6EBF5] bg-[#F8FAFC] px-3 py-3">
+                    <SwitchAprobacion
+                      activo={archivoSeleccionado.requiere_aprobacion !== false}
+                      onChange={(activo) => void cambiarRequiereAprobacion(archivoSeleccionado, activo)}
+                      disabled={accion === `aprobacion-${archivoSeleccionado.id}`}
+                    />
                   </div>
                   <label className="block">
                     <span className="mb-1.5 block text-xs font-black text-[#042E7B]">Nota del entregable</span>

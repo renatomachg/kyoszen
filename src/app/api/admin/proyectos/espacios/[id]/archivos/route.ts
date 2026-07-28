@@ -98,6 +98,7 @@ export async function POST(
   const carpetaId = typeof carpetaForm === "string" && carpetaForm.trim() && carpetaForm !== "root"
     ? carpetaForm.trim()
     : null;
+  const requiereAprobacion = formData.get("requiere_aprobacion") !== "false";
   if (carpetaId) {
     const { data: carpeta, error: carpetaError } = await validarCarpeta(id, carpetaId);
     if (carpetaError) {
@@ -132,6 +133,7 @@ export async function POST(
       peso: file.size,
       nota,
       carpeta_id: carpetaId,
+      requiere_aprobacion: requiereAprobacion,
     })
     .select()
     .single();
