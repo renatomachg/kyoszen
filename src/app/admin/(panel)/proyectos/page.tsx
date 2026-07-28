@@ -26,6 +26,7 @@ import {
   type TipoEspacio,
 } from "@/lib/proyectos";
 import TableroAdmin from "@/components/admin/TableroAdmin";
+import { IconUI } from "@/components/ui/IconUI";
 
 type Progreso = { total: number; aprobado: number; cambios: number; pendiente: number };
 type EtapaListado = ProyectoEtapa & { progreso: Progreso };
@@ -1314,6 +1315,9 @@ export default function ProyectosPage() {
           </div>
           {seccion === "proyectos" && (
             <div className="flex flex-wrap gap-2">
+              <a href="/revisor?tab=proyectos" target="_blank" rel="noopener" title="Ver el portal como lo ve el cliente" className="inline-flex items-center gap-2 rounded-xl border border-[#042E7B]/25 bg-white px-4 py-2.5 text-sm font-black text-[#042E7B] transition hover:border-[#1883FF]/40 hover:bg-blue-50 hover:text-[#1883FF]">
+                <IconUI name="eye" size={16} />Vista cliente
+              </a>
               <button type="button" onClick={() => setModal("importar")} className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#1883FF]/25 bg-white px-4 py-2.5 text-sm font-black text-[#1883FF] hover:bg-blue-50">
                 <IconoLinea nombre="subir" className="h-4 w-4" />Importar guion
               </button>

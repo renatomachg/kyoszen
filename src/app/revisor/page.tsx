@@ -41,6 +41,9 @@ interface PageConfig {
   nombre_pagina: string;
   avatar_url: string | null;
 }
+type SeccionRevisor = "publicaciones" | "proyectos" | "resultados";
+
+const SECCIONES_REVISOR: SeccionRevisor[] = ["publicaciones", "proyectos", "resultados"];
 
 /* ─── Helpers ────────────────────────────────────────── */
 function weekBounds(offset = 0) {
@@ -953,7 +956,7 @@ export default function RevisorPage() {
   const [statsMonth, setStatsMonth] = useState({ aprobados: 0, pendientes: 0, cambios: 0, total: 0 });
   const [config, setConfig] = useState<PageConfig>({ nombre_pagina: "Kyoszen", avatar_url: null });
   const [vista, setVista] = useState<"semana" | "mes">("semana");
-  const [seccion, setSeccion] = useState<"publicaciones" | "resultados" | "proyectos">("publicaciones");
+  const [seccion, setSeccion] = useState<SeccionRevisor>("publicaciones");
   const [periodOffset, setPeriodOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -967,6 +970,13 @@ export default function RevisorPage() {
       setUser(session?.user ?? null);
       setCheckingAuth(false);
     });
+  }, []);
+
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (SECCIONES_REVISOR.includes(tab as SeccionRevisor)) {
+      setSeccion(tab as SeccionRevisor);
+    }
   }, []);
 
   // Mostrar la guía (usuario nuevo) o el aviso de novedad (usuario que ya la vio), una sola vez
