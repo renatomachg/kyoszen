@@ -1,14 +1,18 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-07-31
-**Cambios analizados:** Sin commits de código en las últimas 48 h (solo los dos reportes anteriores). Los 5 bloqueadores críticos siguen sin corregirse. Se agregan 4 hallazgos nuevos no reportados antes.
-
----
+**Fecha:** 2026-08-01
+**Cambios analizados:**
+- `src/lib/assistant/system-prompt.ts`
+- `src/lib/assistant/tools.ts`
+- `src/lib/assistant/knowledge.ts`
+- `src/app/api/assistant/chat/route.ts`
+- `src/components/assistant/ChatWidget.tsx`
+- `src/app/vacantes/page.tsx`
+- `src/components/revisor/ProyectosCliente.tsx`
+- `src/app/revisor/page.tsx`
+- Commits recientes: b21cdcf (switch requiere-aprobación por archivo), 79eecc8 (Vista cliente + deep-link ?tab=)
 
 ## Cambios Recientes Detectados
-
-Últimos commits relevantes de código:
-- `b21cdcf` — feat(proyectos): switch 'requiere aprobación' por archivo en Artes (`src/lib/proyectos.ts`, `ProyectosCliente.tsx`, APIs de archivos)
-- `79eecc8` — feat(proyectos): botón 'Vista cliente' en Centro de Proyectos + deep-link `?tab=` en el revisor (`src/app/admin/(panel)/proyectos/page.tsx`, `src/app/revisor/page.tsx`)
+Los últimos 2 días contienen solo commits automáticos de este análisis. Los últimos cambios sustantivos (29-jul) están en el módulo de Proyectos Hub: se sustituyó el toggle "Requiere aprobación" a nivel de espacio por una bandera `requiere_aprobacion` por archivo individual, y se añadió un botón "Vista cliente" en el admin de proyectos con soporte de deep-link `?tab=` en el revisor para aterrizar en la pestaña correcta.
 
 ---
 
@@ -16,32 +20,27 @@
 
 ### Alta prioridad
 
-- **[REITERO — Crítico] [src/lib/assistant/knowledge.ts:1] Kyo recomienda vacantes del array estático `JOBS`, no de Supabase.**
-  `knowledge.ts` importa `{ JOBS }` de `@/lib/jobs`. Supabase tiene el inventario real de vacantes activas; `jobs.ts` tiene datos de demo que ya no reflejan producción. Un candidato que sigue la recomendación de Kyo y llega a una vacante inexistente es una conversión perdida. **Fix:** crear endpoint `GET /api/assistant/jobs` con service_role que lea `SELECT id,titulo,empresa,categoria,ubicacion,contrato,jornada,salario,descripcion FROM vacantes WHERE activa=true`. Actualizar `executeTool` en `tools.ts` para hacer `fetch('/api/assistant/jobs')` en `search_jobs` y `get_job_details`. Cache 5 min en memoria (mismo patrón de `getStoredInstrucciones` en `route.ts:8-31`).
+- **[vacantes/page.tsx:231] Empty state sin CTA de conversión**: Cuando los filtros no retornan resultados, el usuario ve "Sin resultados" con texto genérico y ninguna acción disponible. Añadir un botón de WhatsApp pre-llenado ("Háblanos sobre el puesto que buscas") y un enlace a `/contacto`. Los candidatos que no encuentran vacante son exactamente el perfil que más necesita el banco de talentos — perderlos en este punto es un costo real.
 
-- **[REITERO — Crítico] [src/app/api/assistant/chat/route.ts:151] `max_tokens: 1024` trunca la respuesta del Paso 5.**
-  El Paso 5 muestra 2-3 vacantes con nombre, empresa, razón de compatibilidad y pregunta de cierre. Con el tool_result de `search_jobs` en el contexto, la respuesta útil puede ocupar 700-900 tokens — el límite actual la corta. **Fix:** cambiar línea 151 a `max_tokens: 2048`. Costo adicional con Haiku: ~$0.00015 por conversación completa, despreciable.
+- **[ChatWidget.tsx:143] Sin región ARIA para mensajes entrantes**: El contenedor de mensajes no tiene `role="log"` ni `aria-live="polite"`. Los lectores de pantalla no anuncian las respuestas de Kyo. Cambiar el `<div ref={scrollRef} className="flex-1 overflow-y-auto ...">` a `<div ref={scrollRef} role="log" aria-live="polite" aria-label="Conversación con Kyo" ...>`.
 
-- **[REITERO] [src/components/assistant/useChat.ts:127] El chat de Kyo se cierra al navegar — el candidato pierde el contexto.**
-  `router.push(target.path)` en `useChat.ts:127` causa re-montaje de `ChatWidget`. El estado `open` vuelve a `false` y el candidato llega a `/vacantes` sin el chat. **Fix:** guardar `open=true` en `localStorage('kyoszen_kyo_open')` antes de la navegación y restaurarlo en el `useEffect` de montaje de `ChatWidget.tsx`.
+- **[ChatWidget.tsx:37] Botón flotante sin indicador de mensajes sin leer**: Si Kyo responde y el usuario cierra el chat, no hay señal visual de que hay un mensaje esperando. Añadir un badge rojo con conteo: `useState<number>` que incremente al recibir mensaje con `open === false`, y se resetee al abrir el chat.
 
-- **[REITERO] [src/app/revisor/page.tsx:975-980] Deep-link `?tab=proyectos` se pierde cuando la revisora no tiene sesión activa.**
-  El `useEffect` (líneas 975-980) lee el `?tab=` una sola vez al montar. Si la sesión ha expirado, el guard de auth redirige a `/revisor` (sin el param) y el tab se pierde. **Fix:** en el `useEffect` de auth, ANTES de redirigir al login, guardar `window.location.href` completo en `sessionStorage('revisor_pending_url')`. Al completar el login, leer ese valor y hacer `router.replace(pendingUrl)`.
+- **[revisor/page.tsx — LoginView:617] Sin enlace "Olvidé mi contraseña"**: La página de login del revisor no tiene ningún mecanismo de recuperación visible. Si Rosy o Monse olvidan su contraseña, están bloqueadas. Añadir un `<button>` de texto que dispare `supabase.auth.resetPasswordForEmail(email)` y muestre "Revisa tu correo" como confirmación.
+
+- **[vacantes/page.tsx:139] Hero con imagen de Unsplash hardcodeada**: La URL `https://images.unsplash.com/photo-...` puede fallar o cambiar. Subir la imagen al bucket `media` de Supabase y referenciar desde ahí. Es un punto de fallo en producción que el cliente ve como imagen rota.
 
 ### Media prioridad
 
-- **[NUEVO] [src/lib/assistant/knowledge.ts:141] El filtro de ubicación usa igualdad exacta (`===`) — "Estado de Mexico" falla si el modelo escribe "Mexico" o "Edo. Mex.".**
-  Línea 141: `.filter((j) => !filters?.location || j.ubicacion.toLowerCase() === filters.location.toLowerCase())`. Si el modelo pasa `"mexico"` o `"estado de méxico"` (con tilde), el filtro devuelve 0 resultados silenciosamente. El filtro de `query` ya usa `.includes()` (línea 110). **Fix:** cambiar la línea 141 a:
-  ```ts
-  .filter((j) => !filters?.location || j.ubicacion.toLowerCase().includes(filters.location.toLowerCase()))
-  ```
-  Misma corrección para `listCourses` línea 121 (modalidad usa `===`).
+- **[vacantes/page.tsx:51] `Suspense fallback={null}` deja pantalla en blanco**: Durante la carga inicial, el usuario ve una pantalla vacía. Cambiar `fallback={null}` por un skeleton de 4 tarjetas con shimmer (`animate-pulse bg-gray-100`) para comunicar que el contenido está cargando.
 
-- **[NUEVO] [src/components/assistant/useChat.ts:15 vs route.ts:131] Se almacenan 30 mensajes en localStorage pero el API solo envía los últimos 20.**
-  `MAX_STORED = 30` en `useChat.ts:15` guarda hasta 30 mensajes. El API los recorta a 20 (`history = body.messages.slice(-20)` en `route.ts:131`). Los mensajes 21-30 del storage nunca se envían al modelo, pero sí se muestran en pantalla al usuario — generan la impresión de que Kyo "recuerda" más de lo que realmente recuerda. **Fix:** alinear los dos valores: cambiar `MAX_STORED` a `20`, o documentar el límite con un comentario junto al slice del API para que futuras ediciones no los desincronicen.
+- **[vacantes/page.tsx:32] Filtro de salario sin acento**: `SALARIOS` incluye `"Mas de $20k"` sin tilde — debería ser `"Más de $20k"`. Inconsistencia tipográfica menor pero visible.
 
-- **[src/lib/assistant/system-prompt.ts:85-88] Filtros `?marca=` referencian empresas del mock — producen 0 resultados en Supabase.**
-  Las líneas 85-88 documentan `/vacantes?marca=Sigma Retail`, `Grupo Corpora`, etc. En Supabase, los nombres de empresa son los de las vacantes reales. Kyo puede generar URLs con esos valores que muestran lista vacía al candidato. **Fix temporal:** eliminar las 6 líneas de ejemplos `?marca=` del system prompt hasta que se confirmen los valores reales en Supabase.
+- **[ProyectosCliente.tsx:1055] Emoji en empty state de archivos**: La carpeta vacía muestra `📂` (emoji decorativo). Per las reglas del proyecto, reemplazar con `<IconoEspacio tipo="archivos" size={36} />` con `color: C.muted`.
+
+- **[revisor/page.tsx:939] Emoji en botón "Entendido 👍"**: El botón del tour NovedadFiltros tiene emoji decorativo. Cambiar a "Entendido" para mantener coherencia con el barrido corporativo reciente.
+
+- **[ChatWidget.tsx:154] Botón "Nueva conversación" demasiado discreto**: En `text-[11px]` sin contraste, muchos usuarios no lo encuentran. Darle más visibilidad: añadir borde, ícono de recarga SVG, y subir a `text-[12px] font-semibold`.
 
 ---
 
@@ -49,40 +48,46 @@
 
 ### Mejoras al flujo de conversación
 
-- **[NUEVO] [src/lib/assistant/system-prompt.ts:22-23] El Paso 0 no maneja el caso de que el candidato salude sin dar su nombre.**
-  Línea 22: "Cuando el usuario responda, agradece y continua al paso 1." Si el usuario responde "hola" o "¿cómo estás?", el modelo puede interpretar que ya dio su nombre e ir al Paso 1. **Fix:** añadir al Paso 0: "Si la respuesta no incluye un nombre claro, vuelve a preguntar de forma natural: '¿Me podría dar su nombre para atenderle mejor?'"
+- **[system-prompt.ts:22-58] Kyo no maneja el caso "usuario da todo de golpe"**: Si alguien escribe "Busco trabajo de contador, 3 años de experiencia, CDMX, tiempo completo" en el primer mensaje, Kyo pregunta el nombre de nuevo ignorando la información ya dada. Añadir regla explícita después del Paso 0: "Si el usuario proporciona puesto + experiencia + ubicación + jornada en un solo mensaje, extrae esos datos directamente y salta al Paso 5. No repitas preguntas ya respondidas." Esto reduce la fricción para candidatos que saben lo que quieren.
 
-- **[src/lib/assistant/system-prompt.ts:43-50] El Paso 5 no indica cuántas vacantes hay en total — el candidato no sabe si le ofrecen lo mejor de 2 o de 20.**
-  **Fix:** cambiar el template a: `"De las [N] vacantes activas, estas se ajustan mejor a su perfil, [nombre]:"`. El conteo viene de `jobsSummary.length` que ya está en el system prompt (línea 137 del archivo compilado).
+- **[system-prompt.ts:84-97] Desincronía entre filtros del prompt y valores reales de la UI**: El prompt lista `ubicacion=Estado de Mexico` (sin acento) pero `vacantes/page.tsx:28` define `"Estado de México"` (con acento) y el filtro hace comparación exacta. Cuando Kyo navega a `/vacantes?ubicacion=Estado de Mexico`, el filtro no se activa. Corregir el prompt para que coincida exactamente: `CDMX`, `Estado de México`, `Híbrido`, `Remoto` — incluyendo tildes.
 
-- **[src/lib/assistant/system-prompt.ts:55-58] Cuando no hay vacante compatible, Kyo dirige a `/contacto` sin preparar al candidato para el formulario.**
-  El formulario de `/contacto` es genérico. El candidato llega sin saber qué escribir. **Fix (system prompt):** añadir antes del `navigate_to`: "Cuando llegues al formulario, en el campo 'Mensaje' escribe 'Banco de talentos' — así el equipo sabe que quieres que te avisemos cuando surja una vacante compatible."
+- **[system-prompt.ts:54-58] Flujo de "banco de talentos" débil**: El mensaje de fallback cuando no hay vacante es genérico. Mejorar: "Por ahora no tenemos una vacante exacta para [puesto] en [zona], pero podemos avisarle en cuanto surja una. ¿Quiere que anotemos su perfil?" Navegar con `navigate_to('/contacto?origen=banco-talentos')` para contextualizar la conversión.
+
+- **[system-prompt.ts:64-69] Manejo de "soy empresa" muy escueto**: Si una empresa llega al chat buscando contratar, Kyo solo dice "te conecto con nuestro equipo". Mejorar añadiendo 1-2 frases del diferenciador (candidatos en 72 horas, garantía 30 días) antes de navegar a `/contacto`. Convierte el chat en un punto de calificación de empresas.
+
+- **[system-prompt.ts:44] Paso 5: mensaje de recomendación demasiado largo**: El formato actual lista 2-3 vacantes con nombre, empresa y razón en párrafos. En mobile con el widget pequeño (360px) esto se lee mal. Reformatear como lista compacta: `1. Cajero · Sigma Retail · CDMX` seguido de una línea de razón, sin párrafo introductorio largo.
 
 ### Nuevas tools o capacidades recomendadas
 
-- **Tool: `register_candidate_interest`** — Cuando no hay vacante compatible (Paso 5 fallido), en vez de redirigir a `/contacto` genérico, una tool que reciba nombre, puesto buscado y contacto podría insertar directamente en la tabla `aplicaciones` o `crm_candidatos` con `origen='kyo'`. Esto convierte el "no hay vacante" en un lead calificado sin fricción de formulario.
+- **`save_candidate_interest` (tool nueva, alta prioridad)**: Cuando no hay vacante compatible, Kyo solo puede navegar a `/contacto`. Con esta tool, Kyo guardaría nombre + puesto + zona directamente en `contactos` desde el chat sin que el usuario abandone la conversación. Archivos: añadir entrada en `src/lib/assistant/tools.ts` y nuevo endpoint `POST /api/assistant/candidato-interes` que inserte en `contactos` con `tipo='banco_talentos'` y dispare el correo de notificación.
 
-- **Tool: `list_active_vacancies_summary` (lazy)** — El system prompt incluye todas las vacantes en cada mensaje (línea 137-138 del prompt compilado), lo cual gasta tokens en los Pasos 0-4 donde aún no se necesitan. Mover la lista a una tool que Kyo llame solo en el Paso 5 reduciría el costo por conversación en ~25-30% y permitiría incluir más vacantes sin truncar el contexto.
+- **`search_jobs` mejorado con ranking de relevancia (mejora en tools.ts:37)**: El método `listJobs` en `knowledge.ts:138` filtra pero no ordena por relevancia. Si el candidato dice "busco operativo en CDMX", devuelve todos en orden de ID. Añadir un campo `score` calculado por coincidencia de `query` contra `titulo` y `tags`, y ordenar descendente antes de retornar. El candidato ve primero lo que más le aplica.
+
+- **`get_salary_range` (tool nueva, media prioridad)**: Los candidatos preguntan "¿cuánto paga eso?" frecuentemente antes del Paso 5. Actualmente Kyo tiene que recordar el salario del contexto del prompt. Una tool explícita que reciba un puesto/categoría y retorne el rango salarial de las vacantes activas daría respuestas más confiables.
 
 ### Problemas detectados
 
-- **[REITERO] [src/lib/assistant/knowledge.ts:2] Kyo lee vacantes estáticas — puede recomendar puestos inexistentes en producción.**
-  Ver "Alta prioridad" arriba. Es el bug más urgente del asistente.
+- **[knowledge.ts:167] Kyo usa datos ESTÁTICOS, no Supabase — impacto alto**: `StaticKnowledgeProvider` lee de `JOBS` importado de `src/lib/jobs.ts` (hardcoded), no de la tabla `vacantes`. El prompt dice "Vacantes disponibles actualmente (X)" pero esos datos no reflejan lo que el admin ha publicado/despublicado. Kyo puede recomendar vacantes inactivas o perder vacantes nuevas. Solución: en `src/app/api/assistant/chat/route.ts`, antes de llamar `buildSystemPrompt`, hacer `supabase.from('vacantes').select(...).eq('activa', true)` con `service_role` e inyectar los resultados en el prompt. El `KnowledgeProvider` ya está diseñado para ser intercambiable (comentario de fase 2 en knowledge.ts:166).
 
-- **[NUEVO] [src/components/assistant/useChat.ts:14] El historial de chat persiste indefinidamente — un candidato que regresa semanas después ve una conversación obsoleta.**
-  `loadHistory()` no verifica timestamps de expiración. Si los mensajes guardados tienen más de 7 días, el contexto es irrelevante (vacantes ya cerradas, nombre ya no recordado). **Fix:** en `loadHistory()`, después de parsear, verificar: `if (parsed[0]?.timestamp && Date.now() - parsed[0].timestamp > 7 * 86400000)` → limpiar storage y retornar `[INITIAL_GREETING]`.
+- **[chat/route.ts:202] Fallback sin acento ni empatía**: Cuando `finalText` está vacío, el fallback es `"Entendido, ¿en que mas te puedo ayudar?"` — sin acento en "más" y tono frío. Corregir a: `"Perdona, no pude generar una respuesta. ¿Podrías repetirme tu pregunta?"`.
 
-- **[src/app/api/assistant/chat/route.ts:68-80] Rate limiter en memoria — inefectivo si hay múltiples instancias del proceso.**
-  El comentario en línea 68 lo documenta. Con PM2 en el VPS corriendo 1 instancia es suficiente hoy. Si se escala a 2 instancias (p.ej. para reducir downtime en deploy), el límite sería 30 msg/min por instancia = 60 efectivos. Bajo riesgo actual; documentado aquí para cuando se escale.
+- **[chat/route.ts:136] `previewPrompt` vacío (`""`) pasa la validación `??`**: `body.previewPrompt ?? await getStoredInstrucciones()` — si el frontend envía `previewPrompt: ""` (string vacío), el operador `??` lo toma como valor válido y Kyo queda sin instrucciones de comportamiento. Cambiar a: `const instrucciones = body.previewPrompt?.trim() || await getStoredInstrucciones() || undefined;` (usa `||` para excluir strings vacíos).
+
+- **[tools.ts:63-70] `navigate_to` no valida paths**: La tool acepta cualquier string como `path`. Si el modelo alucina un path (`/vacantes/undefined`, `/admin/...`), el router del cliente navega a una 404 o ruta protegida. Añadir validación en `executeTool('navigate_to')`: comparar `input.path` contra la lista de paths de `SITE_PAGES` o un whitelist regex `/^\/[a-z0-9\-\/\?\=\&%\.]+$/`. El prompt ya tiene la regla "Solo usa rutas listadas" pero el ejecutor no la hace cumplir en código.
+
+- **[chat/route.ts:68] Rate limiter en memoria se resetea en cada deploy**: El cron del VPS hace `git pull` y PM2 reinicia periódicamente, lo que borra `rateLimitMap`. Documentar esto y, si se quiere un rate limit real, usar una cookie de sesión o Upstash. Como solución temporal, subir el límite de 30 a 60 mensajes/min para que sea menos molesto en producción.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **[NUEVO] `executeTool` en `tools.ts:85` se declara `async` pero no usa `await` en ningún caso.** Todos los casos del `switch` son síncronos (leen arrays en memoria). La infraestructura async está lista para cuando se migre a `SupabaseKnowledgeProvider` — bien diseñado. Solo asegurarse de que el migration de knowledge a Supabase también sea `await`-ed correctamente en cada case.
+- **Sin memoria entre sesiones para candidatos recurrentes**: Cada apertura del chat empieza desde cero. Guardar en `localStorage` el nombre y tipo de puesto del candidato (post-Paso 3), e inicializar el chat con "¿Seguimos buscando [puesto] en [zona], [nombre]?" cuando el usuario regresa. Mejora la percepción de continuidad sin cambios en el backend.
 
-- **El widget de Kyo no reabre el foco al volver de una navegación.** Cuando Kyo navega al candidato a `/vacantes` y el chat sobrevive (una vez aplicado el fix de `open` en localStorage), el foco del teclado queda en el `<body>`. **Fix:** en el `useEffect` de restauración de `open`, llamar `setTimeout(() => inputRef.current?.focus(), 300)`.
+- **Sin tracking del abandono del flujo de Kyo**: No se sabe en qué paso se pierden los usuarios. Añadir en el frontend `logEvent('kyo_paso_N', texto_de_kyo.slice(0,50))` al recibir cada respuesta, detectando por palabras clave del texto si está en Paso 1, 2, etc. Con esos datos en `site_eventos`, el dashboard de Analytics puede mostrar el funnel de conversación y optimizar los pasos de mayor abandono.
 
-- **Las pestañas del revisor no tienen atributos ARIA.** El nav de secciones (`publicaciones` / `proyectos` / `resultados`) usa `<button>` sin `role="tab"` ni `aria-selected`. Lectores de pantalla no anuncian la sección activa. **Fix:** en `src/app/revisor/page.tsx`, añadir `role="tablist"` al contenedor y `role="tab" aria-selected={seccion === k}` a cada botón. El patrón correcto ya existe en `ProyectosCliente.tsx:631`.
+- **[revisor/page.tsx:617] Login del revisor sin toggle de contraseña**: El campo `type="password"` no tiene ícono de ojo. En móvil es frustrante al escribir contraseñas largas. Añadir un botón SVG dentro del input que alterne `type="password"` / `type="text"` con `useState<boolean>`.
 
-- **El visor de PDF en ProyectosCliente usa `src={archivo.url}` directo en el iframe grande, mostrando la barra de herramientas del navegador.** La miniatura ya usa `urlMiniaturaPdf(archivo.url)` que añade `#toolbar=0`. **Fix:** en `ProyectosCliente.tsx` (visor grande), cambiar `src={archivo.url}` a `src={urlMiniaturaPdf(archivo.url)}` para eliminar los botones de impresión/descarga del iframe durante la revisión.
+- **[ProyectosCliente.tsx — DetalleProyecto] Modal sin preservar scroll en mobile**: Al abrir y cerrar el detalle de un proyecto, la lista vuelve al top. Guardar la posición de scroll del contenedor antes de abrir el modal y restaurarla al cerrarlo. En mobile donde el usuario puede volver de otro contexto, esto evita re-navegar toda la lista.
+
+- **[revisor/page.tsx — GUIA_PASOS:666-679] Tour asume que existen posts**: Los pasos 5-6 del tour (`requiereModal: true`) intentan abrir un post de ejemplo. Si el mes está vacío, `onAbrirEjemplo()` no hace nada y el usuario ve un overlay sin contenido contextual. Añadir: `if (actual.requiereModal && !hayPosts) { setPaso(paso + 1); return; }` para saltar esos pasos automáticamente cuando no hay publicaciones disponibles.
