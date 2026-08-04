@@ -68,8 +68,8 @@ async function notifyAdmin(bloqueId: string, autorNombre: string, contenido: str
       subject: `💬 Nuevo comentario en un proyecto · ${autorNombre}`,
       text: `${autorNombre} comentó en el bloque ${bloqueId}:\n\n"${contenido}"\n\nRevisa en: https://kyoszen.com/admin/proyectos`,
     });
-  } catch {
-    // La notificación no debe bloquear el guardado del comentario.
+  } catch (error) {
+    console.error("[notif proyecto bloque comments] error al enviar:", error);
   }
 }
 
@@ -135,7 +135,11 @@ export async function POST(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   if (autorRol === "cliente") {
-    void notifyAdmin(bloqueId, autorNombre, contenido);
+    try {
+      await notifyAdmin(bloqueId, autorNombre, contenido);
+    } catch (error) {
+      console.error("[notif proyecto bloque comments] fallo:", error);
+    }
   }
   return NextResponse.json(data, { status: 201 });
 }

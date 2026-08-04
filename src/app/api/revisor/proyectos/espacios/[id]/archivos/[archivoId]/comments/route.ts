@@ -41,8 +41,8 @@ async function notificarAdmin(nombre: string, autor: string, contenido: string) 
       subject: `💬 Nuevo comentario en Artes · ${nombre}`,
       text: `${autor} comentó en “${nombre}”:\n\n${contenido}\n\nRevisa en: https://kyoszen.com/admin/proyectos`,
     });
-  } catch {
-    // El comentario se conserva aunque falle el correo.
+  } catch (error) {
+    console.error("[notif proyecto archivo comments] error al enviar:", error);
   }
 }
 
@@ -105,6 +105,12 @@ export async function POST(
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  if (autorRol === "cliente") void notificarAdmin(archivo.nombre, autorNombre, contenido);
+  if (autorRol === "cliente") {
+    try {
+      await notificarAdmin(archivo.nombre, autorNombre, contenido);
+    } catch (error) {
+      console.error("[notif proyecto archivo comments] fallo:", error);
+    }
+  }
   return NextResponse.json(data, { status: 201 });
 }

@@ -80,8 +80,8 @@ async function notificarRevisores(titulo: string) {
         html: `<p>Hola ${revisor.nombre || ""},</p><p>Ya hay una nueva versión de <strong>${titulo || "un proyecto"}</strong> lista para revisar.</p><p><a href="https://kyoszen.com/revisor">Revisar ahora</a></p>`,
       }))
     );
-  } catch {
-    // El correo nunca debe romper la creación de la versión.
+  } catch (error) {
+    console.error("[notif proyecto nueva version] error al enviar:", error);
   }
 }
 
@@ -209,6 +209,10 @@ export async function POST(
     }
   }
 
-  void notificarRevisores(tomarTitulo(etapa.proyectos) ?? "");
+  try {
+    await notificarRevisores(tomarTitulo(etapa.proyectos) ?? "");
+  } catch (error) {
+    console.error("[notif proyecto nueva version] fallo:", error);
+  }
   return NextResponse.json(nuevaVersion, { status: 201 });
 }

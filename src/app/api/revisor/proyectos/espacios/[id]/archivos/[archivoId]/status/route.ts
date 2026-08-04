@@ -37,8 +37,8 @@ async function notificarAdmin(
       subject: `${etiqueta} · ${archivo}`,
       text: `${revisor} actualizó “${archivo}” en ${espacio}: ${etiqueta}.\n\nRevisa en: https://kyoszen.com/admin/proyectos`,
     });
-  } catch {
-    // La actualización de estado no depende del correo.
+  } catch (error) {
+    console.error("[notif proyecto archivo status] error al enviar:", error);
   }
 }
 
@@ -93,6 +93,10 @@ export async function PUT(
   const relacion = Array.isArray(archivo.proyecto_espacios)
     ? archivo.proyecto_espacios[0]
     : archivo.proyecto_espacios;
-  void notificarAdmin(relacion?.nombre ?? "Artes", archivo.nombre, estado, revisor);
+  try {
+    await notificarAdmin(relacion?.nombre ?? "Artes", archivo.nombre, estado, revisor);
+  } catch (error) {
+    console.error("[notif proyecto archivo status] fallo:", error);
+  }
   return NextResponse.json({ ok: true });
 }

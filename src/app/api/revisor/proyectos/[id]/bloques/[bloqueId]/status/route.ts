@@ -68,8 +68,8 @@ async function notifyAdmin(
       subject: `${estadoLabel} · ${titulo || "Proyecto"} · ${etapa}`,
       text: `${revisorNombre} actualizó una escena de ${etapa} a: ${estadoLabel}.\n\nRevisa en: https://kyoszen.com/admin/proyectos`,
     });
-  } catch {
-    // La notificación no debe bloquear la respuesta al revisor.
+  } catch (error) {
+    console.error("[notif proyecto bloque status] error al enviar:", error);
   }
 }
 
@@ -182,6 +182,10 @@ export async function PATCH(
     }
   }
 
-  void notifyAdmin(proyecto?.titulo ?? "", etapa.nombre, estado, revisorNombre);
+  try {
+    await notifyAdmin(proyecto?.titulo ?? "", etapa.nombre, estado, revisorNombre);
+  } catch (error) {
+    console.error("[notif proyecto bloque status] fallo:", error);
+  }
   return NextResponse.json({ ok: true, estado_etapa: estadoEtapa });
 }
