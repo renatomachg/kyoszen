@@ -14,9 +14,22 @@ type Usuario = {
   nombre: string | null;
   rol: Rol;
   secciones: string[];
+  proyectos: string[];
   activo: boolean;
   created_at: string;
   updated_at: string;
+};
+
+type ProyectoAsignable = {
+  id: string;
+  titulo: string;
+  folio: string | null;
+  espacio_id: string | null;
+};
+
+type EspacioAsignable = {
+  id: string;
+  nombre: string;
 };
 
 type Formulario = {
@@ -25,6 +38,7 @@ type Formulario = {
   nombre: string;
   rol: Rol;
   secciones: string[];
+  proyectos: string[];
   activo: boolean;
   password: string;
 };
@@ -41,6 +55,7 @@ const FORM_VACIO: Formulario = {
   nombre: "",
   rol: "colaborador",
   secciones: [],
+  proyectos: [],
   activo: true,
   password: "",
 };
@@ -58,8 +73,12 @@ function fechaCorta(fecha: string) {
 
 export default function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [proyectos, setProyectos] = useState<ProyectoAsignable[]>([]);
+  const [espacios, setEspacios] = useState<EspacioAsignable[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProyectos, setLoadingProyectos] = useState(true);
   const [error, setError] = useState("");
+  const [errorProyectos, setErrorProyectos] = useState("");
   const [form, setForm] = useState<Formulario | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -73,6 +92,11 @@ export default function AdminUsuarios() {
         ADMIN_SECCIONES.map((seccion) => [seccion.key, seccion.label]),
       ),
     [],
+  );
+
+  const espaciosPorId = useMemo(
+    () => new Map(espacios.map((espacio) => [espacio.id, espacio.nombre])),
+    [espacios],
   );
 
   const cargar = useCallback(async () => {
@@ -96,9 +120,44 @@ export default function AdminUsuarios() {
     }
   }, []);
 
+  const cargarProyectos = useCallback(async () => {
+    setErrorProyectos("");
+    try {
+      const [proyectosResponse, espaciosResponse] = await Promise.all([
+        fetch("/api/admin/proyectos", { cache: "no-store" }),
+        fetch("/api/admin/proyectos/espacios", { cache: "no-store" }),
+      ]);
+      const proyectosPayload = (await proyectosResponse.json()) as
+        | ProyectoAsignable[]
+        | { error?: string };
+      const espaciosPayload = (await espaciosResponse.json()) as {
+        espacios?: EspacioAsignable[];
+        error?: string;
+      };
+      if (!proyectosResponse.ok) {
+        const mensaje = Array.isArray(proyectosPayload)
+          ? undefined
+          : proyectosPayload.error;
+        throw new Error(mensaje ?? "No se pudieron cargar los proyectos.");
+      }
+      if (!espaciosResponse.ok) {
+        throw new Error(espaciosPayload.error ?? "No se pudieron cargar los espacios.");
+      }
+      setProyectos(Array.isArray(proyectosPayload) ? proyectosPayload : []);
+      setEspacios(espaciosPayload.espacios ?? []);
+    } catch (err) {
+      setErrorProyectos(
+        err instanceof Error ? err.message : "No se pudieron cargar los proyectos.",
+      );
+    } finally {
+      setLoadingProyectos(false);
+    }
+  }, []);
+
   useEffect(() => {
     void cargar();
-  }, [cargar]);
+    void cargarProyectos();
+  }, [cargar, cargarProyectos]);
 
   const abrirNuevo = () => {
     setForm({ ...FORM_VACIO });
@@ -114,6 +173,7 @@ export default function AdminUsuarios() {
       nombre: usuario.nombre ?? "",
       rol: usuario.rol,
       secciones: usuario.secciones ?? [],
+      proyectos: usuario.proyectos ?? [],
       activo: usuario.activo,
       password: "",
     });
@@ -129,6 +189,16 @@ export default function AdminUsuarios() {
         ? actual.secciones.filter((seccion) => seccion !== key)
         : [...actual.secciones, key];
       return { ...actual, secciones: elegidas };
+    });
+  };
+
+  const cambiarProyecto = (id: string) => {
+    setForm((actual) => {
+      if (!actual) return actual;
+      const elegidos = actual.proyectos.includes(id)
+        ? actual.proyectos.filter((proyectoId) => proyectoId !== id)
+        : [...actual.proyectos, id];
+      return { ...actual, proyectos: elegidos };
     });
   };
 
@@ -153,6 +223,7 @@ export default function AdminUsuarios() {
                   nombre: form.nombre,
                   rol: form.rol,
                   secciones: form.rol === "admin" ? [] : form.secciones,
+                  proyectos: form.rol === "admin" ? [] : form.proyectos,
                   activo: form.activo,
                 }
               : {
@@ -162,6 +233,7 @@ export default function AdminUsuarios() {
                   nombre: form.nombre,
                   rol: form.rol,
                   secciones: form.rol === "admin" ? [] : form.secciones,
+                  proyectos: form.rol === "admin" ? [] : form.proyectos,
                   ...(form.password.trim() ? { password: form.password } : {}),
                 },
           ),
@@ -500,6 +572,81 @@ export default function AdminUsuarios() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {form.rol === "colaborador" && form.secciones.includes("proyectos") && (
+              <div className="rounded-2xl border border-[#E6EBF5] bg-[#F8FAFC] p-4">
+                <div className="flex items-end justify-between gap-3 mb-3">
+                  <div>
+                    <label className={label}>Proyectos</label>
+                    <p className="text-xs text-muted">
+                      El colaborador solo verá los videos seleccionados.
+                    </p>
+                  </div>
+                  {proyectos.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          proyectos:
+                            form.proyectos.length === proyectos.length
+                              ? []
+                              : proyectos.map((proyecto) => proyecto.id),
+                        })
+                      }
+                      className="text-xs font-bold text-blue hover:text-blue-dark"
+                    >
+                      {form.proyectos.length === proyectos.length
+                        ? "Quitar todos"
+                        : "Seleccionar todos"}
+                    </button>
+                  )}
+                </div>
+                {loadingProyectos ? (
+                  <p className="text-xs font-semibold text-muted">Cargando proyectos…</p>
+                ) : errorProyectos ? (
+                  <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                    {errorProyectos}
+                  </p>
+                ) : proyectos.length === 0 ? (
+                  <p className="text-xs font-semibold text-muted">Aún no hay proyectos disponibles.</p>
+                ) : (
+                  <div className="grid sm:grid-cols-2 gap-2.5">
+                    {proyectos.map((proyecto) => {
+                      const seleccionado = form.proyectos.includes(proyecto.id);
+                      const espacio = proyecto.espacio_id
+                        ? espaciosPorId.get(proyecto.espacio_id)
+                        : null;
+                      return (
+                        <label
+                          key={proyecto.id}
+                          className={`flex items-start gap-2.5 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${
+                            seleccionado
+                              ? "border-blue bg-blue-soft text-navy"
+                              : "border-border bg-white text-muted hover:border-blue/40"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={seleccionado}
+                            onChange={() => cambiarProyecto(proyecto.id)}
+                            className="mt-0.5 accent-[#042E7B]"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-[12px] font-black text-navy">
+                              {proyecto.titulo}
+                            </span>
+                            <span className="block truncate text-[10px] font-semibold">
+                              {proyecto.folio || "Sin folio"} · {espacio || "Sin espacio"}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 

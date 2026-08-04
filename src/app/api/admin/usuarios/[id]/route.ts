@@ -26,6 +26,17 @@ function validarSecciones(valor: unknown): string[] | null {
     : null;
 }
 
+function validarProyectos(valor: unknown): string[] | null {
+  if (!Array.isArray(valor) || !valor.every((item) =>
+    typeof item === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item)
+  )) {
+    return null;
+  }
+
+  return [...new Set(valor)];
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -93,6 +104,19 @@ export async function PATCH(
       cambios.secciones = [];
     }
 
+    if ("proyectos" in body) {
+      const proyectos = validarProyectos(body.proyectos);
+      if (proyectos === null) {
+        return NextResponse.json(
+          { error: "La lista de proyectos contiene identificadores no válidos." },
+          { status: 400 },
+        );
+      }
+      cambios.proyectos = rolFinal === "admin" ? [] : proyectos;
+    } else if (rolFinal === "admin") {
+      cambios.proyectos = [];
+    }
+
     if (Object.keys(cambios).length === 0) {
       return NextResponse.json(
         { error: "No se recibieron campos editables." },
@@ -105,7 +129,7 @@ export async function PATCH(
       .from("admin_perfiles")
       .update(cambios)
       .eq("user_id", id)
-      .select("user_id, usuario, email, nombre, rol, secciones, activo, created_at, updated_at")
+      .select("user_id, usuario, email, nombre, rol, secciones, proyectos, activo, created_at, updated_at")
       .maybeSingle();
 
     if (error) {

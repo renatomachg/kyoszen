@@ -27,6 +27,7 @@ import {
 } from "@/lib/proyectos";
 import TableroAdmin from "@/components/admin/TableroAdmin";
 import { IconUI } from "@/components/ui/IconUI";
+import { supabase } from "@/lib/supabase";
 
 type Progreso = { total: number; aprobado: number; cambios: number; pendiente: number };
 type EtapaListado = ProyectoEtapa & { progreso: Progreso };
@@ -69,6 +70,10 @@ type GuionAnalizado = {
   formato: string;
   duracion: string;
   escenas: EscenaGuion[];
+};
+type AccesoProyectos = {
+  esAdmin: boolean;
+  proyectos: string[];
 };
 
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[#1883FF] focus:ring-2 focus:ring-[#1883FF]/10 disabled:bg-slate-100 disabled:text-slate-500";
@@ -1362,6 +1367,86 @@ export default function ProyectosPage() {
   const [proyectoAbierto, setProyectoAbierto] = useState<string | null>(null);
   const [espacioArchivos, setEspacioArchivos] = useState<EspacioListado | null>(null);
   const [espacioTablero, setEspacioTablero] = useState<EspacioListado | null>(null);
+  const [acceso, setAcceso] = useState<AccesoProyectos | null>(null);
+  const [cargandoAcceso, setCargandoAcceso] = useState(true);
+  const [errorAcceso, setErrorAcceso] = useState("");
+
+  useEffect(() => {
+    let vigente = true;
+
+    const cargarAcceso = async () => {
+      setCargandoAcceso(true);
+      setErrorAcceso("");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("No se pudo verificar la sesión actual.");
+
+        const { data, error: perfilError } = await supabase
+          .from("admin_perfiles")
+          .select("rol, proyectos")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        if (perfilError) throw perfilError;
+        if (!vigente) return;
+
+        setAcceso(data
+          ? {
+              esAdmin: data.rol !== "colaborador",
+              proyectos: Array.isArray(data.proyectos) ? data.proyectos : [],
+            }
+          : { esAdmin: true, proyectos: [] });
+      } catch (cause) {
+        if (vigente) {
+          setErrorAcceso(
+            cause instanceof Error
+              ? cause.message
+              : "No se pudo verificar el acceso a proyectos.",
+          );
+        }
+      } finally {
+        if (vigente) setCargandoAcceso(false);
+      }
+    };
+
+    void cargarAcceso();
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  const esAdmin = acceso?.esAdmin === true;
+  const proyectosPermitidos = useMemo(
+    () => new Set(acceso?.proyectos ?? []),
+    [acceso?.proyectos],
+  );
+  const proyectosVisibles = useMemo(
+    () => esAdmin
+      ? proyectos
+      : proyectos.filter((proyecto) => proyectosPermitidos.has(proyecto.id)),
+    [esAdmin, proyectos, proyectosPermitidos],
+  );
+  const pendientesVisibles = useMemo(
+    () => esAdmin
+      ? pendientes
+      : pendientes.filter((pendiente) => proyectosPermitidos.has(pendiente.proyecto.id)),
+    [esAdmin, pendientes, proyectosPermitidos],
+  );
+
+  const abrirProyecto = useCallback((proyectoId: string) => {
+    if (!acceso || (!acceso.esAdmin && !proyectosPermitidos.has(proyectoId))) return;
+    setProyectoAbierto(proyectoId);
+  }, [acceso, proyectosPermitidos]);
+
+  useEffect(() => {
+    if (!acceso || acceso.esAdmin) return;
+    setSeccion("proyectos");
+    setModal(null);
+    setEspacioArchivos(null);
+    setEspacioTablero(null);
+    if (proyectoAbierto && !proyectosPermitidos.has(proyectoAbierto)) {
+      setProyectoAbierto(null);
+    }
+  }, [acceso, proyectoAbierto, proyectosPermitidos]);
 
   const cargar = useCallback(async () => {
     setCargando(true); setError("");
@@ -1386,7 +1471,7 @@ export default function ProyectosPage() {
     finally { setCargando(false); }
   }, []);
   useEffect(() => { void cargar(); }, [cargar]);
-  const creado = async (id: string) => { setModal(null); await cargar(); setProyectoAbierto(id); };
+  const creado = async (id: string) => { setModal(null); await cargar(); abrirProyecto(id); };
   const cerrarDetalle = () => { setProyectoAbierto(null); void cargar(); };
   const asignarEspacio = async (proyectoId: string, espacioId: string | null) => {
     setError("");
@@ -1411,7 +1496,7 @@ export default function ProyectosPage() {
             <h1 className="text-2xl font-black tracking-tight text-[#042E7B] sm:text-3xl">Centro de Proyectos</h1>
             <p className="mt-1.5 text-sm text-slate-500">Gestiona espacios y la aprobación granular por escena.</p>
           </div>
-          {seccion === "proyectos" && (
+          {esAdmin && seccion === "proyectos" && (
             <div className="flex flex-wrap gap-2">
               <a href="/revisor?tab=proyectos" target="_blank" rel="noopener" title="Ver el portal como lo ve el cliente" className="inline-flex items-center gap-2 rounded-xl border border-[#042E7B]/25 bg-white px-4 py-2.5 text-sm font-black text-[#042E7B] transition hover:border-[#1883FF]/40 hover:bg-blue-50 hover:text-[#1883FF]">
                 <IconUI name="eye" size={16} />Vista cliente
@@ -1424,29 +1509,29 @@ export default function ProyectosPage() {
           )}
         </header>
         <nav className="mb-7 flex gap-1 border-b border-[#E6EBF5]" aria-label="Secciones del Centro de Proyectos">
-          {(["proyectos", "espacios"] as const).map((id) => (
+          {(esAdmin ? ["proyectos", "espacios"] as const : ["proyectos"] as const).map((id) => (
             <button key={id} type="button" onClick={() => setSeccion(id)} className={`relative inline-flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-black transition after:absolute after:inset-x-3 after:bottom-[-1px] after:h-0.5 after:rounded-full ${seccion === id ? "text-[#042E7B] after:bg-[#1883FF]" : "text-slate-500 after:bg-transparent hover:text-[#1883FF]"}`}>
               {id === "proyectos" ? <IconoEspacio tipo="aprobacion" className="h-[18px] w-[18px]" /> : <IconoLinea nombre="carpeta" className="h-[18px] w-[18px]" />}
               {id === "proyectos" ? "Proyectos" : "Espacios"}
             </button>
           ))}
         </nav>
-        {error && <p className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
-        {cargando ? (
+        {(error || errorAcceso) && <p className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{errorAcceso || error}</p>}
+        {cargando || cargandoAcceso ? (
           <div className="flex min-h-64 items-center justify-center"><Spinner /></div>
-        ) : seccion === "espacios" ? (
+        ) : errorAcceso || !acceso ? null : esAdmin && seccion === "espacios" ? (
           <GestionEspacios espacios={espacios} onUpdated={cargar} onOpenArchivos={setEspacioArchivos} onOpenTablero={setEspacioTablero} />
         ) : (
           <>
             <section className="mb-7 overflow-hidden rounded-2xl border border-red-100 bg-white shadow-[0_1px_2px_rgba(4,46,123,.05)]">
               <button type="button" onClick={() => setBandejaAbierta((abierta) => !abierta)} className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left">
-                <span className="flex items-center gap-2 font-black text-[#042E7B]"><PuntoEstado color="#DC2626" />Por corregir <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600">{pendientes.length}</span></span>
+                <span className="flex items-center gap-2 font-black text-[#042E7B]"><PuntoEstado color="#DC2626" />Por corregir <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600">{pendientesVisibles.length}</span></span>
                 <span className="text-sm text-slate-400">{bandejaAbierta ? "Ocultar" : "Mostrar"}</span>
               </button>
-              {bandejaAbierta && (pendientes.length ? (
+              {bandejaAbierta && (pendientesVisibles.length ? (
                 <div className="divide-y divide-slate-100 border-t border-slate-100">
-                  {pendientes.map((pendiente) => (
-                    <button key={pendiente.id} type="button" onClick={() => setProyectoAbierto(pendiente.proyecto.id)} className="block w-full cursor-pointer px-5 py-4 text-left hover:bg-red-50/40">
+                  {pendientesVisibles.map((pendiente) => (
+                    <button key={pendiente.id} type="button" onClick={() => abrirProyecto(pendiente.proyecto.id)} className="block w-full cursor-pointer px-5 py-4 text-left hover:bg-red-50/40">
                       <p className="text-sm font-black text-[#042E7B]">{pendiente.proyecto.titulo} <span className="font-semibold text-slate-400">· {pendiente.etapa.nombre} · {pendiente.escena ? `Escena ${pendiente.escena.numero}: ${pendiente.escena.titulo}` : "Entregable único"}</span></p>
                       {pendiente.ultimo_comentario ? <p className="mt-1 line-clamp-2 text-sm text-slate-600"><strong>{pendiente.ultimo_comentario.autor_nombre}:</strong> {pendiente.ultimo_comentario.contenido}</p> : <p className="mt-1 text-xs italic text-slate-400">Sin comentario asociado.</p>}
                     </button>
@@ -1454,17 +1539,17 @@ export default function ProyectosPage() {
                 </div>
               ) : <p className="flex items-center gap-2 border-t border-slate-100 px-5 py-4 text-sm font-semibold text-emerald-700"><PuntoEstado color="#16A34A" />Sin cambios pendientes</p>)}
             </section>
-            {proyectos.length === 0 ? (
+            {proyectosVisibles.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
                 <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#042E7B]"><IconoEspacio tipo="aprobacion" /></span>
-                <h2 className="mt-3 font-black text-[#042E7B]">Aún no hay proyectos</h2>
-                <p className="mt-1 text-sm text-slate-500">Crea uno manualmente o importa un guion.</p>
+                <h2 className="mt-3 font-black text-[#042E7B]">{esAdmin ? "Aún no hay proyectos" : "Aún no tienes videos asignados"}</h2>
+                <p className="mt-1 text-sm text-slate-500">{esAdmin ? "Crea uno manualmente o importa un guion." : "Pídele acceso a un administrador."}</p>
               </div>
             ) : (
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {proyectos.map((proyecto) => (
+                {proyectosVisibles.map((proyecto) => (
                   <article key={proyecto.id} className="overflow-hidden rounded-2xl border border-[#E6EBF5] bg-white shadow-[0_1px_2px_rgba(4,46,123,.05)] transition hover:-translate-y-0.5 hover:border-[#BFD5FF] hover:shadow-[0_14px_30px_-16px_rgba(4,46,123,.22)]">
-                    <button type="button" onClick={() => setProyectoAbierto(proyecto.id)} className="group block w-full cursor-pointer p-5 text-left">
+                    <button type="button" onClick={() => abrirProyecto(proyecto.id)} className="group block w-full cursor-pointer p-5 text-left">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0"><h2 className="truncate font-black text-[#042E7B] group-hover:text-[#1883FF]">{proyecto.titulo}</h2>{proyecto.folio && <p className="mt-1 text-xs font-bold text-slate-400">{proyecto.folio}</p>}{proyecto.area && <p className="mt-1 truncate text-xs font-semibold text-slate-500">{proyecto.area}</p>}</div>
                         <span className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold ${proyecto.publicado ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}><PuntoEstado color={proyecto.publicado ? "#16A34A" : "#94A3B8"} />{proyecto.publicado ? "Publicado" : "Borrador"}</span>
@@ -1474,13 +1559,13 @@ export default function ProyectosPage() {
                       </div>
                       <div className="flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xs text-slate-400">{proyecto.escenas_count} {proyecto.escenas_count === 1 ? "escena" : "escenas"}</span><span className="text-xs font-bold text-[#1883FF]">Ver detalle →</span></div>
                     </button>
-                    <label className="block border-t border-slate-100 bg-slate-50 px-5 py-3">
+                    {esAdmin && <label className="block border-t border-slate-100 bg-slate-50 px-5 py-3">
                       <span className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">Espacio</span>
                       <select value={proyecto.espacio_id ?? ""} onChange={(event) => void asignarEspacio(proyecto.id, event.target.value || null)} className="w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-[#042E7B] outline-none focus:border-[#1883FF]">
                         <option value="">Sin espacio</option>
                         {espacios.filter(({ tipo }) => tipo === "aprobacion").map((espacio) => <option key={espacio.id} value={espacio.id}>{espacio.nombre}</option>)}
                       </select>
-                    </label>
+                    </label>}
                   </article>
                 ))}
               </div>
@@ -1488,11 +1573,11 @@ export default function ProyectosPage() {
           </>
         )}
       </div>
-      {modal === "manual" && <ModalManual onClose={() => setModal(null)} onCreated={creado} />}
-      {modal === "importar" && <ModalImportador onClose={() => setModal(null)} onCreated={creado} />}
-      {proyectoAbierto && <ModalDetalle proyectoId={proyectoAbierto} onClose={cerrarDetalle} />}
-      {espacioArchivos && <GestorArchivos espacio={espacioArchivos} onClose={() => setEspacioArchivos(null)} onUpdated={cargar} />}
-      {espacioTablero && <TableroAdmin espacio={espacioTablero} onClose={() => setEspacioTablero(null)} onUpdated={cargar} />}
+      {esAdmin && modal === "manual" && <ModalManual onClose={() => setModal(null)} onCreated={creado} />}
+      {esAdmin && modal === "importar" && <ModalImportador onClose={() => setModal(null)} onCreated={creado} />}
+      {proyectoAbierto && (esAdmin || proyectosPermitidos.has(proyectoAbierto)) && <ModalDetalle proyectoId={proyectoAbierto} onClose={cerrarDetalle} />}
+      {esAdmin && espacioArchivos && <GestorArchivos espacio={espacioArchivos} onClose={() => setEspacioArchivos(null)} onUpdated={cargar} />}
+      {esAdmin && espacioTablero && <TableroAdmin espacio={espacioTablero} onClose={() => setEspacioTablero(null)} onUpdated={cargar} />}
     </div>
   );
 }

@@ -30,6 +30,18 @@ function validarSecciones(valor: unknown): string[] | null {
     : null;
 }
 
+function validarProyectos(valor: unknown): string[] | null {
+  if (valor === undefined) return [];
+  if (!Array.isArray(valor) || !valor.every((item) =>
+    typeof item === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item)
+  )) {
+    return null;
+  }
+
+  return [...new Set(valor)];
+}
+
 function generarPasswordTemporal(): string {
   const codigo = randomBytes(4).toString("hex");
   return `Kyoszen-${codigo}!`;
@@ -49,7 +61,7 @@ export async function GET() {
   try {
     const { data, error } = await sb
       .from("admin_perfiles")
-      .select("user_id, usuario, email, nombre, rol, secciones, activo, created_at, updated_at")
+      .select("user_id, usuario, email, nombre, rol, secciones, proyectos, activo, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -109,6 +121,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const proyectos = validarProyectos(body.proyectos);
+    if (proyectos === null) {
+      return NextResponse.json(
+        { error: "La lista de proyectos contiene identificadores no válidos." },
+        { status: 400 },
+      );
+    }
+
     const passwordSolicitado =
       typeof body.password === "string" ? body.password.trim() : "";
     if (passwordSolicitado && passwordSolicitado.length < 6) {
@@ -164,12 +184,13 @@ export async function POST(req: NextRequest) {
       nombre: nombre || null,
       rol: body.rol,
       secciones: body.rol === "admin" ? [] : secciones,
+      proyectos: body.rol === "admin" ? [] : proyectos,
       activo: true,
     };
     const { data: usuario, error: perfilError } = await sb
       .from("admin_perfiles")
       .insert(perfil)
-      .select("user_id, usuario, email, nombre, rol, secciones, activo, created_at, updated_at")
+      .select("user_id, usuario, email, nombre, rol, secciones, proyectos, activo, created_at, updated_at")
       .single();
 
     if (perfilError || !usuario) {
