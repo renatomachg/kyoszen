@@ -1,132 +1,118 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
-const NAV = [
-  {
-    href: "/admin",
-    label: "Dashboard",
-    icon: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10",
-  },
-  {
-    href: "/admin/vacantes",
-    label: "Vacantes",
-    icon: "M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-  },
-  {
-    href: "/admin/cursos",
-    label: "Cursos",
-    icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253",
-  },
-  {
-    href: "/admin/aplicaciones",
-    label: "Aplicaciones",
-    badge: "aplicaciones",
-    icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-  },
-  {
-    href: "/admin/crm",
-    label: "CRM",
-    icon: "M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H2v-2a4 4 0 014-4h3a4 4 0 014 4v2zm-2-8a4 4 0 100-8 4 4 0 000 8zm4-1a3 3 0 100-6",
-  },
-  {
-    href: "/admin/contactos",
-    label: "Contactos",
-    badge: "contactos",
-    icon: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-  },
-  {
-    href: "/admin/kyo",
-    label: "Asistente Kyo",
-    icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z",
-  },
-  {
-    href: "/admin/blog",
-    label: "Blog",
-    icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
-  },
-  {
-    href: "/admin/testimonios",
-    label: "Testimonios",
-    icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z",
-  },
-  { divider: true },
-  {
-    href: "/admin/redes-sociales",
-    label: "Redes Sociales",
-    icon: "M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z",
-  },
-  {
-    href: "/admin/proyectos",
-    label: "Proyectos",
-    icon: "M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2",
-  },
-  {
-    href: "/admin/cuestionario",
-    label: "Cuestionarios",
-    icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2m-4 0a2 2 0 012-2h2a2 2 0 012 2m-4 0a2 2 0 002 2h4a2 2 0 002-2M9 12h6m-6 4h6",
-  },
-  {
-    href: "/admin/contenido",
-    label: "Contenido",
-    icon: "M4 6h16M4 12h16M4 18h7",
-  },
-  {
-    href: "/admin/seo",
-    label: "SEO",
-    icon: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
-  },
-  {
-    href: "/admin/correos",
-    label: "Correos",
-    icon: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-  },
-  {
-    href: "/admin/analytics",
-    label: "Analytics",
-    icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-  },
-  {
-    href: "/admin/estratega",
-    label: "Estratega",
-    icon: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z",
-  },
-  {
-    href: "/admin/servidor",
-    label: "Servidor",
-    icon: "M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01",
-  },
-  {
-    href: "/admin/actividad",
-    label: "Actividad",
-    icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
-  },
-];
+import { IconUI, type IconUIName } from "@/components/ui/IconUI";
+import {
+  ADMIN_SECCIONES,
+  seccionDeRuta,
+  type AdminSeccionKey,
+} from "@/lib/admin-secciones";
+import { supabase } from "@/lib/supabase";
+
+type PerfilAcceso = {
+  rol: "admin" | "colaborador";
+  secciones: string[];
+  activo: boolean;
+};
+
+const ICONOS: Record<AdminSeccionKey, IconUIName> = {
+  dashboard: "chart",
+  vacantes: "clipboard",
+  cursos: "book-open",
+  aplicaciones: "document",
+  crm: "users",
+  contactos: "mail",
+  kyo: "comment",
+  blog: "pencil",
+  testimonios: "trophy",
+  proyectos: "menu",
+  "redes-sociales": "send",
+  cuestionario: "clipboard",
+  contenido: "document",
+  seo: "search",
+  correos: "mail",
+  analytics: "chart",
+  estratega: "lightbulb",
+  servidor: "archive",
+  actividad: "clock",
+};
+
+const BADGES: Partial<Record<AdminSeccionKey, "aplicaciones" | "contactos">> = {
+  aplicaciones: "aplicaciones",
+  contactos: "contactos",
+};
+
+const SECCIONES_PRINCIPALES = ADMIN_SECCIONES.slice(0, 9);
+const SECCIONES_HERRAMIENTAS = ADMIN_SECCIONES.slice(9);
+
+function Loader() {
+  return (
+    <div className="min-h-screen bg-bg flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [perfil, setPerfil] = useState<PerfilAcceso | null>(null);
   const [loading, setLoading] = useState(true);
   const [unread, setUnread] = useState({ aplicaciones: 0, contactos: 0 });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let activo = true;
+
+    const cargarAcceso = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!activo) return;
+
       if (!session) {
         router.replace("/admin/login");
-      } else {
-        setUser(session.user);
-        setLoading(false);
+        return;
       }
-    });
+
+      const { data } = await supabase
+        .from("admin_perfiles")
+        .select("rol, secciones, activo")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (!activo) return;
+
+      // Las cuentas anteriores a esta entrega no tienen perfil: conservan acceso admin.
+      const acceso: PerfilAcceso = data
+        ? {
+            rol: data.rol === "colaborador" ? "colaborador" : "admin",
+            secciones: Array.isArray(data.secciones) ? data.secciones : [],
+            activo: data.activo !== false,
+          }
+        : { rol: "admin", secciones: [], activo: true };
+
+      if (!acceso.activo) {
+        await supabase.auth.signOut();
+        if (activo) router.replace("/admin/login");
+        return;
+      }
+
+      setUser(session.user);
+      setPerfil(acceso);
+      setLoading(false);
+    };
+
+    void cargarAcceso();
+    return () => {
+      activo = false;
+    };
   }, [router]);
 
-  // Cargar conteo de no leidos
   useEffect(() => {
+    if (loading) return;
+
     const fetchUnread = async () => {
       const [{ count: ap }, { count: co }] = await Promise.all([
         supabase.from("aplicaciones").select("id", { count: "exact", head: true }).eq("leido", false),
@@ -134,50 +120,92 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
       ]);
       setUnread({ aplicaciones: ap ?? 0, contactos: co ?? 0 });
     };
-    fetchUnread();
-    // Recargar cada 60 segundos
-    const interval = setInterval(fetchUnread, 60_000);
-    return () => clearInterval(interval);
-  }, []);
 
-  // Cuando se visita aplicaciones o contactos, refrescar badges
+    void fetchUnread();
+    const interval = window.setInterval(fetchUnread, 60_000);
+    return () => window.clearInterval(interval);
+  }, [loading]);
+
   useEffect(() => {
-    if (pathname.startsWith("/admin/aplicaciones") || pathname.startsWith("/admin/contactos")) {
-      setTimeout(() => {
-        Promise.all([
-          supabase.from("aplicaciones").select("id", { count: "exact", head: true }).eq("leido", false),
-          supabase.from("contactos").select("id", { count: "exact", head: true }).eq("leido", false),
-        ]).then(([{ count: ap }, { count: co }]) => {
-          setUnread({ aplicaciones: ap ?? 0, contactos: co ?? 0 });
-        });
-      }, 1500);
+    if (
+      loading ||
+      (!pathname.startsWith("/admin/aplicaciones") &&
+        !pathname.startsWith("/admin/contactos"))
+    ) {
+      return;
     }
-  }, [pathname]);
+
+    const timeout = window.setTimeout(() => {
+      Promise.all([
+        supabase.from("aplicaciones").select("id", { count: "exact", head: true }).eq("leido", false),
+        supabase.from("contactos").select("id", { count: "exact", head: true }).eq("leido", false),
+      ]).then(([{ count: ap }, { count: co }]) => {
+        setUnread({ aplicaciones: ap ?? 0, contactos: co ?? 0 });
+      });
+    }, 1500);
+
+    return () => window.clearTimeout(timeout);
+  }, [loading, pathname]);
+
+  const esAdmin = perfil?.rol === "admin";
+  const permitidas = useMemo(
+    () => new Set(perfil?.secciones ?? []),
+    [perfil?.secciones],
+  );
+  const seccionActual = seccionDeRuta(pathname);
+  const rutaPermitida =
+    esAdmin || Boolean(seccionActual && permitidas.has(seccionActual.key));
+  const primeraPermitida = ADMIN_SECCIONES.find((seccion) =>
+    permitidas.has(seccion.key),
+  );
+
+  useEffect(() => {
+    if (
+      loading ||
+      esAdmin ||
+      rutaPermitida ||
+      !primeraPermitida
+    ) {
+      return;
+    }
+    router.replace(primeraPermitida.href);
+  }, [esAdmin, loading, primeraPermitida, router, rutaPermitida]);
+
+  const navGrupos = useMemo(() => {
+    const filtrar = (secciones: typeof ADMIN_SECCIONES[number][]) =>
+      secciones.filter((seccion) => esAdmin || permitidas.has(seccion.key));
+
+    return [
+      filtrar([...SECCIONES_PRINCIPALES]),
+      filtrar([...SECCIONES_HERRAMIENTAS]),
+    ].filter((grupo) => grupo.length > 0);
+  }, [esAdmin, permitidas]);
 
   const logout = async () => {
     await supabase.auth.signOut();
     router.replace("/admin/login");
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-bg flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (loading || !perfil) {
+    return <Loader />;
+  }
+
+  if (!rutaPermitida && primeraPermitida) {
+    return <Loader />;
   }
 
   const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+    href === "/admin"
+      ? pathname === "/admin"
+      : pathname === href || pathname.startsWith(`${href}/`);
 
-  const getBadge = (badge?: string) => {
-    if (!badge) return 0;
-    return unread[badge as keyof typeof unread] ?? 0;
+  const getBadge = (key: AdminSeccionKey) => {
+    const badge = BADGES[key];
+    return badge ? unread[badge] : 0;
   };
 
   return (
     <div className="min-h-screen flex bg-bg">
-      {/* Sidebar */}
       <aside className="w-60 bg-navy flex flex-col shrink-0 fixed h-full z-10">
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -192,32 +220,48 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {NAV.map((item, i) => {
-            if ("divider" in item) {
-              return <div key={i} className="border-t border-white/10 my-2 mx-1" />;
-            }
-            const active = isActive(item.href);
-            const badgeCount = getBadge(item.badge);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-colors ${
-                  active ? "bg-yellow text-navy" : "text-white/70 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                  <path d={item.icon} />
-                </svg>
-                <span className="flex-1">{item.label}</span>
-                {badgeCount > 0 && (
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${active ? "bg-navy text-yellow" : "bg-yellow text-navy"}`}>
-                    {badgeCount > 99 ? "99+" : badgeCount}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+          {navGrupos.map((grupo, grupoIndex) => (
+            <div key={grupo[0].key}>
+              {grupoIndex > 0 && <div className="border-t border-white/10 my-2 mx-1" />}
+              {grupo.map((item) => {
+                const active = isActive(item.href);
+                const badgeCount = getBadge(item.key);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-colors ${
+                      active
+                        ? "bg-yellow text-navy"
+                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <IconUI name={ICONOS[item.key]} size={15} className="shrink-0" />
+                    <span className="flex-1">{item.label}</span>
+                    {badgeCount > 0 && (
+                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${active ? "bg-navy text-yellow" : "bg-yellow text-navy"}`}>
+                        {badgeCount > 99 ? "99+" : badgeCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+
+          {esAdmin && (
+            <Link
+              href="/admin/usuarios"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-colors ${
+                isActive("/admin/usuarios")
+                  ? "bg-yellow text-navy"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <IconUI name="users" size={15} className="shrink-0" />
+              <span className="flex-1">Usuarios</span>
+            </Link>
+          )}
         </nav>
 
         <div className="px-4 py-4 border-t border-white/10 space-y-2">
@@ -226,17 +270,27 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             onClick={logout}
             className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] font-semibold transition-colors cursor-pointer"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
-            Cerrar sesion
+            <IconUI name="arrow-left" size={13} />
+            Cerrar sesión
           </button>
         </div>
       </aside>
 
-      {/* Content */}
       <main className="flex-1 ml-60 p-8 min-h-screen">
-        {children}
+        {rutaPermitida ? (
+          children
+        ) : (
+          <div className="max-w-xl bg-white border border-border rounded-2xl p-8">
+            <div className="w-11 h-11 rounded-xl bg-blue-soft text-navy flex items-center justify-center mb-4">
+              <IconUI name="key" size={22} />
+            </div>
+            <h1 className="text-xl font-black text-navy mb-2">Sin secciones asignadas</h1>
+            <p className="text-sm text-muted leading-relaxed">
+              Tu cuenta está activa, pero todavía no tiene acceso a una sección del panel.
+              Pide a un administrador que actualice tus permisos.
+            </p>
+          </div>
+        )}
       </main>
     </div>
   );

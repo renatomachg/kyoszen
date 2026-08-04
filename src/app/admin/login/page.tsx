@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function AdminLogin() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identificador, setIdentificador] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,12 +15,32 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError("Correo o contraseña incorrectos");
-      setLoading(false);
-    } else {
+    try {
+      const valor = identificador.trim().toLowerCase();
+      let email = valor;
+
+      if (!valor.includes("@")) {
+        const response = await fetch("/api/admin/usuarios/resolver", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuario: valor }),
+        });
+        const payload = (await response.json()) as { email?: string };
+        if (!response.ok || !payload.email) {
+          throw new Error("Credenciales incorrectas");
+        }
+        email = payload.email;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        throw error;
+      }
+
       router.replace("/admin");
+    } catch {
+      setError("Usuario, correo o contraseña incorrectos");
+      setLoading(false);
     }
   };
 
@@ -42,20 +62,22 @@ export default function AdminLogin() {
             </div>
           )}
           <div>
-            <label className="block text-[12px] font-bold text-navy mb-1.5">Correo</label>
+            <label className="block text-[12px] font-bold text-navy mb-1.5">Usuario o correo</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              autoComplete="username"
+              value={identificador}
+              onChange={(e) => setIdentificador(e.target.value)}
               required
               className="w-full border border-border rounded-xl px-4 py-2.5 text-[13px] text-navy focus:outline-none focus:border-blue transition-colors"
-              placeholder="admin@kyoszen.com"
+              placeholder="tu.usuario o admin@kyoszen.com"
             />
           </div>
           <div>
             <label className="block text-[12px] font-bold text-navy mb-1.5">Contraseña</label>
             <input
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
