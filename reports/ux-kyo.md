@@ -1,18 +1,28 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-08-03
+**Fecha:** 2026-08-05
 **Cambios analizados:**
+- `src/app/admin/login/page.tsx` (login por usuario sin correo)
+- `src/app/admin/(panel)/layout.tsx` (roles + access control)
+- `src/app/admin/(panel)/usuarios/page.tsx` (CRUD de usuarios con permisos)
+- `src/app/api/admin/usuarios/route.ts` (API creación/listado)
+- `src/app/api/admin/usuarios/[id]/route.ts` (API edición/borrado)
+- `src/app/api/admin/usuarios/resolver/route.ts` (resuelve usuario→email)
+- `src/app/api/revisor/proyectos/[id]/bloques/[bloqueId]/status/route.ts` (notif await fix)
+- `src/app/api/revisor/proyectos/espacios/[id]/archivos/[archivoId]/status/route.ts`
+- `src/lib/admin-secciones.ts`
+- `src/lib/admin-usuarios.ts`
 - `src/lib/assistant/system-prompt.ts`
 - `src/lib/assistant/tools.ts`
 - `src/lib/assistant/knowledge.ts`
 - `src/app/api/assistant/chat/route.ts`
 - `src/components/assistant/ChatWidget.tsx`
 - `src/components/assistant/useChat.ts`
-- `src/lib/jobs.ts`
-- `src/app/vacantes/page.tsx`
-- Commits recientes: solo commits automáticos de análisis UX (2026-07-29 a 2026-08-02). Último cambio de código real: b21cdcf (2026-07-28).
 
 ## Cambios Recientes Detectados
-Sin cambios de código en los últimos 5 días hábiles. El módulo activo más reciente fue el flag `requiere_aprobacion` por archivo en el Centro de Proyectos (Artes). La deuda técnica documentada en reportes anteriores permanece sin resolverse, con especial urgencia en la brecha de datos de vacantes que afecta directamente al candidato que usa Kyo.
+
+**Commit `0dc92f7` + `c6ce339` (2026-08-03/04):** Sistema de roles y gestión de usuarios en el panel admin. Los colaboradores ahora pueden tener login por username (ej. `carlos.garcia`) sin necesidad de correo electrónico real. El layout del panel filtrado las secciones según el rol. Se añadió asignación de proyectos específicos por colaborador.
+
+**Commit `20b13ac` (2026-08-04):** Fix de notificaciones en Proyectos Hub: las llamadas a `notifyAdmin` ahora usan `await` en lugar de fire-and-forget, con logs de error explícitos.
 
 ---
 
@@ -20,158 +30,179 @@ Sin cambios de código en los últimos 5 días hábiles. El módulo activo más 
 
 ### Alta prioridad
 
-- **[ChatWidget.tsx:120] Panel de chat oculto por el teclado virtual en iOS**: El widget usa `bottom-24` fijo. En iPhone, cuando el candidato toca el input y aparece el teclado virtual (≈300px), el panel queda parcialmente oculto y el input puede estar detrás del teclado. Añadir en el contenedor principal del panel `style={{ bottom: open ? 'env(safe-area-inset-bottom, 96px)' : undefined }}` y en el input `inputMode="text"` para forzar teclado estándar (no emoji). También usar `visualViewport` para recalcular la posición:
-  ```typescript
-  useEffect(() => {
-    const handler = () => {
-      if (!open) return;
-      const vv = window.visualViewport;
-      if (vv) setPanelBottom(window.innerHeight - vv.height - vv.offsetTop + 16);
-    };
-    window.visualViewport?.addEventListener('resize', handler);
-    return () => window.visualViewport?.removeEventListener('resize', handler);
-  }, [open]);
-  ```
-  En móvil el chat es el primer punto de contacto del candidato — si no puede escribir, abandona.
+- **[login/page.tsx:95] Sin recuperación de contraseña para colaboradores**: El formulario de login no tiene enlace "¿Olvidé mi contraseña?". Un colaborador que olvida su contraseña temporal no puede recuperarla — depende 100% de que Renato entre a `/admin/usuarios` y genere una nueva. Como el admin no puede cambiar contraseñas desde la UI actual (solo se muestran al crear), el flujo queda bloqueado. Solución mínima: añadir bajo el botón de enviar un texto `"¿Problemas para entrar? Escríbele a Renato por WhatsApp."` con el link `https://wa.link/5zv0ba`. Solución completa: añadir en `/admin/usuarios` un botón "Restablecer contraseña" que llame a `sb.auth.admin.generateLink({ type: 'recovery', email })` y muestre la nueva contraseña temporal al admin.
 
-- **[system-prompt.ts:138] `toLocaleString()` sin locale en el servidor**: La línea que formatea el salario en el system prompt usa `j.salario?.toLocaleString?.()` sin especificar locale ni opciones. En Node.js sobre Linux (el VPS), el locale por defecto puede ser `POSIX` o `C`, produciendo `12000` en lugar de `12,000`. El modelo recibe el número sin formato y puede presentarlo de distintas formas al candidato. Corregir:
-  ```typescript
-  const fmtSalario = (s: number) =>
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(s);
-  // Uso en la línea 138:
-  `- id=${j.id} · ${j.titulo} · ${j.empresa} · ... · ${fmtSalario(j.salario)}/mes`
+- **[usuarios/page.tsx:497] Campo de contraseña temporal visible (`type="text"`)**: El campo de contraseña al crear un usuario es de tipo texto plano (línea 497). Si alguien pasa detrás del admin en ese momento, ve la contraseña en pantalla. Cambiar a `type="password"` y añadir un botón show/hide:
+  ```tsx
+  const [mostrarPass, setMostrarPass] = useState(false);
+  <div className="relative">
+    <input
+      type={mostrarPass ? "text" : "password"}
+      ...
+    />
+    <button type="button" onClick={() => setMostrarPass(v => !v)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+      {mostrarPass ? "Ocultar" : "Ver"}
+    </button>
+  </div>
   ```
-  Esto garantiza `$12,000/mes` consistente en cualquier entorno.
 
-- **[knowledge.ts:138-153, jobs.ts:1-247] Kyo recomienda vacantes de datos estáticos mientras el sitio público usa Supabase en tiempo real**: `VacantesPage` hace `supabase.from('vacantes').select(...).eq('activa', true)` en cada carga. Kyo usa `JOBS` del archivo `jobs.ts` que tiene 10 vacantes hardcoded, potencialmente diferentes a las que el admin gestiona. Un candidato puede ver en `/vacantes` posiciones que Kyo no conoce, o Kyo puede recomendar vacantes ya inactivas. Esta es la deuda más crítica del asistente. Implementar en `chat/route.ts`, antes de `buildSystemPrompt`:
-  ```typescript
-  const { data: activeJobs } = await sbAdmin
-    .from('vacantes')
-    .select('id,titulo,empresa,categoria,ubicacion,contrato,jornada,salario,descripcion,tags,salario_nota,beneficios,horario')
-    .eq('activa', true)
-    .order('id');
+- **[layout.tsx:268] Email interno confuso en el sidebar**: El footer del sidebar muestra `user?.email` (línea 268). Para colaboradores con login por username, ese email es `nombre.apellido@acceso.kyoszen.com` — un correo ficticio que el colaborador nunca vio y puede generar confusión ("¿tengo un correo del trabajo que no sabía?"). Mostrar el `nombre` del perfil si existe, o el `usuario` si no hay correo real:
+  ```tsx
+  // En el layout, después de cargar el perfil, guardar también el display name:
+  const [displayName, setDisplayName] = useState("");
+  // En cargarAcceso():
+  setDisplayName(data?.nombre || data?.usuario || session.user.email || "");
+  // En el footer:
+  <p className="text-white/40 text-[11px] truncate">{displayName}</p>
   ```
-  Pasar `activeJobs` a `buildSystemPrompt` como parámetro e inyectarlos en lugar del `jobsSummary` estático. El `KnowledgeProvider` ya tiene la interfaz preparada para esto (`knowledge.ts:166`).
 
-- **[tools.ts:43] Categorías de vacantes sin tilde pueden no hacer match**: `category` en `search_jobs` documenta `"Atencion al cliente"` (sin tilde). Si los datos de Supabase guardan `"Atención al cliente"` (con tilde), el filtro `j.categoria.toLowerCase() === filters.category.toLowerCase()` falla. Normalizar el comparador con `deburr` (lodash) o comparación básica:
-  ```typescript
-  const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  .filter((j) => !filters?.category || normalize(j.categoria) === normalize(filters.category))
+- **[usuarios/page.tsx:277] Confirmación de borrado con `window.confirm()` nativo**: El diálogo nativo del browser para confirmar el borrado de un usuario es brusco e inconsistente con el estilo del panel. No indica las consecuencias reales (se pierde acceso de autenticación). Reemplazar con un estado de confirmación inline:
+  ```tsx
+  const [confirmarBorradoId, setConfirmarBorradoId] = useState<string | null>(null);
+  // En la fila del usuario:
+  {confirmarBorradoId === usuario.user_id ? (
+    <div className="flex items-center gap-2">
+      <span className="text-[11px] text-red-600 font-bold">¿Confirmar borrado?</span>
+      <button onClick={() => { setBorradoId(null); borrarConfirmado(usuario); }} className="text-[11px] text-red-600 font-black">Sí</button>
+      <button onClick={() => setConfirmarBorradoId(null)} className="text-[11px] text-muted">No</button>
+    </div>
+  ) : (
+    <button onClick={() => setConfirmarBorradoId(usuario.user_id)}>Borrar</button>
+  )}
   ```
-  Aplicar el mismo fix en `listCourses`. Afecta directamente la capacidad de Kyo de filtrar vacantes por categoría.
 
 ### Media prioridad
 
-- **[system-prompt.ts:38-40, Paso 3] Kyo no ofrece opciones de zona al preguntar ubicación**: La pregunta de ubicación es abierta ("¿en qué zona vive?"). Un candidato puede responder "Neza", "Iztapalapa", "Tlalnepantla" — topónimos que Kyo no puede mapear a los filtros disponibles (`CDMX`, `Estado de México`, `Híbrido`, `Remoto`). Añadir en el prompt del Paso 3:
-  ```
-  ## Paso 3 — UBICACION
-  Pregunta: "¿En qué zona de la ciudad vive o trabaja? Tenemos vacantes en CDMX, Estado de México, y también posiciones híbridas y remotas."
-  Si el usuario da una colonia o municipio, infiere la zona más cercana (Neza → Estado de México, Iztapalapa → CDMX) para usar en search_jobs.
-  ```
+- **[layout.tsx:49] Split de secciones por índice hardcodeado**: `SECCIONES_PRINCIPALES = ADMIN_SECCIONES.slice(0, 9)` y `SECCIONES_HERRAMIENTAS = ADMIN_SECCIONES.slice(9)` (líneas 49-50). Si `admin-secciones.ts` alguna vez reordena las secciones (ej. mover CRM arriba), el separador visual del sidebar se mueve en silencio a otro lugar. Añadir un campo `grupo: "principal" | "herramienta"` en `ADMIN_SECCIONES` y filtrar por ese campo en lugar del slice por índice. Es un cambio quirúrgico de 2 archivos que previene un bug difícil de detectar.
 
-- **[useChat.ts:24-34] Historial de chat sin expiración — candidato ve vacantes obsoletas**: La conversación se persiste en `localStorage` sin fecha de expiración. Un candidato que regresa 2 semanas después ve un hilo donde Kyo le recomendó vacantes que pueden ya no existir, y Kyo continúa ese contexto como válido. Añadir expiración de 7 días:
-  ```typescript
-  function loadHistory(): ChatMessage[] {
-    // ...existing parse...
-    const last = parsed[parsed.length - 1];
-    if (last && Date.now() - last.timestamp > 7 * 24 * 60 * 60 * 1000) {
-      return [INITIAL_GREETING];
-    }
-    return parsed.length > 0 ? parsed : [INITIAL_GREETING];
-  }
-  ```
+- **[usuarios/page.tsx:464] Campo "Nombre" sin `required`**: El nombre del usuario es opcional en el formulario (línea 464-475), pero en la lista se muestra como "Sin nombre" si está vacío (línea 705). En la práctica es el identificador principal visible. Hacer `required` el campo nombre para colaboradores — el username ya es identificador técnico; el nombre es para que el admin sepa quién es quién.
 
-- **[useChat.ts:94-102] Sin timeout ni AbortController en el fetch a Kyo**: El `fetch` no tiene límite de tiempo. Si el servidor tarda más de 15s (5 iteraciones de tool-use bajo carga), `isLoading` permanece `true` y el usuario ve "escribiendo..." indefinidamente sin poder interrumpir. Añadir:
-  ```typescript
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20_000);
-  try {
-    const res = await fetch('/api/assistant/chat', { ..., signal: controller.signal });
-    clearTimeout(timeoutId);
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      setError('Kyo tardó demasiado en responder. Por favor intenta de nuevo.');
-      return;
-    }
-    // ...existing error handling...
-  }
-  ```
-
-- **[ChatWidget.tsx:154-164] Botón "Nueva conversación" demasiado discreto**: `text-[11px] text-muted` casi no se ve. El candidato que quiere empezar de cero no lo encuentra fácilmente y puede cerrar y reabrir el widget (perdiendo el contexto anterior). Mejorar visibilidad:
+- **[layout.tsx:283-293] "Sin secciones asignadas" sin acción clara para el colaborador**: El estado de error cuando un colaborador no tiene secciones (líneas 283-293) muestra un mensaje explicativo correcto, pero no da ninguna instrucción de a quién contactar ni cómo. Añadir debajo del párrafo:
   ```tsx
-  <button
-    type="button"
-    onClick={reset}
-    className="text-[12px] text-muted hover:text-navy font-semibold flex items-center gap-1.5 border border-border rounded-full px-3 py-1 hover:border-navy transition-colors"
-  >
-    <svg width="12" height="12" ...reinicio icon.../> Nueva conversación
-  </button>
+  <a href="https://wa.link/5zv0ba"
+    className="inline-flex items-center gap-2 mt-4 bg-yellow text-navy rounded-xl px-4 py-2 text-sm font-bold">
+    Contactar al administrador
+  </a>
   ```
+
+- **[usuarios/page.tsx:578-650] El panel de proyectos dice "videos" cuando aplica a cualquier espacio**: El label dice "El colaborador solo verá los **videos** seleccionados." (línea 581). Pero el módulo de Proyectos ahora incluye espacios de tipo `artes`, `tablero`, `aprobacion` — no solo videos. Cambiar a "El colaborador solo verá los **proyectos** seleccionados."
 
 ---
 
 ## Sugerencias para el Asistente Kyo
 
-### Mejoras al flujo de conversación
+*(Nota: Kyo no recibió cambios en este ciclo. Se reportan issues pendientes del ciclo anterior que siguen sin corregirse.)*
 
-- **[useChat.ts:20] Tilde faltante en el saludo inicial**: `"estoy aqui para orientarte"` — falta el acento en "aquí". Es la primera impresión del candidato. Corregir la constante `INITIAL_GREETING.content` a: `"Bienvenido a Kyoszen. Mi nombre es Kyo y estoy aquí para orientarte. ¿Me permite saber su nombre?"`. **Esta corrección no requiere API — es solo el valor del string en `useChat.ts:20`.**
+### Mejoras al flujo de conversación (PENDIENTES DEL CICLO ANTERIOR)
 
-- **[system-prompt.ts:65-68] Kyo corta el flujo con empresas sin calificar el lead**: Cuando detecta intención de "quiero contratar" o "soy empresa", el prompt instruye ir directo a `/contacto`. Pero ese candidato empresarial es el lead de mayor valor. Antes de navegar, añadir 2 preguntas de calificación rápida en el flujo para empresas:
-  ```
-  Si el usuario dice que es empresa o quiere contratar:
-  1. "¿Qué tipo de puesto buscan cubrir? (operativo, administrativo, gerencial)"
-  2. "¿Con qué urgencia? (inmediata, dentro de un mes)"
-  Luego navegar a /contacto con un mensaje: "Perfecto, en breve un especialista se pondrá en contacto con usted."
-  ```
-  Esto permite al equipo de ventas recibir un lead pre-calificado en lugar de un contacto frío.
-
-- **[system-prompt.ts:54-57] Banco de talentos genérico sin usar el nombre y puesto**: El mensaje de fallback cuando no hay vacante compatible es impersonal: navega a /contacto sin mencionar el puesto ni la zona del candidato. Personalizar con los datos ya recopilados en el flujo:
-  ```
-  "Por ahora no tenemos una vacante de [puesto] en [zona], [nombre], pero podemos contactarle cuando surja una oportunidad similar.
-  ¿Le gustaría que anotemos su perfil para nuestro banco de talentos?"
-  Si acepta → navigate_to('/contacto')
-  Si no → "Entendido. Puede consultar nuestras vacantes en cualquier momento en la sección de vacantes."
-  → navigate_to('/vacantes')
+- **[useChat.ts:20] Tilde faltante en el saludo inicial — SIGUE SIN CORREGIR**: `"estoy aqui para orientarte"` — falta acento en "aquí". Es la primera impresión del candidato. El modelo de Kyo leen esta cadena en español y la inconsistencia ortográfica puede afectar cómo calibra su tono. Corrección de 3 caracteres:
+  ```typescript
+  content: "Bienvenido a Kyoszen. Mi nombre es Kyo y estoy aquí para orientarte. ¿Me permite saber su nombre?",
   ```
 
-- **[system-prompt.ts — Paso 5] Kyo no menciona el rango salarial al recomendar vacantes**: El formato de respuesta del Paso 5 dice `"[Nombre del puesto] — [Empresa] — [Por qué le aplica]"` pero no incluye el salario. Para el candidato operativo, el salario es el dato más importante antes de decidir si aplica. Actualizar el formato:
+- **[ChatWidget.tsx:160] "Nueva conversacion" sin tilde y con estilo casi invisible**: El botón de reset (línea 159-163) sigue con texto `"Nueva conversacion"` (sin tilde) y en `text-[11px] text-muted font-medium` — casi invisible. Corregir texto y mejorar visibilidad:
+  ```tsx
+  <button
+    type="button"
+    onClick={reset}
+    className="text-[12px] text-muted hover:text-navy font-semibold flex items-center gap-1.5 border border-border rounded-full px-3 py-1 hover:border-navy/40 transition-colors"
+  >
+    Nueva conversación
+  </button>
   ```
-  1. [Puesto] — [Empresa] — $[Salario]/mes · [Por qué le aplica]
+
+- **[chat/route.ts:202] Fallback sin tilde y poco empático — SIGUE SIN CORREGIR**: `"Entendido, ¿en que mas te puedo ayudar?"` — falta tilde en "más" y el mensaje suena robótico cuando aparece tras un error de la API. Corregir:
+  ```typescript
+  const replyContent = finalText || "Perdona, tuve un problema procesando tu mensaje. ¿Podrías repetirme tu pregunta?";
   ```
-  El salario ya está disponible en el system prompt (lista de vacantes, línea 138).
+
+- **[system-prompt.ts:138] `toLocaleString()` sin locale en el VPS — SIGUE SIN CORREGIR**: En Node.js sobre Linux el locale puede ser POSIX, produciendo `12000` en lugar de `$12,000`. El candidato recibe un número sin formato de parte de Kyo. Corregir en `buildSystemPrompt`:
+  ```typescript
+  const fmtSalario = (s: number) =>
+    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(s);
+  // línea 138:
+  `· ${fmtSalario(j.salario ?? 0)}/mes`
+  ```
+
+- **[knowledge.ts:167] Kyo recomienda vacantes del archivo estático, no de Supabase — SIGUE SIN CORREGIR**: El sitio público lee de Supabase en tiempo real; Kyo usa `jobs.ts` con vacantes hardcoded. Un candidato puede ver vacantes en `/vacantes` que Kyo no conoce, o recibir recomendaciones de vacantes ya inactivas. Esta es la deuda más crítica del asistente. Ver implementación en el reporte del 2026-08-03.
+
+### Nuevas issues detectadas en este ciclo
+
+- **[admin-secciones.ts:7] Colaboradores asignados a "Asistente Kyo" pueden editar el system prompt**: La sección `kyo` da acceso a `/admin/kyo`, que incluye el editor de instrucciones y el test en vivo del asistente. Un colaborador (ej. fotógrafo asignado a "proyectos") con acceso a "kyo" puede modificar el comportamiento del asistente en producción. En `/admin/usuarios`, mostrar una advertencia al seleccionar "Asistente Kyo":
+  ```tsx
+  {seccion.key === "kyo" && seleccionada && (
+    <p className="text-[10px] text-amber-700 font-bold mt-1 col-span-full">
+      ⚠ Permite editar las instrucciones del asistente en producción.
+    </p>
+  )}
+  ```
+
+- **[status/route.ts:69] Correo de notificación de proyectos hardcodeado**: La función `notifyAdmin` en el route de status de bloques (línea 69) envía a `renatomachg@gmail.com` directamente en el código, en lugar de leer de `site_config.resumen_email` como hacen los otros módulos. Si el correo destino cambia, este módulo queda desactualizado. Corregir:
+  ```typescript
+  // En getSmtp(), añadir "resumen_email" al select:
+  .in("key", ["smtp_host", "smtp_port", "smtp_user", "smtp_pass", "smtp_from", "resumen_email"])
+  // En notifyAdmin():
+  to: smtp.resumen_email || "renatomachg@gmail.com",
+  ```
+
+- **[useChat.ts:94-102] Sin timeout en fetch a Kyo — SIGUE SIN CORREGIR**: El fetch no tiene AbortController. Con 5 iteraciones de tool-use bajo carga del VPS, `isLoading` puede quedar en `true` indefinidamente. En el contexto del nuevo módulo de usuarios (más carga en la API), esto es más probable. Añadir:
+  ```typescript
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const res = await fetch('/api/assistant/chat', {
+      ...,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      setError('Kyo tardó demasiado. Por favor intenta de nuevo.');
+      return;
+    }
+    // ...existing error handling
+  }
+  ```
 
 ### Nuevas tools o capacidades recomendadas
 
-- **`save_candidate_interest` (pendiente crítico, ya reportado)**: Sin esta tool, el candidato que no encuentra vacante tiene que salir del chat, ir a `/contacto` y llenar el formulario desde cero. La conversión cae drásticamente. Con la tool, Kyo captura: `{ nombre, puesto_buscado, zona, sessionId }` en `contactos` con `fuente='banco_talentos'`. Implementar:
-  - `src/lib/assistant/tools.ts` — nueva entrada `save_candidate_interest`
-  - `POST /api/assistant/candidato-interes` — inserta en `contactos` con service_role
-  - Triggerar desde el Paso 6 si el candidato acepta el banco de talentos
-
-- **`get_available_jobs_count` (baja prioridad)**: Cuando el candidato pregunta "¿cuántas vacantes tienen?" antes de iniciar el flujo, Kyo actualmente usa el número estático del system prompt (10 vacantes de `jobs.ts`). Con esta tool haría `supabase.from('vacantes').select('id', { count: 'exact' }).eq('activa', true)` y respondería con el dato real. Puede implementarse como un mini-endpoint o inline en `executeTool`.
+- **`reset_collaborator_password` (admin tool)**: No es una tool de Kyo sino una capacidad del panel admin. La ausencia de reset de contraseña para colaboradores es el bloqueador más práctico del módulo de usuarios recién lanzado. Implementar en `/api/admin/usuarios/[id]/route.ts` un endpoint `POST .../reset-password` que use `sb.auth.admin.updateUserById(userId, { password: generarPasswordTemporal() })` y devuelva la nueva contraseña temporal al admin. El botón aparecería en el formulario de edición de usuario.
 
 ### Problemas detectados
 
-- **[chat/route.ts:202] Fallback vacío sin tilde ni empatía**: `"Entendido, ¿en que mas te puedo ayudar?"` — falta tilde en "más" y el mensaje suena robótico. Peor aún, aparece cuando Kyo no pudo generar respuesta, que es exactamente cuando el candidato necesita más claridad. Corregir:
+- **[admin/usuarios/route.ts:124-130] Validación de proyectos no verifica existencia en BD**: `validarProyectos` valida que los IDs sean UUIDs válidos (regex), pero no consulta si esos IDs existen en la tabla `proyectos`. Si un UUID se filtra accidentalmente (proyecto borrado), el perfil del colaborador tendría un proyecto fantasma en su array. Añadir una consulta de verificación:
   ```typescript
-  const replyContent = finalText || "Perdona, tuve un problema al procesar tu mensaje. ¿Podrías repetirme tu pregunta?";
+  if (proyectos.length > 0) {
+    const { data: existentes } = await sb.from("proyectos")
+      .select("id").in("id", proyectos);
+    const idsValidos = new Set((existentes ?? []).map(p => p.id));
+    const invalidos = proyectos.filter(id => !idsValidos.has(id));
+    if (invalidos.length > 0) {
+      return NextResponse.json({ error: "Uno o más proyectos no existen." }, { status: 400 });
+    }
+  }
   ```
 
-- **[tools.ts:43 vs knowledge.ts:138-145] Categorías documentadas en tools vs categorías reales en datos**: La tool `search_jobs` documenta las categorías `Administrativo, Ventas, Operaciones, Atencion al cliente, RRHH`. Pero si las vacantes en Supabase usan etiquetas distintas (ej. "Operativo", "Call Center"), el filtro nunca retorna resultados. Verificar que las categorías en la descripción de la tool coincidan exactamente con los valores en la columna `categoria` de la tabla `vacantes` en Supabase. Ejecutar: `SELECT DISTINCT categoria FROM vacantes WHERE activa = true;` y actualizar la descripción de la tool con los valores reales.
-
-- **[knowledge.ts:167] Datos de Supabase ausentes en el contexto de Kyo (deuda crítica, ciclos previos)**: `StaticKnowledgeProvider` usa `JOBS` (10 vacantes hardcoded). El sitio público usa Supabase. Los campos `salario_nota`, `beneficios`, `horario` que se añadieron a la tabla `vacantes` en junio de 2026 **no existen en `jobs.ts`** (confirmado: `grep salario_nota src/lib/jobs.ts` devuelve solo menciones en `requisitos[]`, no como campo propio). Kyo no puede responder `"¿Qué horario tiene esa vacante?"` con datos reales. La solución completa requiere migrar a `SupabaseKnowledgeProvider` como está planeado en el comentario de `knowledge.ts:166`.
-
-- **[chat/route.ts:68-82] Rate limiter en memoria no sobrevive reinicios de PM2**: El `rateLimitMap` es una variable en módulo. Cada `pm2 restart kyoszen` (que ocurre en cada deploy con `deploy.sh`) lo resetea. Un usuario con intenciones de abuso puede enviar 30 mensajes, esperar el restart del deploy, y enviar 30 más. Para producción real usar Redis o al menos añadir el conteo a `kyo_conversaciones` (que ya persiste en Supabase). Por ahora es aceptable dado el volumen, pero documentar el riesgo.
+- **[chat/route.ts:68-82] Rate limiter en memoria se resetea en cada deploy**: Cada `pm2 restart` (que ocurre en cada deploy via `deploy.sh`) resetea el `rateLimitMap`. Con el módulo de usuarios activo, los deploys son más frecuentes en esta etapa. La solución es añadir el conteo al campo `messages` de `kyo_conversaciones` que ya existe en Supabase, o usar un contador simple en site_config. Riesgo actual: bajo dado el volumen de tráfico, pero documentado.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **[ChatWidget.tsx:37] Botón flotante sin focus ring para teclado**: El `<motion.button>` del widget tiene `aria-label` correcto pero no tiene `focus-visible:ring-*`. En navegación por teclado o lectores de pantalla el foco es invisible. Añadir: `className="... focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:outline-none"`.
+- **[usuarios/page.tsx] Sin notificación automática al colaborador de sus credenciales**: Al crear un usuario, el admin debe copiar y enviar manualmente las credenciales (hay un botón "Copiar" pero nada de envío automático). Si el colaborador tiene correo real (admins), enviar automáticamente un correo con las credenciales via IONOS SMTP — el helper de correo ya existe en el proyecto. Para username-based (sin correo real), el flujo manual actual es correcto, pero añadir en el bloque de credenciales: "Envía estas credenciales al colaborador por WhatsApp o en persona. La contraseña no se volverá a mostrar." (texto más accionable que el actual).
 
-- **[vacantes/page.tsx:32] Filtro de salario con texto "Mas de $20k" sin tilde**: La constante `SALARIOS` tiene `"Mas de $20k"` (sin tilde en "Más"). Si esta cadena se muestra en la UI o la comparte un candidato por URL, queda con ortografía incorrecta. Corregir a `"Más de $20k"` en la línea 32.
+- **[layout.tsx — sidebar] Sin indicador del nombre del usuario logueado**: El footer del sidebar (línea 267-276) muestra el email pero no el nombre completo ni el rol del usuario. Para admins que gestionan varios colaboradores es útil ver de un vistazo "quién está dentro". Añadir el nombre completo si está disponible (se puede leer de `admin_perfiles` al cargar el layout). El rol `"Colaborador"` también podría mostrarse como badge pequeño.
 
-- **Sin métricas de abandono en el flujo de Kyo**: Se logguea `kyo_mensaje` en `useChat.ts:81` pero no hay evento cuando el candidato cierra el widget sin completar el flujo ni cuando llega al Paso 5 y no aplica. Añadir en `useChat.ts:reset()` un evento `logEvent('kyo_reset', messages.length.toString())` para medir cuántos mensajes alcanzó antes de reiniciar. Y en `ChatWidget.tsx` en el botón de cerrar: `logEvent('kyo_cerrado', messages.length.toString())`. Estos datos permitirían identificar en qué paso se pierden más candidatos.
+- **[usuarios/page.tsx — proyectos] No hay feedback de cuántos proyectos tiene el colaborador en el listado**: En la lista de usuarios, los permisos de sección se muestran como chips (líneas 722-738). Los proyectos asignados no aparecen — solo se ven secciones. Añadir bajo los chips de sección:
+  ```tsx
+  {usuario.proyectos?.length > 0 && (
+    <span className="text-[10px] text-slate-500 font-semibold">
+      + {usuario.proyectos.length} proyecto{usuario.proyectos.length > 1 ? 's' : ''} asignado{usuario.proyectos.length > 1 ? 's' : ''}
+    </span>
+  )}
+  ```
 
-- **[system-prompt.ts:85-91] Filtros de URL documentados con marcas ficticias**: Los valores de ejemplo en el filtro `?marca=Sigma Retail` corresponden a empresas del archivo `jobs.ts` estático (Grupo Corpora, Logística Norte, etc.). Cuando se migre a datos reales de Supabase, estos valores serán incorrectos. Actualizar la sección de filtros disponibles con las empresas reales activas en la BD, o eliminar el filtro `?marca=` del prompt hasta que esté sincronizado con datos reales.
+- **Sin métricas de abandono en el flujo de Kyo (pendiente ciclos anteriores)**: `logEvent('kyo_mensaje')` registra mensajes pero no el abandono. Añadir en `useChat.ts:reset()`: `logEvent('kyo_reset', messages.length.toString())` y en `ChatWidget.tsx` al cerrar: `logEvent('kyo_cerrado', String(messages.length))`. Estos datos revelan en qué paso se pierden los candidatos.
 
-- **Sin modo oscuro en el ChatWidget**: El widget usa colores hardcodeados (`bg-white`, `bg-[#F3F4F7]`, `text-navy`). En sistemas con `prefers-color-scheme: dark`, el widget aparece con fondo blanco brillante sobre fondo oscuro del sitio si el usuario tiene darkmode activado. Añadir variantes Tailwind dark: `dark:bg-[#1a2035] dark:text-white dark:bg-[#222940]` en las burbujas de mensajes y el panel principal.
+- **[system-prompt.ts:85-91] Filtros de URL con empresas ficticias del archivo estático**: Los filtros de ejemplo `?marca=Sigma Retail`, `?marca=Grupo Corpora` (líneas 85-91) corresponden a datos de `jobs.ts` estático. Cuando la migración a Supabase esté completa, estos valores serán incorrectos. Por ahora, añadir un comentario en el prompt: `"(los valores de marca varían según las vacantes activas — usa search_jobs para conocer las empresas disponibles)"`.
