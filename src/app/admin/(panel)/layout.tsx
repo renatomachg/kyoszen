@@ -31,6 +31,7 @@ const ICONOS: Record<AdminSeccionKey, IconUIName> = {
   testimonios: "trophy",
   proyectos: "menu",
   "redes-sociales": "send",
+  campanas: "target",
   cuestionario: "clipboard",
   contenido: "document",
   seo: "search",

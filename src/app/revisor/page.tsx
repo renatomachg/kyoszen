@@ -7,6 +7,7 @@ import { getRedSocial } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
 import InformeCliente from "@/components/revisor/InformeCliente";
 import ProyectosCliente from "@/components/revisor/ProyectosCliente";
+import CampanasCliente from "@/components/revisor/CampanasCliente";
 import StoryboardView, { PropuestaView } from "@/components/social/StoryboardView";
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -41,9 +42,9 @@ interface PageConfig {
   nombre_pagina: string;
   avatar_url: string | null;
 }
-type SeccionRevisor = "publicaciones" | "proyectos" | "resultados";
+type SeccionRevisor = "publicaciones" | "campanas" | "proyectos" | "resultados";
 
-const SECCIONES_REVISOR: SeccionRevisor[] = ["publicaciones", "proyectos", "resultados"];
+const SECCIONES_REVISOR: SeccionRevisor[] = ["publicaciones", "campanas", "proyectos", "resultados"];
 
 /* ─── Helpers ────────────────────────────────────────── */
 function weekBounds(offset = 0) {
@@ -100,6 +101,7 @@ const ESTADO: Record<string, { label: string; bg: string; color: string; dot: st
 
 type IconoRevisorNombre =
   | "publicaciones"
+  | "campanas"
   | "proyectos"
   | "analisis"
   | "ayuda"
@@ -116,6 +118,7 @@ type IconoRevisorNombre =
 function IconoRevisor({ name, size = 18 }: { name: IconoRevisorNombre; size?: number }) {
   const paths: Record<IconoRevisorNombre, React.ReactNode> = {
     publicaciones: <path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />,
+    campanas: <><circle cx="12" cy="12" r="8.25" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" /></>,
     proyectos: <path d="M3.75 3v18M20.25 3v18M3.75 7.5h16.5M3.75 12h16.5M3.75 16.5h16.5M7.5 3v18M16.5 3v18" />,
     analisis: <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />,
     ayuda: <><circle cx="12" cy="12" r="9" /><path d="M9.75 9a2.25 2.25 0 114.29.94c-.45.73-1.44 1.05-1.82 1.83-.14.28-.22.61-.22.98M12 16.25h.01" /></>,
@@ -1126,6 +1129,7 @@ export default function RevisorPage() {
         <div style={{ display: "flex", gap: 3, marginBottom: 24, background: "#F1F5F9", border: "1px solid #E6EBF5", borderRadius: 12, padding: 4, width: "fit-content" }}>
           {([
             ["publicaciones", "Publicaciones", "publicaciones"],
+            ["campanas", "Campañas", "campanas"],
             ["proyectos", "Proyectos", "proyectos"],
             ["resultados", "Análisis", "analisis"],
           ] as const).map(([k, label, icon]) => (
@@ -1139,6 +1143,8 @@ export default function RevisorPage() {
 
         {seccion === "resultados" ? (
           <InformeCliente />
+        ) : seccion === "campanas" ? (
+          <CampanasCliente userName={userName} config={config} />
         ) : seccion === "proyectos" ? (
           <ProyectosCliente userName={userName} />
         ) : (

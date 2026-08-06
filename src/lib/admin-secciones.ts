@@ -10,6 +10,7 @@ export const ADMIN_SECCIONES = [
   { key: "testimonios", label: "Testimonios", href: "/admin/testimonios" },
   { key: "proyectos", label: "Proyectos", href: "/admin/proyectos" },
   { key: "redes-sociales", label: "Redes Sociales", href: "/admin/redes-sociales" },
+  { key: "campanas", label: "Campañas", href: "/admin/campanas" },
   { key: "cuestionario", label: "Cuestionarios", href: "/admin/cuestionario" },
   { key: "contenido", label: "Contenido", href: "/admin/contenido" },
   { key: "seo", label: "SEO", href: "/admin/seo" },

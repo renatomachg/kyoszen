@@ -110,6 +110,9 @@ src/
 - **social_page_config** (red_social, nombre_pagina, avatar_url) — config del mockup por red
 - **social_reviewers** (id UUID→auth.users, nombre, email, activo) — clientes que reciben notificaciones del revisor. Solo los `activo:true` reciben correos.
 - **social_informes** (id, periodo "2026-06", periodo_label, desde, hasta, metricas JSONB, resumen, decisiones, propuestas, estado, fuente) — informe mensual de análisis de redes. estado: borrador (solo admin) / publicado (cliente lo ve). fuente: 'sitio' (fase 1) / 'meta' (fase 2). UNIQUE(periodo).
+- **campanas** (id, nombre, cliente_final, plataforma, tipo, objetivo, publica_desde, segmentacion JSONB, presupuesto_texto, fecha_difusion, fechas_reclutamiento, meta_texto, sede_texto, flujo JSONB, nota_interna, estado, publicado, orden) — campañas pagadas de Facebook. `publicado` = barrera con el cliente (igual que social_posts). `nota_interna` NUNCA se manda al revisor. `estado` es rollup de sus anuncios.
+- **campana_anuncios** (id, campana_id, puesto, imagen_url, texto_principal, titulo, descripcion, cta, formulario JSONB {preguntas[], pantalla_confirmacion}, estado, orden) — el anuncio que el cliente aprueba uno por uno.
+- **campana_comentarios** (id, anuncio_id, autor_nombre, autor_rol, contenido) — hilo por anuncio.
 
 RLS activo en todas las tablas (políticas permisivas USING(true) — el acceso real lo controla la service_role en las API routes).
 
@@ -253,6 +256,8 @@ Creadas con `sb.auth.admin.createUser` + contraseña temporal `Kyoszen2025!` (el
 - [ ] **Logo PNG** — el icono ya se usa en el revisor (`brand/kyoszen-icon.png`). Footer aún usa wordmark de texto.
 - [ ] **Cron del resumen mensual** — el toggle guarda la preferencia pero el envío automático (cron en VPS llamando a /api/admin/resumen) aún no está montado.
 - [ ] **Panel de Análisis Fase 2** — conectar API de Meta (Graph API insights orgánicos: alcance, seguidores, engagement). Requiere: app de Meta for Developers + permisos `read_insights`/`pages_read_engagement` + App Review (días/semanas). El usuario es admin de la página de FB de Kyoszen. La fuente de datos en `social-informe.ts` es intercambiable (`fuente: 'sitio'|'meta'`), enchufar sin rehacer el panel.
+- [ ] **Artes de la campaña GPG** — subir los 3 PNG (Cajero/a, Vigilante, Ayudante General) desde `/admin/campanas`. Mientras tanto el anuncio muestra "Arte pendiente".
+- [ ] **Publicar la campaña GPG al cliente** — está en borrador. El botón "Publicar al cliente" avisa por correo a los revisores activos.
 - [ ] Revisar copy con cliente (es razonable pero no 100% aprobado)
 
 ### Panel Admin — YA COMPLETO
@@ -377,6 +382,15 @@ Semana 1 lanzamiento (Mayo 18-24):
 - Martes 20 · TIKTOK 30 seg · Presentación cuenta · 12pm
 
 ## Última actualización
+
+2026-08-06 — **Módulo de aprobación de campañas pagadas (`/revisor` → pestaña Campañas + `/admin/campanas`).**
+- **Concepto:** una campaña no es una pieza suelta del calendario, es *1 encabezado + N anuncios hijos*, cada uno con su formulario. Por eso tablas propias (`campanas`, `campana_anuncios`, `campana_comentarios`) y NO se reusó `social_posts` (habría ensuciado el calendario y el informe mensual). Se copió el patrón de redes: estados `pendiente|aprobado|cambios`, hilo de comentarios, flag `publicado` como barrera con el cliente, notificación SMTP a `social_reviewers` activos.
+- **Cliente** (`src/components/revisor/CampanasCliente.tsx`, 4ª pestaña del revisor): encabezado con avance de revisión + **"A quién le va a llegar"** (zonas, edad, público estimado, inversión, meta, difusión, reclutamiento, sede, objetivo en lenguaje simple) + **"El recorrido del candidato"** (5 pasos derivados de los datos reales por `flujoDeCampana()`; se puede sobrescribir con la columna `flujo`) + tarjetas de anuncio. El modal tiene 2 vistas: **"Lo que ve en Facebook"** (mockup de anuncio con tarjeta de enlace y botón CTA) y **"Lo que llena"** (simulación del formulario instantáneo: preguntas reales + pantalla de confirmación). Abajo Aprobar / Necesito cambios + comentarios, idéntico a publicaciones.
+- **Rollup:** la campaña queda `aprobado` solo cuando TODOS sus anuncios lo están; `cambios` si alguno lo pide (`rollupCampana()` en `src/lib/campanas.ts`).
+- **Admin** `/admin/campanas`: publicar/ocultar al cliente, editar los datos de la campaña, y por anuncio: subir arte (reusa `/api/admin/social/upload`), editar textos, **editor de preguntas del formulario** (tipo, opciones, orden), pantalla de confirmación, responder comentarios y **"Guardar y avisar al cliente"** (regresa a pendiente + correo).
+- **APIs:** `/api/revisor/campanas` (solo publicadas, sin `nota_interna`), `/api/revisor/campanas/anuncios/[id]/{status,comments}` (validan que la campaña esté publicada), `/api/admin/campanas[/[id]]`, `/api/admin/campanas/anuncios/[id][/comments]`. Correos en `src/lib/campanas-notify.ts`.
+- **Cargada la campaña "Reclutamiento GPG · 11–12 Ago"** (Grupo Papelero Gutiérrez) con sus 3 anuncios (Cajero/a $2,600 + bono · Vigilante $2,600 sin bono · Ayudante General $2,400 + bono, sin experiencia). **Sigue en borrador** — el cliente no la ve hasta que el admin dé "Publicar al cliente". **Faltan los 3 artes** (fondo morado GPG): se suben desde el admin.
+- Reglas de contenido a respetar al editar: sueldo siempre semanal; bono solo Cajero/a y Ayudante General; constancias laborales en la confirmación solo Cajero/a y Vigilante; "sin experiencia" es gancho exclusivo de Ayudante General. La campaña entrega **registros**, no contrataciones — no prometer número de contratados de cara al cliente (queda en `nota_interna`).
 
 2026-07-28 — **Proyectos Hub: subcarpetas + vista previa de archivos + rediseño corporativo del revisor y admin de Proyectos.** (entregas K/L/M/N/O/P, flujo Opus↔Codex).
 - **Subcarpetas (K):** `espacio_carpetas` (id, espacio_id, parent_id self-ref = anidado, nombre, orden) + `espacio_archivos.carpeta_id` (ON DELETE SET NULL → archivos suben a raíz). Navegación tipo Drive con breadcrumb en admin y cliente; admin crea/mueve carpetas (con anti-ciclos en el PATCH), cliente navega. APIs `/api/admin/proyectos/espacios/[id]/carpetas[/carpetaId]`; el GET revisor de archivos devuelve `{carpetas, archivos}`.
