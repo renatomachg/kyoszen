@@ -51,6 +51,8 @@ export async function GET(
       .select("*")
       .in("etapa_id", etapaIds)
       .eq("es_activa", true)
+      // Lo que un colaborador entregó y el admin no ha liberado todavía no se ve
+      .eq("visible_cliente", true)
       .order("created_at");
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     bloques = (data ?? []) as ProyectoBloque[];

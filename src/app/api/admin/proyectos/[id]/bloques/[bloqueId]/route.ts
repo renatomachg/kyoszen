@@ -75,6 +75,9 @@ export async function PUT(
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "No hay campos válidos para actualizar" }, { status: 400 });
   }
+  // Borrador de un colaborador: se guarda pero el cliente no lo ve. Sigue sin
+  // entrar a la bandeja del admin hasta que ella apriete "Enviar a revisión".
+  if (body.destino === "interno") patch.visible_cliente = false;
   patch.updated_at = new Date().toISOString();
 
   const { data, error } = await sb

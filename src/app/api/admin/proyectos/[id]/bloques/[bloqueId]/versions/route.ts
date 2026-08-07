@@ -54,6 +54,42 @@ async function getSmtp() {
   return config;
 }
 
+const ADMIN_EMAIL = "renatomachg@gmail.com";
+
+/** Entrega interna: un colaborador subió su parte y le toca al admin revisarla.
+ *  El cliente NO se entera todavía. */
+async function notificarAdminEntrega(
+  titulo: string,
+  etapa: string,
+  escena: string,
+  autor: string
+) {
+  try {
+    const smtp = await getSmtp();
+    if (!smtp.smtp_host || !smtp.smtp_user || !smtp.smtp_pass) return;
+    const puerto = Number.parseInt(smtp.smtp_port ?? "465", 10);
+    const transport = nodemailer.createTransport({
+      host: smtp.smtp_host,
+      port: puerto,
+      secure: puerto === 465,
+      auth: { user: smtp.smtp_user, pass: smtp.smtp_pass },
+    });
+
+    await transport.sendMail({
+      from: { name: "Kyoszen", address: smtp.smtp_from || smtp.smtp_user },
+      to: ADMIN_EMAIL,
+      subject: `${autor} entregó ${escena} · ${etapa} · ${titulo || "Proyecto"}`,
+      html:
+        `<p><strong>${autor}</strong> subió su entrega y está esperando tu revisión.</p>` +
+        `<p>Proyecto: <strong>${titulo || "Proyecto"}</strong><br/>Etapa: <strong>${etapa}</strong><br/>${escena}</p>` +
+        `<p>El cliente todavía no lo ve. Revísalo y, cuando esté bien, mándaselo con el botón <strong>"Enviar al cliente"</strong>.</p>` +
+        `<p><a href="https://kyoszen.com/admin/proyectos">Revisar la entrega</a></p>`,
+    });
+  } catch (error) {
+    console.error("[notif entrega interna] error al enviar:", error);
+  }
+}
+
 async function notificarRevisores(titulo: string) {
   try {
     const { data: revisores } = await sb
@@ -144,6 +180,14 @@ export async function POST(
   const { error: desactivarError } = await desactivar;
   if (desactivarError) return NextResponse.json({ error: desactivarError.message }, { status: 500 });
 
+  // `destino: "interno"` = entrega de un colaborador. Se guarda igual, pero el
+  // cliente no la ve hasta que el admin la revise y la mande.
+  const interno = body.destino === "interno";
+  const autor = typeof body.autor_nombre === "string" && body.autor_nombre.trim()
+    ? body.autor_nombre.trim()
+    : "Un colaborador";
+  const ahoraEntrega = new Date().toISOString();
+
   const { data: nuevaVersion, error: insertarError } = await sb
     .from("proyecto_bloques")
     .insert({
@@ -155,6 +199,10 @@ export async function POST(
       nota: body.nota !== undefined ? body.nota : bloque.nota,
       version_num: (ultima?.version_num ?? 0) + 1,
       es_activa: true,
+      visible_cliente: !interno,
+      entrega_estado: interno ? "entregado" : "ninguna",
+      entrega_nombre: interno ? autor : null,
+      entrega_at: interno ? ahoraEntrega : null,
     })
     .select()
     .single();
@@ -210,7 +258,26 @@ export async function POST(
   }
 
   try {
-    await notificarRevisores(tomarTitulo(etapa.proyectos) ?? "");
+    if (interno) {
+      // Nombre de la escena y de la etapa, para que el correo diga qué revisar
+      const [{ data: escena }, { data: datosEtapa }] = await Promise.all([
+        bloque.escena_id
+          ? sb.from("proyecto_escenas").select("numero, titulo").eq("id", bloque.escena_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        sb.from("proyecto_etapas").select("nombre").eq("id", bloque.etapa_id).maybeSingle(),
+      ]);
+      const nombreEscena = escena
+        ? `Escena ${escena.numero} · ${escena.titulo}`
+        : "el entregable de la etapa";
+      await notificarAdminEntrega(
+        tomarTitulo(etapa.proyectos) ?? "",
+        datosEtapa?.nombre ?? "",
+        nombreEscena,
+        autor
+      );
+    } else {
+      await notificarRevisores(tomarTitulo(etapa.proyectos) ?? "");
+    }
   } catch (error) {
     console.error("[notif proyecto nueva version] fallo:", error);
   }

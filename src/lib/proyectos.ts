@@ -128,8 +128,25 @@ export interface ProyectoBloque {
   nota: string | null;
   version_num: number;
   es_activa: boolean;
+  /** false mientras una entrega interna espera el visto bueno del admin. */
+  visible_cliente: boolean;
+  entrega_estado: EntregaEstado;
+  /** Quién hizo la entrega interna (el colaborador). */
+  entrega_nombre: string | null;
+  entrega_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** Handoff interno colaborador → admin → cliente.
+ *  - `ninguna`: flujo normal del admin, sin entrega pendiente.
+ *  - `entregado`: un colaborador lo subió y espera revisión interna (el cliente NO lo ve).
+ *  - `enviado`: el admin ya lo mandó al cliente. */
+export type EntregaEstado = "ninguna" | "entregado" | "enviado";
+
+/** Cuántos bloques de la etapa esperan revisión interna. */
+export function entregasPendientes(bloques: Pick<ProyectoBloque, "entrega_estado">[]): number {
+  return bloques.filter(b => b.entrega_estado === "entregado").length;
 }
 
 export interface ProyectoComentario {

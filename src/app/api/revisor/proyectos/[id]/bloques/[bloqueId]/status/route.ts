@@ -98,6 +98,8 @@ export async function PATCH(
     .select("id, etapa_id, estado, proyecto_etapas!inner(id, proyecto_id, orden, estado, nombre, proyectos!inner(titulo, publicado))")
     .eq("id", bloqueId)
     .eq("es_activa", true)
+    // Una entrega interna que el admin no ha liberado no se puede aprobar
+    .eq("visible_cliente", true)
     .eq("proyecto_etapas.proyecto_id", id)
     .eq("proyecto_etapas.proyectos.publicado", true)
     .maybeSingle();

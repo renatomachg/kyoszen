@@ -32,6 +32,8 @@ export async function GET() {
     `)
     .eq("publicado", true)
     .eq("proyecto_etapas.proyecto_bloques.es_activa", true)
+    // El progreso que ve el cliente no cuenta las entregas internas sin liberar
+    .eq("proyecto_etapas.proyecto_bloques.visible_cliente", true)
     .order("created_at", { ascending: false });
 
   if (error) {

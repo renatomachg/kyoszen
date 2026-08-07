@@ -74,6 +74,8 @@ type GuionAnalizado = {
 type AccesoProyectos = {
   esAdmin: boolean;
   proyectos: string[];
+  /** Con quién se firma la entrega interna. */
+  nombre: string;
 };
 
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[#1883FF] focus:ring-2 focus:ring-[#1883FF]/10 disabled:bg-slate-100 disabled:text-slate-500";
@@ -445,12 +447,15 @@ function VistaArchivo({ archivo }: { archivo: Archivo }) {
   return <a href={archivo.url} target="_blank" rel="noreferrer" className="max-w-48 truncate text-xs font-bold text-[#1883FF] hover:underline">{archivo.nombre}</a>;
 }
 
-function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, onSaved }: {
+function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin, autorNombre, onSaved }: {
   bloque: BloqueDetalle;
   etapa: EtapaDetalle;
   escena: ProyectoEscena | null;
   proyectoId: string;
   soloLectura: boolean;
+  /** El admin manda al cliente; un colaborador solo entrega para revisión interna. */
+  esAdmin: boolean;
+  autorNombre: string;
   onSaved: () => Promise<void>;
 }) {
   const [locucion, setLocucion] = useState(() => textoContenido(bloque.contenido, "locucion"));
@@ -458,6 +463,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, onSaved
   const [nota, setNota] = useState(bloque.nota ?? "");
   const [archivos, setArchivos] = useState<Archivo[]>(bloque.archivos);
   const [accion, setAccion] = useState<"guardar" | "avisar" | "subir" | null>(null);
+  const [arrastrando, setArrastrando] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -500,7 +506,14 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, onSaved
       const response = await fetch(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}${avisar ? "/versions" : ""}`, {
         method: avisar ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contenido, nota: nota || null, archivos }),
+        body: JSON.stringify({
+          contenido,
+          nota: nota || null,
+          archivos,
+          // El admin libera al cliente; el colaborador entrega para revisión interna
+          destino: esAdmin ? "cliente" : "interno",
+          autor_nombre: autorNombre,
+        }),
       });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo guardar el bloque."));
       await onSaved();
@@ -512,26 +525,130 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, onSaved
   };
 
   const ui = ESTADO_BLOQUE_UI[bloque.estado];
+  const entregado = bloque.entrega_estado === "entregado";
   return (
     <article className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div><h4 className="font-black text-[#042E7B]">{escena ? `Escena ${escena.numero} · ${escena.titulo}` : "Entregable único"}</h4><p className="mt-0.5 text-[10px] font-bold text-slate-400">Versión {bloque.version_num}</p></div>
-        <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-extrabold" style={{ color: ui.color }}><PuntoEstado color={ui.color} />{ui.label}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {entregado && (
+            <span className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-extrabold text-amber-700">
+              <PuntoEstado color="#D97706" />
+              {esAdmin
+                ? `${bloque.entrega_nombre ?? "Un colaborador"} entregó · por revisar`
+                : "Enviado a revisión · el cliente aún no lo ve"}
+            </span>
+          )}
+          {!entregado && !bloque.visible_cliente && (
+            <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-extrabold text-slate-500">
+              <PuntoEstado color="#94A3B8" />Borrador · el cliente no lo ve
+            </span>
+          )}
+          {(esAdmin || !entregado) && (
+            <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-extrabold" style={{ color: ui.color }}><PuntoEstado color={ui.color} />{ui.label}</span>
+          )}
+        </div>
       </div>
       {etapa.tipo === "guion" ? <div className="grid gap-4 lg:grid-cols-2"><label><Etiqueta texto="Locución" /><textarea disabled={soloLectura} value={locucion} onChange={(event) => setLocucion(event.target.value)} rows={7} className={inputClass} /></label><label><Etiqueta texto="En pantalla" /><textarea disabled={soloLectura} value={enPantalla} onChange={(event) => setEnPantalla(event.target.value)} rows={7} className={inputClass} /></label></div> : <label><Etiqueta texto={etapa.tipo === "arte" ? "Nota / brief" : "Nota"} /><textarea disabled={soloLectura} value={nota} onChange={(event) => setNota(event.target.value)} rows={5} className={inputClass} /></label>}
-      {etapa.tipo !== "guion" && <div className="mt-5"><div className="mb-2 flex items-center justify-between gap-2"><h5 className="text-xs font-black uppercase tracking-wider text-[#042E7B]">Archivos</h5>{!soloLectura && <label className="cursor-pointer rounded-lg border border-[#1883FF]/30 bg-white px-3 py-2 text-xs font-bold text-[#1883FF] hover:bg-blue-50">{accion === "subir" ? "Subiendo…" : "+ Subir"}<input type="file" multiple disabled={accion !== null} className="hidden" onChange={(event) => { void subir(event.target.files); event.currentTarget.value = ""; }} /></label>}</div>{archivos.length ? <div className="flex flex-wrap gap-3">{archivos.map((archivo, index) => <div key={`${archivo.url}-${index}`} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2"><VistaArchivo archivo={archivo} />{!soloLectura && <button type="button" onClick={() => setArchivos((actuales) => actuales.filter((_, itemIndex) => itemIndex !== index))} className="cursor-pointer px-1 text-lg text-red-500" aria-label={`Quitar ${archivo.nombre}`}>×</button>}</div>)}</div> : <p className="rounded-xl border border-dashed border-slate-200 bg-white p-4 text-center text-xs text-slate-400">Sin archivos.</p>}</div>}
+      {etapa.tipo !== "guion" && (
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h5 className="text-xs font-black uppercase tracking-wider text-[#042E7B]">Archivos</h5>
+            {!soloLectura && (
+              <label className="cursor-pointer rounded-lg border border-[#1883FF]/30 bg-white px-3 py-2 text-xs font-bold text-[#1883FF] hover:bg-blue-50">
+                {accion === "subir" ? "Subiendo…" : "+ Subir"}
+                <input type="file" multiple disabled={accion !== null} className="hidden" onChange={(event) => { void subir(event.target.files); event.currentTarget.value = ""; }} />
+              </label>
+            )}
+          </div>
+
+          {/* Toda la caja es zona de arrastre */}
+          <div
+            onDragOver={soloLectura ? undefined : (event) => { event.preventDefault(); }}
+            onDragEnter={soloLectura ? undefined : (event) => { event.preventDefault(); setArrastrando(true); }}
+            onDragLeave={soloLectura ? undefined : (event) => {
+              // Solo apagar el resaltado al salir de la caja, no al cruzar sus hijos
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setArrastrando(false);
+            }}
+            onDrop={soloLectura ? undefined : (event) => {
+              event.preventDefault();
+              setArrastrando(false);
+              void subir(event.dataTransfer.files);
+            }}
+            className={`rounded-xl border-2 border-dashed p-4 transition ${
+              arrastrando ? "border-[#1883FF] bg-[#EAF2FF]" : "border-slate-200 bg-white"
+            }`}
+          >
+            {archivos.length ? (
+              <div className="flex flex-wrap gap-3">
+                {archivos.map((archivo, index) => (
+                  <div key={`${archivo.url}-${index}`} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
+                    <VistaArchivo archivo={archivo} />
+                    {!soloLectura && (
+                      <button type="button" onClick={() => setArchivos((actuales) => actuales.filter((_, itemIndex) => itemIndex !== index))} className="cursor-pointer px-1 text-lg text-red-500" aria-label={`Quitar ${archivo.nombre}`}>×</button>
+                    )}
+                  </div>
+                ))}
+                {!soloLectura && (
+                  <p className="w-full pt-1 text-center text-[11px] text-slate-400">
+                    {arrastrando ? "Suelta para agregarlos" : "Arrastra más archivos aquí para agregarlos"}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-center text-xs font-semibold text-slate-400">
+                {soloLectura
+                  ? "Sin archivos."
+                  : arrastrando
+                    ? "Suelta aquí tus archivos"
+                    : "Arrastra aquí tus archivos, o usa “+ Subir”"}
+              </p>
+            )}
+            {accion === "subir" && (
+              <p className="pt-2 text-center text-[11px] font-bold text-[#1883FF]">Subiendo…</p>
+            )}
+          </div>
+        </div>
+      )}
       <div className="mt-5"><h5 className="mb-2 text-xs font-black uppercase tracking-wider text-[#042E7B]">Comentarios</h5>{bloque.proyecto_comentarios.length ? <ul className="space-y-2">{bloque.proyecto_comentarios.map((comentario) => <li key={comentario.id} className="rounded-xl border border-slate-200 bg-white p-3"><div className="flex flex-wrap gap-2 text-[10px]"><strong className="text-[#042E7B]">{comentario.autor_nombre}</strong><span className="capitalize text-slate-400">{comentario.autor_rol}</span><time className="text-slate-400">{new Date(comentario.created_at).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}</time></div><p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{comentario.contenido}</p></li>)}</ul> : <p className="text-xs text-slate-400">Sin comentarios.</p>}</div>
       {error && <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
-      {!soloLectura && <div className="mt-5 flex flex-col justify-end gap-2 sm:flex-row">{bloque.estado !== "aprobado" && <button type="button" onClick={() => void guardar(false)} disabled={accion !== null} className="cursor-pointer rounded-xl border border-[#1883FF] bg-white px-4 py-2.5 text-sm font-black text-[#1883FF] disabled:opacity-50">{accion === "guardar" ? "Guardando…" : "Guardar"}</button>}<button type="button" onClick={() => void guardar(true)} disabled={accion !== null} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50"><IconoLinea nombre="enviar" className="h-4 w-4" />{accion === "avisar" ? "Guardando y avisando…" : "Guardar y avisar"}</button></div>}
+      {!soloLectura && (
+        <div className="mt-5 flex flex-col items-end justify-end gap-2 sm:flex-row sm:items-center">
+          {bloque.estado !== "aprobado" && (
+            <button type="button" onClick={() => void guardar(false)} disabled={accion !== null} className="w-full cursor-pointer rounded-xl border border-[#1883FF] bg-white px-4 py-2.5 text-sm font-black text-[#1883FF] disabled:opacity-50 sm:w-auto">
+              {accion === "guardar" ? "Guardando…" : esAdmin ? "Guardar" : "Guardar sin enviar"}
+            </button>
+          )}
+          <button type="button" onClick={() => void guardar(true)} disabled={accion !== null} className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50 sm:w-auto">
+            <IconoLinea nombre="enviar" className="h-4 w-4" />
+            {accion === "avisar"
+              ? "Enviando…"
+              : esAdmin ? "Guardar y avisar al cliente" : "Enviar a revisión"}
+          </button>
+        </div>
+      )}
+      {!soloLectura && !esAdmin && (
+        <p className="mt-2 text-right text-[11px] leading-relaxed text-slate-500">
+          <strong className="text-slate-600">Guardar sin enviar</strong>: sigues trabajando, nadie recibe aviso.{" "}
+          <strong className="text-slate-600">Enviar a revisión</strong>: le avisa a Renato para que lo revise. El cliente no lo ve hasta que él lo apruebe.
+        </p>
+      )}
     </article>
   );
 }
 
-function ModalDetalle({ proyectoId, onClose }: { proyectoId: string; onClose: () => void }) {
+function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
+  proyectoId: string;
+  esAdmin: boolean;
+  autorNombre: string;
+  onClose: () => void;
+}) {
   const [proyecto, setProyecto] = useState<ProyectoDetalle | null>(null);
   const [etapaId, setEtapaId] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [actualizando, setActualizando] = useState(false);
+  const [enviandoCliente, setEnviandoCliente] = useState(false);
+  const [avisoEnvio, setAvisoEnvio] = useState("");
   const [error, setError] = useState("");
 
   const cargar = useCallback(async (mantener?: string | null) => {
@@ -559,6 +676,32 @@ function ModalDetalle({ proyectoId, onClose }: { proyectoId: string; onClose: ()
     return [...etapa.proyecto_bloques].sort((a, b) => (a.escena_id ? orden.get(a.escena_id) ?? 999 : -1) - (b.escena_id ? orden.get(b.escena_id) ?? 999 : -1));
   }, [etapa, proyecto]);
 
+  // Escenas que un colaborador entregó y siguen esperando el visto bueno del admin
+  const porRevisar = useMemo(
+    () => bloques.filter((bloque) => bloque.entrega_estado === "entregado"),
+    [bloques]
+  );
+
+  const enviarAlCliente = async () => {
+    if (!proyecto || !etapa) return;
+    setEnviandoCliente(true); setError(""); setAvisoEnvio("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/${proyecto.id}/etapas/${etapa.id}/enviar-cliente`, { method: "POST" });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo enviar al cliente."));
+      const data = (await response.json()) as { enviados: number; notificado: boolean };
+      setAvisoEnvio(
+        data.notificado
+          ? `Listo: ${data.enviados} escena${data.enviados === 1 ? "" : "s"} al cliente. Ya le llegó el correo.`
+          : `Listo: ${data.enviados} escena${data.enviados === 1 ? "" : "s"} liberada${data.enviados === 1 ? "" : "s"}. El proyecto está en borrador, así que no se mandó correo.`
+      );
+      await cargar(etapaId);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo enviar al cliente.");
+    } finally {
+      setEnviandoCliente(false);
+    }
+  };
+
   const publicar = async () => {
     if (!proyecto) return;
     setActualizando(true); setError("");
@@ -583,7 +726,39 @@ function ModalDetalle({ proyectoId, onClose }: { proyectoId: string; onClose: ()
     <ModalBase onClose={onClose} ancho="max-w-6xl">
       {cargando && !proyecto ? <div className="flex min-h-72 items-center justify-center"><Spinner /></div> : <>
         <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-black text-[#042E7B]">{proyecto?.titulo ?? "Proyecto"}</h2>{proyecto?.folio && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">{proyecto.folio}</span>}{proyecto && <span className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold capitalize text-[#1883FF]"><PuntoEstado color="#1883FF" />{proyecto.estado}</span>}</div>{proyecto?.area && <p className="mt-1 text-sm text-slate-500">{proyecto.area}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{proyecto && <button type="button" onClick={() => void publicar()} disabled={actualizando} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FFCC00] px-3.5 py-2 text-xs font-black text-[#042E7B] disabled:opacity-50"><IconoLinea nombre="subir" className="h-4 w-4" />{proyecto.publicado ? "Ocultar" : "Publicar al cliente"}</button>}<button type="button" onClick={() => void eliminar()} disabled={actualizando || !proyecto} className="cursor-pointer rounded-xl border border-red-200 px-3.5 py-2 text-xs font-bold text-red-600 disabled:opacity-50">Eliminar</button><button type="button" onClick={onClose} className="cursor-pointer px-1 text-2xl text-slate-400" aria-label="Cerrar">×</button></div></div>
-        <div className="p-6">{error && <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}{proyecto && <div className="mb-6 flex gap-2 overflow-x-auto pb-1">{proyecto.proyecto_etapas.map((item) => { const ui = ESTADO_ETAPA_UI[item.estado]; const progreso = progresoDe(item); return <button key={item.id} type="button" onClick={() => setEtapaId(item.id)} className={`cursor-pointer whitespace-nowrap rounded-xl border px-3 py-2 text-left transition ${item.estado === "bloqueada" ? "opacity-55" : ""}`} style={{ color: ui.color, backgroundColor: ui.colorSuave, borderColor: item.id === etapaId ? ui.color : `${ui.color}44` }}><span className="flex items-center gap-1.5 text-xs font-black">{item.estado === "bloqueada" && <IconoLinea nombre="bloqueo" className="h-3.5 w-3.5" />}{item.nombre}</span><span className="text-[10px] font-bold">{progreso.total > 0 ? `${progreso.aprobado}/${progreso.total}` : ui.label}</span></button>; })}</div>}{etapa && <section><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-lg font-black text-[#042E7B]">{etapa.nombre}</h3><p className="text-xs text-slate-500">{etapa.modo === "por_escena" ? "Un entregable por escena" : "Un entregable para toda la etapa"}{etapa.estado === "bloqueada" ? " · Solo lectura" : ""}</p></div></div><div className="space-y-4">{bloques.map((bloque) => <TarjetaBloque key={bloque.id} bloque={bloque} etapa={etapa} escena={bloque.escena_id ? escenasPorId.get(bloque.escena_id) ?? null : null} proyectoId={proyectoId} soloLectura={etapa.estado === "bloqueada"} onSaved={() => cargar(etapa.id)} />)}{bloques.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">Esta etapa no tiene bloques activos.</p>}</div></section>}</div>
+        <div className="p-6">{error && <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}{proyecto && <div className="mb-6 flex gap-2 overflow-x-auto pb-1">{proyecto.proyecto_etapas.map((item) => { const ui = ESTADO_ETAPA_UI[item.estado]; const progreso = progresoDe(item); return <button key={item.id} type="button" onClick={() => setEtapaId(item.id)} className={`cursor-pointer whitespace-nowrap rounded-xl border px-3 py-2 text-left transition ${item.estado === "bloqueada" ? "opacity-55" : ""}`} style={{ color: ui.color, backgroundColor: ui.colorSuave, borderColor: item.id === etapaId ? ui.color : `${ui.color}44` }}><span className="flex items-center gap-1.5 text-xs font-black">{item.estado === "bloqueada" && <IconoLinea nombre="bloqueo" className="h-3.5 w-3.5" />}{item.nombre}</span><span className="text-[10px] font-bold">{progreso.total > 0 ? `${progreso.aprobado}/${progreso.total}` : ui.label}</span></button>; })}</div>}{etapa && <section><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-lg font-black text-[#042E7B]">{etapa.nombre}</h3><p className="text-xs text-slate-500">{etapa.modo === "por_escena" ? "Un entregable por escena" : "Un entregable para toda la etapa"}{etapa.estado === "bloqueada" ? " · Solo lectura" : ""}</p></div>
+          {esAdmin && porRevisar.length > 0 && (
+            <button type="button" onClick={() => void enviarAlCliente()} disabled={enviandoCliente} className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50">
+              <IconoLinea nombre="enviar" className="h-4 w-4" />
+              {enviandoCliente ? "Enviando…" : `Enviar al cliente (${porRevisar.length})`}
+            </button>
+          )}
+        </div>
+
+        {/* Cómo funciona esto, para quien entrega */}
+        {!esAdmin && etapa.estado !== "bloqueada" && (
+          <ol className="mb-4 flex flex-col gap-2 rounded-2xl border border-[#1883FF]/25 bg-[#EAF2FF] p-4 text-xs text-[#042E7B] sm:flex-row sm:items-center">
+            {[
+              "Sube tus archivos en la escena",
+              "Aprieta \"Enviar a revisión\"",
+              "Renato lo revisa y se lo manda al cliente",
+            ].map((paso, indice) => (
+              <li key={paso} className="flex flex-1 items-center gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#042E7B] text-[10px] font-black text-white">{indice + 1}</span>
+                <span className="font-bold leading-snug">{paso}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {esAdmin && porRevisar.length > 0 && (
+          <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+            {porRevisar[0].entrega_nombre ?? "Un colaborador"} entregó {porRevisar.length} escena{porRevisar.length === 1 ? "" : "s"} y está esperando tu revisión. El cliente todavía no las ve.
+          </p>
+        )}
+        {avisoEnvio && <p className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">{avisoEnvio}</p>}
+
+        <div className="space-y-4">{bloques.map((bloque) => <TarjetaBloque key={bloque.id} bloque={bloque} etapa={etapa} escena={bloque.escena_id ? escenasPorId.get(bloque.escena_id) ?? null : null} proyectoId={proyectoId} soloLectura={etapa.estado === "bloqueada"} esAdmin={esAdmin} autorNombre={autorNombre} onSaved={() => cargar(etapa.id)} />)}{bloques.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">Esta etapa no tiene bloques activos.</p>}</div></section>}</div>
       </>}
     </ModalBase>
   );
@@ -1383,7 +1558,7 @@ export default function ProyectosPage() {
 
         const { data, error: perfilError } = await supabase
           .from("admin_perfiles")
-          .select("rol, proyectos")
+          .select("rol, proyectos, nombre, usuario")
           .eq("user_id", session.user.id)
           .maybeSingle();
         if (perfilError) throw perfilError;
@@ -1393,8 +1568,9 @@ export default function ProyectosPage() {
           ? {
               esAdmin: data.rol !== "colaborador",
               proyectos: Array.isArray(data.proyectos) ? data.proyectos : [],
+              nombre: data.nombre || data.usuario || "Un colaborador",
             }
-          : { esAdmin: true, proyectos: [] });
+          : { esAdmin: true, proyectos: [], nombre: "Kyoszen" });
       } catch (cause) {
         if (vigente) {
           setErrorAcceso(
@@ -1575,7 +1751,7 @@ export default function ProyectosPage() {
       </div>
       {esAdmin && modal === "manual" && <ModalManual onClose={() => setModal(null)} onCreated={creado} />}
       {esAdmin && modal === "importar" && <ModalImportador onClose={() => setModal(null)} onCreated={creado} />}
-      {proyectoAbierto && (esAdmin || proyectosPermitidos.has(proyectoAbierto)) && <ModalDetalle proyectoId={proyectoAbierto} onClose={cerrarDetalle} />}
+      {proyectoAbierto && (esAdmin || proyectosPermitidos.has(proyectoAbierto)) && <ModalDetalle proyectoId={proyectoAbierto} esAdmin={esAdmin} autorNombre={acceso?.nombre ?? "Kyoszen"} onClose={cerrarDetalle} />}
       {esAdmin && espacioArchivos && <GestorArchivos espacio={espacioArchivos} onClose={() => setEspacioArchivos(null)} onUpdated={cargar} />}
       {esAdmin && espacioTablero && <TableroAdmin espacio={espacioTablero} onClose={() => setEspacioTablero(null)} onUpdated={cargar} />}
     </div>

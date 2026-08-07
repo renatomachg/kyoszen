@@ -27,6 +27,7 @@ async function validarBloque(proyectoId: string, bloqueId: string) {
     .select("id, proyecto_etapas!inner(proyecto_id, proyectos!inner(publicado))")
     .eq("id", bloqueId)
     .eq("es_activa", true)
+    .eq("visible_cliente", true)
     .eq("proyecto_etapas.proyecto_id", proyectoId)
     .eq("proyecto_etapas.proyectos.publicado", true)
     .maybeSingle();
