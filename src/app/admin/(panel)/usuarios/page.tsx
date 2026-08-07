@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Dot, IconUI } from "@/components/ui/IconUI";
 import { ADMIN_SECCIONES } from "@/lib/admin-secciones";
+import { PASSWORD_MINIMO } from "@/lib/admin-usuarios";
 
 type Rol = "admin" | "colaborador";
 
@@ -85,6 +86,8 @@ export default function AdminUsuarios() {
   const [borrando, setBorrando] = useState<string | null>(null);
   const [credenciales, setCredenciales] = useState<Credenciales | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [passwordNueva, setPasswordNueva] = useState("");
+  const [cambiandoPassword, setCambiandoPassword] = useState(false);
 
   const etiquetas = useMemo(
     () =>
@@ -163,6 +166,7 @@ export default function AdminUsuarios() {
     setForm({ ...FORM_VACIO });
     setEditandoId(null);
     setCredenciales(null);
+    setPasswordNueva("");
     setError("");
   };
 
@@ -179,6 +183,7 @@ export default function AdminUsuarios() {
     });
     setEditandoId(usuario.user_id);
     setCredenciales(null);
+    setPasswordNueva("");
     setError("");
   };
 
@@ -200,6 +205,53 @@ export default function AdminUsuarios() {
         : [...actual.proyectos, id];
       return { ...actual, proyectos: elegidos };
     });
+  };
+
+  /** Le pone contraseña nueva a la cuenta abierta y la muestra una sola vez. */
+  const cambiarPassword = async () => {
+    if (!form || !editandoId) return;
+    const elegida = passwordNueva.trim();
+    if (elegida && elegida.length < PASSWORD_MINIMO) {
+      setError(`La contraseña debe tener al menos ${PASSWORD_MINIMO} caracteres.`);
+      return;
+    }
+
+    setCambiandoPassword(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/admin/usuarios/${encodeURIComponent(editandoId)}/password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(elegida ? { password: elegida } : {}),
+        },
+      );
+      const payload = (await response.json()) as {
+        password?: string;
+        usuario?: string | null;
+        email?: string;
+        error?: string;
+      };
+      if (!response.ok || !payload.password) {
+        throw new Error(payload.error ?? "No se pudo cambiar la contraseña.");
+      }
+
+      setCredenciales({
+        identificador: payload.usuario || payload.email || form.usuario || form.email,
+        etiqueta: payload.usuario ? "Usuario" : "Correo",
+        password: payload.password,
+      });
+      setPasswordNueva("");
+      setCopiado(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "No se pudo cambiar la contraseña.",
+      );
+    } finally {
+      setCambiandoPassword(false);
+    }
   };
 
   const guardar = async (event: FormEvent<HTMLFormElement>) => {
@@ -414,7 +466,7 @@ export default function AdminUsuarios() {
             </div>
             <button
               type="button"
-              onClick={() => setForm(null)}
+              onClick={() => { setForm(null); setPasswordNueva(""); }}
               className="text-muted hover:text-navy"
               aria-label="Cerrar formulario"
             >
@@ -650,6 +702,46 @@ export default function AdminUsuarios() {
               </div>
             )}
 
+            {/* Acceso: la única forma de recuperar la cuenta si olvida su contraseña */}
+            {editandoId && (
+              <div className="border border-border rounded-xl p-4 bg-slate-50">
+                <p className="text-[13px] font-black text-navy mb-1">Acceso</p>
+                <p className="text-xs text-muted leading-relaxed mb-3">
+                  Entra en <span className="font-semibold text-navy">kyoszen.com/admin/login</span> escribiendo
+                  su usuario <span className="font-mono font-semibold text-navy">{form.usuario || form.email}</span> y su contraseña.
+                  {form.email.endsWith("@acceso.kyoszen.com") && (
+                    <> Ese correo es solo un identificador interno: no recibe mensajes, así que no puede recuperar
+                    su contraseña sola. Si la olvida, cámbiasela aquí.</>
+                  )}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    value={passwordNueva}
+                    onChange={(event) => setPasswordNueva(event.target.value)}
+                    placeholder={`Contraseña nueva (mín. ${PASSWORD_MINIMO}), o déjalo vacío`}
+                    className={`${field} sm:w-72`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void cambiarPassword()}
+                    disabled={cambiandoPassword}
+                    className="inline-flex items-center gap-2 border border-navy text-navy rounded-xl px-4 py-2.5 text-sm font-bold hover:bg-navy hover:text-white transition-colors disabled:opacity-60"
+                  >
+                    <IconUI name="key" size={14} />
+                    {cambiandoPassword
+                      ? "Cambiando…"
+                      : passwordNueva.trim()
+                        ? "Cambiar contraseña"
+                        : "Generar contraseña nueva"}
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted mt-2">
+                  Se muestra una sola vez arriba, para que se la pases. La anterior deja de servir de inmediato.
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-1">
               <button
                 type="submit"
@@ -665,7 +757,7 @@ export default function AdminUsuarios() {
               </button>
               <button
                 type="button"
-                onClick={() => setForm(null)}
+                onClick={() => { setForm(null); setPasswordNueva(""); }}
                 className="border border-border rounded-xl px-6 py-2.5 text-sm font-semibold text-muted hover:text-navy"
               >
                 Cancelar

@@ -1,9 +1,13 @@
-import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 import { ADMIN_SECCION_KEYS } from "@/lib/admin-secciones";
-import { correoInterno, sanitizarUsuario } from "@/lib/admin-usuarios";
+import {
+  PASSWORD_MINIMO,
+  correoInterno,
+  generarPasswordTemporal,
+  sanitizarUsuario,
+} from "@/lib/admin-usuarios";
 
 export const runtime = "nodejs";
 
@@ -40,11 +44,6 @@ function validarProyectos(valor: unknown): string[] | null {
   }
 
   return [...new Set(valor)];
-}
-
-function generarPasswordTemporal(): string {
-  const codigo = randomBytes(4).toString("hex");
-  return `Kyoszen-${codigo}!`;
 }
 
 function esErrorDuplicado(message: string): boolean {
@@ -131,9 +130,9 @@ export async function POST(req: NextRequest) {
 
     const passwordSolicitado =
       typeof body.password === "string" ? body.password.trim() : "";
-    if (passwordSolicitado && passwordSolicitado.length < 6) {
+    if (passwordSolicitado && passwordSolicitado.length < PASSWORD_MINIMO) {
       return NextResponse.json(
-        { error: "La contraseña debe tener al menos 6 caracteres." },
+        { error: `La contraseña debe tener al menos ${PASSWORD_MINIMO} caracteres.` },
         { status: 400 },
       );
     }
