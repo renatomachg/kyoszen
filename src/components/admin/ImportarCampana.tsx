@@ -443,14 +443,30 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
                     )}
                     <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 11.5, color: C.muted, fontWeight: 700 }}>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                        <IconUI name="clipboard" size={13} />{a.formulario?.preguntas?.length ?? 0} preguntas
-                      </span>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                         <IconUI name="mouse-pointer" size={13} />{a.cta || "Registrarte"}
                       </span>
-                      {a.formulario?.pantalla_confirmacion
-                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#166534" }}><IconUI name="check" size={13} />con confirmación</span>
-                        : <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#B45309" }}><IconUI name="x" size={13} />sin confirmación</span>}
+                      {(() => {
+                        const preguntas = a.formulario?.preguntas?.length ?? 0;
+                        const confirmacion = !!a.formulario?.pantalla_confirmacion?.trim();
+                        // Sin preguntas ni confirmación = campaña de alcance, no es un faltante
+                        if (preguntas === 0 && !confirmacion) {
+                          return (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                              <IconUI name="image" size={13} />Sin formulario (solo el anuncio)
+                            </span>
+                          );
+                        }
+                        return (
+                          <>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                              <IconUI name="clipboard" size={13} />{preguntas} preguntas
+                            </span>
+                            {confirmacion
+                              ? <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#166534" }}><IconUI name="check" size={13} />con confirmación</span>
+                              : <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#B45309" }}><IconUI name="x" size={13} />falta la confirmación</span>}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

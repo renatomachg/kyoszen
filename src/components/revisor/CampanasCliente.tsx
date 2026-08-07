@@ -8,6 +8,7 @@ import {
   ESTADOS_CAMPANA,
   flujoDeCampana,
   statsAnuncios,
+  tieneFormulario,
   type Campana,
   type CampanaAnuncio,
   type CampanaComentario,
@@ -266,6 +267,7 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
   onStatusChange: (anuncioId: number, estado: EstadoCampana, comentario?: CampanaComentario) => void;
 }) {
   const [vista, setVista] = useState<"anuncio" | "formulario">("anuncio");
+  const conFormulario = tieneFormulario(anuncio);
   const [estado, setEstado] = useState<EstadoCampana>(anuncio.estado);
   const [comments, setComments] = useState<CampanaComentario[]>(anuncio.campana_comentarios ?? []);
   const [guardando, setGuardando] = useState(false);
@@ -358,24 +360,42 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
         <div className="camp-modal-cols">
           {/* Izquierda: anuncio / formulario */}
           <div style={{ padding: 24 }}>
-            <div style={{ display: "flex", gap: 3, background: C.wash, border: `1px solid ${C.hair}`, borderRadius: 10, padding: 3, marginBottom: 16 }}>
-              {([
-                ["anuncio", "Lo que ve en Facebook", "image"],
-                ["formulario", "Lo que llena", "clipboard"],
-              ] as const).map(([k, label, icono]) => (
-                <button key={k} onClick={() => setVista(k)}
-                  style={{ flex: 1, padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 800,
-                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
-                    background: vista === k ? "#fff" : "transparent", color: vista === k ? C.navy : C.muted,
-                    boxShadow: vista === k ? "0 1px 3px rgba(4,46,123,.12)" : "none" }}>
-                  <IconUI name={icono as IconUIName} size={14} />{label}
-                </button>
-              ))}
-            </div>
+            {conFormulario ? (
+              <div style={{ display: "flex", gap: 3, background: C.wash, border: `1px solid ${C.hair}`, borderRadius: 10, padding: 3, marginBottom: 16 }}>
+                {([
+                  ["anuncio", "Lo que ve en Facebook", "image"],
+                  ["formulario", "Lo que llena", "clipboard"],
+                ] as const).map(([k, label, icono]) => (
+                  <button key={k} onClick={() => setVista(k)}
+                    style={{ flex: 1, padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 800,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+                      background: vista === k ? "#fff" : "transparent", color: vista === k ? C.navy : C.muted,
+                      boxShadow: vista === k ? "0 1px 3px rgba(4,46,123,.12)" : "none" }}>
+                    <IconUI name={icono as IconUIName} size={14} />{label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: ".06em" }}>
+                Así se va a ver en Facebook
+              </p>
+            )}
 
-            {vista === "anuncio"
-              ? <AnuncioMockup anuncio={anuncio} config={config} plataforma={campana.plataforma} />
-              : <FormularioSimulado anuncio={anuncio} config={config} />}
+            {conFormulario && vista === "formulario"
+              ? <FormularioSimulado anuncio={anuncio} config={config} />
+              : <AnuncioMockup anuncio={anuncio} config={config} plataforma={campana.plataforma} />}
+
+            {!conFormulario && (
+              <div style={{ marginTop: 14, background: "#F7F9FC", border: `1px solid ${C.hair}`, borderRadius: 12, padding: "13px 15px" }}>
+                <p style={{ margin: "0 0 5px", fontSize: 12.5, fontWeight: 800, color: C.navy }}>
+                  Este anuncio no lleva formulario
+                </p>
+                <p style={{ margin: 0, fontSize: 12.5, color: C.body, lineHeight: 1.55 }}>
+                  La información completa va en la imagen. Quien toca &quot;{anuncio.cta}&quot; llega a la publicación,
+                  donde puede guardarla, compartirla o escribirnos.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Derecha: decisión + comentarios */}
@@ -437,7 +457,9 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
                 ["Título", anuncio.titulo],
                 ["Descripción", anuncio.descripcion],
                 ["Botón", anuncio.cta],
-                ["Preguntas del formulario", String(anuncio.formulario?.preguntas?.length ?? 0)],
+                ["Formulario", conFormulario
+                  ? `${anuncio.formulario?.preguntas?.length ?? 0} preguntas`
+                  : "Sin formulario"],
               ].map(([k, v]) => (
                 <div key={k} style={{ display: "flex", gap: 10, padding: "4px 0", fontSize: 12.5 }}>
                   <span style={{ color: C.muted, minWidth: 118, flexShrink: 0 }}>{k}</span>
@@ -507,9 +529,11 @@ function AnuncioCard({ anuncio, onOpen }: { anuncio: CampanaAnuncio; onOpen: () 
           <p style={{ margin: "0 0 10px", fontSize: 12.5, color: C.body, lineHeight: 1.45 }}>{anuncio.titulo}</p>
         )}
         <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: C.muted, fontWeight: 700 }}>
-            <IconUI name="clipboard" size={13} />{anuncio.formulario?.preguntas?.length ?? 0} preguntas
-          </span>
+          {(anuncio.formulario?.preguntas?.length ?? 0) > 0 && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: C.muted, fontWeight: 700 }}>
+              <IconUI name="clipboard" size={13} />{anuncio.formulario!.preguntas.length} preguntas
+            </span>
+          )}
           {numComentarios > 0 && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: C.muted, fontWeight: 700 }}>
               <IconUI name="comment" size={13} />{numComentarios}
@@ -536,6 +560,7 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
   const anuncios = campana.campana_anuncios ?? [];
   const stats = statsAnuncios(anuncios);
   const flujo = flujoDeCampana(campana);
+  const hayFormularios = anuncios.some(tieneFormulario);
   const seg = campana.segmentacion ?? {};
   const red = getRedSocial(campana.plataforma);
 
@@ -670,7 +695,8 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
           </div>
         </div>
         <p style={{ margin: "0 0 14px", fontSize: 13, color: C.muted }}>
-          Cada anuncio se aprueba por separado. Ábrelo para ver el arte, el texto y el formulario que llena el candidato.
+          Cada anuncio se aprueba por separado. Ábrelo para ver el arte, el texto
+          {hayFormularios ? " y el formulario que llena el candidato" : " y cómo se va a ver publicado"}.
         </p>
 
         {anuncios.length === 0 ? (
@@ -688,8 +714,10 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
 
         {red.nombre && (
           <p style={{ margin: "16px 0 0", fontSize: 11.5, color: C.faint, lineHeight: 1.6 }}>
-            Los anuncios se publican desde la página de {red.nombre} de Kyoszen. Los registros llegan directo a nuestro equipo
-            para contactarlos y confirmarles la cita.
+            Los anuncios se publican desde la página de {red.nombre} de Kyoszen.{" "}
+            {hayFormularios
+              ? "Los registros llegan directo a nuestro equipo para contactarlos y confirmarles la cita."
+              : "Esta campaña busca alcance: lleva la vacante a más gente de la zona, y el candidato se presenta directo al reclutamiento."}
           </p>
         )}
       </div>

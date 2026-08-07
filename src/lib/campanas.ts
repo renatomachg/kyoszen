@@ -94,24 +94,63 @@ export function rollupCampana(anuncios: { estado: EstadoCampana }[]): EstadoCamp
   return "pendiente";
 }
 
+/** Un anuncio lleva formulario solo si tiene preguntas o pantalla de confirmación.
+    Las campañas de alcance no llevan: el candidato solo ve el anuncio. */
+export function tieneFormulario(anuncio: Pick<CampanaAnuncio, "formulario">): boolean {
+  const f = anuncio.formulario;
+  return (f?.preguntas?.length ?? 0) > 0 || !!f?.pantalla_confirmacion?.trim();
+}
+
 /** Pasos del recorrido del candidato. Si la campaña no trae un flujo propio,
-    se arma uno estándar con sus datos reales (preguntas, fechas, sede). */
+    se arma uno con sus datos reales, distinto según lleve formulario o no. */
 export function flujoDeCampana(campana: Campana): PasoFlujo[] {
   if (campana.flujo && campana.flujo.length > 0) return campana.flujo;
 
   const anuncios = campana.campana_anuncios ?? [];
-  const numPreguntas = anuncios[0]?.formulario?.preguntas?.length ?? 0;
+  const conFormulario = anuncios.filter(tieneFormulario);
+  const numPreguntas = conFormulario[0]?.formulario?.preguntas?.length ?? 0;
   const cta = anuncios[0]?.cta ?? "Registrarte";
   const red = campana.plataforma === "facebook" ? "Facebook" : campana.plataforma;
 
+  const verAnuncio: PasoFlujo = {
+    titulo: `Ve el anuncio en ${red}`,
+    detalle: campana.segmentacion?.ubicaciones?.length
+      ? `Le aparece a quien vive en ${campana.segmentacion.ubicaciones.join(", ")}.`
+      : "Le aparece al público segmentado de la campaña.",
+    icono: "users",
+  };
+
+  const llegaAlReclutamiento: PasoFlujo = {
+    titulo: "Se presenta al reclutamiento",
+    detalle: campana.sede_texto ?? "Llega a la sede con su documentación completa.",
+    icono: "location",
+  };
+
+  // Campaña de alcance: no hay formulario, la información vive en el anuncio
+  if (conFormulario.length === 0) {
+    return [
+      verAnuncio,
+      {
+        titulo: "Lee la vacante en la imagen",
+        detalle: "El sueldo, el puesto y las fechas del reclutamiento van en el arte del anuncio.",
+        icono: "clipboard",
+      },
+      {
+        titulo: `Toca "${cta}"`,
+        detalle: "Llega a la publicación completa, donde puede guardarla, compartirla o escribirnos.",
+        icono: "mouse-pointer",
+      },
+      {
+        ...llegaAlReclutamiento,
+        detalle: campana.fechas_reclutamiento
+          ? `${campana.fechas_reclutamiento}. ${campana.sede_texto ?? ""}`.trim()
+          : llegaAlReclutamiento.detalle,
+      },
+    ];
+  }
+
   return [
-    {
-      titulo: `Ve el anuncio en ${red}`,
-      detalle: campana.segmentacion?.ubicaciones?.length
-        ? `Le aparece a quien vive en ${campana.segmentacion.ubicaciones.join(", ")}.`
-        : "Le aparece al público segmentado de la campaña.",
-      icono: "users",
-    },
+    verAnuncio,
     {
       titulo: `Toca "${cta}"`,
       detalle: "El formulario se abre dentro de Facebook. No sale de la app ni tiene que descargar nada.",
@@ -129,11 +168,7 @@ export function flujoDeCampana(campana: Campana): PasoFlujo[] {
         : "Al terminar ve la cita, la dirección y los documentos que debe llevar.",
       icono: "check",
     },
-    {
-      titulo: "Se presenta al reclutamiento",
-      detalle: campana.sede_texto ?? "Llega a la sede con su documentación completa.",
-      icono: "location",
-    },
+    llegaAlReclutamiento,
   ];
 }
 
