@@ -9,6 +9,29 @@ export const ESTADOS_CAMPANA: Record<EstadoCampana, { label: string; bg: string;
   cambios:   { label: "Cambios solicitados", bg: "#FEE2E2", color: "#991B1B", dot: "#EF4444" },
 };
 
+/** Cómo se le presenta la campaña al cliente.
+ *  - `revision`: la aprueba anuncio por anuncio antes de salir al aire.
+ *  - `en_curso`: ya está corriendo en Meta. Solo la ve; si quiere, comenta. */
+export type ModoCampana = "revision" | "en_curso";
+
+export const MODOS_CAMPANA: Record<ModoCampana, { label: string; corto: string; descripcion: string }> = {
+  revision: {
+    label: "Revisión del cliente",
+    corto: "En revisión",
+    descripcion: "El cliente aprueba cada anuncio antes de que salga al aire.",
+  },
+  en_curso: {
+    label: "Ya está corriendo",
+    corto: "En curso",
+    descripcion: "La campaña ya está publicada en Meta. El cliente solo la ve y puede dejar comentarios.",
+  },
+};
+
+/** true cuando la campaña ya está al aire y no se le pide aprobación al cliente. */
+export function esEnCurso(campana: Pick<Campana, "modo">): boolean {
+  return campana.modo === "en_curso";
+}
+
 export type TipoPregunta = "opcion" | "texto" | "telefono" | "numero";
 
 export interface PreguntaFormulario {
@@ -79,6 +102,7 @@ export interface Campana {
   /** Solo admin — nunca se envía al revisor. */
   nota_interna?: string | null;
   estado: EstadoCampana;
+  modo: ModoCampana;
   publicado: boolean;
   orden: number;
   created_at: string;

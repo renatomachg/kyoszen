@@ -22,16 +22,23 @@ export async function PATCH(
   // El anuncio tiene que existir y pertenecer a una campaña publicada
   const { data: anuncio, error: errAnuncio } = await sb
     .from("campana_anuncios")
-    .select("id, puesto, campana_id, campanas(nombre, publicado)")
+    .select("id, puesto, campana_id, campanas(nombre, publicado, modo)")
     .eq("id", id)
     .maybeSingle();
 
   if (errAnuncio) return NextResponse.json({ error: errAnuncio.message }, { status: 500 });
   if (!anuncio) return NextResponse.json({ error: "Anuncio no encontrado" }, { status: 404 });
 
-  const campana = anuncio.campanas as unknown as { nombre: string; publicado: boolean } | null;
+  const campana = anuncio.campanas as unknown as { nombre: string; publicado: boolean; modo: string } | null;
   if (!campana?.publicado) {
     return NextResponse.json({ error: "Esta campaña aún no está disponible" }, { status: 403 });
+  }
+  // Campaña ya corriendo: es informativa, no se aprueba ni se piden cambios
+  if (campana.modo === "en_curso") {
+    return NextResponse.json(
+      { error: "Esta campaña ya está al aire: no requiere aprobación" },
+      { status: 409 }
+    );
   }
 
   const { error } = await sb

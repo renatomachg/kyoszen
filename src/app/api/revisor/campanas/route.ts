@@ -13,7 +13,7 @@ export async function GET() {
     .select(`
       id, nombre, cliente_final, plataforma, tipo, objetivo, publica_desde,
       segmentacion, presupuesto_texto, fecha_difusion, fechas_reclutamiento,
-      meta_texto, sede_texto, flujo, estado, publicado, orden, created_at,
+      meta_texto, sede_texto, flujo, estado, modo, publicado, orden, created_at,
       campana_anuncios(
         id, campana_id, puesto, imagen_url, texto_principal, titulo, descripcion,
         cta, formulario, estado, orden,

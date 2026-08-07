@@ -6,6 +6,7 @@ import { RedLogo } from "@/components/RedLogo";
 import { getRedSocial } from "@/lib/redes-sociales";
 import {
   ESTADOS_CAMPANA,
+  esEnCurso,
   flujoDeCampana,
   statsAnuncios,
   tieneFormulario,
@@ -68,6 +69,20 @@ function PillEstado({ estado, size = "md" }: { estado: EstadoCampana; size?: "sm
     }}>
       <span style={{ width: s ? 6 : 7, height: s ? 6 : 7, borderRadius: "50%", background: e.dot }} />
       {e.label}
+    </span>
+  );
+}
+
+/* ─── Distintivo de campaña que ya está corriendo ─────── */
+function PillAlAire({ size = "md" }: { size?: "sm" | "md" }) {
+  const s = size === "sm";
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6, background: "#DCFCE7", color: "#166534",
+      borderRadius: 50, padding: s ? "4px 10px" : "6px 13px", fontSize: s ? 11 : 12, fontWeight: 800,
+    }}>
+      <span style={{ width: s ? 6 : 7, height: s ? 6 : 7, borderRadius: "50%", background: "#22C55E" }} />
+      Al aire
     </span>
   );
 }
@@ -268,11 +283,14 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
 }) {
   const [vista, setVista] = useState<"anuncio" | "formulario">("anuncio");
   const conFormulario = tieneFormulario(anuncio);
+  const enCurso = esEnCurso(campana);
   const [estado, setEstado] = useState<EstadoCampana>(anuncio.estado);
   const [comments, setComments] = useState<CampanaComentario[]>(anuncio.campana_comentarios ?? []);
   const [guardando, setGuardando] = useState(false);
   const [showCambios, setShowCambios] = useState(false);
   const [cambiosTexto, setCambiosTexto] = useState("");
+  const [comentarioTexto, setComentarioTexto] = useState("");
+  const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const aprobar = async () => {
@@ -328,6 +346,31 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
     }
   };
 
+  /* Campaña ya corriendo: el comentario es opcional y no cambia ningún estado. */
+  const enviarComentario = async () => {
+    const texto = comentarioTexto.trim();
+    if (!texto) return;
+    setGuardando(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/revisor/campanas/anuncios/${anuncio.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autor_nombre: userName, autor_rol: "cliente", contenido: texto }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "No se pudo enviar");
+      const nuevo: CampanaComentario = await res.json();
+      setComments(prev => [...prev, nuevo]);
+      onStatusChange(anuncio.id, anuncio.estado, nuevo);
+      setComentarioTexto("");
+      setEnviado(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo enviar");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   const est = ESTADOS_CAMPANA[estado];
 
   return (
@@ -348,8 +391,10 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ color: "#fff", fontSize: 16, fontWeight: 900 }}>{anuncio.puesto}</span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: est.dot }} />
-                <span style={{ color: "rgba(255,255,255,.85)", fontSize: 12.5, fontWeight: 700 }}>{est.label}</span>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: enCurso ? "#22C55E" : est.dot }} />
+                <span style={{ color: "rgba(255,255,255,.85)", fontSize: 12.5, fontWeight: 700 }}>
+                  {enCurso ? "Publicado en Facebook" : est.label}
+                </span>
               </span>
             </div>
           </div>
@@ -377,7 +422,7 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
               </div>
             ) : (
               <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: ".06em" }}>
-                Así se va a ver en Facebook
+                {enCurso ? "Así se está viendo en Facebook" : "Así se va a ver en Facebook"}
               </p>
             )}
 
@@ -400,6 +445,43 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
 
           {/* Derecha: decisión + comentarios */}
           <div className="camp-modal-der" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
+            {enCurso ? (
+              /* Campaña al aire: nada que aprobar, solo comentar si quiere */
+              <div>
+                <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 14, padding: "13px 15px", marginBottom: 14 }}>
+                  <p style={{ margin: "0 0 5px", fontSize: 12.5, fontWeight: 800, color: "#166534", display: "flex", alignItems: "center", gap: 7 }}>
+                    <IconUI name="check" size={15} /> Este anuncio ya está corriendo
+                  </p>
+                  <p style={{ margin: 0, fontSize: 12.5, color: "#15803D", lineHeight: 1.55 }}>
+                    No necesitas aprobar nada. Te lo mostramos para que veas exactamente qué está saliendo publicado.
+                  </p>
+                </div>
+
+                <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 800, color: C.navy }}>
+                  ¿Nos quieres dejar un comentario?
+                </p>
+                <p style={{ margin: "0 0 10px", fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
+                  Opcional. Si ves algo que quieras ajustar para la próxima campaña, escríbelo aquí y nos llega directo.
+                </p>
+                <textarea value={comentarioTexto} onChange={e => { setComentarioTexto(e.target.value); setEnviado(false); }} rows={4}
+                  placeholder="Ej: para la siguiente, subamos el sueldo del anuncio de Vigilante."
+                  style={{ width: "100%", border: `1.5px solid ${C.hair}`, borderRadius: 10, padding: "10px 12px", fontSize: 13, resize: "none", outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box", marginBottom: 10 }} />
+                <button onClick={enviarComentario} disabled={!comentarioTexto.trim() || guardando}
+                  style={{ width: "100%", padding: "12px 0", borderRadius: 12, border: "none", background: C.navy, color: "#fff", fontSize: 13.5, fontWeight: 800,
+                    cursor: !comentarioTexto.trim() || guardando ? "default" : "pointer", opacity: !comentarioTexto.trim() || guardando ? 0.5 : 1,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <IconUI name="send" size={15} />{guardando ? "Enviando..." : "Enviar comentario"}
+                </button>
+                {enviado && (
+                  <p style={{ margin: "10px 0 0", fontSize: 12.5, color: "#166534", fontWeight: 700 }}>
+                    Listo, tu comentario ya nos llegó.
+                  </p>
+                )}
+                {error && (
+                  <p style={{ margin: "10px 0 0", fontSize: 12.5, color: "#B91C1C", fontWeight: 700 }}>{error}</p>
+                )}
+              </div>
+            ) : (
             <div>
               <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 800, color: C.navy }}>
                 ¿Apruebas este anuncio?
@@ -447,6 +529,7 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
                 <p style={{ margin: "10px 0 0", fontSize: 12.5, color: "#B91C1C", fontWeight: 700 }}>{error}</p>
               )}
             </div>
+            )}
 
             {/* Ficha rápida del anuncio */}
             <div style={{ background: "#F7F9FC", border: `1px solid ${C.hair}`, borderRadius: 12, padding: "13px 15px" }}>
@@ -501,8 +584,10 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
 }
 
 /* ─── Tarjeta de anuncio ──────────────────────────────── */
-function AnuncioCard({ anuncio, onOpen }: { anuncio: CampanaAnuncio; onOpen: () => void }) {
-  const est = ESTADOS_CAMPANA[anuncio.estado];
+function AnuncioCard({ anuncio, enCurso, onOpen }: { anuncio: CampanaAnuncio; enCurso: boolean; onOpen: () => void }) {
+  const est = enCurso
+    ? { label: "Al aire", bg: "#DCFCE7", color: "#166534", dot: "#22C55E" }
+    : ESTADOS_CAMPANA[anuncio.estado];
   const numComentarios = anuncio.campana_comentarios?.length ?? 0;
 
   return (
@@ -540,7 +625,7 @@ function AnuncioCard({ anuncio, onOpen }: { anuncio: CampanaAnuncio; onOpen: () 
             </span>
           )}
           <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: C.blueDark, display: "inline-flex", alignItems: "center", gap: 4 }}>
-            Revisar <IconUI name="chevron-right" size={13} />
+            {enCurso ? "Ver" : "Revisar"} <IconUI name="chevron-right" size={13} />
           </span>
         </div>
       </div>
@@ -558,6 +643,7 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
 }) {
   const [abierto, setAbierto] = useState<CampanaAnuncio | null>(null);
   const anuncios = campana.campana_anuncios ?? [];
+  const enCurso = esEnCurso(campana);
   const stats = statsAnuncios(anuncios);
   const flujo = flujoDeCampana(campana);
   const hayFormularios = anuncios.some(tieneFormulario);
@@ -597,26 +683,46 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
             )}
           </div>
 
-          {/* Progreso de aprobación */}
-          <div style={{ background: "rgba(255,255,255,.1)", borderRadius: 14, padding: "12px 16px", minWidth: 180 }}>
-            <p style={{ margin: "0 0 8px", fontSize: 10.5, fontWeight: 800, color: "rgba(255,255,255,.55)", textTransform: "uppercase", letterSpacing: ".06em" }}>
-              Avance de tu revisión
-            </p>
-            <p style={{ margin: "0 0 9px", fontSize: 19, fontWeight: 900 }}>
-              {stats.aprobados} <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.6)" }}>de {stats.total} aprobados</span>
-            </p>
-            <div style={{ height: 6, borderRadius: 50, background: "rgba(255,255,255,.18)", overflow: "hidden" }}>
-              <div style={{ width: `${stats.total ? (stats.aprobados / stats.total) * 100 : 0}%`, height: "100%", background: "#FFCC00", borderRadius: 50, transition: "width .3s" }} />
+          {/* Estado: campaña al aire, o avance de la revisión */}
+          {enCurso ? (
+            <div style={{ background: "rgba(34,197,94,.16)", border: "1px solid rgba(134,239,172,.4)", borderRadius: 14, padding: "12px 16px", minWidth: 190 }}>
+              <p style={{ margin: "0 0 7px", fontSize: 10.5, fontWeight: 800, color: "rgba(255,255,255,.6)", textTransform: "uppercase", letterSpacing: ".06em" }}>
+                Estado de la campaña
+              </p>
+              <p style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 900, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#4ADE80", flexShrink: 0 }} />
+                Corriendo en Facebook
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,.7)", lineHeight: 1.5 }}>
+                {stats.total} anuncio{stats.total === 1 ? "" : "s"} publicado{stats.total === 1 ? "" : "s"}
+                {campana.fecha_difusion ? ` · ${campana.fecha_difusion}` : ""}
+              </p>
             </div>
-          </div>
+          ) : (
+            <div style={{ background: "rgba(255,255,255,.1)", borderRadius: 14, padding: "12px 16px", minWidth: 180 }}>
+              <p style={{ margin: "0 0 8px", fontSize: 10.5, fontWeight: 800, color: "rgba(255,255,255,.55)", textTransform: "uppercase", letterSpacing: ".06em" }}>
+                Avance de tu revisión
+              </p>
+              <p style={{ margin: "0 0 9px", fontSize: 19, fontWeight: 900 }}>
+                {stats.aprobados} <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.6)" }}>de {stats.total} aprobados</span>
+              </p>
+              <div style={{ height: 6, borderRadius: 50, background: "rgba(255,255,255,.18)", overflow: "hidden" }}>
+                <div style={{ width: `${stats.total ? (stats.aprobados / stats.total) * 100 : 0}%`, height: "100%", background: "#FFCC00", borderRadius: 50, transition: "width .3s" }} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* A quién le llega */}
       <div style={{ marginBottom: 24 }}>
-        <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 900, color: C.navy }}>A quién le va a llegar</h3>
+        <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 900, color: C.navy }}>
+          {enCurso ? "A quién le está llegando" : "A quién le va a llegar"}
+        </h3>
         <p style={{ margin: "0 0 14px", fontSize: 13, color: C.muted }}>
-          Así queda configurada la campaña antes de salir al aire.
+          {enCurso
+            ? "Así quedó configurada la campaña que está corriendo."
+            : "Así queda configurada la campaña antes de salir al aire."}
         </p>
         <div className="camp-datos">
           <Dato icono="location" label="Zonas">
@@ -686,17 +792,33 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
       <div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: C.navy }}>
-            Los anuncios ({anuncios.length})
+            {enCurso ? `Los anuncios al aire (${anuncios.length})` : `Los anuncios (${anuncios.length})`}
           </h3>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {stats.pendientes > 0 && <PillEstado estado="pendiente" size="sm" />}
-            {stats.cambios > 0 && <PillEstado estado="cambios" size="sm" />}
-            {stats.total > 0 && stats.aprobados === stats.total && <PillEstado estado="aprobado" size="sm" />}
+            {enCurso ? (
+              anuncios.length > 0 && <PillAlAire size="sm" />
+            ) : (
+              <>
+                {stats.pendientes > 0 && <PillEstado estado="pendiente" size="sm" />}
+                {stats.cambios > 0 && <PillEstado estado="cambios" size="sm" />}
+                {stats.total > 0 && stats.aprobados === stats.total && <PillEstado estado="aprobado" size="sm" />}
+              </>
+            )}
           </div>
         </div>
         <p style={{ margin: "0 0 14px", fontSize: 13, color: C.muted }}>
-          Cada anuncio se aprueba por separado. Ábrelo para ver el arte, el texto
-          {hayFormularios ? " y el formulario que llena el candidato" : " y cómo se va a ver publicado"}.
+          {enCurso ? (
+            <>
+              Ábrelos para ver exactamente el arte, el texto
+              {hayFormularios ? " y el formulario que llena el candidato" : " y cómo se ven publicados"}.
+              No hay nada que aprobar: si quieres, déjanos un comentario dentro de cada uno.
+            </>
+          ) : (
+            <>
+              Cada anuncio se aprueba por separado. Ábrelo para ver el arte, el texto
+              {hayFormularios ? " y el formulario que llena el candidato" : " y cómo se va a ver publicado"}.
+            </>
+          )}
         </p>
 
         {anuncios.length === 0 ? (
@@ -707,7 +829,7 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
         ) : (
           <div className="camp-anuncios">
             {anuncios.map(a => (
-              <AnuncioCard key={a.id} anuncio={a} onOpen={() => setAbierto(a)} />
+              <AnuncioCard key={a.id} anuncio={a} enCurso={enCurso} onOpen={() => setAbierto(a)} />
             ))}
           </div>
         )}
@@ -812,17 +934,20 @@ export default function CampanasCliente({ userName, config }: { userName: string
         <div>
           <h2 style={{ margin: "0 0 3px", fontSize: 20, fontWeight: 900, color: C.navy }}>Campañas</h2>
           <p style={{ margin: "0 0 18px", fontSize: 13.5, color: C.muted }}>
-            Anuncios pagados en redes. Entra a una campaña para ver a quién le llega y aprobar cada anuncio.
+            {campanas.every(esEnCurso)
+              ? "Anuncios pagados en redes. Entra a una campaña para ver a quién le llega y cómo se están viendo los anuncios."
+              : "Anuncios pagados en redes. Entra a una campaña para ver a quién le llega y aprobar cada anuncio."}
           </p>
           <div className="camp-anuncios">
             {campanas.map(c => {
               const st = statsAnuncios(c.campana_anuncios ?? []);
+              const cEnCurso = esEnCurso(c);
               return (
                 <button key={c.id} onClick={() => setSeleccionada(c.id)}
                   style={{ textAlign: "left", background: "#fff", border: `1px solid ${C.hair}`, borderRadius: 16, padding: "18px 20px", cursor: "pointer", boxShadow: "0 1px 3px rgba(4,46,123,.05)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <RedLogo red_social={c.plataforma} height={11} />
-                    <PillEstado estado={c.estado} size="sm" />
+                    {cEnCurso ? <PillAlAire size="sm" /> : <PillEstado estado={c.estado} size="sm" />}
                   </div>
                   <p style={{ margin: "0 0 4px", fontSize: 15.5, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>{c.nombre}</p>
                   {c.cliente_final && <p style={{ margin: "0 0 12px", fontSize: 12.5, color: C.muted }}>{c.cliente_final}</p>}
@@ -830,9 +955,17 @@ export default function CampanasCliente({ userName, config }: { userName: string
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                       <IconUI name="image" size={13} />{st.total} anuncios
                     </span>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                      <IconUI name="check" size={13} />{st.aprobados} aprobados
-                    </span>
+                    {cEnCurso ? (
+                      c.fecha_difusion && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          <IconUI name="calendar" size={13} />{c.fecha_difusion}
+                        </span>
+                      )
+                    ) : (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        <IconUI name="check" size={13} />{st.aprobados} aprobados
+                      </span>
+                    )}
                     <span style={{ marginLeft: "auto", color: C.blueDark, display: "inline-flex", alignItems: "center", gap: 4 }}>
                       Abrir <IconUI name="chevron-right" size={13} />
                     </span>

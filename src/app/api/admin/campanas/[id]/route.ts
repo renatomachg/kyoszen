@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { notificarRevisoresCampanaPublicada } from "@/lib/campanas-notify";
+import type { ModoCampana } from "@/lib/campanas";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,7 +11,7 @@ const sb = createClient(
 const CAMPOS_EDITABLES = [
   "nombre", "cliente_final", "plataforma", "tipo", "objetivo", "publica_desde",
   "segmentacion", "presupuesto_texto", "fecha_difusion", "fechas_reclutamiento",
-  "meta_texto", "sede_texto", "flujo", "nota_interna", "publicado", "orden",
+  "meta_texto", "sede_texto", "flujo", "nota_interna", "modo", "publicado", "orden",
 ] as const;
 
 export async function PATCH(
@@ -27,7 +28,7 @@ export async function PATCH(
 
   const { data: antes } = await sb
     .from("campanas")
-    .select("publicado, nombre")
+    .select("publicado, nombre, modo")
     .eq("id", id)
     .maybeSingle();
 
@@ -42,7 +43,8 @@ export async function PATCH(
       .eq("campana_id", id);
     await notificarRevisoresCampanaPublicada(
       (update.nombre as string) ?? antes.nombre,
-      count ?? 0
+      count ?? 0,
+      ((update.modo as ModoCampana) ?? antes.modo ?? "revision")
     );
   }
 

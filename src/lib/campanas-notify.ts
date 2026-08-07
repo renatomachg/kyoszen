@@ -3,6 +3,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import type { ModoCampana } from "@/lib/campanas";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +32,7 @@ async function getTransport() {
   };
 }
 
-/** El cliente aprobó o pidió cambios en un anuncio → avisar al admin. */
+/** El cliente aprobó, pidió cambios o comentó un anuncio → avisar al admin. */
 export async function notificarAdminAnuncio(
   puesto: string,
   campana: string,
@@ -42,13 +43,20 @@ export async function notificarAdminAnuncio(
   try {
     const t = await getTransport();
     if (!t) return;
-    const label = estado === "aprobado" ? "✅ Aprobado" : "🔴 Cambios solicitados";
+    const label =
+      estado === "aprobado" ? "✅ Aprobado"
+      : estado === "comentario" ? "💬 Nuevo comentario"
+      : "🔴 Cambios solicitados";
+    const cuerpo =
+      estado === "comentario"
+        ? `${revisor} dejó un comentario en el anuncio "${puesto}" de la campaña "${campana}".`
+        : `${revisor} marcó el anuncio "${puesto}" de la campaña "${campana}" como: ${label}.`;
     await t.transport.sendMail({
       from: t.from,
       to: ADMIN_EMAIL,
       subject: `${label} — Anuncio "${puesto}" · ${campana}`,
       text:
-        `${revisor} marcó el anuncio "${puesto}" de la campaña "${campana}" como: ${label}.` +
+        cuerpo +
         (comentario ? `\n\nComentario:\n"${comentario}"` : "") +
         `\n\nRevisa en: https://kyoszen.com/admin/campanas`,
     });
@@ -105,8 +113,13 @@ export async function notificarRevisoresAnuncio(puesto: string, campana: string)
   }
 }
 
-/** El admin publicó una campaña nueva → avisar a los revisores activos. */
-export async function notificarRevisoresCampanaPublicada(campana: string, numAnuncios: number) {
+/** El admin publicó una campaña nueva → avisar a los revisores activos.
+ *  Si la campaña ya está corriendo (`en_curso`) el correo informa, no pide aprobación. */
+export async function notificarRevisoresCampanaPublicada(
+  campana: string,
+  numAnuncios: number,
+  modo: ModoCampana = "revision"
+) {
   try {
     const { data: revisores } = await sb
       .from("social_reviewers")
@@ -117,16 +130,25 @@ export async function notificarRevisoresCampanaPublicada(campana: string, numAnu
     const t = await getTransport();
     if (!t) return;
 
+    const enCurso = modo === "en_curso";
+    const titulo = enCurso ? "Tu campaña ya está al aire" : "Tienes una campaña por revisar";
+    const entrada = enCurso
+      ? "Ya está corriendo en Facebook la campaña:"
+      : "Ya está lista para tu revisión la campaña:";
+    const detalle = enCurso
+      ? `Entra a ver a quién le está llegando, cuánto se invierte, el recorrido del candidato y los ${numAnuncios} anuncio${numAnuncios === 1 ? "" : "s"} tal como se ven publicados. No tienes que aprobar nada: si algo te salta, déjanos un comentario.`
+      : `Vas a ver a quién le llega, cuánto se invierte, el recorrido completo del candidato y ${numAnuncios} anuncio${numAnuncios === 1 ? "" : "s"} para aprobar uno por uno.`;
+
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:32px 16px"><tr><td align="center">
 <table width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;border:1.5px solid #E2E8F0;border-radius:18px;overflow:hidden">
   <tr><td style="background:#042E7B;padding:22px 28px;text-align:center">
-    <h1 style="margin:0;color:#fff;font-size:18px;font-weight:900">Tienes una campaña por revisar</h1>
+    <h1 style="margin:0;color:#fff;font-size:18px;font-weight:900">${titulo}</h1>
   </td></tr>
   <tr><td style="padding:26px 30px;background:#fff">
-    <p style="margin:0 0 14px;font-size:14px;color:#1E293B;line-height:1.6">Ya está lista para tu revisión la campaña:</p>
+    <p style="margin:0 0 14px;font-size:14px;color:#1E293B;line-height:1.6">${entrada}</p>
     <p style="margin:0 0 18px;font-size:15px;font-weight:800;color:#0D55BE;background:#F0F4FF;border-radius:10px;padding:12px 16px">${campana}</p>
-    <p style="margin:0 0 22px;font-size:13.5px;color:#475569;line-height:1.6">Vas a ver a quién le llega, cuánto se invierte, el recorrido completo del candidato y ${numAnuncios} anuncio${numAnuncios === 1 ? "" : "s"} para aprobar uno por uno.</p>
+    <p style="margin:0 0 22px;font-size:13.5px;color:#475569;line-height:1.6">${detalle}</p>
     <table cellpadding="0" cellspacing="0" width="100%"><tr><td align="center">
       <a href="https://kyoszen.com/revisor?tab=campanas" style="display:inline-block;background:#0D55BE;color:#fff;text-decoration:none;padding:14px 38px;border-radius:50px;font-weight:900;font-size:14px">Ver la campaña →</a>
     </td></tr></table>
@@ -141,7 +163,9 @@ export async function notificarRevisoresCampanaPublicada(campana: string, numAnu
         t.transport.sendMail({
           from: t.from,
           to: r.email,
-          subject: `Campaña lista para revisión · ${campana}`,
+          subject: enCurso
+            ? `Campaña al aire · ${campana}`
+            : `Campaña lista para revisión · ${campana}`,
           html,
         })
       )

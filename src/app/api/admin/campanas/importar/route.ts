@@ -196,6 +196,7 @@ export async function POST(req: NextRequest) {
           meta_texto: c.meta_texto || null,
           sede_texto: c.sede_texto || null,
           nota_interna: c.nota_interna || null,
+          modo: c.modo === "en_curso" ? "en_curso" : "revision",
           publicado: false,
         })
         .select("id")

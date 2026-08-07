@@ -7,9 +7,12 @@ import ImportarCampana from "@/components/admin/ImportarCampana";
 import ConfirmModal, { type ConfirmModalProps } from "@/components/ui/ConfirmModal";
 import {
   ESTADOS_CAMPANA,
+  MODOS_CAMPANA,
+  esEnCurso,
   statsAnuncios,
   type Campana,
   type CampanaAnuncio,
+  type ModoCampana,
   type PreguntaFormulario,
   type TipoPregunta,
 } from "@/lib/campanas";
@@ -112,7 +115,7 @@ function PreguntasEditor({ preguntas, onChange }: {
 }
 
 /* ─── Editor de un anuncio ────────────────────────────── */
-function AnuncioEditor({ anuncio, onSaved }: { anuncio: CampanaAnuncio; onSaved: () => void }) {
+function AnuncioEditor({ anuncio, enCurso, onSaved }: { anuncio: CampanaAnuncio; enCurso: boolean; onSaved: () => void }) {
   const [borrador, setBorrador] = useState<CampanaAnuncio>(anuncio);
   const [guardando, setGuardando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
@@ -216,9 +219,15 @@ function AnuncioEditor({ anuncio, onSaved }: { anuncio: CampanaAnuncio; onSaved:
     <div style={{ background: "#fff", border: `1px solid ${C.hair}`, borderRadius: 16, padding: 18, marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
         <h4 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: C.navy }}>{anuncio.puesto}</h4>
-        <span style={{ background: est.bg, color: est.color, borderRadius: 50, padding: "4px 11px", fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot }} />{est.label}
-        </span>
+        {enCurso ? (
+          <span style={{ background: "#DCFCE7", color: "#166534", borderRadius: 50, padding: "4px 11px", fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} />Al aire
+          </span>
+        ) : (
+          <span style={{ background: est.bg, color: est.color, borderRadius: 50, padding: "4px 11px", fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: est.dot }} />{est.label}
+          </span>
+        )}
         {comentarios.length > 0 && (
           <span style={{ fontSize: 11.5, color: C.muted, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5 }}>
             <IconUI name="comment" size={13} />{comentarios.length}
@@ -289,10 +298,17 @@ function AnuncioEditor({ anuncio, onSaved }: { anuncio: CampanaAnuncio; onSaved:
               style={{ background: "#fff", border: `1.5px solid ${C.hair}`, borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 800, color: C.navy, cursor: "pointer" }}>
               {guardando ? "Guardando..." : "Guardar"}
             </button>
-            <button onClick={() => guardar(true)} disabled={guardando}
-              style={{ background: C.yellow, border: "none", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 900, color: C.navy, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
-              <IconUI name="send" size={14} /> Guardar y avisar al cliente
-            </button>
+            {!enCurso && (
+              <button onClick={() => guardar(true)} disabled={guardando}
+                style={{ background: C.yellow, border: "none", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 900, color: C.navy, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
+                <IconUI name="send" size={14} /> Guardar y avisar al cliente
+              </button>
+            )}
+            {enCurso && (
+              <span style={{ fontSize: 12, color: C.faint, lineHeight: 1.5 }}>
+                Esta campaña ya está corriendo: el cliente solo la ve, no se le pide aprobación.
+              </span>
+            )}
             {aviso && <span style={{ fontSize: 12.5, color: C.muted, fontWeight: 700 }}>{aviso}</span>}
           </div>
 
@@ -371,7 +387,7 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nombre: b.nombre, cliente_final: b.cliente_final, objetivo: b.objetivo,
+          nombre: b.nombre, cliente_final: b.cliente_final, objetivo: b.objetivo, modo: b.modo ?? "revision",
           publica_desde: b.publica_desde, segmentacion: b.segmentacion,
           presupuesto_texto: b.presupuesto_texto, fecha_difusion: b.fecha_difusion,
           fechas_reclutamiento: b.fechas_reclutamiento, meta_texto: b.meta_texto,
@@ -391,6 +407,31 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
 
   return (
     <div style={{ background: "#fff", border: `1px solid ${C.hair}`, borderRadius: 16, padding: 18, marginBottom: 18 }}>
+      {/* Modo: define si el cliente aprueba o solo la ve */}
+      <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 900, color: C.navy }}>¿Qué le pedimos al cliente?</h4>
+      <p style={{ margin: "0 0 10px", fontSize: 12.5, color: C.muted }}>
+        Cambia lo que ve en su portal: los botones de aprobación, o solo el anuncio con una caja de comentario.
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+        {(Object.keys(MODOS_CAMPANA) as ModoCampana[]).map(m => {
+          const activo = (b.modo ?? "revision") === m;
+          return (
+            <button key={m} onClick={() => set({ modo: m })}
+              style={{ textAlign: "left", background: activo ? C.blueWash : "#fff", border: `1.5px solid ${activo ? C.blue : C.hair}`, borderRadius: 12, padding: "12px 14px", cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <span style={{ width: 15, height: 15, borderRadius: "50%", border: `2px solid ${activo ? C.blue : "#CBD5E1"}`, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {activo && <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.blue }} />}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 900, color: C.navy }}>{MODOS_CAMPANA[m].label}</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 12, color: C.body, lineHeight: 1.5, paddingLeft: 23 }}>
+                {MODOS_CAMPANA[m].descripcion}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
       <h4 style={{ margin: "0 0 14px", fontSize: 14, fontWeight: 900, color: C.navy }}>Datos que ve el cliente</h4>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
         <Campo label="Nombre de la campaña" ancho="span 2">
@@ -482,14 +523,19 @@ export default function CampanasAdminPage() {
 
     const num = c.campana_anuncios?.length ?? 0;
     const sinArte = (c.campana_anuncios ?? []).filter(a => !a.imagen_url).length;
+    const enCurso = esEnCurso(c);
 
     setDialogo({
       tono: "primario",
       icono: "send",
       titulo: `Publicar "${c.nombre}" al cliente`,
-      descripcion: "El cliente va a poder verla y aprobar cada anuncio desde su portal.",
+      descripcion: enCurso
+        ? "El cliente va a poder verla desde su portal. No se le piden aprobaciones: la campaña ya está corriendo."
+        : "El cliente va a poder verla y aprobar cada anuncio desde su portal.",
       puntos: [
-        `${num} anuncio${num === 1 ? "" : "s"} listos para revisión`,
+        enCurso
+          ? `${num} anuncio${num === 1 ? "" : "s"} al aire, solo para que los vea`
+          : `${num} anuncio${num === 1 ? "" : "s"} listos para revisión`,
         "Se avisa por correo a los revisores activos",
       ],
       aviso: sinArte > 0
@@ -644,6 +690,7 @@ export default function CampanasAdminPage() {
         {campanas.map(c => {
           const st = statsAnuncios(c.campana_anuncios ?? []);
           const est = ESTADOS_CAMPANA[c.estado];
+          const enCurso = esEnCurso(c);
           const esActual = abierta === c.id;
           return (
             <div key={c.id} style={{ background: "#fff", border: `1px solid ${esActual ? C.blue : C.hair}`, borderRadius: 16, overflow: "hidden", boxShadow: esActual ? "0 4px 18px rgba(24,131,255,.12)" : "0 1px 3px rgba(4,46,123,.05)" }}>
@@ -655,11 +702,22 @@ export default function CampanasAdminPage() {
                     {!c.publicado && (
                       <span style={{ background: C.wash, color: C.muted, borderRadius: 6, padding: "3px 8px", fontSize: 10.5, fontWeight: 900, letterSpacing: ".05em" }}>BORRADOR</span>
                     )}
-                    <span style={{ background: est.bg, color: est.color, borderRadius: 50, padding: "3px 10px", fontSize: 11, fontWeight: 800 }}>{est.label}</span>
+                    {enCurso ? (
+                      <span style={{ background: "#DCFCE7", color: "#166534", borderRadius: 50, padding: "3px 10px", fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} />
+                        En curso · sin aprobación
+                      </span>
+                    ) : (
+                      <span style={{ background: est.bg, color: est.color, borderRadius: 50, padding: "3px 10px", fontSize: 11, fontWeight: 800 }}>{est.label}</span>
+                    )}
                   </div>
                   <p style={{ margin: "3px 0 0", fontSize: 12.5, color: C.muted }}>
-                    {c.cliente_final ?? "—"} · {st.aprobados} de {st.total} anuncios aprobados
-                    {st.cambios > 0 && <span style={{ color: "#B91C1C", fontWeight: 800 }}> · {st.cambios} con cambios</span>}
+                    {c.cliente_final ?? "—"} · {enCurso ? (
+                      <>{st.total} anuncio{st.total === 1 ? "" : "s"} al aire{c.fecha_difusion ? ` · ${c.fecha_difusion}` : ""}</>
+                    ) : (
+                      <>{st.aprobados} de {st.total} anuncios aprobados</>
+                    )}
+                    {!enCurso && st.cambios > 0 && <span style={{ color: "#B91C1C", fontWeight: 800 }}> · {st.cambios} con cambios</span>}
                   </p>
                 </div>
                 <button onClick={() => togglePublicado(c)} disabled={publicando}
@@ -690,7 +748,7 @@ export default function CampanasAdminPage() {
                     </button>
                   </div>
                   {(actual.campana_anuncios ?? []).map(a => (
-                    <AnuncioEditor key={a.id} anuncio={a} onSaved={load} />
+                    <AnuncioEditor key={a.id} anuncio={a} enCurso={enCurso} onSaved={load} />
                   ))}
                 </div>
               )}

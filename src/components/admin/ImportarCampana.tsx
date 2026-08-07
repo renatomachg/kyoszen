@@ -2,7 +2,7 @@
 
 import { useRef, useState, type DragEvent } from "react";
 import { IconUI } from "@/components/ui/IconUI";
-import type { Campana, FormularioAnuncio, Segmentacion } from "@/lib/campanas";
+import { MODOS_CAMPANA, type Campana, type FormularioAnuncio, type ModoCampana, type Segmentacion } from "@/lib/campanas";
 
 const C = {
   navy: "#042E7B",
@@ -37,6 +37,7 @@ interface CampanaPropuesta {
   meta_texto?: string;
   sede_texto?: string;
   nota_interna?: string;
+  modo?: ModoCampana;
 }
 
 interface AnuncioPropuesto {
@@ -387,6 +388,27 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
                   <input value={propuesta.cliente_final ?? ""} onChange={e => setPropuesta({ ...propuesta, cliente_final: e.target.value })} style={{ ...input, marginTop: 3 }} />
                 </div>
               </div>
+              {/* Modo: si ya está corriendo, el cliente no la aprueba */}
+              <div style={{ marginTop: 11 }}>
+                <label style={{ fontSize: 11, color: C.muted, fontWeight: 700, display: "block", marginBottom: 5 }}>
+                  ¿Qué le pedimos al cliente?
+                </label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {(["revision", "en_curso"] as const).map(m => {
+                    const activo = (propuesta.modo ?? "revision") === m;
+                    return (
+                      <button key={m} onClick={() => setPropuesta({ ...propuesta, modo: m })}
+                        style={{ background: activo ? "#EAF2FF" : "#fff", border: `1.5px solid ${activo ? "#1883FF" : C.hair}`, borderRadius: 9, padding: "7px 12px", fontSize: 12.5, fontWeight: 800, color: C.navy, cursor: "pointer" }}>
+                        {MODOS_CAMPANA[m].label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={{ margin: "6px 0 0", fontSize: 11.5, color: C.faint, lineHeight: 1.5 }}>
+                  {MODOS_CAMPANA[propuesta.modo ?? "revision"].descripcion}
+                </p>
+              </div>
+
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 11 }}>
                 {([
                   ["Zonas", (propuesta.segmentacion?.ubicaciones ?? []).join(", ")],
