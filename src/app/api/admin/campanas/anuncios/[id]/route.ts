@@ -73,7 +73,30 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  const { data: anuncio } = await sb
+    .from("campana_anuncios")
+    .select("campana_id")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await sb.from("campana_anuncios").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Al quitar un anuncio cambia el rollup de la campaña
+  if (anuncio) {
+    const { data: hermanos } = await sb
+      .from("campana_anuncios")
+      .select("estado")
+      .eq("campana_id", anuncio.campana_id);
+    await sb
+      .from("campanas")
+      .update({
+        estado: rollupCampana((hermanos ?? []) as { estado: EstadoCampana }[]),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", anuncio.campana_id);
+  }
+
   return NextResponse.json({ ok: true });
 }

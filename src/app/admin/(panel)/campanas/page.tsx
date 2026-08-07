@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconUI } from "@/components/ui/IconUI";
 import { RedLogo } from "@/components/RedLogo";
+import ImportarCampana from "@/components/admin/ImportarCampana";
+import ConfirmModal, { type ConfirmModalProps } from "@/components/ui/ConfirmModal";
 import {
   ESTADOS_CAMPANA,
   statsAnuncios,
@@ -116,6 +118,8 @@ function AnuncioEditor({ anuncio, onSaved }: { anuncio: CampanaAnuncio; onSaved:
   const [subiendo, setSubiendo] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [respuesta, setRespuesta] = useState("");
+  const [confirmarBorrado, setConfirmarBorrado] = useState(false);
+  const [borrando, setBorrando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setBorrador(anuncio); }, [anuncio]);
@@ -189,6 +193,22 @@ function AnuncioEditor({ anuncio, onSaved }: { anuncio: CampanaAnuncio; onSaved:
     }
   };
 
+  const eliminar = async () => {
+    setBorrando(true);
+    try {
+      const res = await fetch(`/api/admin/campanas/anuncios/${anuncio.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setAviso(data.error ?? "No se pudo eliminar");
+        return;
+      }
+      setConfirmarBorrado(false);
+      onSaved();
+    } finally {
+      setBorrando(false);
+    }
+  };
+
   const est = ESTADOS_CAMPANA[anuncio.estado];
   const comentarios = anuncio.campana_comentarios ?? [];
 
@@ -204,6 +224,10 @@ function AnuncioEditor({ anuncio, onSaved }: { anuncio: CampanaAnuncio; onSaved:
             <IconUI name="comment" size={13} />{comentarios.length}
           </span>
         )}
+        <button onClick={() => setConfirmarBorrado(true)} disabled={guardando} title="Eliminar este anuncio"
+          style={{ marginLeft: "auto", background: "#fff", border: "1.5px solid #FECACA", borderRadius: 9, padding: "6px 11px", fontSize: 12, fontWeight: 800, color: "#B91C1C", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <IconUI name="trash" size={13} /> Eliminar anuncio
+        </button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 18, alignItems: "start" }}>
@@ -305,6 +329,24 @@ function AnuncioEditor({ anuncio, onSaved }: { anuncio: CampanaAnuncio; onSaved:
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        abierto={confirmarBorrado}
+        tono="peligro"
+        titulo={`Eliminar el anuncio "${anuncio.puesto}"`}
+        descripcion="Se quita del portal del cliente y deja de contar para el avance de la campaña."
+        puntos={[
+          "El arte, el texto y el formulario de este anuncio",
+          ...(comentarios.length > 0
+            ? [`${comentarios.length} comentario${comentarios.length === 1 ? "" : "s"} del cliente`]
+            : []),
+        ]}
+        nota="Esto no se puede deshacer. No afecta nada en Meta."
+        confirmarLabel="Eliminar anuncio"
+        cargando={borrando}
+        onConfirmar={eliminar}
+        onCancelar={() => setConfirmarBorrado(false)}
+      />
     </div>
   );
 }
@@ -414,6 +456,11 @@ export default function CampanasAdminPage() {
   const [loading, setLoading] = useState(true);
   const [abierta, setAbierta] = useState<number | null>(null);
   const [publicando, setPublicando] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dialogo, setDialogo] = useState<
+    Omit<ConfirmModalProps, "abierto" | "onCancelar" | "cargando"> | null
+  >(null);
 
   const load = useCallback(async () => {
     try {
@@ -427,24 +474,118 @@ export default function CampanasAdminPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const cerrarDialogo = () => { setDialogo(null); setPublicando(false); };
+
   const togglePublicado = async (c: Campana) => {
-    if (!c.publicado && !confirm(`¿Publicar "${c.nombre}" al cliente? Se le avisa por correo a los revisores activos.`)) return;
+    // Ocultar no necesita confirmación: es reversible y no manda correos
+    if (c.publicado) { await aplicarPublicado(c, false); return; }
+
+    const num = c.campana_anuncios?.length ?? 0;
+    const sinArte = (c.campana_anuncios ?? []).filter(a => !a.imagen_url).length;
+
+    setDialogo({
+      tono: "primario",
+      icono: "send",
+      titulo: `Publicar "${c.nombre}" al cliente`,
+      descripcion: "El cliente va a poder verla y aprobar cada anuncio desde su portal.",
+      puntos: [
+        `${num} anuncio${num === 1 ? "" : "s"} listos para revisión`,
+        "Se avisa por correo a los revisores activos",
+      ],
+      aviso: sinArte > 0
+        ? `${sinArte} de ${num} anuncios todavía no tienen arte. El cliente los verá como "Arte pendiente".`
+        : undefined,
+      confirmarLabel: "Publicar al cliente",
+      onConfirmar: () => aplicarPublicado(c, true),
+    });
+  };
+
+  const aplicarPublicado = async (c: Campana, publicado: boolean) => {
     setPublicando(true);
     try {
       const res = await fetch(`/api/admin/campanas/${c.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicado: !c.publicado }),
+        body: JSON.stringify({ publicado }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error ?? "No se pudo cambiar la publicación");
+        setError(data.error ?? "No se pudo cambiar la publicación");
         return;
       }
+      setDialogo(null);
       await load();
     } finally {
       setPublicando(false);
     }
+  };
+
+  const agregarAnuncio = (campanaId: number) => {
+    setDialogo({
+      tono: "primario",
+      icono: "plus",
+      titulo: "Agregar un anuncio",
+      descripcion: "Se crea vacío y lo llenas abajo: arte, texto, título y formulario.",
+      input: { label: "¿Qué puesto anuncia?", placeholder: "Ej: Almacenista" },
+      confirmarLabel: "Agregar anuncio",
+      onConfirmar: async puesto => {
+        setPublicando(true);
+        try {
+          const res = await fetch(`/api/admin/campanas/${campanaId}/anuncios`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ puesto }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            setError(data.error ?? "No se pudo agregar el anuncio");
+            return;
+          }
+          setDialogo(null);
+          await load();
+        } finally {
+          setPublicando(false);
+        }
+      },
+    });
+  };
+
+  const eliminarCampana = (c: Campana) => {
+    const num = c.campana_anuncios?.length ?? 0;
+    const comentarios = (c.campana_anuncios ?? []).reduce((n, a) => n + (a.campana_comentarios?.length ?? 0), 0);
+
+    setDialogo({
+      tono: "peligro",
+      titulo: `Eliminar la campaña "${c.nombre}"`,
+      descripcion: "Se borra del aprobador junto con todo lo que cuelga de ella.",
+      puntos: [
+        `${num} anuncio${num === 1 ? "" : "s"} con su arte, texto y formulario`,
+        ...(comentarios > 0 ? [`${comentarios} comentario${comentarios === 1 ? "" : "s"} del cliente`] : []),
+      ],
+      aviso: c.publicado
+        ? "Esta campaña está publicada: el cliente la está viendo en este momento."
+        : undefined,
+      // Si el cliente ya la ve, exigir que se escriba la palabra
+      confirmarEscribiendo: c.publicado ? "ELIMINAR" : undefined,
+      nota: "Esto no se puede deshacer. No afecta nada en Meta: tus campañas, formularios y anuncios del administrador de anuncios siguen igual.",
+      confirmarLabel: "Eliminar campaña",
+      onConfirmar: async () => {
+        setPublicando(true);
+        try {
+          const res = await fetch(`/api/admin/campanas/${c.id}`, { method: "DELETE" });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            setError(data.error ?? "No se pudo eliminar la campaña");
+            return;
+          }
+          if (abierta === c.id) setAbierta(null);
+          setDialogo(null);
+          await load();
+        } finally {
+          setPublicando(false);
+        }
+      },
+    });
   };
 
   const actual = campanas.find(c => c.id === abierta) ?? null;
@@ -462,13 +603,36 @@ export default function CampanasAdminPage() {
             Anuncios pagados que el cliente aprueba en su portal, uno por uno.
           </p>
         </div>
-        <a href="/revisor?tab=campanas" target="_blank" rel="noreferrer"
-          style={{ background: "#fff", border: `1.5px solid ${C.hair}`, borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 800, color: C.navy, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 7 }}>
-          <IconUI name="eye" size={14} /> Ver como cliente
-        </a>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button onClick={() => setImportando(true)}
+            style={{ background: C.yellow, border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 12.5, fontWeight: 900, color: C.navy, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
+            <IconUI name="upload" size={14} /> Importar campaña
+          </button>
+          <a href="/revisor?tab=campanas" target="_blank" rel="noreferrer"
+            style={{ background: "#fff", border: `1.5px solid ${C.hair}`, borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 800, color: C.navy, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 7 }}>
+            <IconUI name="eye" size={14} /> Ver como cliente
+          </a>
+        </div>
       </div>
 
-      {campanas.length === 0 && (
+      {error && (
+        <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: "12px 15px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: "#991B1B", flexShrink: 0 }}><IconUI name="x" size={15} /></span>
+          <p style={{ margin: 0, fontSize: 13, color: "#991B1B", fontWeight: 700, flex: 1 }}>{error}</p>
+          <button onClick={() => setError(null)}
+            style={{ background: "none", border: "none", color: "#B91C1C", fontSize: 17, cursor: "pointer", lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
+      {importando && (
+        <ImportarCampana
+          campanas={campanas}
+          onCerrar={() => setImportando(false)}
+          onCreada={async id => { await load(); setAbierta(id); }}
+        />
+      )}
+
+      {campanas.length === 0 && !importando && (
         <div style={{ background: "#fff", border: `1px dashed ${C.hair}`, borderRadius: 16, padding: "48px 20px", textAlign: "center", color: C.faint }}>
           <IconUI name="target" size={26} />
           <p style={{ margin: "10px 0 0", fontSize: 13.5, fontWeight: 700 }}>Todavía no hay campañas.</p>
@@ -507,14 +671,24 @@ export default function CampanasAdminPage() {
                   style={{ background: "#fff", border: `1.5px solid ${C.hair}`, borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 800, color: C.navy, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
                   {esActual ? "Cerrar" : "Editar"} <IconUI name={esActual ? "chevron-up" : "chevron-down"} size={13} />
                 </button>
+                <button onClick={() => eliminarCampana(c)} disabled={publicando} title="Eliminar campaña"
+                  style={{ background: "#fff", border: "1.5px solid #FECACA", borderRadius: 10, width: 38, height: 38, color: "#B91C1C", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <IconUI name="trash" size={15} />
+                </button>
               </div>
 
               {esActual && actual && (
                 <div style={{ background: "#F8FAFC", borderTop: `1px solid ${C.hair}`, padding: 18 }}>
                   <CampanaEditor campana={actual} onSaved={load} />
-                  <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 900, color: C.navy }}>
-                    Anuncios ({actual.campana_anuncios?.length ?? 0})
-                  </h4>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+                    <h4 style={{ margin: 0, fontSize: 14, fontWeight: 900, color: C.navy }}>
+                      Anuncios ({actual.campana_anuncios?.length ?? 0})
+                    </h4>
+                    <button onClick={() => agregarAnuncio(actual.id)}
+                      style={{ background: "#fff", border: `1.5px dashed ${C.hair}`, borderRadius: 10, padding: "8px 14px", fontSize: 12.5, fontWeight: 800, color: C.blueDark, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <IconUI name="plus" size={14} /> Agregar anuncio
+                    </button>
+                  </div>
                   {(actual.campana_anuncios ?? []).map(a => (
                     <AnuncioEditor key={a.id} anuncio={a} onSaved={load} />
                   ))}
@@ -524,6 +698,10 @@ export default function CampanasAdminPage() {
           );
         })}
       </div>
+
+      {dialogo && (
+        <ConfirmModal abierto {...dialogo} cargando={publicando} onCancelar={cerrarDialogo} />
+      )}
     </div>
   );
 }
