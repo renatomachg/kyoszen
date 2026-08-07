@@ -56,6 +56,10 @@ Devuelve SOLO un objeto JSON válido, sin markdown, sin bloques de código, sin 
   ]
 }
 
+Si lo que recibes NO es una campaña publicitaria (por ejemplo: un contrato, un instructivo, una propuesta de diseño, un calendario de contenido orgánico, una factura, notas sueltas), NO inventes nada. Devuelve exactamente:
+
+{ "campana": null, "anuncios": [], "motivo": "una sola línea diciendo qué es el documento en realidad" }
+
 Reglas:
 - "tipo" de cada pregunta: "opcion" si tiene opciones para elegir; "telefono" si pide teléfono o celular; "numero" si pide edad o una cantidad; "texto" para lo demás (nombre completo, respuesta abierta).
 - Si una pregunta trae una aclaración entre paréntesis del estilo "(No es obligatoria para este puesto)", ponla en "nota" y déjala fuera del texto de "pregunta".
@@ -71,14 +75,22 @@ interface ImagenEntrada {
   data: string;
 }
 
-function extraerJSON(texto: string): unknown {
+/** Devuelve null si la respuesta no trae JSON (p.ej. el modelo contestó en prosa). */
+function extraerJSON(texto: string): Record<string, unknown> | null {
   let limpio = texto.trim();
   limpio = limpio.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   const start = limpio.indexOf("{");
   const end = limpio.lastIndexOf("}");
-  if (start === -1 || end === -1) throw new Error("La IA no devolvió un JSON reconocible.");
-  return JSON.parse(limpio.slice(start, end + 1));
+  if (start === -1 || end === -1) return null;
+  try {
+    return JSON.parse(limpio.slice(start, end + 1)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }
+
+const SIN_CAMPANA =
+  "No encontré una campaña en lo que subiste. El importador espera el brief de una campaña: los anuncios con su texto, título, botón y las preguntas del formulario.";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -120,18 +132,33 @@ export async function POST(req: NextRequest) {
       });
 
       const salida = res.content.find(b => b.type === "text");
-      if (!salida || salida.type !== "text") throw new Error("Respuesta vacía de la IA.");
+      if (!salida || salida.type !== "text") {
+        return NextResponse.json({ error: SIN_CAMPANA }, { status: 422 });
+      }
 
-      const parsed = extraerJSON(salida.text) as { campana?: unknown; anuncios?: unknown };
-      const anuncios = Array.isArray(parsed.anuncios) ? parsed.anuncios : [];
-      if (!parsed.campana && anuncios.length === 0) {
-        throw new Error("No se reconoció ninguna campaña en lo que enviaste.");
+      const parsed = extraerJSON(salida.text);
+      const anuncios = parsed && Array.isArray(parsed.anuncios) ? parsed.anuncios : [];
+
+      // El documento no es una campaña: decirlo en claro, con lo que sí parece ser
+      if (!parsed || anuncios.length === 0) {
+        const motivo = typeof parsed?.motivo === "string" ? parsed.motivo.trim() : "";
+        return NextResponse.json(
+          {
+            error: SIN_CAMPANA,
+            detalle: motivo || undefined,
+            sin_campana: true,
+          },
+          { status: 422 }
+        );
       }
 
       return NextResponse.json({ campana: parsed.campana ?? {}, anuncios });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "No se pudo analizar";
-      return NextResponse.json({ error: msg }, { status: 500 });
+      console.error("importar campañas:", e);
+      return NextResponse.json(
+        { error: "Se cayó el análisis. Vuelve a intentarlo; si sigue fallando, pega el brief como texto." },
+        { status: 500 }
+      );
     }
   }
 

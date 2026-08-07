@@ -98,6 +98,7 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
   const [dragOver, setDragOver] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [error, setError] = useState<{ texto: string; detalle?: string; ayuda?: boolean } | null>(null);
   const [destino, setDestino] = useState<"nueva" | number>("nueva");
 
   const [propuesta, setPropuesta] = useState<CampanaPropuesta | null>(null);
@@ -108,24 +109,24 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
 
   const reset = () => {
     setTexto(""); setCapturas([]); setArchivoNombre(null);
-    setPropuesta(null); setAnuncios([]); setMsg(null); setDestino("nueva");
+    setPropuesta(null); setAnuncios([]); setMsg(null); setError(null); setDestino("nueva");
   };
 
   /* ── Entradas ─────────────────────────────────────── */
   const agregarImagenes = async (files: File[]) => {
     const imgs = files.filter(f => f.type.startsWith("image/"));
     if (imgs.length === 0) return;
-    setMsg(null);
+    setError(null);
     try {
       const nuevas = await Promise.all(imgs.map(prepararImagen));
       setCapturas(prev => [...prev, ...nuevas].slice(0, 12));
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "No se pudieron leer las capturas");
+      setError({ texto: e instanceof Error ? e.message : "No se pudieron leer las capturas" });
     }
   };
 
   const leerDocumento = async (file: File) => {
-    setMsg(null);
+    setError(null);
     try {
       const esPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
       let contenido: string;
@@ -143,7 +144,7 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
       setTexto(prev => (prev ? `${prev}\n\n${contenido}` : contenido));
       setArchivoNombre(file.name);
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "No se pudo leer el archivo");
+      setError({ texto: e instanceof Error ? e.message : "No se pudo leer el archivo" });
     }
   };
 
@@ -160,10 +161,11 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
   /* ── Analizar ─────────────────────────────────────── */
   const analizar = async () => {
     if (!texto.trim() && capturas.length === 0) {
-      setMsg("Pega el brief o sube al menos una captura.");
+      setError({ texto: "Pega el brief o sube al menos una captura." });
       return;
     }
     setCargando(true);
+    setError(null);
     setMsg(capturas.length > 0 ? "Leyendo las capturas..." : "Leyendo el brief...");
     setPropuesta(null); setAnuncios([]);
     try {
@@ -177,14 +179,21 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "No se pudo analizar");
+      if (!res.ok) {
+        setError({
+          texto: data.error ?? "No se pudo analizar",
+          detalle: data.detalle,
+          ayuda: data.sin_campana === true,
+        });
+        return;
+      }
 
       setPropuesta(data.campana ?? {});
       setAnuncios((data.anuncios ?? []).map((a: AnuncioPropuesto) => ({ ...a, seleccionado: true })));
-      setMsg(null);
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : "No se pudo analizar");
+    } catch {
+      setError({ texto: "No se pudo conectar con el servidor. Vuelve a intentarlo." });
     } finally {
+      setMsg(null);
       setCargando(false);
     }
   };
@@ -193,11 +202,11 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
   const crear = async () => {
     const elegidos = anuncios.filter(a => a.seleccionado);
     if (elegidos.length === 0) {
-      setMsg("Selecciona al menos un anuncio.");
+      setError({ texto: "Selecciona al menos un anuncio." });
       return;
     }
     setCargando(true);
-    setMsg(null);
+    setError(null);
     try {
       const res = await fetch("/api/admin/campanas/importar", {
         method: "POST",
@@ -210,12 +219,15 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "No se pudo crear");
+      if (!res.ok) {
+        setError({ texto: data.error ?? "No se pudo crear" });
+        return;
+      }
       reset();
       onCerrar();
       onCreada(data.campana_id);
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : "No se pudo crear");
+    } catch {
+      setError({ texto: "No se pudo conectar con el servidor. Vuelve a intentarlo." });
     } finally {
       setCargando(false);
     }
@@ -290,6 +302,42 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
               </div>
             )}
           </div>
+
+          {error && (
+            <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "13px 15px", marginBottom: 12 }}>
+              <div style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
+                <span style={{ color: "#B45309", flexShrink: 0, marginTop: 1 }}><IconUI name="search" size={15} /></span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: 13, color: "#92400E", fontWeight: 800, lineHeight: 1.5 }}>{error.texto}</p>
+                  {error.detalle && (
+                    <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#B45309", lineHeight: 1.5 }}>
+                      Lo que subiste parece ser: {error.detalle}
+                    </p>
+                  )}
+                  {error.ayuda && (
+                    <div style={{ marginTop: 10, background: "#fff", border: `1px solid ${C.hair}`, borderRadius: 10, padding: "10px 12px" }}>
+                      <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: ".05em" }}>
+                        Un brief que sí funciona trae
+                      </p>
+                      {[
+                        "Un anuncio por puesto, con su texto principal, título y botón",
+                        "Las preguntas del formulario, con sus opciones",
+                        "La pantalla de confirmación que ve el candidato",
+                        "A quién le llega: zonas, edad, inversión y fechas",
+                      ].map(p => (
+                        <div key={p} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "2px 0" }}>
+                          <span style={{ width: 4, height: 4, borderRadius: "50%", background: C.blue, marginTop: 7, flexShrink: 0 }} />
+                          <span style={{ fontSize: 12.5, color: C.body, lineHeight: 1.5 }}>{p}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => setError(null)}
+                  style={{ background: "none", border: "none", color: "#B45309", fontSize: 17, cursor: "pointer", lineHeight: 1, flexShrink: 0 }}>×</button>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <button onClick={analizar} disabled={cargando}
@@ -421,7 +469,7 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
               {cargando ? "Creando..." : destino === "nueva" ? "Crear campaña" : `Agregar ${seleccionados} anuncio${seleccionados === 1 ? "" : "s"}`}
             </button>
             <span style={{ fontSize: 12, color: C.faint }}>Nace en borrador — el cliente no la ve hasta que la publiques.</span>
-            {msg && <span style={{ fontSize: 12.5, color: "#B91C1C", fontWeight: 700 }}>{msg}</span>}
+            {error && <span style={{ fontSize: 12.5, color: "#B91C1C", fontWeight: 700 }}>{error.texto}</span>}
           </div>
         </>
       )}
