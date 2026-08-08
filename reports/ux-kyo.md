@@ -1,34 +1,42 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-08-06
-**Commits analizados (últimos 5):**
-- `885ed30` — chore: ux-kyo analysis 2026-08-05 (sin cambios de código)
-- `278903b` — chore: reporte de tendencias Agosto 2026 (sin cambios de código)
-- `20b13ac` — fix(proyectos): notificaciones confiables (await + log)
-- `c6ce339` — feat(admin): acceso por proyecto para colaboradores
-- `0dc92f7` — feat(admin): roles + gestión de usuarios con login por usuario
+**Fecha:** 2026-08-08
+**Commits analizados (últimos 7 desde 2026-08-06):**
+- `e4339d3` — feat(usuarios): cambiar la contraseña de una cuenta del panel
+- `023294a` — feat(proyectos): entrega interna del colaborador antes de mandar al cliente
+- `4638acf` — feat(campanas): modo "ya está corriendo" — mostrar sin pedir aprobación
+- `664b04d` — feat(campanas): soportar campañas de alcance (sin formulario)
+- `88c39cc` — fix(campanas): mensaje claro cuando el documento no es una campaña
+- `59829f8` — feat(campanas): importador (brief/capturas/PDF), alta y borrado con modales propios
+- `935adb7` — feat(campanas): módulo de aprobación de campañas pagadas
 
-**Archivos del asistente revisados:**
-- `src/components/assistant/ChatWidget.tsx`
-- `src/components/assistant/useChat.ts`
+**Archivos del asistente revisados siempre:**
 - `src/lib/assistant/system-prompt.ts`
 - `src/lib/assistant/tools.ts`
 - `src/lib/assistant/knowledge.ts`
 - `src/app/api/assistant/chat/route.ts`
-- `src/app/admin/(panel)/layout.tsx`
+
+**Archivos nuevos revisados este ciclo:**
 - `src/app/admin/(panel)/usuarios/page.tsx`
-- `src/app/admin/login/page.tsx`
-- `src/app/admin/(panel)/kyo/page.tsx`
+- `src/components/revisor/CampanasCliente.tsx`
+- `src/lib/campanas.ts`
+- `src/lib/jobs.ts`
 
 ---
 
 ## Cambios Recientes Detectados
 
-No hubo commits de código entre el 2026-08-05 y hoy. Los últimos cambios funcionales siguen siendo los del 2026-08-03:
-- **Sistema de roles** (`admin|colaborador`) con acceso por sección y proyecto asignado
-- **Login por username** (sin correo real, resuelve `usuario → @acceso.kyoszen.com`)
-- **Notificaciones de proyectos** ahora usan `await` en lugar de fire-and-forget
+### Módulo de campañas pagadas (principal novedad)
+El módulo de campañas es el mayor cambio del ciclo. Incluye:
+- **Portal del cliente** (`CampanasCliente.tsx`): el revisor aprueba anuncios uno a uno con mockup de Facebook + simulación del formulario del candidato. Nuevo modo **"ya está corriendo"** (`en_curso`) que muestra la campaña en lectura con comentarios opcionales, sin pedir aprobación.
+- **Campañas de alcance** (`tieneFormulario()`): anuncios sin formulario — candidato ve el arte y se presenta físicamente al reclutamiento. Flujo adaptado correctamente en `flujoDeCampana()`.
+- **Importador** (`ImportarCampana.tsx`): brief pegado / capturas / PDF → Claude haiku parsea → preview → crear. Soporta visión (opus cuando hay imágenes).
+- **ConfirmModal** (`ui/ConfirmModal.tsx`): modal de confirmación con identidad del panel para publicar, eliminar campaña (requiere escribir "ELIMINAR" si está publicada) y eliminar anuncio. Reusable.
 
-**Estado de issues previos**: Todos los issues reportados en el ciclo 2026-08-05 siguen sin corregirse. Se listan al final con estado `[PENDIENTE]`.
+### Cambio de contraseña de usuarios (feat menor)
+Nueva función `cambiarPassword()` en `usuarios/page.tsx`: permite al admin cambiar la contraseña de cualquier cuenta sin hacer login como ese usuario. La nueva contraseña se muestra una sola vez en el panel de credenciales temporales. El campo de nueva contraseña tiene `type="text"` — problema de seguridad (ver issues).
+
+### Entrega interna de proyectos
+Antes del paso al cliente, el colaborador puede marcar una entrega como revisada internamente. La API de etapas/bloques fue actualizada para soportar este estado intermedio.
 
 ---
 
@@ -36,105 +44,75 @@ No hubo commits de código entre el 2026-08-05 y hoy. Los últimos cambios funci
 
 ### Alta prioridad
 
-- **[knowledge.ts:96-106] `kyo_faqs` de Supabase desconectadas de Kyo — BUG CRÍTICO**
-  El admin puede agregar/editar preguntas frecuentes en `/admin/kyo` → pestaña "Preguntas frecuentes", que se guardan en la tabla `kyo_faqs`. Sin embargo, `StaticKnowledgeProvider.getCompanyInfo()` devuelve FAQs **hardcodeadas en el código** (líneas 99-106 de `knowledge.ts`), nunca leyendo de Supabase. Resultado: editar FAQs desde el admin **no tiene ningún efecto en Kyo**. La pestaña entera de FAQs en el panel es decorativa desde la perspectiva del asistente.
-  Solución en `src/app/api/assistant/chat/route.ts`: cargar las FAQs activas de `kyo_faqs` junto con las instrucciones y pasarlas al `buildSystemPrompt`:
-  ```typescript
-  // En getStoredInstrucciones() o una función nueva getFaqs():
-  const { data: faqsData } = await sb
-    .from("kyo_faqs")
-    .select("pregunta, respuesta")
-    .eq("activo", true)
-    .order("orden");
-  // Pasar a buildSystemPrompt como argumento adicional
+- **[usuarios/page.tsx:719] Campo de nueva contraseña en `type="text"` — bug de seguridad**
+  El input de la nueva contraseña en la sección "Acceso" tiene `type="text"`, lo que muestra la contraseña en texto plano mientras el admin escribe. Si hay una pantalla compartida o alguien mirando, la contraseña queda expuesta.
+  ```tsx
+  // Cambiar de:
+  <input type="text" value={passwordNueva} ... />
+  // A:
+  <input type="password" value={passwordNueva} autocomplete="new-password" ... />
   ```
-  Y en `knowledge.ts`, reemplazar las FAQs hardcodeadas en `COMPANY.faqs` con las cargadas dinámicamente. Alternativamente, inyectarlas directamente en el system prompt tras el bloque `# FAQs` ya existente. Impacto: el admin puede actualizar lo que Kyo responde sin tocar código.
+  Archivo: `src/app/admin/(panel)/usuarios/page.tsx`, línea 719. El campo de contraseña temporal al crear usuario también usa `type="text"` (línea 547) — mismo fix.
 
-- **[layout.tsx:80-84] `cargarAcceso()` no carga `nombre` ni `usuario` del perfil**
-  El select es `.select("rol, secciones, activo")` (líneas 80-84). El footer del sidebar muestra `user?.email` (línea 268), que para colaboradores con login por username es el correo sintético `nombre@acceso.kyoszen.com` — correo que el colaborador nunca vio. Dos fixes simultáneos:
-  ```typescript
-  // layout.tsx — en el select:
-  .select("rol, secciones, activo, nombre, usuario")
-  // Añadir estado:
-  const [displayName, setDisplayName] = useState("");
-  // En cargarAcceso(), tras setPerfil(acceso):
-  setDisplayName(data?.nombre || data?.usuario || session.user.email || "");
-  // En el footer (línea 268):
-  <p className="text-white/40 text-[11px] truncate">{displayName}</p>
-  ```
-  Impacto: un colaborador llamado "Carlos García" verá su nombre, no `carlos.garcia@acceso.kyoszen.com`.
-
-- **[layout.tsx:96-99] Colaborador desactivado no sabe por qué no puede entrar**
-  Cuando `!acceso.activo`, el layout ejecuta signOut y redirige a `/admin/login` sin ningún mensaje (líneas 96-99). La página de login no muestra ningún error. El colaborador cree que olvidó su contraseña cuando en realidad su cuenta fue desactivada. Fix: añadir query param al redirect:
-  ```typescript
-  router.replace("/admin/login?error=cuenta-inactiva");
-  ```
-  Y en `login/page.tsx`, leer el param y mostrar el mensaje:
-  ```typescript
-  const params = useSearchParams();
-  const errorParam = params.get("error");
-  // En el JSX, sobre el formulario:
-  {errorParam === "cuenta-inactiva" && (
-    <div className="bg-amber-50 border border-amber-200 text-amber-800 text-[13px] px-4 py-3 rounded-lg">
-      Tu cuenta ha sido desactivada. Contacta al administrador.
-    </div>
-  )}
+- **[usuarios/page.tsx:329] `window.confirm()` para borrar usuarios — PENDIENTE del ciclo anterior**
+  La función `borrar()` usa `window.confirm()` nativo (línea 329), que fue el antipatrón que el módulo de campañas eliminó con `ConfirmModal`. El ConfirmModal ya existe y es reusable (`src/components/ui/ConfirmModal.tsx`). Aplicarlo a usuario garantiza consistencia y maneja mejor el texto en la confirmación.
+  ```tsx
+  // Reemplazar el window.confirm() por:
+  <ConfirmModal
+    titulo="Eliminar usuario"
+    descripcion={`¿Borrar a ${nombre}? Se eliminará su acceso y su cuenta de autenticación.`}
+    accion="Eliminar usuario"
+    peligro
+    onConfirm={() => borrarConfirmado(usuario)}
+    onCancel={() => setBorrandoId(null)}
+  />
   ```
 
-- **[useChat.ts:30 + useChat.ts:14-16] Historia truncada pero Kyo no sabe que la perdió**
-  `localStorage` guarda hasta `MAX_STORED = 30` mensajes; el API route recibe solo los últimos 20 (`history = body.messages.slice(-20)`). En conversaciones largas, Kyo pierde los primeros 10 mensajes — que incluyen el nombre del candidato (Paso 0) y el tipo de trabajo que busca (Paso 1). Resultado: Kyo vuelve a preguntar el nombre o ignora contexto ya dado. Solución de mínima: reducir `MAX_STORED` a 20 para evitar la ilusión de que hay más contexto del que el API recibe. Solución completa: conservar el nombre y el puesto en un campo separado en `sessionStorage` y anteponer un resumen al inicio de los mensajes enviados a la API:
-  ```typescript
-  // En sendMessage(), antes del fetch:
-  const contexto = sessionStorage.getItem("kyo_contexto"); // "Nombre: Ana, Busca: cajera"
-  const mensajesConContexto = contexto
-    ? [{ role: "user" as const, content: `[Contexto previo: ${contexto}]` }, ...history]
-    : history;
+- **[CampanasCliente.tsx:881] Rollup `campana.estado` no se recalcula localmente tras aprobaciones**
+  `handleStatusChange()` actualiza el estado de cada anuncio en la lista local, pero no recalcula `campana.estado` (el rollup de la campaña). En la vista de lista (cuando hay más de una campaña), la píldora de estado de la campaña muestra el estado original hasta que el revisor recarga la página. Por ejemplo: aprueba los 3 anuncios → el progreso en la vista de detalle llega a "3 de 3", pero si vuelve al listado, la campaña sigue en amarillo "Pendiente revisión".
+  ```tsx
+  // En handleStatusChange, tras actualizar campana_anuncios, recalcular el rollup:
+  import { rollupCampana } from "@/lib/campanas";
+  
+  const handleStatusChange = (...) => {
+    setCampanas(prev => prev.map(c => {
+      const nuevosAnuncios = (c.campana_anuncios ?? []).map(a =>
+        a.id === anuncioId ? { ...a, estado, ... } : a
+      );
+      return { ...c, campana_anuncios: nuevosAnuncios, estado: rollupCampana(nuevosAnuncios) };
+    }));
+  };
   ```
+  La función `rollupCampana` ya existe en `src/lib/campanas.ts:114` — solo falta llamarla.
+
+- **[usuarios/page.tsx:636] Etiqueta "videos" en sección de proyectos — PENDIENTE del ciclo anterior**
+  El texto en la sección de proyectos del formulario dice: `"El colaborador solo verá los videos seleccionados."` (línea 636). El módulo evolucionó a Espacios tipados (videos, artes, tableros). Corregir a: `"El colaborador solo verá los proyectos y espacios seleccionados."`
 
 ### Media prioridad
 
-- **[useChat.ts:139-145] `reset()` no limpia el session ID de Supabase**
-  Al hacer "Nueva conversación", se borra el localStorage pero `sessionStorage.getItem("kyo_session_id")` sigue igual (línea 139-145). Todos los mensajes posteriores se guardan en `kyo_conversaciones` bajo el mismo `session_id` que la conversación anterior. En `/admin/kyo` → Conversaciones, la "nueva" conversación aparece concatenada con la anterior. Fix:
-  ```typescript
-  const reset = useCallback(() => {
-    setMessages([INITIAL_GREETING]);
-    setError(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(STORAGE_KEY);
-      sessionStorage.removeItem("kyo_session_id"); // ← nuevo
-    }
-  }, []);
-  ```
+- **[CampanasCliente.tsx — flujo en_curso] Sin notificación cuando una campaña sale al aire**
+  Cuando el admin cambia el modo de `revision` a `en_curso`, los revisores no reciben correo informándoles que la campaña ya está publicada. Solo lo descubren la próxima vez que entran al revisor. Añadir en la API `PATCH /api/admin/campanas/[id]` cuando `modo` cambia a `en_curso`: enviar correo a `social_reviewers` activos con el título de la campaña y los anuncios que están al aire. El helper de notificaciones ya existe en `src/lib/campanas-notify.ts`.
 
-- **[kyo/page.tsx:230] `confirm()` nativo para eliminar FAQs**
-  La función `eliminarFaq` usa `window.confirm()` (línea 230) igual que el borrado de usuarios. Reemplazar con confirmación inline sobre la tarjeta de la FAQ:
+- **[CampanasCliente.tsx:920] Campaña única auto-seleccionada sin breadcrumb de vuelta**
+  Cuando hay exactamente una campaña, el componente la muestra directamente sin pasar por la lista (línea 920: `campanas.length === 1 ? campanas[0] : null`), por lo que `onVolver` es `undefined` y no hay botón "Todas las campañas". Si en el futuro llega una segunda campaña, el usuario que solo conocía la vista directa puede desorientarse. Solución mínima: mantener el botón "Todas las campañas" visible aunque haya solo una, o cambiar la lógica a mostrar siempre la lista cuando hay más de una.
+
+- **[CampanasCliente.tsx:704-715] Sin mensaje de "¡Todo aprobado!" cuando el revisor completa la revisión**
+  La barra de progreso llega a 100% cuando todos los anuncios son aprobados, pero no hay ningún estado de celebración / confirmación. El revisor no sabe si debe hacer algo más. Añadir un banner verde cuando `stats.aprobados === stats.total && stats.total > 0`:
   ```tsx
-  const [confirmDeleteFaqId, setConfirmDeleteFaqId] = useState<number | null>(null);
-  // En la tarjeta:
-  {confirmDeleteFaqId === faq.id ? (
-    <div className="flex items-center gap-2 text-[11px]">
-      <span className="text-red-700 font-bold">¿Eliminar?</span>
-      <button onClick={() => { eliminarFaqConfirmado(faq.id); setConfirmDeleteFaqId(null); }}
-        className="text-red-700 font-black">Sí</button>
-      <button onClick={() => setConfirmDeleteFaqId(null)} className="text-muted">No</button>
+  {stats.aprobados === stats.total && stats.total > 0 && !enCurso && (
+    <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 14, padding: "13px 16px", marginTop: 16 }}>
+      <p style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: "#166534" }}>
+        ✓ Revisión completa — los {stats.total} anuncios están aprobados. Kyoszen los tiene listos para publicar.
+      </p>
     </div>
-  ) : (
-    <button onClick={() => setConfirmDeleteFaqId(faq.id)}>Eliminar</button>
   )}
   ```
 
-- **[kyo/page.tsx:407] El contador de FAQs dice "activas" pero Kyo no las usa**
-  La pestaña muestra `"{faqs.filter(f => f.activo).length} activas · {faqs.length} total"` (línea 407). Hasta que `knowledge.ts` lea de `kyo_faqs`, esta UI promete algo que no ocurre. Añadir un aviso debajo del contador:
-  ```tsx
-  <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
-    Las FAQs se guardan correctamente, pero Kyo aún las lee del código fuente.
-    Pide al equipo técnico que conecte <code>kyo_faqs</code> al asistente.
-  </p>
-  ```
-  Impacto inmediato: el admin entiende que su edición aún no tiene efecto, evita confusión.
+- **[layout.tsx:268] Email sintético en sidebar — PENDIENTE del ciclo anterior**
+  Para colaboradores con login por username, el footer del sidebar muestra `usuario@acceso.kyoszen.com` en lugar del nombre real. La solución está documentada en el ciclo 2026-08-06.
 
-- **[ChatWidget.tsx:154-164] Botón "Nueva conversacion" visible solo tras 2 mensajes, umbral incorrecto**
-  La condición `messages.length > 2` (línea 154) cuenta el saludo inicial (mensaje 1) más el primer mensaje del usuario (mensaje 2) = 2. Con 2 mensajes el botón ya aparece — demasiado pronto, antes de que la conversación tenga contexto real. Cambiar a `> 4` para que aparezca después de al menos 2 intercambios completos. Adicionalmente, el texto sigue siendo `"Nueva conversacion"` sin tilde — corregir a `"Nueva conversación"`.
+- **[layout.tsx:96-99] Colaborador desactivado redirige a login sin mensaje — PENDIENTE del ciclo anterior**
+  El usuario cree que olvidó su contraseña. Añadir `?error=cuenta-inactiva` al redirect y capturar en login/page.tsx.
 
 ---
 
@@ -142,161 +120,98 @@ No hubo commits de código entre el 2026-08-05 y hoy. Los últimos cambios funci
 
 ### Mejoras al flujo de conversación
 
-- **[system-prompt.ts:52] Paso 5 navega con filtros antes de mostrar recomendaciones**
-  La instrucción en Paso 5 dice "Usa `navigate_to` con `/vacantes` y los filtros que mejor correspondan" (línea 58). Pero el formato de respuesta correcto del Paso 5 (líneas 44-51) primero muestra 2-3 vacantes con texto, y *después* navega. El orden puede invertirse si Kyo interpreta la instrucción de `navigate_to` antes de mostrar el texto. Clarificar el orden explícitamente:
-  ```
-  ## Paso 5 — RECOMENDACIÓN
-  1. PRIMERO: muestra las 2-3 vacantes más compatibles con el formato de texto indicado.
-  2. DESPUÉS: llama a navigate_to con los filtros correspondientes al perfil.
-  Nunca llames navigate_to antes de mostrar las recomendaciones escritas.
-  ```
+- **[system-prompt.ts:52] Paso 5 — conflicto entre mostrar texto y navegar — PENDIENTE del ciclo anterior**
+  El orden de las instrucciones en Paso 5 puede llevar a Kyo a llamar `navigate_to` antes de mostrar las recomendaciones en texto. Reescribir la instrucción con orden numérico explícito (ver reporte 2026-08-06 para el fix exacto).
 
-- **[system-prompt.ts:65-69] Manejo de empresas sin flujo claro**
-  Cuando una empresa pregunta (no candidato), la instrucción dice "Responde: 'Con gusto te conecto con nuestro equipo' y sugiere WhatsApp o navega a /contacto" (líneas 65-67). Kyo no diferencia entre candidato y empresa en ningún paso previo del flujo — el saludo no pregunta si es candidato o empresa. Añadir una bifurcación temprana:
-  ```
-  ## Paso 0b — TIPO DE USUARIO (después del nombre)
-  Si de la primera respuesta del usuario queda claro que es una EMPRESA (busca contratar, cotizar, capacitar a su equipo), salta directamente al flujo de empresa:
-  "Mucho gusto, [nombre]. ¿Me puede comentar qué servicio le interesa explorar con Kyoszen?"
-  Luego navega a /servicios o /contacto según corresponda.
-  Si es un CANDIDATO (busca empleo, trabajo, vacante), continúa al Paso 1 normal.
-  ```
+- **[system-prompt.ts:65-69] Sin bifurcación candidato/empresa — PENDIENTE del ciclo anterior**
+  Kyo asume que el usuario es candidato. Las empresas no tienen un flujo diferenciado hasta que mencionan "contratar" o "cotizar". Añadir Paso 0b de clasificación de tipo de usuario.
 
-- **[knowledge.ts:136-152] `listJobs()` no tiene filtro por `jornada` o `contrato`**
-  La tool `search_jobs` acepta `category`, `location` y `query` como filtros (líneas 38-46 de `tools.ts`), pero el Paso 4 del flujo recoge la `jornada` (tiempo completo / medio tiempo). Kyo no puede filtrar vacantes por ese atributo porque la tool no lo soporta. Añadir filtro en `tools.ts` y en `knowledge.ts`:
-  ```typescript
-  // tools.ts — en search_jobs input_schema:
-  schedule: { type: "string", description: "Filtra por jornada: 'Tiempo completo', 'Medio tiempo', 'Por proyecto'" },
-  contract: { type: "string", description: "Filtra por contrato: 'Tiempo completo', 'Medio tiempo', 'Por proyecto'" },
-  // knowledge.ts — en listJobs():
-  .filter((j) => !filters?.schedule || j.jornada.toLowerCase().includes(filters.schedule.toLowerCase()))
+- **[Kyo — nuevo] Sin flujo para candidatos que llegan desde anuncios de Facebook**
+  Con la campaña GPG activa, candidatos pueden llegar al sitio después de haber visto el anuncio de Facebook. Al usar Kyo, preguntan "vengo por la vacante de cajero que vi en Facebook" — Kyo no tiene contexto de las campañas pagadas ni puede conectar ese interés con la vacante correcta.
+  Solución corta: añadir al system prompt, bajo "Manejo de otros temas":
   ```
-  Sin este filtro, la información de jornada que el candidato da en el Paso 4 nunca se usa en la búsqueda.
+  Si el usuario menciona haber visto un anuncio de Facebook o una campaña de reclutamiento:
+  Confirma el puesto que vio, luego busca la vacante correspondiente con search_jobs y
+  dirígelo al formulario de aplicación (/vacantes/[id] o /contacto).
+  ```
+  Esto no requiere conectar campañas a Kyo — solo reconocer el origen y redirigir al flujo correcto.
 
 ### Nuevas tools o capacidades recomendadas
 
-- **`capture_lead` — tool para registrar interés sin navegar**
-  Cuando no hay vacante compatible, Kyo navega a `/contacto` (Paso 5 fallback). Pero muchos candidatos abandonan el sitio antes de completar el formulario de contacto. Una tool `capture_lead` que llame a `/api/aplicar` directamente desde el chat (con los datos ya recolectados: nombre, puesto, ubicación, jornada) evita esa fricción:
-  ```typescript
-  // tools.ts
-  {
-    name: "capture_lead",
-    description: "Registra el interés de un candidato cuando no hay vacante exacta. Guarda su perfil en la base de datos para contactarle cuando surja una oportunidad.",
-    input_schema: {
-      type: "object",
-      properties: {
-        nombre: { type: "string" },
-        puesto_interes: { type: "string" },
-        ubicacion: { type: "string" },
-        jornada: { type: "string" },
-        whatsapp: { type: "string", description: "Número de WhatsApp del candidato (opcional)" },
-      },
-      required: ["nombre", "puesto_interes"],
-    },
-  }
-  ```
-  El backend puede guardar en la tabla `crm_candidatos` que ya existe, marcando `origen: "kyo"`.
+- **`capture_lead` — tool para banco de talentos — PENDIENTE del ciclo anterior**
+  Cuando no hay vacante compatible, Kyo navega a `/contacto`. Una tool `capture_lead` que guarde directamente en `crm_candidatos` (tabla que ya existe, con `origen: "kyo"`) evita el abandono del formulario. Ver reporte 2026-08-06 para la definición completa de la tool.
 
-- **`get_salario_mercado` — tool informativa de rango salarial**
-  El módulo `/salarios` ya tiene datos de mercado para 35 puestos (`src/lib/salarios.ts`). Añadir una tool que Kyo pueda consultar cuando el candidato pregunta "¿cuánto pagan?" en una categoría:
-  ```typescript
-  {
-    name: "get_salario_mercado",
-    description: "Devuelve el rango salarial estimado de mercado para un puesto en CDMX.",
-    input_schema: {
-      type: "object",
-      properties: {
-        puesto: { type: "string", description: "Nombre del puesto, ej: cajero, analista de nómina" },
-      },
-      required: ["puesto"],
-    },
-  }
-  ```
-  Implementación en `executeTool`: buscar en `SALARIOS` por nombre parecido, devolver `{ puesto, salario_min, salario_max, nivel }`. Esto hace a Kyo más útil y diferenciador.
+- **`get_salario_mercado` — tool informativa — PENDIENTE del ciclo anterior**
+  El módulo `/salarios` tiene datos de 35 puestos en `src/lib/salarios.ts`. Kyo puede consultarlos cuando el candidato pregunta "¿cuánto pagan?". Ver reporte 2026-08-06 para la definición completa.
+
+- **`search_jobs` — añadir filtro por `jornada` — PENDIENTE del ciclo anterior**
+  El Paso 4 recolecta la jornada del candidato pero `search_jobs` no la acepta como filtro. La información recolectada en el Paso 4 nunca se usa en la búsqueda del Paso 5. Añadir `schedule` al schema de la tool y el filtro en `knowledge.ts:listJobs()`.
 
 ### Problemas detectados
 
-- **[useChat.ts:20] Tilde faltante en el saludo — PENDIENTE CICLO ANTERIOR**
-  `"estoy aqui para orientarte"` → debe ser `"estoy aquí para orientarte"`. Es la primera frase que lee el candidato.
+- **[knowledge.ts:167] Kyo usa vacantes del archivo estático, no de Supabase — CRÍTICO, PENDIENTE**
+  El sitio público lee vacantes en tiempo real de Supabase; Kyo lee del fallback `jobs.ts`. Un candidato puede recibir recomendaciones de vacantes ya inactivas o no ver las nuevas que el admin publica. Esta sigue siendo la deuda más crítica del asistente.
 
-- **[chat/route.ts:202] Fallback sin tildes y robotico — PENDIENTE CICLO ANTERIOR**
-  `"Entendido, ¿en que mas te puedo ayudar?"` → cambiar a:
-  `"Perdona, tuve un inconveniente procesando tu mensaje. ¿Podrías repetirme tu pregunta?"`
+- **[knowledge.ts:99-106] `kyo_faqs` de Supabase desconectadas de Kyo — PENDIENTE del ciclo anterior**
+  Las FAQs editables desde el admin no llegan a Kyo. La pestaña de FAQs en `/admin/kyo` es decorativa desde la perspectiva del asistente. Ver reporte 2026-08-06 para el fix exacto con fetch desde `kyo_faqs`.
 
-- **[system-prompt.ts:138] `toLocaleString()` sin locale en VPS Linux — PENDIENTE CICLO ANTERIOR**
-  Produce `12000` en lugar de `$12,000`. Usar `Intl.NumberFormat('es-MX', {...})`.
+- **[useChat.ts:20] Tilde faltante en saludo — PENDIENTE del ciclo anterior**
+  `"estoy aqui para orientarte"` → `"estoy aquí para orientarte"`. Es la primera frase que lee el candidato.
 
-- **[useChat.ts:95] Sin AbortController ni timeout — PENDIENTE CICLO ANTERIOR**
-  Con 5 iteraciones de tool-use, si el VPS tiene carga el fetch puede colgarse indefinidamente. Añadir timeout de 20s con AbortController.
+- **[chat/route.ts:202] Fallback robótico sin tildes — PENDIENTE del ciclo anterior**
+  `"Entendido, ¿en que mas te puedo ayudar?"` → cambiar a `"Perdona, tuve un inconveniente procesando tu mensaje. ¿Podrías repetirme tu pregunta?"` Archivo: `src/app/api/assistant/chat/route.ts`, línea 202.
 
-- **[knowledge.ts:167] Kyo usa vacantes del archivo estático, no de Supabase — PENDIENTE CICLO ANTERIOR**
-  El sitio público lee vacantes en tiempo real de Supabase; Kyo lee del fallback `jobs.ts`. Un candidato puede recibir recomendaciones de vacantes ya inactivas. Esta sigue siendo la deuda más crítica del asistente.
+- **[system-prompt.ts:138] `toLocaleString()` sin locale — PENDIENTE del ciclo anterior**
+  En VPS Linux produce `12000` en lugar de `$12,000/mes`. Usar `Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(j.salario)`.
 
-- **[sistema prompt:54-58] Referencia `empresa` en las recomendaciones puede revelar info confidencial**
-  El Paso 5 del system prompt muestra `[Empresa]` en la recomendación. Pero en el admin de vacantes existe la opción "Empresa: Confidencial" (documentado en CLAUDE.md: "si se deja vacía, el sitio muestra 'Confidencial'"). El `JobSummary` en `knowledge.ts` incluye el campo `empresa` que puede estar vacío o con valor real. El system prompt debe instruir: "Si la empresa es vacía o 'Confidencial', no la menciones en la recomendación."
+- **[useChat.ts:95] Sin AbortController ni timeout — PENDIENTE del ciclo anterior**
+  Con 5 iteraciones de tool-use, si el VPS tiene carga el fetch puede colgarse indefinidamente. Añadir timeout de 20s con `AbortController`.
+
+- **[system-prompt.ts:85-87] Filtros de URL con nombres de empresas ficticias — PENDIENTE del ciclo anterior**
+  Los filtros `?marca=Sigma Retail`, `?marca=Logistica Norte` etc. son datos de demo de `jobs.ts`, no empresas reales de Kyoszen. Si el admin gestiona vacantes con empresas distintas en Supabase, estos filtros no sirven. Actualizar con los valores reales cuando las vacantes de Supabase tengan nombres de empresa consistentes.
+
+- **[system-prompt.ts:54-58] Empresa "Confidencial" puede quedar expuesta — PENDIENTE del ciclo anterior**
+  El Paso 5 muestra `[Empresa]` en la recomendación, pero si la empresa es vacía el `JobSummary.empresa` es `""`. Instruir a Kyo: si `empresa` está vacío o es `"Confidencial"`, no mencionarla en la recomendación.
 
 ---
 
 ## Oportunidades de mejora general
 
-- **[analytics] Sin tracking de qué paso del flujo abandona el candidato**
-  `logEvent("kyo_mensaje")` registra cada mensaje enviado, pero no el paso del flujo en que se encuentra Kyo. Añadir en `useChat.ts` un evento al cerrar el widget y al resetear:
-  ```typescript
-  // En reset():
-  logEvent("kyo_reset", String(messages.length));
-  // En ChatWidget.tsx, al cerrar (onClick del botón close y del botón flotante):
-  if (messages.length > 1) logEvent("kyo_cerrado", String(messages.length));
-  ```
-  Con esto, el dashboard de analytics puede mostrar "los candidatos promedio abandonan a los X mensajes" — dato clave para optimizar el flujo.
+- **[usuarios/page.tsx] Nuevo: campo de contraseña al crear usuario también en `type="text"`**
+  El campo de "Contraseña temporal" al crear un nuevo usuario (línea 547) también tiene `type="text"`. Cambiar a `type="password"` con `autocomplete="new-password"`. El administrador que crea la cuenta puede ver caracteres al escribir si quiere (es un campo que él controla), pero enmascararlo por defecto es la práctica correcta.
 
-- **[sistema/general] Chips de respuesta rápida para acelerar el flujo**
-  En los Pasos 3 y 4, las respuestas son predecibles (ubicación: CDMX / Estado de México / Remoto; jornada: Tiempo completo / Medio tiempo). Añadir chips debajo del input en `ChatWidget.tsx` que aparezcan contextualmente cuando Kyo hace esas preguntas:
-  ```tsx
-  // En ChatWidget, tras el área de mensajes, si el último mensaje es de Kyo:
-  {lastAssistantMsg?.includes("zona") && (
-    <div className="flex gap-2 flex-wrap px-5 pb-2">
-      {["CDMX", "Estado de México", "Híbrido", "Remoto"].map(chip => (
-        <button key={chip} onClick={() => sendMessage(chip)}
-          className="text-[12px] border border-navy/30 text-navy rounded-full px-3 py-1 hover:bg-navy/5">
-          {chip}
-        </button>
-      ))}
-    </div>
-  )}
-  ```
-  Reduce la fricción de escritura en mobile y aumenta la tasa de completación del flujo.
+- **[analytics] Sin tracking de qué paso del flujo abandona el candidato — PENDIENTE**
+  `logEvent("kyo_mensaje")` registra cada mensaje pero no el paso del flujo. Añadir evento `kyo_cerrado` con el número de mensajes al cerrar el widget. Ver reporte 2026-08-06 para el código exacto.
 
-- **[admin panel — sidebar] No hay indicador de rol visible para el usuario logueado**
-  El sidebar solo muestra el email (o nombre si se aplica el fix de layout). Añadir un badge pequeño con el rol actual (`Admin` / `Colaborador`) en el footer del sidebar, junto al nombre, para que el usuario sepa qué permisos tiene:
-  ```tsx
-  <div className="flex items-center gap-2">
-    <p className="text-white/40 text-[11px] truncate flex-1">{displayName}</p>
-    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
-      esAdmin ? "bg-yellow/20 text-yellow" : "bg-white/10 text-white/50"
-    }`}>{esAdmin ? "Admin" : "Colaborador"}</span>
-  </div>
-  ```
+- **[ChatWidget] Chips de respuesta rápida para acelerar el flujo — PENDIENTE**
+  En los Pasos 3 (ubicación) y 4 (jornada), las respuestas son predecibles. Chips de respuesta rápida reducen la fricción en mobile. Ver reporte 2026-08-06 para el componente.
 
-- **[chat/route.ts:69-82] Rate limiter en memoria, se resetea en cada deploy**
-  El `rateLimitMap` (líneas 68-81) vive en memoria del proceso. Cada `pm2 restart` tras un deploy borra todos los conteos. Con los VPS watchdog scripts que hacen commits+push a main, los deploys son frecuentes. El riesgo es bajo con el volumen actual de tráfico, pero documentado para cuando escale.
+- **[admin panel — sidebar] Badge de rol no visible para el usuario logueado — PENDIENTE**
+  Añadir un badge pequeño `Admin` / `Colaborador` junto al nombre en el footer del sidebar. Ver reporte 2026-08-06 para el JSX.
 
 ---
 
-## Estado de issues del ciclo anterior (2026-08-05)
+## Estado de issues acumulados
 
 | Issue | Archivo | Estado |
 |---|---|---|
-| Tilde en saludo inicial "aquí" | `useChat.ts:20` | **PENDIENTE** |
+| Tilde en saludo "aquí" | `useChat.ts:20` | **PENDIENTE** |
 | "Nueva conversacion" sin tilde | `ChatWidget.tsx:159` | **PENDIENTE** |
-| Fallback robotico sin tildes | `chat/route.ts:202` | **PENDIENTE** |
+| Fallback robótico sin tildes | `chat/route.ts:202` | **PENDIENTE** |
 | `toLocaleString()` sin locale | `system-prompt.ts:138` | **PENDIENTE** |
 | Sin AbortController en fetch | `useChat.ts:95` | **PENDIENTE** |
 | Kyo lee jobs del archivo estático | `knowledge.ts:167` | **PENDIENTE** |
+| kyo_faqs desconectadas de Kyo | `knowledge.ts:99` | **PENDIENTE** |
 | Email sintético en sidebar | `layout.tsx:268` | **PENDIENTE** |
-| `window.confirm()` para borrar usuario | `usuarios/page.tsx:277` | **PENDIENTE** |
-| Recuperación de contraseña colaboradores | `login/page.tsx:91` | **PENDIENTE** |
+| `window.confirm()` para borrar usuario | `usuarios/page.tsx:329` | **PENDIENTE** |
+| Colaborador desactivado sin mensaje | `layout.tsx:96-99` | **PENDIENTE** |
 | Colaboradores sin secciones sin CTA | `layout.tsx:283` | **PENDIENTE** |
-| Panel dice "videos" en vez de "proyectos" | `usuarios/page.tsx:581` | **PENDIENTE** |
+| Panel dice "videos" en vez de "proyectos" | `usuarios/page.tsx:636` | **PENDIENTE** |
 | Sin tracking de abandono de Kyo | `useChat.ts` | **PENDIENTE** |
 | Filtros de URL con empresas ficticias | `system-prompt.ts:85` | **PENDIENTE** |
-| Correo de notificación proyectos hardcodeado | `status/route.ts:69` | **PENDIENTE** |
-| kyo_faqs desconectadas de Kyo | `knowledge.ts:99` | **PENDIENTE** ← *nuevo detalle hoy* |
+| Empresa "Confidencial" expuesta en Paso 5 | `system-prompt.ts:54` | **PENDIENTE** |
+| search_jobs sin filtro de jornada | `tools.ts:38-46` | **PENDIENTE** |
+| Campo contraseña en `type="text"` | `usuarios/page.tsx:547,719` | **NUEVO** |
+| Rollup campaña no recalcula en cliente | `CampanasCliente.tsx:881` | **NUEVO** |
+| Sin notificación cuando campaña sale al aire | `campanas-notify.ts` | **NUEVO** |
+| Sin flujo en Kyo para candidatos de Facebook | `system-prompt.ts` | **NUEVO** |
