@@ -1,82 +1,50 @@
 # Reporte de Dependencias — Kyoszen
-**Fecha:** 2026-08-03
+**Fecha:** 2026-08-10
+
+---
 
 ## Vulnerabilidades de Seguridad
 
-### 🔴 CRÍTICO / ALTO — `next` 16.2.3 (directa) — Fix: 16.2.12 (no breaking)
+### 🔴 ALTA (9 vulnerabilidades — 2 dependencias directas)
 
-22 CVEs activos. Rango afectado: `9.3.4-canary.0 – 16.3.0-preview.7`.
+| Paquete | Directo | Vulnerabilidad | Fix disponible |
+|---------|---------|----------------|----------------|
+| **next** 16.2.3 | ✅ Sí | DoS en Server Components; Middleware/Proxy bypass (múltiples CVEs); XSS en App Router con nonces CSP; cache poisoning en RSC; SSRF en Server Actions y WebSocket upgrades; bypass en Pages Router i18n; endpoint disclosure | `npm install next@16.3.0` |
+| **nodemailer** 6.10.1 | ✅ Sí | SMTP command injection vía `envelope.size`; CRLF injection en HELO/EHLO y List-* headers; TLS incorrecto en OAuth2; bypass de `disableFileAccess`/`disableUrlAccess`; DoS en addressparser | `npm install nodemailer@9.0.5` (major) |
+| brace-expansion | ❌ Indirecto | DoS: expansión exponencial / arrays ilimitados / crash OOM (múltiples CVEs encadenados) | Actualizar dependencia padre |
+| ip-address | ❌ Indirecto | SSRF y bypass de trust-boundary: octetos con ceros iniciales, CIDR suffix, IPv4-mapped/NAT64 | Actualizar dependencia padre |
+| js-yaml | ❌ Indirecto | DoS: complejidad cuadrática en merge keys, aliases y !!omap (múltiples CVEs) | Actualizar dependencia padre |
+| nanoid | ❌ Indirecto | Loop infinito con generadores custom de tamaño 0 o negativo | Actualizar dependencia padre |
+| postcss | ❌ Indirecto | XSS vía `</style>` sin escapar; path traversal en sourceMappingURL; lectura arbitraria de archivos .map | Se resuelve al actualizar `next@16.3.0` |
+| sharp | ❌ Indirecto | Vulnerabilidades heredadas de libvips: CVE-2026-33327/33328/35590/35591 | Se resuelve al actualizar `next@16.3.0` |
+| ws | ❌ Indirecto | Divulgación de memoria no inicializada; DoS por agotamiento de memoria | Actualizar dependencia padre |
 
-Selección de más graves:
+### 🟡 MODERADA (1 vulnerabilidad — dependencia directa)
 
-| Advisory | Descripción |
-|----------|-------------|
-| GHSA-267c-6grr-h53f / GHSA-26hh-7cqf-hhc6 | **Middleware/Proxy bypass** en App Router — permite omitir autenticación (rutas `/admin`, `/revisor`) |
-| GHSA-ffhc-5mcf-pf4q | **XSS** en App Router con CSP nonces |
-| GHSA-gx5p-jg67-6x7h | **XSS** en scripts `beforeInteractive` con input no confiable |
-| GHSA-68g3-v927-f742 / GHSA-4633-3j49-mh5q | **Cache poisoning** en RSC y respuestas con UTF-8 inválido |
-| GHSA-89xv-2m56-2m9x / GHSA-p9j2-gv94-2wf4 | **SSRF** en Server Actions y rewrites |
-| GHSA-955p-x3mx-jcvp | **Exposición de endpoints internos** sin autenticación |
-| GHSA-mg66-mrh9-m8jx / GHSA-8h8q-6873-q5fj | **DoS** en Cache Components e Image Optimization API |
+| Paquete | Directo | Vulnerabilidad | Fix disponible |
+|---------|---------|----------------|----------------|
+| **@anthropic-ai/sdk** 0.89.x | ✅ Sí | Permisos de archivo inseguros en Local Filesystem Memory Tool (CWE-732). Rango afectado: >=0.79.0 <0.91.1 | `npm install @anthropic-ai/sdk@latest` (0.116.0, major bump) |
 
-> ⚠️ El bypass de middleware es especialmente crítico: el proyecto usa App Router con rutas protegidas.
-> Fix no breaking: `npm install next@16.2.12 eslint-config-next@16.2.12`
+### ⚪ BAJA (1 vulnerabilidad — indirecta)
 
----
-
-### 🔴 ALTO — `nodemailer` 6.10.1 (directa) — Fix: 9.0.3 (cambio mayor)
-
-8 CVEs activos. Rango afectado: `<=9.0.0`.
-
-| Advisory | Descripción |
-|----------|-------------|
-| GHSA-c7w3-x93f-qmm8 / GHSA-vvjj-xcjg-gr5g | **SMTP Command Injection** vía CRLF en envelope.size y nombre de transporte |
-| GHSA-268h-hp4c-crq3 | **Header injection** en cabeceras List-* |
-| GHSA-p6gq-j5cr-w38f | **Lectura arbitraria de archivos y SSRF** via opción `raw` |
-| GHSA-r7g4-qg5f-qqm2 | **Validación TLS incorrecta** en OAuth2 token fetch |
-| GHSA-rcmh-qjqh-p98v | **DoS** en addressparser por recursión |
-
-> Fix requiere upgrade mayor a v9. Revisar breaking changes antes de actualizar.
-
----
-
-### 🟡 MODERADO — `@anthropic-ai/sdk` 0.89.0 (directa) — Fix: >=0.91.1 (último: 0.115.0)
-
-| Advisory | Severidad | Descripción |
-|----------|-----------|-------------|
-| GHSA-p7fg-763f-g4gf | Moderada | **Permisos inseguros** en Local Filesystem Memory Tool (CWE-732). La herramienta no se usa en Kyoszen, impacto directo bajo. |
-
----
-
-### 🔵 INFO — Dependencias indirectas (transitivas)
-
-| Paquete | Severidad | Descripción |
-|---------|-----------|-------------|
-| `brace-expansion` | Alta | DoS via expansión ilimitada (3 CVEs, CVSS 7.5) — transitiva de eslint/typescript |
-| `js-yaml` | Alta | DoS via merge-key chains (2 CVEs, CVSS 7.5) — transitiva de herramientas de build |
-| `postcss` | Alta | Vulnerabilidad en procesamiento CSS — transitiva de tailwindcss |
-| `sharp` | Alta | Vulnerabilidad en procesamiento de imágenes — transitiva de next |
-| `ws` | Alta | Vulnerabilidad en WebSocket — transitiva |
-| `@babel/core` | Baja | Lectura arbitraria de archivo via sourceMappingURL (CVSS 3.2) — transitiva |
-
-Las indirectas se resuelven en su mayoría actualizando `next` a 16.2.12.
+| Paquete | Directo | Vulnerabilidad | Fix disponible |
+|---------|---------|----------------|----------------|
+| @babel/core | ❌ Indirecto | Lectura arbitraria de archivos vía comentario `sourceMappingURL` (CVSS 3.2) | Actualizar dependencia padre |
 
 ---
 
 ## Paquetes Desactualizados
 
-| Paquete | Instalada | Última | Tipo | Severidad |
-|---------|-----------|--------|------|-----------|
-| `next` | 16.2.3 | **16.2.12** | patch | 🔴 CRÍTICO — 22 CVEs incluyendo XSS, SSRF y bypass de auth |
-| `nodemailer` | 6.10.1 | **9.0.3** | mayor (v6→v9) | 🔴 CRÍTICO — 8 CVEs de SMTP injection y SSRF |
-| `@anthropic-ai/sdk` | 0.89.0 | **0.115.0** | mayor | 🟡 ADVERTENCIA — 1 CVE moderado, 26 versiones de atraso |
-| `react` | 19.2.4 | **19.2.8** | patch | 🔵 INFO |
-| `react-dom` | 19.2.4 | **19.2.8** | patch | 🔵 INFO |
-| `@supabase/supabase-js` | ~2.103.x | **2.112.0** | menor | 🔵 INFO |
-| `lucide-react` | ~1.8.x | **1.28.0** | menor | 🔵 INFO |
-| `framer-motion` | ~12.38.x | **12.43.0** | patch | 🔵 INFO |
-| `marked` | ~18.0.x | **18.0.7** | patch | 🔵 INFO |
-| `unpdf` | ~1.6.x | **1.8.0** | menor | 🔵 INFO |
+| Paquete | Instalado | Último (range) | Último (global) | Severidad |
+|---------|-----------|----------------|-----------------|-----------|
+| next | 16.2.3 | 16.2.3 | **16.3.0** | 🔴 CRÍTICO — múltiples CVEs HIGH |
+| nodemailer | 6.9.x | 6.10.1 | **9.0.5** | 🔴 CRÍTICO — CVEs HIGH + 3 versiones mayores |
+| @anthropic-ai/sdk | 0.89.x | 0.89.x | **0.116.0** | 🟡 MODERADA — CVE + 1 versión mayor atrás |
+| framer-motion | 12.x | 12.43.0 | **13.1.0** | ⚠️ ADVERTENCIA — nueva versión mayor disponible |
+| react | 19.2.4 | 19.2.4 | 19.2.8 | ℹ️ INFO — patch menor |
+| react-dom | 19.2.4 | 19.2.4 | 19.2.8 | ℹ️ INFO — patch menor |
+
+> Los paquetes `@supabase/supabase-js`, `lucide-react`, `marked` y `unpdf` están al día en su última versión.
 
 ---
 
@@ -84,68 +52,42 @@ Las indirectas se resuelven en su mayoría actualizando `next` a 16.2.12.
 
 | Métrica | Valor |
 |---------|-------|
-| Total paquetes instalados | 531 (41 prod · 455 dev · 84 opcional) |
-| Dependencias directas en package.json | 21 (10 deps + 11 devDeps) |
-| Vulnerabilidades totales | **9** (0 críticas · 7 altas · 1 moderada · 1 baja) |
-| Dependencias directas vulnerables | **3** (`next`, `nodemailer`, `@anthropic-ai/sdk`) |
-| Paquetes directos desactualizados con diff notable | **3** (`next`, `nodemailer`, `@anthropic-ai/sdk`) |
+| Total de paquetes (prod + dev + optional) | 531 |
+| Vulnerabilidades totales | 11 (0 críticas, 9 altas, 1 moderada, 1 baja) |
+| Dependencias directas con CVE | 3 (`next`, `nodemailer`, `@anthropic-ai/sdk`) |
+| Paquetes desactualizados | 6 (2 con CVE resuelto en nueva versión) |
 
 ---
 
 ## Recomendaciones
 
-### Acción 1 — URGENTE: `next` 16.2.3 → 16.2.12
+### Acción inmediata (esta semana)
 
-```bash
-npm install next@16.2.12 eslint-config-next@16.2.12
-npm run build
-# Probar en local (localhost:3002) → aprobar → deploy a VPS
-```
+1. **Actualizar `next` a 16.3.0** — Resuelve 9 vulnerabilidades HIGH en el framework principal, incluyendo bypasses de middleware y ataques de cache poisoning que podrían afectar al panel `/admin` y al revisor `/revisor`. La actualización es minor (no breaking):
+   ```bash
+   npm install next@16.3.0 eslint-config-next@16.3.0
+   ```
 
-Cierra 22 CVEs incluyendo bypass de autenticación en rutas `/admin` y `/revisor`. Patch sin breaking changes.
+2. **Actualizar `nodemailer` a 9.0.5** — El proyecto usa nodemailer para correos SMTP (IONOS) de notificaciones a clientes. Los CVEs HIGH incluyen SMTP injection y bypass de restricciones de archivo. Es un salto major; revisar si el API cambió:
+   ```bash
+   npm install nodemailer@9.0.5
+   # Verificar que el transporte SMTP con puerto 465 (secure:true) siga funcionando
+   ```
 
-### Acción 2 — PLANIFICADA: `nodemailer` 6 → 9
+### Acción a corto plazo (próximo ciclo)
 
-Antes de actualizar, revisar estos archivos para compatibilidad de API:
-- `src/app/api/aplicar/route.ts`
-- `src/app/api/contacto/route.ts`
-- Rutas de `/api/admin/social/` que envían notificaciones
+3. **Actualizar `@anthropic-ai/sdk`** — De 0.89.x a la última (0.116.0). Es un salto major; revisar changelog del SDK de Anthropic antes de actualizar para no romper el asistente Kyo ni el Estratega:
+   ```bash
+   npm install @anthropic-ai/sdk@latest
+   ```
 
-```bash
-npm install nodemailer@9.0.3
-# @types/nodemailer es innecesario en v9 (tipos incluidos)
-# Probar flujo SMTP IONOS en local y verificar entrega antes de deploy
-```
+4. **Ejecutar `npm audit fix`** — Para resolver las dependencias indirectas (brace-expansion, ip-address, js-yaml, nanoid, ws, postcss, sharp) que en su mayoría se resuelven automáticamente o al actualizar next:
+   ```bash
+   npm audit fix
+   ```
 
-### Acción 3 — EVALUAR: `@anthropic-ai/sdk` 0.89.0 → 0.115.0
+### Notas
 
-Salto mayor. Antes de deploy, probar:
-- Kyo (`/api/assistant/chat`) — tool-use con haiku
-- Estratega (`/admin/estratega`) — streaming con opus
-- Importador de planes — haiku parsing
-
-```bash
-npm install @anthropic-ai/sdk@^0.115.0
-```
-
-### Acción 4 — INFO: parches sin riesgo
-
-```bash
-npm install react@19.2.8 react-dom@19.2.8
-```
-
-### Después de las actualizaciones
-
-```bash
-npm audit fix --dry-run   # revisar qué va a cambiar
-npm audit fix             # aplicar fixes automáticos de dependencias indirectas
-```
-
-### No hacer
-- No correr `npm audit fix --force` — puede degradar versiones principales.
-- No deployar `nodemailer@9` sin probar el flujo SMTP en local primero.
-- No deployar `@anthropic-ai/sdk@0.115.0` sin probar Kyo y el Estratega en local.
-
----
-
-*Generado automáticamente por el agente de mantenimiento — 2026-08-03.*
+- Las vulnerabilidades de `brace-expansion`, `postcss` y `sharp` se resuelven en cadena al actualizar `next@16.3.0`.
+- La vulnerabilidad de `@anthropic-ai/sdk` (permisos de archivo) aplica al **Local Filesystem Memory Tool** — si el proyecto no usa esa feature, el riesgo real es bajo. Igualmente recomendado actualizar.
+- `framer-motion` v13 puede tener breaking changes respecto a v12; actualizar después de verificar el changelog.
