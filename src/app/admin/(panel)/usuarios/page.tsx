@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Dot, IconUI } from "@/components/ui/IconUI";
 import { ADMIN_SECCIONES } from "@/lib/admin-secciones";
 import { PASSWORD_MINIMO } from "@/lib/admin-usuarios";
+import { fetchAdmin } from "@/lib/admin-fetch";
 
 type Rol = "admin" | "colaborador";
 
@@ -105,7 +106,7 @@ export default function AdminUsuarios() {
   const cargar = useCallback(async () => {
     setError("");
     try {
-      const response = await fetch("/api/admin/usuarios", { cache: "no-store" });
+      const response = await fetchAdmin("/api/admin/usuarios", { cache: "no-store" });
       const payload = (await response.json()) as {
         usuarios?: Usuario[];
         error?: string;
@@ -219,7 +220,7 @@ export default function AdminUsuarios() {
     setCambiandoPassword(true);
     setError("");
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/usuarios/${encodeURIComponent(editandoId)}/password`,
         {
           method: "POST",
@@ -262,7 +263,7 @@ export default function AdminUsuarios() {
     setError("");
     try {
       const esEdicion = Boolean(editandoId);
-      const response = await fetch(
+      const response = await fetchAdmin(
         esEdicion
           ? `/api/admin/usuarios/${encodeURIComponent(editandoId!)}`
           : "/api/admin/usuarios",
@@ -336,7 +337,7 @@ export default function AdminUsuarios() {
     setBorrando(usuario.user_id);
     setError("");
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/usuarios/${encodeURIComponent(usuario.user_id)}`,
         { method: "DELETE" },
       );

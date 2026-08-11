@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 import { PASSWORD_MINIMO, generarPasswordTemporal } from "@/lib/admin-usuarios";
+import { SinPermiso, soloAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await soloAdmin(req);
     const { id } = await params;
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
@@ -56,6 +58,7 @@ export async function POST(
       email: perfil.email,
     });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudo cambiar la contraseña.";
     return NextResponse.json({ error: message }, { status: 500 });

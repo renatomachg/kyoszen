@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 import { ADMIN_SECCION_KEYS } from "@/lib/admin-secciones";
+import { SinPermiso, soloAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -42,6 +43,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await soloAdmin(req);
     const { id } = await params;
     const body = (await req.json()) as Record<string, unknown>;
     const { data: actual, error: consultaError } = await sb
@@ -141,6 +143,7 @@ export async function PATCH(
 
     return NextResponse.json({ usuario });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudo actualizar el usuario.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -148,11 +151,18 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const quien = await soloAdmin(req);
     const { id } = await params;
+    if (id === quien.user_id) {
+      return NextResponse.json(
+        { error: "No puedes borrar tu propia cuenta." },
+        { status: 400 },
+      );
+    }
     const { error: authError } = await sb.auth.admin.deleteUser(id);
 
     if (authError) {
@@ -170,6 +180,7 @@ export async function DELETE(
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudo borrar el usuario.";
     return NextResponse.json({ error: message }, { status: 500 });

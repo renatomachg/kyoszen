@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 import { ADMIN_SECCION_KEYS } from "@/lib/admin-secciones";
+import { SinPermiso, soloAdmin } from "@/lib/admin-auth";
 import {
   PASSWORD_MINIMO,
   correoInterno,
@@ -56,8 +57,9 @@ function esErrorDuplicado(message: string): boolean {
   );
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    await soloAdmin(req);
     const { data, error } = await sb
       .from("admin_perfiles")
       .select("user_id, usuario, email, nombre, rol, secciones, proyectos, activo, created_at, updated_at")
@@ -69,6 +71,7 @@ export async function GET() {
 
     return NextResponse.json({ usuarios: data ?? [] });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudieron cargar los usuarios.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -77,6 +80,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    await soloAdmin(req);
     const body = (await req.json()) as Record<string, unknown>;
     const emailSolicitado =
       typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -212,6 +216,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ usuario, passwordTemporal }, { status: 201 });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudo crear el usuario.";
     return NextResponse.json({ error: message }, { status: 500 });
