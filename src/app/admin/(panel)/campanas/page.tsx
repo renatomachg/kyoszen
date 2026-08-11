@@ -9,11 +9,16 @@ import {
   ESTADOS_CAMPANA,
   MODOS_CAMPANA,
   esEnCurso,
+  fmtDinero,
+  fmtNumero,
   statsAnuncios,
+  sumarResultados,
+  tieneResultados,
   type Campana,
   type CampanaAnuncio,
   type ModoCampana,
   type PreguntaFormulario,
+  type ResultadosCampana,
   type TipoPregunta,
 } from "@/lib/campanas";
 
@@ -43,6 +48,80 @@ function Campo({ label, children, ancho }: { label: string; children: React.Reac
         {label}
       </label>
       {children}
+    </div>
+  );
+}
+
+/* ─── Resultados de Meta ──────────────────────────────── */
+const CAMPOS_RESULTADO: [keyof ResultadosCampana, string][] = [
+  ["alcance", "Alcance (personas)"],
+  ["impresiones", "Impresiones"],
+  ["clics", "Clics"],
+  ["clics_enlace", "Clics al enlace"],
+  ["gastado", "Gastado (MXN)"],
+  ["interacciones", "Interacciones"],
+];
+
+function ResultadosEditor({ resultados, onChange }: {
+  resultados: ResultadosCampana | null | undefined;
+  onChange: (r: ResultadosCampana) => void;
+}) {
+  const r = resultados ?? {};
+  const set = (patch: Partial<ResultadosCampana>) =>
+    onChange({ ...r, ...patch, fuente: "manual", moneda: r.moneda ?? "MXN", actualizado_en: new Date().toISOString() });
+
+  const numero = (campo: keyof ResultadosCampana) => {
+    const v = r[campo];
+    return typeof v === "number" ? String(v) : "";
+  };
+
+  return (
+    <div style={{ background: "#F8FAFC", border: `1px solid ${C.hair}`, borderRadius: 12, padding: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 10 }}>
+        <Campo label="Desde">
+          <input type="date" value={r.desde ?? ""} onChange={e => set({ desde: e.target.value })} style={{ ...input, padding: "8px 9px" }} />
+        </Campo>
+        <Campo label="Hasta">
+          <input type="date" value={r.hasta ?? ""} onChange={e => set({ hasta: e.target.value })} style={{ ...input, padding: "8px 9px" }} />
+        </Campo>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+        {CAMPOS_RESULTADO.map(([campo, label]) => (
+          <Campo key={campo} label={label}>
+            <input
+              type="number" min="0" step={campo === "gastado" ? "0.01" : "1"}
+              value={numero(campo)}
+              onChange={e => set({ [campo]: e.target.value === "" ? undefined : Number(e.target.value) } as Partial<ResultadosCampana>)}
+              style={{ ...input, padding: "8px 9px" }}
+            />
+          </Campo>
+        ))}
+      </div>
+      {r.actualizado_en && (
+        <p style={{ margin: "10px 0 0", fontSize: 11.5, color: C.faint }}>
+          Último corte: {new Date(r.actualizado_en).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}
+          {r.fuente === "meta" ? " · traído de Meta" : " · capturado a mano"}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Vista rápida de los números, sin editar. */
+function ResumenResultados({ resultados }: { resultados: ResultadosCampana }) {
+  const datos: [string, string][] = [
+    ["Alcance", fmtNumero(resultados.alcance)],
+    ["Impresiones", fmtNumero(resultados.impresiones)],
+    ["Clics", fmtNumero(resultados.clics)],
+    ["Gastado", fmtDinero(resultados.gastado, resultados.moneda ?? "MXN")],
+  ];
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {datos.map(([k, v]) => (
+        <span key={k} style={{ background: C.blueWash, color: C.navy, borderRadius: 8, padding: "6px 11px", fontSize: 12, fontWeight: 800 }}>
+          {k}: {v}
+        </span>
+      ))}
     </div>
   );
 }
@@ -162,6 +241,7 @@ function AnuncioEditor({ anuncio, enCurso, onSaved }: { anuncio: CampanaAnuncio;
           descripcion: borrador.descripcion,
           cta: borrador.cta,
           formulario: borrador.formulario,
+          resultados: borrador.resultados ?? null,
           avisar,
         }),
       });
@@ -293,6 +373,10 @@ function AnuncioEditor({ anuncio, enCurso, onSaved }: { anuncio: CampanaAnuncio;
               rows={5} style={{ ...input, resize: "vertical", lineHeight: 1.5 }} />
           </Campo>
 
+          <Campo label="Resultados de este anuncio">
+            <ResultadosEditor resultados={borrador.resultados} onChange={resultados => set({ resultados })} />
+          </Campo>
+
           <div style={{ display: "flex", gap: 9, flexWrap: "wrap", alignItems: "center" }}>
             <button onClick={() => guardar(false)} disabled={guardando}
               style={{ background: "#fff", border: `1.5px solid ${C.hair}`, borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 800, color: C.navy, cursor: "pointer" }}>
@@ -391,7 +475,7 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
           publica_desde: b.publica_desde, segmentacion: b.segmentacion,
           presupuesto_texto: b.presupuesto_texto, fecha_difusion: b.fecha_difusion,
           fechas_reclutamiento: b.fechas_reclutamiento, meta_texto: b.meta_texto,
-          sede_texto: b.sede_texto, nota_interna: b.nota_interna,
+          sede_texto: b.sede_texto, nota_interna: b.nota_interna, resultados: b.resultados ?? null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -480,6 +564,16 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
             style={{ ...input, resize: "vertical", background: "#FFFBEB", borderColor: "#FDE68A" }} />
         </Campo>
       </div>
+      {/* Resultados de Meta que ve el cliente */}
+      <div style={{ marginTop: 20 }}>
+        <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 900, color: C.navy }}>Resultados de la campaña</h4>
+        <p style={{ margin: "0 0 10px", fontSize: 12.5, color: C.muted }}>
+          Los números que el cliente ve en “Cómo va la campaña”. Cópialos del administrador de anuncios de Meta.
+          {b.meta_id && <> ID en Meta: <span style={{ fontFamily: "monospace", color: C.body }}>{b.meta_id}</span>.</>}
+        </p>
+        <ResultadosEditor resultados={b.resultados} onChange={resultados => set({ resultados })} />
+      </div>
+
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14 }}>
         <button onClick={guardar} disabled={guardando}
           style={{ background: C.navy, border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 13, fontWeight: 800, color: "#fff", cursor: "pointer" }}>
@@ -692,6 +786,12 @@ export default function CampanasAdminPage() {
           const est = ESTADOS_CAMPANA[c.estado];
           const enCurso = esEnCurso(c);
           const esActual = abierta === c.id;
+          const anunciosDe = c.campana_anuncios ?? [];
+          const resumen = tieneResultados(c.resultados)
+            ? c.resultados!
+            : anunciosDe.some(a => tieneResultados(a.resultados))
+              ? sumarResultados(anunciosDe)
+              : null;
           return (
             <div key={c.id} style={{ background: "#fff", border: `1px solid ${esActual ? C.blue : C.hair}`, borderRadius: 16, overflow: "hidden", boxShadow: esActual ? "0 4px 18px rgba(24,131,255,.12)" : "0 1px 3px rgba(4,46,123,.05)" }}>
               <div style={{ padding: "16px 18px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
@@ -719,6 +819,11 @@ export default function CampanasAdminPage() {
                     )}
                     {!enCurso && st.cambios > 0 && <span style={{ color: "#B91C1C", fontWeight: 800 }}> · {st.cambios} con cambios</span>}
                   </p>
+                  {resumen && (
+                    <div style={{ marginTop: 8 }}>
+                      <ResumenResultados resultados={resumen} />
+                    </div>
+                  )}
                 </div>
                 <button onClick={() => togglePublicado(c)} disabled={publicando}
                   style={{ background: c.publicado ? "#fff" : C.yellow, border: c.publicado ? `1.5px solid ${C.hair}` : "none", borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 900, color: C.navy, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>

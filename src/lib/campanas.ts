@@ -61,6 +61,77 @@ export interface PasoFlujo {
   icono: "mouse-pointer" | "clipboard" | "check" | "location" | "send" | "users";
 }
 
+/** Corte de resultados de Meta. Todo opcional: una campaña recién creada no trae nada. */
+export interface ResultadosCampana {
+  /** `meta` = traído del administrador de anuncios. `manual` = capturado a mano. */
+  fuente?: "meta" | "manual";
+  actualizado_en?: string;
+  desde?: string;
+  hasta?: string;
+  moneda?: string;
+  /** Veces que se mostró el anuncio (incluye repetidos). */
+  impresiones?: number;
+  /** Personas distintas que lo vieron. */
+  alcance?: number;
+  clics?: number;
+  /** Clics que abrieron la publicación, subconjunto de `clics`. */
+  clics_enlace?: number;
+  gastado?: number;
+  /** Reacciones, comentarios, compartidos y guardados. */
+  interacciones?: number;
+  cpm?: number;
+  cpc?: number;
+  ctr?: number;
+  frecuencia?: number;
+}
+
+/** Solo vale la pena pintar el panel si hay al menos un número. */
+export function tieneResultados(r?: ResultadosCampana | null): boolean {
+  if (!r) return false;
+  return [r.impresiones, r.alcance, r.clics, r.gastado].some(
+    v => typeof v === "number" && v > 0
+  );
+}
+
+/** Suma los cortes de los anuncios cuando la campaña no trae uno propio.
+ *  El alcance NO se suma: la misma persona puede ver dos anuncios. */
+export function sumarResultados(anuncios: { resultados?: ResultadosCampana | null }[]): ResultadosCampana {
+  const cortes = anuncios.map(a => a.resultados).filter((r): r is ResultadosCampana => !!r);
+  const suma = (campo: keyof ResultadosCampana) =>
+    cortes.reduce((total, r) => total + (typeof r[campo] === "number" ? (r[campo] as number) : 0), 0);
+
+  return {
+    fuente: cortes[0]?.fuente,
+    actualizado_en: cortes[0]?.actualizado_en,
+    desde: cortes[0]?.desde,
+    hasta: cortes[0]?.hasta,
+    moneda: cortes[0]?.moneda ?? "MXN",
+    impresiones: suma("impresiones"),
+    clics: suma("clics"),
+    clics_enlace: suma("clics_enlace"),
+    gastado: suma("gastado"),
+    interacciones: suma("interacciones"),
+  };
+}
+
+/** Miles con separador, en español de México. */
+export function fmtNumero(valor?: number): string {
+  if (typeof valor !== "number" || Number.isNaN(valor)) return "—";
+  return valor.toLocaleString("es-MX");
+}
+
+export function fmtDinero(valor?: number, moneda = "MXN"): string {
+  if (typeof valor !== "number" || Number.isNaN(valor)) return "—";
+  return `$${valor.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${moneda}`;
+}
+
+/** Costo por cada mil impresiones, en palabras del cliente. */
+export function costoPorMil(r: ResultadosCampana): number | undefined {
+  if (typeof r.cpm === "number") return r.cpm;
+  if (r.gastado && r.impresiones) return (r.gastado / r.impresiones) * 1000;
+  return undefined;
+}
+
 export interface CampanaComentario {
   id: number;
   autor_nombre: string;
@@ -81,6 +152,8 @@ export interface CampanaAnuncio {
   formulario: FormularioAnuncio;
   estado: EstadoCampana;
   orden: number;
+  resultados?: ResultadosCampana | null;
+  meta_id?: string | null;
   campana_comentarios?: CampanaComentario[];
 }
 
@@ -103,6 +176,8 @@ export interface Campana {
   nota_interna?: string | null;
   estado: EstadoCampana;
   modo: ModoCampana;
+  resultados?: ResultadosCampana | null;
+  meta_id?: string | null;
   publicado: boolean;
   orden: number;
   created_at: string;

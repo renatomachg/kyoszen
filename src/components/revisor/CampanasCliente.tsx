@@ -6,15 +6,21 @@ import { RedLogo } from "@/components/RedLogo";
 import { getRedSocial } from "@/lib/redes-sociales";
 import {
   ESTADOS_CAMPANA,
+  costoPorMil,
   esEnCurso,
   flujoDeCampana,
+  fmtDinero,
+  fmtNumero,
   statsAnuncios,
+  sumarResultados,
   tieneFormulario,
+  tieneResultados,
   type Campana,
   type CampanaAnuncio,
   type CampanaComentario,
   type EstadoCampana,
   type PreguntaFormulario,
+  type ResultadosCampana,
 } from "@/lib/campanas";
 
 interface PageConfig {
@@ -39,14 +45,17 @@ const CSS = `
 .camp-datos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .camp-flujo { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .camp-anuncios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.camp-cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .camp-modal-cols { display: grid; grid-template-columns: 1.05fr .95fr; }
 .camp-modal-der { border-left: 1px solid #F1F5F9; }
 @media (max-width: 1080px) {
+  .camp-cifras { grid-template-columns: repeat(2, 1fr); }
   .camp-datos { grid-template-columns: repeat(2, 1fr); }
   .camp-flujo { grid-template-columns: repeat(1, 1fr); }
   .camp-anuncios { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 760px) {
+  .camp-cifras { grid-template-columns: 1fr; }
   .camp-datos { grid-template-columns: 1fr; }
   .camp-anuncios { grid-template-columns: 1fr; }
   .camp-modal-cols { grid-template-columns: 1fr; }
@@ -84,6 +93,131 @@ function PillAlAire({ size = "md" }: { size?: "sm" | "md" }) {
       <span style={{ width: s ? 6 : 7, height: s ? 6 : 7, borderRadius: "50%", background: "#22C55E" }} />
       Al aire
     </span>
+  );
+}
+
+/* ─── Resultados de la campaña ────────────────────────── */
+function fmtFechaCorta(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(`${iso}T12:00:00`);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("es-MX", { day: "numeric", month: "long" });
+}
+
+function CifraGrande({ valor, etiqueta, ayuda, destacada }: {
+  valor: string; etiqueta: string; ayuda: string; destacada?: boolean;
+}) {
+  return (
+    <div style={{
+      background: destacada ? C.navy : "#fff",
+      border: `1px solid ${destacada ? C.navy : C.hair}`,
+      borderRadius: 16, padding: "16px 18px",
+    }}>
+      <p style={{
+        margin: "0 0 6px", fontSize: 10.5, fontWeight: 800, letterSpacing: ".06em",
+        textTransform: "uppercase", color: destacada ? "rgba(255,255,255,.6)" : C.faint,
+      }}>{etiqueta}</p>
+      <p style={{
+        margin: "0 0 6px", fontSize: 26, fontWeight: 900, lineHeight: 1.1,
+        color: destacada ? "#fff" : C.navy,
+      }}>{valor}</p>
+      <p style={{
+        margin: 0, fontSize: 11.5, lineHeight: 1.45,
+        color: destacada ? "rgba(255,255,255,.7)" : C.muted,
+      }}>{ayuda}</p>
+    </div>
+  );
+}
+
+function PanelResultados({ resultados }: { resultados: ResultadosCampana }) {
+  const moneda = resultados.moneda ?? "MXN";
+  const cpm = costoPorMil(resultados);
+  const periodo = resultados.desde && resultados.hasta
+    ? `Del ${fmtFechaCorta(resultados.desde)} al ${fmtFechaCorta(resultados.hasta)}`
+    : null;
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 900, color: C.navy }}>Cómo va la campaña</h3>
+        {periodo && (
+          <span style={{ fontSize: 11.5, color: C.faint, fontWeight: 700 }}>{periodo}</span>
+        )}
+      </div>
+      <p style={{ margin: "0 0 14px", fontSize: 13, color: C.muted }}>
+        Números reales tomados de Facebook.
+      </p>
+
+      <div className="camp-cifras">
+        <CifraGrande
+          destacada
+          valor={fmtNumero(resultados.alcance)}
+          etiqueta="Personas alcanzadas"
+          ayuda="Personas distintas que vieron el anuncio. Es el número que importa en una campaña de alcance."
+        />
+        <CifraGrande
+          valor={fmtNumero(resultados.impresiones)}
+          etiqueta="Veces que se mostró"
+          ayuda="Cuántas veces apareció en pantalla, contando a quien lo vio más de una vez."
+        />
+        <CifraGrande
+          valor={fmtNumero(resultados.clics)}
+          etiqueta="Clics"
+          ayuda={
+            typeof resultados.clics_enlace === "number" && resultados.clics_enlace > 0
+              ? `${fmtNumero(resultados.clics_enlace)} de ellos abrieron la publicación completa.`
+              : "Personas que tocaron el anuncio."
+          }
+        />
+        <CifraGrande
+          valor={fmtDinero(resultados.gastado, moneda)}
+          etiqueta="Invertido"
+          ayuda={
+            typeof cpm === "number"
+              ? `Cuesta $${cpm.toFixed(2)} ${moneda} llegarle a mil personas.`
+              : "Lo que lleva gastado la campaña."
+          }
+        />
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+        {typeof resultados.frecuencia === "number" && resultados.frecuencia > 0 && (
+          <span style={{ background: C.wash, color: C.body, borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 700 }}>
+            Cada persona lo vio {resultados.frecuencia.toFixed(1)} veces en promedio
+          </span>
+        )}
+        {typeof resultados.interacciones === "number" && resultados.interacciones > 0 && (
+          <span style={{ background: C.wash, color: C.body, borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 700 }}>
+            {fmtNumero(resultados.interacciones)} reacciones, comentarios y compartidos
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Cifras del anuncio, en una línea. */
+function TiraResultados({ resultados, compacta }: { resultados: ResultadosCampana; compacta?: boolean }) {
+  const datos: [string, string][] = [
+    ["Alcance", fmtNumero(resultados.alcance)],
+    ["Se mostró", fmtNumero(resultados.impresiones)],
+    ["Clics", fmtNumero(resultados.clics)],
+    ["Invertido", fmtDinero(resultados.gastado, resultados.moneda ?? "MXN").replace(/ [A-Z]{3}$/, "")],
+  ];
+  return (
+    <div style={{
+      display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: compacta ? 6 : 10,
+      background: "#F7F9FC", border: `1px solid ${C.hair}`, borderRadius: 12,
+      padding: compacta ? "9px 10px" : "12px 14px",
+    }}>
+      {datos.map(([k, v]) => (
+        <div key={k} style={{ minWidth: 0 }}>
+          <p style={{ margin: "0 0 2px", fontSize: 9.5, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: ".05em" }}>{k}</p>
+          <p style={{ margin: 0, fontSize: compacta ? 12.5 : 14, fontWeight: 900, color: C.navy, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -531,6 +665,16 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
             </div>
             )}
 
+            {/* Cómo va este anuncio */}
+            {tieneResultados(anuncio.resultados) && (
+              <div>
+                <p style={{ margin: "0 0 8px", fontSize: 10.5, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: ".06em" }}>
+                  Cómo va este anuncio
+                </p>
+                <TiraResultados resultados={anuncio.resultados!} />
+              </div>
+            )}
+
             {/* Ficha rápida del anuncio */}
             <div style={{ background: "#F7F9FC", border: `1px solid ${C.hair}`, borderRadius: 12, padding: "13px 15px" }}>
               <p style={{ margin: "0 0 9px", fontSize: 10.5, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: ".06em" }}>
@@ -613,6 +757,11 @@ function AnuncioCard({ anuncio, enCurso, onOpen }: { anuncio: CampanaAnuncio; en
         {anuncio.titulo && (
           <p style={{ margin: "0 0 10px", fontSize: 12.5, color: C.body, lineHeight: 1.45 }}>{anuncio.titulo}</p>
         )}
+        {tieneResultados(anuncio.resultados) && (
+          <div style={{ marginBottom: 10 }}>
+            <TiraResultados resultados={anuncio.resultados!} compacta />
+          </div>
+        )}
         <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           {(anuncio.formulario?.preguntas?.length ?? 0) > 0 && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: C.muted, fontWeight: 700 }}>
@@ -645,6 +794,12 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
   const anuncios = campana.campana_anuncios ?? [];
   const enCurso = esEnCurso(campana);
   const stats = statsAnuncios(anuncios);
+  // El corte de la campaña manda; si no hay, se arma sumando el de los anuncios
+  const resultados = tieneResultados(campana.resultados)
+    ? campana.resultados!
+    : anuncios.some(a => tieneResultados(a.resultados))
+      ? sumarResultados(anuncios)
+      : null;
   const flujo = flujoDeCampana(campana);
   const hayFormularios = anuncios.some(tieneFormulario);
   const seg = campana.segmentacion ?? {};
@@ -713,6 +868,9 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
           )}
         </div>
       </div>
+
+      {/* Resultados reales, si ya hay */}
+      {resultados && <PanelResultados resultados={resultados} />}
 
       {/* A quién le llega */}
       <div style={{ marginBottom: 24 }}>

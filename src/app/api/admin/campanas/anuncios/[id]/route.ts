@@ -10,7 +10,7 @@ const sb = createClient(
 
 const CAMPOS_EDITABLES = [
   "puesto", "imagen_url", "texto_principal", "titulo", "descripcion",
-  "cta", "formulario", "orden",
+  "cta", "formulario", "orden", "resultados", "meta_id",
 ] as const;
 
 /** PATCH — editar el anuncio.
