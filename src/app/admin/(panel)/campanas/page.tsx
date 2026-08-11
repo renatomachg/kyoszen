@@ -21,6 +21,7 @@ import {
   type ResultadosCampana,
   type TipoPregunta,
 } from "@/lib/campanas";
+import type { EstadoToken } from "@/lib/meta-insights";
 
 const C = {
   navy: "#042E7B",
@@ -476,6 +477,7 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
           presupuesto_texto: b.presupuesto_texto, fecha_difusion: b.fecha_difusion,
           fechas_reclutamiento: b.fechas_reclutamiento, meta_texto: b.meta_texto,
           sede_texto: b.sede_texto, nota_interna: b.nota_interna, resultados: b.resultados ?? null,
+          meta_id: b.meta_id ?? null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -568,9 +570,15 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
       <div style={{ marginTop: 20 }}>
         <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 900, color: C.navy }}>Resultados de la campaña</h4>
         <p style={{ margin: "0 0 10px", fontSize: 12.5, color: C.muted }}>
-          Los números que el cliente ve en “Cómo va la campaña”. Cópialos del administrador de anuncios de Meta.
-          {b.meta_id && <> ID en Meta: <span style={{ fontFamily: "monospace", color: C.body }}>{b.meta_id}</span>.</>}
+          Los números que el cliente ve en “Cómo va la campaña”. Con el ID de Meta puesto, el botón
+          “Actualizar de Meta” los trae solo; si no, cáptura los aquí a mano.
         </p>
+        <div style={{ marginBottom: 10, maxWidth: 380 }}>
+          <Campo label="ID de la campaña en Meta">
+            <input value={b.meta_id ?? ""} onChange={e => set({ meta_id: e.target.value.trim() || null })}
+              placeholder="Ej: 120251901050030472" style={{ ...input, fontFamily: "monospace" }} />
+          </Campo>
+        </div>
         <ResultadosEditor resultados={b.resultados} onChange={resultados => set({ resultados })} />
       </div>
 
@@ -593,6 +601,9 @@ export default function CampanasAdminPage() {
   const [publicando, setPublicando] = useState(false);
   const [importando, setImportando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [meta, setMeta] = useState<EstadoToken | null>(null);
+  const [sincronizando, setSincronizando] = useState<number | null>(null);
+  const [avisoSync, setAvisoSync] = useState<string | null>(null);
   const [dialogo, setDialogo] = useState<
     Omit<ConfirmModalProps, "abierto" | "onCancelar" | "cargando"> | null
   >(null);
@@ -608,6 +619,45 @@ export default function CampanasAdminPage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  // ¿El servidor tiene el acceso a Meta, y le queda vida al token?
+  useEffect(() => {
+    let vigente = true;
+    fetch("/api/admin/campanas/0/sync-meta")
+      .then(r => r.json())
+      .then((d: EstadoToken) => { if (vigente) setMeta(d); })
+      .catch(() => { if (vigente) setMeta({ configurado: false }); });
+    return () => { vigente = false; };
+  }, []);
+
+  const metaListo = meta?.configurado === true && meta.valido !== false;
+  // Un token de usuario del sistema no vence; uno de usuario dura ~60 días
+  const porVencer =
+    metaListo && typeof meta?.dias_restantes === "number" && meta.dias_restantes <= 10;
+
+  const sincronizarMeta = async (c: Campana) => {
+    setSincronizando(c.id);
+    setError(null);
+    setAvisoSync(null);
+    try {
+      const res = await fetch(`/api/admin/campanas/${c.id}/sync-meta`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "No se pudo traer de Meta");
+        return;
+      }
+      const sinCasar: string[] = data.anuncios_sin_casar ?? [];
+      setAvisoSync(
+        `Números actualizados desde Meta · ${data.anuncios_actualizados} anuncio${data.anuncios_actualizados === 1 ? "" : "s"}` +
+        (sinCasar.length ? ` · sin ID de Meta: ${sinCasar.join(", ")}` : "")
+      );
+      await load();
+    } catch {
+      setError("No se pudo traer de Meta");
+    } finally {
+      setSincronizando(null);
+    }
+  };
 
   const cerrarDialogo = () => { setDialogo(null); setPublicando(false); };
 
@@ -764,6 +814,51 @@ export default function CampanasAdminPage() {
         </div>
       )}
 
+      {avisoSync && (
+        <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "12px 15px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: "#166534", flexShrink: 0 }}><IconUI name="check" size={15} /></span>
+          <p style={{ margin: 0, fontSize: 13, color: "#166534", fontWeight: 700, flex: 1 }}>{avisoSync}</p>
+          <button onClick={() => setAvisoSync(null)}
+            style={{ background: "none", border: "none", color: "#166534", fontSize: 17, cursor: "pointer", lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
+      {meta?.configurado === true && meta.valido === false && (
+        <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: "13px 16px", marginBottom: 16 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#991B1B" }}>
+            El acceso a Meta dejó de funcionar
+          </p>
+          <p style={{ margin: 0, fontSize: 12.5, color: "#B45454", lineHeight: 1.55 }}>
+            {meta.error ?? "El token ya no es válido."} Mientras tanto puedes capturar los números a mano.
+          </p>
+        </div>
+      )}
+
+      {porVencer && (
+        <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "13px 16px", marginBottom: 16 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#92400E" }}>
+            {(meta?.dias_restantes ?? 0) <= 0
+              ? "El acceso a Meta vence hoy"
+              : `El acceso a Meta vence en ${meta?.dias_restantes} día${meta?.dias_restantes === 1 ? "" : "s"}`}
+          </p>
+          <p style={{ margin: 0, fontSize: 12.5, color: "#A16207", lineHeight: 1.55 }}>
+            Genera un token nuevo y actualízalo en el servidor para que el botón siga trayendo los números.
+          </p>
+        </div>
+      )}
+
+      {meta?.configurado === false && campanas.some(c => c.meta_id) && (
+        <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "13px 16px", marginBottom: 16 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#92400E" }}>
+            El botón “Actualizar de Meta” todavía no puede funcionar
+          </p>
+          <p style={{ margin: 0, fontSize: 12.5, color: "#A16207", lineHeight: 1.55 }}>
+            Falta guardar el token de Meta en el servidor (<span style={{ fontFamily: "monospace" }}>META_ACCESS_TOKEN</span>).
+            Mientras tanto, los números se capturan a mano en el editor de cada campaña.
+          </p>
+        </div>
+      )}
+
       {importando && (
         <ImportarCampana
           campanas={campanas}
@@ -820,11 +915,36 @@ export default function CampanasAdminPage() {
                     {!enCurso && st.cambios > 0 && <span style={{ color: "#B91C1C", fontWeight: 800 }}> · {st.cambios} con cambios</span>}
                   </p>
                   {resumen && (
-                    <div style={{ marginTop: 8 }}>
+                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       <ResumenResultados resultados={resumen} />
+                      {resumen.actualizado_en && (
+                        <span style={{ fontSize: 11.5, color: C.faint, fontWeight: 700 }}>
+                          Corte del {new Date(resumen.actualizado_en).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          {resumen.fuente === "meta" ? " · de Meta" : " · a mano"}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
+
+                {c.meta_id && (
+                  <button
+                    onClick={() => void sincronizarMeta(c)}
+                    disabled={sincronizando !== null || !metaListo}
+                    title={!metaListo
+                      ? "Falta conectar Meta en el servidor para que este botón funcione"
+                      : "Trae impresiones, alcance, clics y gasto directo de Meta"}
+                    style={{
+                      background: "#fff", border: `1.5px solid ${metaListo ? C.blue : C.hair}`,
+                      borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 800,
+                      color: metaListo ? C.blueDark : C.faint,
+                      cursor: metaListo ? "pointer" : "not-allowed",
+                      display: "inline-flex", alignItems: "center", gap: 7, opacity: sincronizando === c.id ? 0.6 : 1,
+                    }}>
+                    <IconUI name="refresh" size={14} />
+                    {sincronizando === c.id ? "Trayendo..." : "Actualizar de Meta"}
+                  </button>
+                )}
                 <button onClick={() => togglePublicado(c)} disabled={publicando}
                   style={{ background: c.publicado ? "#fff" : C.yellow, border: c.publicado ? `1.5px solid ${C.hair}` : "none", borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 900, color: C.navy, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
                   <IconUI name={c.publicado ? "eye" : "send"} size={14} />
