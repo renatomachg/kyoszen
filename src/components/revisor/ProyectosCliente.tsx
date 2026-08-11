@@ -382,7 +382,12 @@ function TarjetaBloque({
   onCambios: (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => Promise<void>;
 }) {
   const ui = ESTADO_BLOQUE_UI[bloque.estado];
-  const revisable = etapa.estado !== "bloqueada" && (bloque.estado === "pendiente" || bloque.estado === "cambios");
+  // El arte lo aprueba Kyoszen: el cliente lo ve como avance, sin decidir
+  const laApruebaKyoszen = etapa.aprobador === "admin";
+  const revisable =
+    !laApruebaKyoszen &&
+    etapa.estado !== "bloqueada" &&
+    (bloque.estado === "pendiente" || bloque.estado === "cambios");
   const ocupada = accionId !== null;
   const titulo = escena
     ? `Escena ${escena.numero}${escena.titulo ? ` · ${escena.titulo}` : ""}`
@@ -394,7 +399,9 @@ function TarjetaBloque({
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <h4 style={{ margin: 0, color: C.navy, fontSize: 15.5, fontWeight: 900, lineHeight: 1.35 }}>{titulo}</h4>
         <span style={{ display: "inline-flex", padding: "5px 10px", border: `1px solid ${ui.color}55`, borderRadius: 999, background: ui.colorSuave, color: ui.color, fontSize: 10.5, fontWeight: 850 }}>
-          {bloque.estado === "aprobado" ? "✅ Aprobado" : ui.label}
+          {laApruebaKyoszen
+            ? (bloque.estado === "aprobado" ? "Listo" : "En proceso")
+            : bloque.estado === "aprobado" ? "✅ Aprobado" : ui.label}
         </span>
       </div>
 
@@ -675,15 +682,25 @@ function DetalleProyecto({
                         <p style={{ margin: "0 0 4px", color: C.faint, fontSize: 10.5, fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}>Etapa {etapa.orden}</p>
                         <h3 style={{ margin: 0, color: C.navy, fontSize: 18, fontWeight: 900 }}>{etapa.nombre}</h3>
                         {progreso && (
-                          <p style={{ margin: "6px 0 0", color: C.body, fontSize: 12.5, fontWeight: 700 }}>{progreso.aprobado} de {progreso.total} aprobadas</p>
+                          <p style={{ margin: "6px 0 0", color: C.body, fontSize: 12.5, fontWeight: 700 }}>
+                            {etapa.aprobador === "admin"
+                              ? `${progreso.aprobado} de ${progreso.total} listas`
+                              : `${progreso.aprobado} de ${progreso.total} aprobadas`}
+                          </p>
                         )}
                       </div>
-                      {progreso && progreso.pendiente > 0 && (
+                      {etapa.aprobador !== "admin" && progreso && progreso.pendiente > 0 && (
                         <Boton onClick={() => void aprobarPendientes()} disabled={aprobandoTodas || accionId !== null}>
                           ✅ {aprobandoTodas ? "Aprobando…" : "Aprobar todas las pendientes"}
                         </Boton>
                       )}
                     </div>
+
+                    {etapa.aprobador === "admin" && (
+                      <p style={{ margin: "0 0 14px", border: `1px solid ${C.border}`, borderRadius: 12, background: C.surface, padding: "11px 14px", color: C.body, fontSize: 12.5, fontWeight: 700, lineHeight: 1.55 }}>
+                        Esta etapa la produce y aprueba el equipo de Kyoszen. Te la mostramos para que veas el avance; no necesitas aprobar nada aquí.
+                      </p>
+                    )}
 
                     {progreso && (
                       <div aria-label={`${progreso.aprobado} de ${progreso.total} aprobadas`} style={{ height: 8, marginBottom: 18, overflow: "hidden", borderRadius: 999, background: C.border }}>

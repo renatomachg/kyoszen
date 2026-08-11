@@ -14,6 +14,7 @@ type EtapaRelacion = {
   orden: number;
   estado: EstadoEtapa;
   nombre: string;
+  aprobador: string;
   proyectos: { titulo: string; publicado: boolean } | { titulo: string; publicado: boolean }[] | null;
 } | {
   id: string;
@@ -21,6 +22,7 @@ type EtapaRelacion = {
   orden: number;
   estado: EstadoEtapa;
   nombre: string;
+  aprobador: string;
   proyectos: { titulo: string; publicado: boolean } | { titulo: string; publicado: boolean }[] | null;
 }[] | null;
 
@@ -95,7 +97,7 @@ export async function PATCH(
 
   const { data, error: bloqueError } = await sb
     .from("proyecto_bloques")
-    .select("id, etapa_id, estado, proyecto_etapas!inner(id, proyecto_id, orden, estado, nombre, proyectos!inner(titulo, publicado))")
+    .select("id, etapa_id, estado, proyecto_etapas!inner(id, proyecto_id, orden, estado, nombre, aprobador, proyectos!inner(titulo, publicado))")
     .eq("id", bloqueId)
     .eq("es_activa", true)
     // Una entrega interna que el admin no ha liberado no se puede aprobar
@@ -110,6 +112,13 @@ export async function PATCH(
   const proyecto = etapa ? tomarUno(etapa.proyectos) : null;
   if (!bloque || !etapa || etapa.proyecto_id !== id || proyecto?.publicado !== true) {
     return NextResponse.json({ error: "Etapa/bloque no encontrado" }, { status: 404 });
+  }
+  // El arte lo aprueba Kyoszen; el cliente solo lo ve
+  if (etapa.aprobador === "admin") {
+    return NextResponse.json(
+      { error: "Esta etapa la revisa el equipo de Kyoszen. Aquí solo puedes verla." },
+      { status: 409 }
+    );
   }
   if (
     etapa.estado === "bloqueada" ||

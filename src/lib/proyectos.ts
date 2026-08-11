@@ -97,6 +97,11 @@ export interface EspacioComentario {
   created_at: string;
 }
 
+/** Quién da el visto bueno de una etapa.
+ *  - `cliente`: la aprueba desde /revisor (guion, video).
+ *  - `admin`: la aprueba Kyoszen desde el panel (arte). El cliente la ve, no la aprueba. */
+export type Aprobador = "cliente" | "admin";
+
 export interface ProyectoEtapa {
   id: string;
   proyecto_id: string;
@@ -105,8 +110,30 @@ export interface ProyectoEtapa {
   orden: number;
   modo: ModoEtapa;
   estado: EstadoEtapa;
+  aprobador: Aprobador;
   created_at: string;
   updated_at: string;
+}
+
+/** El arte es producción interna; lo demás lo aprueba el cliente. */
+export function apruebaElAdmin(etapa: Pick<ProyectoEtapa, "aprobador">): boolean {
+  return etapa.aprobador === "admin";
+}
+
+/** Un bloque solo se puede aprobar si de verdad hay algo entregado.
+ *  Evita el 9/9 en verde con las escenas vacías. */
+export function tieneEntregable(
+  bloque: Pick<ProyectoBloque, "contenido" | "archivos">,
+  tipo: TipoEtapa
+): boolean {
+  if (tipo === "guion") {
+    const c = bloque.contenido ?? {};
+    return Boolean(
+      (typeof c.locucion === "string" && c.locucion.trim()) ||
+      (typeof c.en_pantalla === "string" && c.en_pantalla.trim())
+    );
+  }
+  return (bloque.archivos?.length ?? 0) > 0;
 }
 
 export interface ProyectoEscena {

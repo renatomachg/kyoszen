@@ -12,6 +12,7 @@ import {
 import {
   ESTADO_BLOQUE_UI,
   ESTADO_ETAPA_UI,
+  tieneEntregable,
   type Archivo,
   type Espacio,
   type EspacioArchivo,
@@ -462,7 +463,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   const [enPantalla, setEnPantalla] = useState(() => textoContenido(bloque.contenido, "en_pantalla"));
   const [nota, setNota] = useState(bloque.nota ?? "");
   const [archivos, setArchivos] = useState<Archivo[]>(bloque.archivos);
-  const [accion, setAccion] = useState<"guardar" | "avisar" | "subir" | null>(null);
+  const [accion, setAccion] = useState<"guardar" | "avisar" | "subir" | "decidir" | null>(null);
   const [arrastrando, setArrastrando] = useState(false);
   const [error, setError] = useState("");
 
@@ -526,6 +527,28 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
 
   const ui = ESTADO_BLOQUE_UI[bloque.estado];
   const entregado = bloque.entrega_estado === "entregado";
+  // El arte lo aprueba Kyoszen. Un colaborador entrega, pero no aprueba lo suyo.
+  const puedoAprobar = esAdmin && etapa.aprobador === "admin" && !soloLectura;
+  const listoParaAprobar = tieneEntregable({ contenido: bloque.contenido, archivos }, etapa.tipo);
+
+  const decidir = async (nuevo: "aprobado" | "cambios") => {
+    setAccion("decidir");
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevo }),
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo actualizar la escena."));
+      await onSaved();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo actualizar la escena.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
   return (
     <article className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -612,6 +635,34 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
       )}
       <div className="mt-5"><h5 className="mb-2 text-xs font-black uppercase tracking-wider text-[#042E7B]">Comentarios</h5>{bloque.proyecto_comentarios.length ? <ul className="space-y-2">{bloque.proyecto_comentarios.map((comentario) => <li key={comentario.id} className="rounded-xl border border-slate-200 bg-white p-3"><div className="flex flex-wrap gap-2 text-[10px]"><strong className="text-[#042E7B]">{comentario.autor_nombre}</strong><span className="capitalize text-slate-400">{comentario.autor_rol}</span><time className="text-slate-400">{new Date(comentario.created_at).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}</time></div><p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{comentario.contenido}</p></li>)}</ul> : <p className="text-xs text-slate-400">Sin comentarios.</p>}</div>
       {error && <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
+      {/* El visto bueno del arte: lo das tú, no el cliente */}
+      {puedoAprobar && (
+        <div className="mt-5 rounded-2xl border border-[#1883FF]/25 bg-[#F5F9FF] p-4">
+          <p className="mb-1 text-xs font-black uppercase tracking-wider text-[#042E7B]">Tu visto bueno</p>
+          <p className="mb-3 text-xs leading-relaxed text-slate-600">
+            Esta etapa la apruebas tú. El cliente la ve en su portal como avance, pero no la aprueba.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={() => void decidir("aprobado")}
+              disabled={accion !== null || !listoParaAprobar || bloque.estado === "aprobado"}
+              title={!listoParaAprobar ? "Todavía no hay nada entregado en esta escena" : undefined}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">
+              {bloque.estado === "aprobado" ? "Aprobada" : accion === "decidir" ? "Guardando…" : "Aprobar escena"}
+            </button>
+            <button type="button" onClick={() => void decidir("cambios")}
+              disabled={accion !== null || bloque.estado === "cambios"}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-300 bg-white px-4 py-2.5 text-sm font-black text-red-600 disabled:opacity-40">
+              {bloque.estado === "cambios" ? "Cambios pedidos" : "Pedir cambios a Rosita"}
+            </button>
+          </div>
+          {!listoParaAprobar && (
+            <p className="mt-2 text-[11px] font-semibold text-amber-700">
+              No puedes aprobarla vacía: falta que se suba el archivo.
+            </p>
+          )}
+        </div>
+      )}
+
       {!soloLectura && (
         <div className="mt-5 flex flex-col items-end justify-end gap-2 sm:flex-row sm:items-center">
           {bloque.estado !== "aprobado" && (
