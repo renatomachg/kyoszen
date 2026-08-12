@@ -43,9 +43,9 @@ function tokenDeRequest(req: Request): string | null {
 
 /** Quién está llamando. Lanza `SinPermiso` si no hay sesión válida.
  *
- *  Una cuenta sin fila en `admin_perfiles` se considera administrador: son las
- *  cuentas originales del panel, anteriores al módulo de usuarios. Es el mismo
- *  criterio que ya usaba la interfaz. */
+ *  Sin fila en `admin_perfiles` no se entra. La misma instancia de Supabase Auth
+ *  guarda las cuentas del cliente en /revisor (Rosy, Monse), así que tratar la
+ *  ausencia de perfil como "administrador" les habría abierto el panel. */
 export async function identificar(req: Request): Promise<Identidad> {
   const token = tokenDeRequest(req);
   if (!token) throw new SinPermiso(401, "Necesitas iniciar sesión.");
@@ -61,14 +61,7 @@ export async function identificar(req: Request): Promise<Identidad> {
     .maybeSingle();
 
   if (!perfil) {
-    return {
-      user_id: usuario.id,
-      email: usuario.email ?? null,
-      nombre: null,
-      rol: "admin",
-      secciones: [],
-      proyectos: [],
-    };
+    throw new SinPermiso(403, "Tu cuenta no tiene acceso al panel.");
   }
   if (perfil.activo === false) {
     throw new SinPermiso(403, "Tu cuenta está desactivada.");
@@ -89,6 +82,30 @@ export async function soloAdmin(req: Request): Promise<Identidad> {
   const quien = await identificar(req);
   if (quien.rol !== "admin") {
     throw new SinPermiso(403, "Esta sección es solo para administradores.");
+  }
+  return quien;
+}
+
+/** Exige que el que llama tenga esa sección asignada. El admin pasa siempre.
+ *  `seccion` es una clave de ADMIN_SECCIONES (p.ej. "campanas", "proyectos"). */
+export async function exigirSeccion(req: Request, seccion: string): Promise<Identidad> {
+  const quien = await identificar(req);
+  if (quien.rol === "admin") return quien;
+  if (!quien.secciones.includes(seccion)) {
+    throw new SinPermiso(403, "No tienes acceso a esta sección del panel.");
+  }
+  return quien;
+}
+
+/** Un colaborador solo toca los proyectos que le asignaron. El admin, todos. */
+export function puedeVerProyecto(quien: Identidad, proyectoId: string): boolean {
+  return quien.rol === "admin" || quien.proyectos.includes(proyectoId);
+}
+
+export async function exigirProyecto(req: Request, proyectoId: string): Promise<Identidad> {
+  const quien = await exigirSeccion(req, "proyectos");
+  if (!puedeVerProyecto(quien, proyectoId)) {
+    throw new SinPermiso(403, "Este proyecto no está asignado a tu cuenta.");
   }
   return quien;
 }

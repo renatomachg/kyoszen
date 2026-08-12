@@ -383,7 +383,7 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-08-06 (tarde) — **Importador de campañas: brief pegado, capturas de pantalla o PDF → campaña completa.**
+2026-08-11 (tarde) — **Importador de campañas: brief pegado, capturas de pantalla o PDF → campaña completa.**
 - **Problema que resuelve:** capturar a mano una campaña (encabezado + 3 anuncios + 7 preguntas cada uno) es inviable. Ahora se pega el brief que sale de claude.ai, se arrastran capturas del administrador de anuncios, o se sube un PDF/HTML.
 - **`/api/admin/campanas/importar`** con 2 acciones, igual que el importador de planes: **`analizar`** (solo lee y propone, NO crea nada) → **`crear`** (inserta lo que el admin dejó seleccionado). Modelo: `claude-haiku-4-5-20251001` con texto, **`claude-opus-4-5` cuando hay capturas** (visión). ~15s en ambos casos.
 - **Lo probado:** reconstruye formularios descritos como *"iguales al anterior pero cambiando la pregunta 3"* (arma las 7 completas con el cambio aplicado), detecta que la confirmación de Ayudante General va SIN la línea de constancias, mete la aclaración entre paréntesis en `nota` y no en el texto de la pregunta, e infiere el tipo de cada pregunta (opcion/texto/telefono/numero). Con capturas extrajo texto, título, botón, las 6 preguntas y la pantalla de agradecimiento.
