@@ -73,7 +73,7 @@ export function aResultados(fila: FilaInsight, moneda: string): ResultadosCampan
   };
 }
 
-async function pedir(path: string, params: Record<string, string>) {
+async function pedir<T>(path: string, params: Record<string, string>): Promise<T> {
   const token = process.env.META_ACCESS_TOKEN;
   if (!token) throw new MetaSinConfigurar();
 
@@ -94,7 +94,25 @@ async function pedir(path: string, params: Record<string, string>) {
     }
     throw new Error(msg);
   }
-  return cuerpo as { data?: FilaInsight[] };
+  return cuerpo as T;
+}
+
+export interface VentanaDeMeta {
+  inicio: string | null;
+  fin: string | null;
+  status: string | null;
+}
+
+/** Trae la ventana real y el estado de una campaña en Meta. */
+export async function traerVentana(metaId: string): Promise<VentanaDeMeta> {
+  const campana = await pedir<{ start_time?: string; stop_time?: string; status?: string }>(metaId, {
+    fields: "start_time,stop_time,status",
+  });
+  return {
+    inicio: campana.start_time ?? null,
+    fin: campana.stop_time ?? null,
+    status: campana.status ?? null,
+  };
 }
 
 /** Moneda de la cuenta de anuncios. Si falla, asume MXN. */
@@ -168,12 +186,12 @@ export async function traerResultados(
   const moneda = cuentaId ? await monedaDeCuenta(cuentaId) : "MXN";
 
   const [nivelCampana, nivelAnuncio] = await Promise.all([
-    pedir(`${campanaMetaId}/insights`, {
+    pedir<{ data?: FilaInsight[] }>(`${campanaMetaId}/insights`, {
       level: "campaign",
       date_preset: "maximum",
       fields: CAMPOS,
     }),
-    pedir(`${campanaMetaId}/insights`, {
+    pedir<{ data?: FilaInsight[] }>(`${campanaMetaId}/insights`, {
       level: "ad",
       date_preset: "maximum",
       fields: CAMPOS,

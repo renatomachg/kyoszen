@@ -12,7 +12,8 @@ const sb = createClient(
 const CAMPOS_EDITABLES = [
   "nombre", "cliente_final", "plataforma", "tipo", "objetivo", "publica_desde",
   "segmentacion", "presupuesto_texto", "fecha_difusion", "fechas_reclutamiento",
-  "meta_texto", "sede_texto", "flujo", "nota_interna", "modo", "resultados", "meta_id",
+  "meta_texto", "sede_texto", "flujo", "nota_interna", "modo", "fecha_inicio", "fecha_fin",
+  "resultados", "meta_id",
   "publicado", "orden",
 ] as const;
 

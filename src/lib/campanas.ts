@@ -11,8 +11,9 @@ export const ESTADOS_CAMPANA: Record<EstadoCampana, { label: string; bg: string;
 
 /** Cómo se le presenta la campaña al cliente.
  *  - `revision`: la aprueba anuncio por anuncio antes de salir al aire.
- *  - `en_curso`: ya está corriendo en Meta. Solo la ve; si quiere, comenta. */
-export type ModoCampana = "revision" | "en_curso";
+ *  - `en_curso`: ya está corriendo en Meta. Solo la ve; si quiere, comenta.
+ *  - `finalizada`: ya dejó de correr. Ve los resultados finales y puede comentar. */
+export type ModoCampana = "revision" | "en_curso" | "finalizada";
 
 export const MODOS_CAMPANA: Record<ModoCampana, { label: string; corto: string; descripcion: string }> = {
   revision: {
@@ -25,11 +26,54 @@ export const MODOS_CAMPANA: Record<ModoCampana, { label: string; corto: string; 
     corto: "En curso",
     descripcion: "La campaña ya está publicada en Meta. El cliente solo la ve y puede dejar comentarios.",
   },
+  finalizada: {
+    label: "Ya terminó",
+    corto: "Finalizada",
+    descripcion: "La campaña ya dejó de correr. El cliente ve los resultados finales.",
+  },
 };
 
-/** true cuando la campaña ya está al aire y no se le pide aprobación al cliente. */
-export function esEnCurso(campana: Pick<Campana, "modo">): boolean {
-  return campana.modo === "en_curso";
+/** Lo que el cliente debe ver hoy. Una campaña marcada `en_curso` cuya
+ *  `fecha_fin` ya pasó se muestra como terminada sin que nadie mueva nada. */
+export function faseDeCampana(campana: Pick<Campana, "modo" | "fecha_fin">): ModoCampana {
+  if (campana.modo === "finalizada") return "finalizada";
+  if (campana.modo === "en_curso" && campana.fecha_fin && new Date(campana.fecha_fin) <= new Date()) {
+    return "finalizada";
+  }
+  return campana.modo ?? "revision";
+}
+
+/** true cuando la campaña está corriendo ahora. */
+export function esEnCurso(campana: Pick<Campana, "modo" | "fecha_fin">): boolean {
+  return faseDeCampana(campana) === "en_curso";
+}
+
+export function esFinalizada(campana: Pick<Campana, "modo" | "fecha_fin">): boolean {
+  return faseDeCampana(campana) === "finalizada";
+}
+
+/** Ventana real de Meta en palabras para el cliente. */
+export function rangoDeFechas(
+  campana: Pick<Campana, "fecha_inicio" | "fecha_fin">
+): string | null {
+  if (!campana.fecha_inicio || !campana.fecha_fin) return null;
+
+  const inicio = new Date(campana.fecha_inicio);
+  const fin = new Date(campana.fecha_fin);
+  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) return null;
+
+  const mismoMes = inicio.getFullYear() === fin.getFullYear() && inicio.getMonth() === fin.getMonth();
+  const anoActual = new Date().getFullYear();
+  const conAnoInicio = inicio.getFullYear() !== anoActual && inicio.getFullYear() !== fin.getFullYear();
+  const conAnoFin = fin.getFullYear() !== anoActual;
+  const fecha = (valor: Date, conMes: boolean, conAno: boolean) =>
+    valor.toLocaleDateString("es-MX", {
+      day: "numeric",
+      ...(conMes ? { month: "long" as const } : {}),
+      ...(conAno ? { year: "numeric" as const } : {}),
+    });
+
+  return `Del ${fecha(inicio, !mismoMes, conAnoInicio)} al ${fecha(fin, true, conAnoFin)}`;
 }
 
 export type TipoPregunta = "opcion" | "texto" | "telefono" | "numero";
@@ -176,6 +220,8 @@ export interface Campana {
   nota_interna?: string | null;
   estado: EstadoCampana;
   modo: ModoCampana;
+  fecha_inicio?: string | null;
+  fecha_fin?: string | null;
   resultados?: ResultadosCampana | null;
   meta_id?: string | null;
   publicado: boolean;

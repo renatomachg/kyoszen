@@ -396,7 +396,7 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
                   ¿Qué le pedimos al cliente?
                 </label>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {(["revision", "en_curso"] as const).map(m => {
+                  {(Object.keys(MODOS_CAMPANA) as ModoCampana[]).map(m => {
                     const activo = (propuesta.modo ?? "revision") === m;
                     return (
                       <button key={m} onClick={() => setPropuesta({ ...propuesta, modo: m })}

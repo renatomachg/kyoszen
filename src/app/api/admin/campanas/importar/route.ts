@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
+import { MODOS_CAMPANA, type ModoCampana } from "@/lib/campanas";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -199,7 +200,9 @@ export async function POST(req: NextRequest) {
             meta_texto: c.meta_texto || null,
             sede_texto: c.sede_texto || null,
             nota_interna: c.nota_interna || null,
-            modo: c.modo === "en_curso" ? "en_curso" : "revision",
+            modo: typeof c.modo === "string" && c.modo in MODOS_CAMPANA
+              ? c.modo as ModoCampana
+              : "revision",
             publicado: false,
           })
           .select("id")

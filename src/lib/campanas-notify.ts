@@ -3,7 +3,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-import type { ModoCampana } from "@/lib/campanas";
+import { faseDeCampana, type ModoCampana } from "@/lib/campanas";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -114,7 +114,7 @@ export async function notificarRevisoresAnuncio(puesto: string, campana: string)
 }
 
 /** El admin publicó una campaña nueva → avisar a los revisores activos.
- *  Si la campaña ya está corriendo (`en_curso`) el correo informa, no pide aprobación. */
+ *  Si la campaña es informativa, el correo no pide aprobación. */
 export async function notificarRevisoresCampanaPublicada(
   campana: string,
   numAnuncios: number,
@@ -130,14 +130,20 @@ export async function notificarRevisoresCampanaPublicada(
     const t = await getTransport();
     if (!t) return;
 
-    const enCurso = modo === "en_curso";
-    const titulo = enCurso ? "Tu campaña ya está al aire" : "Tienes una campaña por revisar";
-    const entrada = enCurso
-      ? "Ya está corriendo en Facebook la campaña:"
-      : "Ya está lista para tu revisión la campaña:";
-    const detalle = enCurso
-      ? `Entra a ver a quién le está llegando, cuánto se invierte, el recorrido del candidato y los ${numAnuncios} anuncio${numAnuncios === 1 ? "" : "s"} tal como se ven publicados. No tienes que aprobar nada: si algo te salta, déjanos un comentario.`
-      : `Vas a ver a quién le llega, cuánto se invierte, el recorrido completo del candidato y ${numAnuncios} anuncio${numAnuncios === 1 ? "" : "s"} para aprobar uno por uno.`;
+    const fase = faseDeCampana({ modo, fecha_fin: null });
+    const informativa = fase !== "revision";
+    const finalizada = fase === "finalizada";
+    const titulo = finalizada
+      ? "Tu campaña ya terminó"
+      : informativa ? "Tu campaña ya está al aire" : "Tienes una campaña por revisar";
+    const entrada = finalizada
+      ? "Ya terminó la campaña:"
+      : informativa ? "Ya está corriendo en Facebook la campaña:" : "Ya está lista para tu revisión la campaña:";
+    const detalle = finalizada
+      ? `Entra a ver cómo cerró, a quién le llegó y los ${numAnuncios} anuncio${numAnuncios === 1 ? "" : "s"} que salieron. No tienes que aprobar nada: si algo te sirve para la próxima, déjanos un comentario.`
+      : informativa
+        ? `Entra a ver a quién le está llegando, cuánto se invierte, el recorrido del candidato y los ${numAnuncios} anuncio${numAnuncios === 1 ? "" : "s"} tal como se ven publicados. No tienes que aprobar nada: si algo te salta, déjanos un comentario.`
+        : `Vas a ver a quién le llega, cuánto se invierte, el recorrido completo del candidato y ${numAnuncios} anuncio${numAnuncios === 1 ? "" : "s"} para aprobar uno por uno.`;
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:32px 16px"><tr><td align="center">
@@ -163,9 +169,9 @@ export async function notificarRevisoresCampanaPublicada(
         t.transport.sendMail({
           from: t.from,
           to: r.email,
-          subject: enCurso
-            ? `Campaña al aire · ${campana}`
-            : `Campaña lista para revisión · ${campana}`,
+          subject: finalizada
+            ? `Campaña finalizada · ${campana}`
+            : informativa ? `Campaña al aire · ${campana}` : `Campaña lista para revisión · ${campana}`,
           html,
         })
       )

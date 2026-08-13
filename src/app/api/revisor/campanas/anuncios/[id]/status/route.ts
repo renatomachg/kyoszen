@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { notificarAdminAnuncio } from "@/lib/campanas-notify";
-import { rollupCampana, type EstadoCampana } from "@/lib/campanas";
+import { faseDeCampana, rollupCampana, type Campana, type EstadoCampana } from "@/lib/campanas";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,21 +22,21 @@ export async function PATCH(
   // El anuncio tiene que existir y pertenecer a una campaña publicada
   const { data: anuncio, error: errAnuncio } = await sb
     .from("campana_anuncios")
-    .select("id, puesto, campana_id, campanas(nombre, publicado, modo)")
+    .select("id, puesto, campana_id, campanas(nombre, publicado, modo, fecha_fin)")
     .eq("id", id)
     .maybeSingle();
 
   if (errAnuncio) return NextResponse.json({ error: errAnuncio.message }, { status: 500 });
   if (!anuncio) return NextResponse.json({ error: "Anuncio no encontrado" }, { status: 404 });
 
-  const campana = anuncio.campanas as unknown as { nombre: string; publicado: boolean; modo: string } | null;
+  const campana = anuncio.campanas as unknown as Pick<Campana, "nombre" | "publicado" | "modo" | "fecha_fin"> | null;
   if (!campana?.publicado) {
     return NextResponse.json({ error: "Esta campaña aún no está disponible" }, { status: 403 });
   }
-  // Campaña ya corriendo: es informativa, no se aprueba ni se piden cambios
-  if (campana.modo === "en_curso") {
+  // Campaña informativa: no se aprueba ni se piden cambios
+  if (faseDeCampana(campana) !== "revision") {
     return NextResponse.json(
-      { error: "Esta campaña ya está al aire: no requiere aprobación" },
+      { error: "Esta campaña no requiere aprobación" },
       { status: 409 }
     );
   }

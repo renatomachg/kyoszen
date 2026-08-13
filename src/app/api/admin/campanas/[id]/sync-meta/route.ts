@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { MetaSinConfigurar, revisarToken, traerResultados } from "@/lib/meta-insights";
+import { MetaSinConfigurar, revisarToken, traerResultados, traerVentana } from "@/lib/meta-insights";
 import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
@@ -35,7 +35,7 @@ export async function POST(
 
     const { data: campana, error } = await sb
       .from("campanas")
-      .select("id, nombre, meta_id, campana_anuncios(id, puesto, meta_id)")
+      .select("id, nombre, meta_id, modo, campana_anuncios(id, puesto, meta_id)")
       .eq("id", id)
       .maybeSingle();
 
@@ -53,12 +53,25 @@ export async function POST(
     }
 
     try {
-      const corte = await traerResultados(campana.meta_id, process.env.META_AD_ACCOUNT_ID);
+      const [corte, ventana] = await Promise.all([
+        traerResultados(campana.meta_id, process.env.META_AD_ACCOUNT_ID),
+        traerVentana(campana.meta_id),
+      ]);
       const ahora = new Date().toISOString();
+      // Solo se apaga sola una campaña que estaba corriendo. Una que sigue en
+      // revisión del cliente conserva su modo, aunque en Meta ya haya cerrado.
+      const yaCerro = Boolean(ventana.fin && new Date(ventana.fin) <= new Date());
+      const finalizada = yaCerro && campana.modo === "en_curso";
 
       await sb
         .from("campanas")
-        .update({ resultados: corte.campana, updated_at: ahora })
+        .update({
+          resultados: corte.campana,
+          fecha_inicio: ventana.inicio,
+          fecha_fin: ventana.fin,
+          ...(finalizada ? { modo: "finalizada" } : {}),
+          updated_at: ahora,
+        })
         .eq("id", campana.id);
 
       // Cada anuncio se casa por su id de Meta
@@ -83,6 +96,7 @@ export async function POST(
 
       return NextResponse.json({
         ok: true,
+        finalizada,
         campana: corte.campana,
         anuncios_actualizados: actualizados,
         anuncios_sin_casar: sinCasar,

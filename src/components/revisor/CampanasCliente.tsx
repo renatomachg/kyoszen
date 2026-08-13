@@ -8,9 +8,12 @@ import {
   ESTADOS_CAMPANA,
   costoPorMil,
   esEnCurso,
+  esFinalizada,
+  faseDeCampana,
   flujoDeCampana,
   fmtDinero,
   fmtNumero,
+  rangoDeFechas,
   statsAnuncios,
   sumarResultados,
   tieneFormulario,
@@ -83,15 +86,16 @@ function PillEstado({ estado, size = "md" }: { estado: EstadoCampana; size?: "sm
 }
 
 /* ─── Distintivo de campaña que ya está corriendo ─────── */
-function PillAlAire({ size = "md" }: { size?: "sm" | "md" }) {
+function PillAlAire({ size = "md", finalizada = false }: { size?: "sm" | "md"; finalizada?: boolean }) {
   const s = size === "sm";
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 6, background: "#DCFCE7", color: "#166534",
+      display: "inline-flex", alignItems: "center", gap: 6,
+      background: finalizada ? "#F1F5F9" : "#DCFCE7", color: finalizada ? "#475569" : "#166534",
       borderRadius: 50, padding: s ? "4px 10px" : "6px 13px", fontSize: s ? 11 : 12, fontWeight: 800,
     }}>
-      <span style={{ width: s ? 6 : 7, height: s ? 6 : 7, borderRadius: "50%", background: "#22C55E" }} />
-      Al aire
+      <span style={{ width: s ? 6 : 7, height: s ? 6 : 7, borderRadius: "50%", background: finalizada ? "#94A3B8" : "#22C55E" }} />
+      {finalizada ? "Finalizada" : "Al aire"}
     </span>
   );
 }
@@ -130,7 +134,7 @@ function CifraGrande({ valor, etiqueta, ayuda, destacada }: {
   );
 }
 
-function PanelResultados({ resultados }: { resultados: ResultadosCampana }) {
+function PanelResultados({ resultados, finalizada }: { resultados: ResultadosCampana; finalizada: boolean }) {
   const moneda = resultados.moneda ?? "MXN";
   const cpm = costoPorMil(resultados);
   const periodo = resultados.desde && resultados.hasta
@@ -140,13 +144,17 @@ function PanelResultados({ resultados }: { resultados: ResultadosCampana }) {
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 900, color: C.navy }}>Cómo va la campaña</h3>
+        <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 900, color: C.navy }}>
+          {finalizada ? "Resultados finales" : "Cómo va la campaña"}
+        </h3>
         {periodo && (
           <span style={{ fontSize: 11.5, color: C.faint, fontWeight: 700 }}>{periodo}</span>
         )}
       </div>
       <p style={{ margin: "0 0 14px", fontSize: 13, color: C.muted }}>
-        Números reales tomados de Facebook.
+        {finalizada
+          ? "Así cerró la campaña. Números reales tomados de Facebook."
+          : "Números reales tomados de Facebook."}
       </p>
 
       <div className="camp-cifras">
@@ -417,7 +425,10 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
 }) {
   const [vista, setVista] = useState<"anuncio" | "formulario">("anuncio");
   const conFormulario = tieneFormulario(anuncio);
-  const enCurso = esEnCurso(campana);
+  const fase = faseDeCampana(campana);
+  const enCurso = fase === "en_curso";
+  const finalizada = fase === "finalizada";
+  const informativa = fase !== "revision";
   const [estado, setEstado] = useState<EstadoCampana>(anuncio.estado);
   const [comments, setComments] = useState<CampanaComentario[]>(anuncio.campana_comentarios ?? []);
   const [guardando, setGuardando] = useState(false);
@@ -525,9 +536,9 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ color: "#fff", fontSize: 16, fontWeight: 900 }}>{anuncio.puesto}</span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: enCurso ? "#22C55E" : est.dot }} />
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: finalizada ? "#94A3B8" : enCurso ? "#22C55E" : est.dot }} />
                 <span style={{ color: "rgba(255,255,255,.85)", fontSize: 12.5, fontWeight: 700 }}>
-                  {enCurso ? "Publicado en Facebook" : est.label}
+                  {finalizada ? "Ya no está al aire" : enCurso ? "Publicado en Facebook" : est.label}
                 </span>
               </span>
             </div>
@@ -556,7 +567,7 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
               </div>
             ) : (
               <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: ".06em" }}>
-                {enCurso ? "Así se está viendo en Facebook" : "Así se va a ver en Facebook"}
+                {finalizada ? "Así se vio en Facebook" : enCurso ? "Así se está viendo en Facebook" : "Así se va a ver en Facebook"}
               </p>
             )}
 
@@ -579,15 +590,17 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
 
           {/* Derecha: decisión + comentarios */}
           <div className="camp-modal-der" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
-            {enCurso ? (
+            {informativa ? (
               /* Campaña al aire: nada que aprobar, solo comentar si quiere */
               <div>
-                <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 14, padding: "13px 15px", marginBottom: 14 }}>
-                  <p style={{ margin: "0 0 5px", fontSize: 12.5, fontWeight: 800, color: "#166534", display: "flex", alignItems: "center", gap: 7 }}>
-                    <IconUI name="check" size={15} /> Este anuncio ya está corriendo
+                <div style={{ background: finalizada ? "#F8FAFC" : "#F0FDF4", border: `1px solid ${finalizada ? "#E6EBF5" : "#BBF7D0"}`, borderRadius: 14, padding: "13px 15px", marginBottom: 14 }}>
+                  <p style={{ margin: "0 0 5px", fontSize: 12.5, fontWeight: 800, color: finalizada ? "#475569" : "#166534", display: "flex", alignItems: "center", gap: 7 }}>
+                    <IconUI name="check" size={15} /> {finalizada ? "Esta campaña ya terminó" : "Este anuncio ya está corriendo"}
                   </p>
-                  <p style={{ margin: 0, fontSize: 12.5, color: "#15803D", lineHeight: 1.55 }}>
-                    No necesitas aprobar nada. Te lo mostramos para que veas exactamente qué está saliendo publicado.
+                  <p style={{ margin: 0, fontSize: 12.5, color: finalizada ? "#475569" : "#15803D", lineHeight: 1.55 }}>
+                    {finalizada
+                      ? "Te dejamos el anuncio y sus números para que veas cómo cerró."
+                      : "No necesitas aprobar nada. Te lo mostramos para que veas exactamente qué está saliendo publicado."}
                   </p>
                 </div>
 
@@ -728,10 +741,13 @@ function AnuncioModal({ anuncio, campana, config, userName, onClose, onStatusCha
 }
 
 /* ─── Tarjeta de anuncio ──────────────────────────────── */
-function AnuncioCard({ anuncio, enCurso, onOpen }: { anuncio: CampanaAnuncio; enCurso: boolean; onOpen: () => void }) {
-  const est = enCurso
-    ? { label: "Al aire", bg: "#DCFCE7", color: "#166534", dot: "#22C55E" }
-    : ESTADOS_CAMPANA[anuncio.estado];
+function AnuncioCard({ anuncio, fase, onOpen }: { anuncio: CampanaAnuncio; fase: ReturnType<typeof faseDeCampana>; onOpen: () => void }) {
+  const informativa = fase !== "revision";
+  const est = fase === "finalizada"
+    ? { label: "Finalizada", bg: "#F1F5F9", color: "#475569", dot: "#94A3B8" }
+    : fase === "en_curso"
+      ? { label: "Al aire", bg: "#DCFCE7", color: "#166534", dot: "#22C55E" }
+      : ESTADOS_CAMPANA[anuncio.estado];
   const numComentarios = anuncio.campana_comentarios?.length ?? 0;
 
   return (
@@ -774,7 +790,7 @@ function AnuncioCard({ anuncio, enCurso, onOpen }: { anuncio: CampanaAnuncio; en
             </span>
           )}
           <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: C.blueDark, display: "inline-flex", alignItems: "center", gap: 4 }}>
-            {enCurso ? "Ver" : "Revisar"} <IconUI name="chevron-right" size={13} />
+            {informativa ? "Ver" : "Revisar"} <IconUI name="chevron-right" size={13} />
           </span>
         </div>
       </div>
@@ -792,7 +808,11 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
 }) {
   const [abierto, setAbierto] = useState<CampanaAnuncio | null>(null);
   const anuncios = campana.campana_anuncios ?? [];
-  const enCurso = esEnCurso(campana);
+  const fase = faseDeCampana(campana);
+  const enCurso = fase === "en_curso";
+  const finalizada = fase === "finalizada";
+  const informativa = fase !== "revision";
+  const rango = rangoDeFechas(campana);
   const stats = statsAnuncios(anuncios);
   // El corte de la campaña manda; si no hay, se arma sumando el de los anuncios
   const resultados = tieneResultados(campana.resultados)
@@ -839,18 +859,19 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
           </div>
 
           {/* Estado: campaña al aire, o avance de la revisión */}
-          {enCurso ? (
-            <div style={{ background: "rgba(34,197,94,.16)", border: "1px solid rgba(134,239,172,.4)", borderRadius: 14, padding: "12px 16px", minWidth: 190 }}>
+          {informativa ? (
+            <div style={{ background: finalizada ? "rgba(255,255,255,.1)" : "rgba(34,197,94,.16)", border: finalizada ? undefined : "1px solid rgba(134,239,172,.4)", borderRadius: 14, padding: "12px 16px", minWidth: 190 }}>
               <p style={{ margin: "0 0 7px", fontSize: 10.5, fontWeight: 800, color: "rgba(255,255,255,.6)", textTransform: "uppercase", letterSpacing: ".06em" }}>
                 Estado de la campaña
               </p>
               <p style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 900, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#4ADE80", flexShrink: 0 }} />
-                Corriendo en Facebook
+                <span style={{ width: 9, height: 9, borderRadius: "50%", background: finalizada ? "#CBD5E1" : "#4ADE80", flexShrink: 0 }} />
+                {finalizada ? "Campaña terminada" : "Corriendo en Facebook"}
               </p>
               <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,.7)", lineHeight: 1.5 }}>
-                {stats.total} anuncio{stats.total === 1 ? "" : "s"} publicado{stats.total === 1 ? "" : "s"}
-                {campana.fecha_difusion ? ` · ${campana.fecha_difusion}` : ""}
+                {finalizada && rango
+                  ? `Corrió ${rango.replace(/^Del/, "del")}`
+                  : <>{stats.total} anuncio{stats.total === 1 ? "" : "s"} publicado{stats.total === 1 ? "" : "s"}{!finalizada && campana.fecha_difusion ? ` · ${campana.fecha_difusion}` : ""}</>}
               </p>
             </div>
           ) : (
@@ -870,15 +891,17 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
       </div>
 
       {/* Resultados reales, si ya hay */}
-      {resultados && <PanelResultados resultados={resultados} />}
+      {resultados && <PanelResultados resultados={resultados} finalizada={finalizada} />}
 
       {/* A quién le llega */}
       <div style={{ marginBottom: 24 }}>
         <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 900, color: C.navy }}>
-          {enCurso ? "A quién le está llegando" : "A quién le va a llegar"}
+          {finalizada ? "A quién le llegó" : enCurso ? "A quién le está llegando" : "A quién le va a llegar"}
         </h3>
         <p style={{ margin: "0 0 14px", fontSize: 13, color: C.muted }}>
-          {enCurso
+          {finalizada
+            ? "Así estuvo configurada la campaña."
+            : enCurso
             ? "Así quedó configurada la campaña que está corriendo."
             : "Así queda configurada la campaña antes de salir al aire."}
         </p>
@@ -950,11 +973,15 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
       <div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: C.navy }}>
-            {enCurso ? `Los anuncios al aire (${anuncios.length})` : `Los anuncios (${anuncios.length})`}
+            {finalizada
+              ? `Los anuncios que salieron (${anuncios.length})`
+              : enCurso
+                ? `Los anuncios al aire (${anuncios.length})`
+                : `Los anuncios (${anuncios.length})`}
           </h3>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {enCurso ? (
-              anuncios.length > 0 && <PillAlAire size="sm" />
+            {informativa ? (
+              anuncios.length > 0 && <PillAlAire size="sm" finalizada={finalizada} />
             ) : (
               <>
                 {stats.pendientes > 0 && <PillEstado estado="pendiente" size="sm" />}
@@ -965,7 +992,9 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
           </div>
         </div>
         <p style={{ margin: "0 0 14px", fontSize: 13, color: C.muted }}>
-          {enCurso ? (
+          {finalizada ? (
+            <>Ábrelos para ver el arte y el texto con el que salieron. Si algo te sirve para la próxima, déjanos un comentario.</>
+          ) : enCurso ? (
             <>
               Ábrelos para ver exactamente el arte, el texto
               {hayFormularios ? " y el formulario que llena el candidato" : " y cómo se ven publicados"}.
@@ -987,7 +1016,7 @@ function CampanaDetalle({ campana, config, userName, onStatusChange, onVolver }:
         ) : (
           <div className="camp-anuncios">
             {anuncios.map(a => (
-              <AnuncioCard key={a.id} anuncio={a} enCurso={enCurso} onOpen={() => setAbierto(a)} />
+              <AnuncioCard key={a.id} anuncio={a} fase={fase} onOpen={() => setAbierto(a)} />
             ))}
           </div>
         )}
@@ -1092,20 +1121,25 @@ export default function CampanasCliente({ userName, config }: { userName: string
         <div>
           <h2 style={{ margin: "0 0 3px", fontSize: 20, fontWeight: 900, color: C.navy }}>Campañas</h2>
           <p style={{ margin: "0 0 18px", fontSize: 13.5, color: C.muted }}>
-            {campanas.every(esEnCurso)
+            {campanas.every(esFinalizada)
+              ? "Anuncios pagados en redes. Entra a una campaña para ver a quién le llegó y cómo cerró."
+              : campanas.every(esEnCurso)
               ? "Anuncios pagados en redes. Entra a una campaña para ver a quién le llega y cómo se están viendo los anuncios."
               : "Anuncios pagados en redes. Entra a una campaña para ver a quién le llega y aprobar cada anuncio."}
           </p>
           <div className="camp-anuncios">
             {campanas.map(c => {
               const st = statsAnuncios(c.campana_anuncios ?? []);
-              const cEnCurso = esEnCurso(c);
+              const cFase = faseDeCampana(c);
+              const cFinalizada = cFase === "finalizada";
+              const cInformativa = cFase !== "revision";
+              const cRango = rangoDeFechas(c);
               return (
                 <button key={c.id} onClick={() => setSeleccionada(c.id)}
                   style={{ textAlign: "left", background: "#fff", border: `1px solid ${C.hair}`, borderRadius: 16, padding: "18px 20px", cursor: "pointer", boxShadow: "0 1px 3px rgba(4,46,123,.05)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <RedLogo red_social={c.plataforma} height={11} />
-                    {cEnCurso ? <PillAlAire size="sm" /> : <PillEstado estado={c.estado} size="sm" />}
+                    {cInformativa ? <PillAlAire size="sm" finalizada={cFinalizada} /> : <PillEstado estado={c.estado} size="sm" />}
                   </div>
                   <p style={{ margin: "0 0 4px", fontSize: 15.5, fontWeight: 900, color: C.navy, lineHeight: 1.3 }}>{c.nombre}</p>
                   {c.cliente_final && <p style={{ margin: "0 0 12px", fontSize: 12.5, color: C.muted }}>{c.cliente_final}</p>}
@@ -1113,10 +1147,10 @@ export default function CampanasCliente({ userName, config }: { userName: string
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                       <IconUI name="image" size={13} />{st.total} anuncios
                     </span>
-                    {cEnCurso ? (
-                      c.fecha_difusion && (
+                    {cInformativa ? (
+                      (cFinalizada ? cRango : c.fecha_difusion) && (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                          <IconUI name="calendar" size={13} />{c.fecha_difusion}
+                          <IconUI name="calendar" size={13} />{cFinalizada ? cRango : c.fecha_difusion}
                         </span>
                       )
                     ) : (

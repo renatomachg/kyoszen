@@ -9,6 +9,7 @@ import {
   ESTADOS_CAMPANA,
   MODOS_CAMPANA,
   esEnCurso,
+  faseDeCampana,
   fmtDinero,
   fmtNumero,
   statsAnuncios,
@@ -43,6 +44,20 @@ const input: React.CSSProperties = {
   width: "100%", border: `1.5px solid ${C.hair}`, borderRadius: 10, padding: "9px 11px",
   fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", color: C.ink,
 };
+
+function aDatetimeLocal(valor?: string | null): string {
+  if (!valor) return "";
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return "";
+  const dos = (n: number) => String(n).padStart(2, "0");
+  return `${fecha.getFullYear()}-${dos(fecha.getMonth() + 1)}-${dos(fecha.getDate())}T${dos(fecha.getHours())}:${dos(fecha.getMinutes())}`;
+}
+
+function desdeDatetimeLocal(valor: string): string | null {
+  if (!valor) return null;
+  const fecha = new Date(valor);
+  return Number.isNaN(fecha.getTime()) ? null : fecha.toISOString();
+}
 
 function Campo({ label, children, ancho }: { label: string; children: React.ReactNode; ancho?: string }) {
   return (
@@ -479,7 +494,7 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
           presupuesto_texto: b.presupuesto_texto, fecha_difusion: b.fecha_difusion,
           fechas_reclutamiento: b.fechas_reclutamiento, meta_texto: b.meta_texto,
           sede_texto: b.sede_texto, nota_interna: b.nota_interna, resultados: b.resultados ?? null,
-          meta_id: b.meta_id ?? null,
+          meta_id: b.meta_id ?? null, fecha_inicio: b.fecha_inicio ?? null, fecha_fin: b.fecha_fin ?? null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -500,7 +515,7 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
       <p style={{ margin: "0 0 10px", fontSize: 12.5, color: C.muted }}>
         Cambia lo que ve en su portal: los botones de aprobación, o solo el anuncio con una caja de comentario.
       </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 20 }}>
         {(Object.keys(MODOS_CAMPANA) as ModoCampana[]).map(m => {
           const activo = (b.modo ?? "revision") === m;
           return (
@@ -575,12 +590,23 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
           Los números que el cliente ve en “Cómo va la campaña”. Con el ID de Meta puesto, el botón
           “Actualizar de Meta” los trae solo; si no, cáptura los aquí a mano.
         </p>
-        <div style={{ marginBottom: 10, maxWidth: 380 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 6 }}>
           <Campo label="ID de la campaña en Meta">
             <input value={b.meta_id ?? ""} onChange={e => set({ meta_id: e.target.value.trim() || null })}
               placeholder="Ej: 120251901050030472" style={{ ...input, fontFamily: "monospace" }} />
           </Campo>
+          <Campo label="Corrió desde">
+            <input type="datetime-local" value={aDatetimeLocal(b.fecha_inicio)}
+              onChange={e => set({ fecha_inicio: desdeDatetimeLocal(e.target.value) })} style={input} />
+          </Campo>
+          <Campo label="Corrió hasta">
+            <input type="datetime-local" value={aDatetimeLocal(b.fecha_fin)}
+              onChange={e => set({ fecha_fin: desdeDatetimeLocal(e.target.value) })} style={input} />
+          </Campo>
         </div>
+        <p style={{ margin: "0 0 10px", fontSize: 11.5, color: C.faint, lineHeight: 1.5 }}>
+          Se llenan solas al traer de Meta. Sirven para que el portal del cliente sepa cuándo dejó de correr.
+        </p>
         <ResultadosEditor resultados={b.resultados} onChange={resultados => set({ resultados })} />
       </div>
 
@@ -669,18 +695,19 @@ export default function CampanasAdminPage() {
 
     const num = c.campana_anuncios?.length ?? 0;
     const sinArte = (c.campana_anuncios ?? []).filter(a => !a.imagen_url).length;
-    const enCurso = esEnCurso(c);
+    const fase = faseDeCampana(c);
+    const informativa = fase !== "revision";
 
     setDialogo({
       tono: "primario",
       icono: "send",
       titulo: `Publicar "${c.nombre}" al cliente`,
-      descripcion: enCurso
-        ? "El cliente va a poder verla desde su portal. No se le piden aprobaciones: la campaña ya está corriendo."
+      descripcion: informativa
+        ? `El cliente va a poder verla desde su portal. No se le piden aprobaciones: la campaña ${fase === "finalizada" ? "ya terminó" : "ya está corriendo"}.`
         : "El cliente va a poder verla y aprobar cada anuncio desde su portal.",
       puntos: [
-        enCurso
-          ? `${num} anuncio${num === 1 ? "" : "s"} al aire, solo para que los vea`
+        informativa
+          ? `${num} anuncio${num === 1 ? "" : "s"}, solo para que los vea`
           : `${num} anuncio${num === 1 ? "" : "s"} listos para revisión`,
         "Se avisa por correo a los revisores activos",
       ],
@@ -881,7 +908,10 @@ export default function CampanasAdminPage() {
         {campanas.map(c => {
           const st = statsAnuncios(c.campana_anuncios ?? []);
           const est = ESTADOS_CAMPANA[c.estado];
-          const enCurso = esEnCurso(c);
+          const fase = faseDeCampana(c);
+          const enCurso = fase === "en_curso";
+          const finalizada = fase === "finalizada";
+          const marcadaEnCurso = esEnCurso({ ...c, fecha_fin: null });
           const esActual = abierta === c.id;
           const anunciosDe = c.campana_anuncios ?? [];
           const resumen = tieneResultados(c.resultados)
@@ -899,7 +929,12 @@ export default function CampanasAdminPage() {
                     {!c.publicado && (
                       <span style={{ background: C.wash, color: C.muted, borderRadius: 6, padding: "3px 8px", fontSize: 10.5, fontWeight: 900, letterSpacing: ".05em" }}>BORRADOR</span>
                     )}
-                    {enCurso ? (
+                    {finalizada ? (
+                      <span style={{ background: "#F1F5F9", color: "#475569", borderRadius: 50, padding: "3px 10px", fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#94A3B8" }} />
+                        Finalizada
+                      </span>
+                    ) : enCurso ? (
                       <span style={{ background: "#DCFCE7", color: "#166534", borderRadius: 50, padding: "3px 10px", fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} />
                         En curso · sin aprobación
@@ -908,13 +943,20 @@ export default function CampanasAdminPage() {
                       <span style={{ background: est.bg, color: est.color, borderRadius: 50, padding: "3px 10px", fontSize: 11, fontWeight: 800 }}>{est.label}</span>
                     )}
                   </div>
+                  {finalizada && marcadaEnCurso && c.fecha_fin && (
+                    <p style={{ margin: "3px 0 0", fontSize: 11.5, color: C.faint }}>
+                      Terminó el {new Date(c.fecha_fin).toLocaleDateString("es-MX", { day: "numeric", month: "long" })}, se muestra como finalizada
+                    </p>
+                  )}
                   <p style={{ margin: "3px 0 0", fontSize: 12.5, color: C.muted }}>
-                    {c.cliente_final ?? "—"} · {enCurso ? (
+                    {c.cliente_final ?? "—"} · {finalizada ? (
+                      <>{st.total} anuncio{st.total === 1 ? "" : "s"} publicado{st.total === 1 ? "" : "s"}</>
+                    ) : enCurso ? (
                       <>{st.total} anuncio{st.total === 1 ? "" : "s"} al aire{c.fecha_difusion ? ` · ${c.fecha_difusion}` : ""}</>
                     ) : (
                       <>{st.aprobados} de {st.total} anuncios aprobados</>
                     )}
-                    {!enCurso && st.cambios > 0 && <span style={{ color: "#B91C1C", fontWeight: 800 }}> · {st.cambios} con cambios</span>}
+                    {fase === "revision" && st.cambios > 0 && <span style={{ color: "#B91C1C", fontWeight: 800 }}> · {st.cambios} con cambios</span>}
                   </p>
                   {resumen && (
                     <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
