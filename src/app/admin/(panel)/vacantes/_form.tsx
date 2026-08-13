@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { logAdminClient } from "@/lib/admin-log-client";
 import { IconUI } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 interface VacanteFormData {
   titulo: string;
@@ -85,7 +87,7 @@ export default function VacanteForm({ initial, id }: { initial?: Partial<Vacante
     if (!rawText.trim()) return;
     setParsing(true);
     try {
-      const res = await fetch("/api/admin/parse-vacante", {
+      const res = await fetchAdmin("/api/admin/parse-vacante", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto: rawText }),

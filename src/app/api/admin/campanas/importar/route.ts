@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -93,144 +94,151 @@ const SIN_CAMPANA =
   "No encontré una campaña en lo que subiste. El importador espera el brief de una campaña: los anuncios con su texto, título, botón y las preguntas del formulario.";
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const accion = body.accion;
+  try {
+    await exigirSeccion(req, "campanas");
+    const body = await req.json();
+    const accion = body.accion;
 
-  /* ── Analizar: solo lee y propone, NO crea nada ─────── */
-  if (accion === "analizar") {
-    const texto: string = (body.texto ?? "").trim();
-    const imagenes: ImagenEntrada[] = Array.isArray(body.imagenes) ? body.imagenes : [];
+    /* ── Analizar: solo lee y propone, NO crea nada ─────── */
+    if (accion === "analizar") {
+      const texto: string = (body.texto ?? "").trim();
+      const imagenes: ImagenEntrada[] = Array.isArray(body.imagenes) ? body.imagenes : [];
 
-    if (!texto && imagenes.length === 0) {
-      return NextResponse.json({ error: "Pega el brief o sube al menos una captura." }, { status: 400 });
-    }
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: "Falta ANTHROPIC_API_KEY en el servidor." }, { status: 500 });
-    }
-
-    const contenido: Anthropic.ContentBlockParam[] = [];
-    for (const img of imagenes.slice(0, 12)) {
-      contenido.push({
-        type: "image",
-        source: { type: "base64", media_type: img.media_type as "image/png", data: img.data },
-      });
-    }
-    contenido.push({
-      type: "text",
-      text: texto
-        ? `Extrae la campaña y sus anuncios de este brief:\n\n${texto}`
-        : "Extrae la campaña y sus anuncios de estas capturas de pantalla.",
-    });
-
-    try {
-      const res = await anthropic.messages.create({
-        // Con capturas conviene el modelo más fuerte; con texto, el rápido.
-        model: imagenes.length > 0 ? "claude-opus-4-5" : "claude-haiku-4-5-20251001",
-        max_tokens: 8000,
-        system: SYSTEM,
-        messages: [{ role: "user", content: contenido }],
-      });
-
-      const salida = res.content.find(b => b.type === "text");
-      if (!salida || salida.type !== "text") {
-        return NextResponse.json({ error: SIN_CAMPANA }, { status: 422 });
+      if (!texto && imagenes.length === 0) {
+        return NextResponse.json({ error: "Pega el brief o sube al menos una captura." }, { status: 400 });
+      }
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return NextResponse.json({ error: "Falta ANTHROPIC_API_KEY en el servidor." }, { status: 500 });
       }
 
-      const parsed = extraerJSON(salida.text);
-      const anuncios = parsed && Array.isArray(parsed.anuncios) ? parsed.anuncios : [];
+      const contenido: Anthropic.ContentBlockParam[] = [];
+      for (const img of imagenes.slice(0, 12)) {
+        contenido.push({
+          type: "image",
+          source: { type: "base64", media_type: img.media_type as "image/png", data: img.data },
+        });
+      }
+      contenido.push({
+        type: "text",
+        text: texto
+          ? `Extrae la campaña y sus anuncios de este brief:\n\n${texto}`
+          : "Extrae la campaña y sus anuncios de estas capturas de pantalla.",
+      });
 
-      // El documento no es una campaña: decirlo en claro, con lo que sí parece ser
-      if (!parsed || anuncios.length === 0) {
-        const motivo = typeof parsed?.motivo === "string" ? parsed.motivo.trim() : "";
+      try {
+        const res = await anthropic.messages.create({
+          // Con capturas conviene el modelo más fuerte; con texto, el rápido.
+          model: imagenes.length > 0 ? "claude-opus-4-5" : "claude-haiku-4-5-20251001",
+          max_tokens: 8000,
+          system: SYSTEM,
+          messages: [{ role: "user", content: contenido }],
+        });
+
+        const salida = res.content.find(b => b.type === "text");
+        if (!salida || salida.type !== "text") {
+          return NextResponse.json({ error: SIN_CAMPANA }, { status: 422 });
+        }
+
+        const parsed = extraerJSON(salida.text);
+        const anuncios = parsed && Array.isArray(parsed.anuncios) ? parsed.anuncios : [];
+
+        // El documento no es una campaña: decirlo en claro, con lo que sí parece ser
+        if (!parsed || anuncios.length === 0) {
+          const motivo = typeof parsed?.motivo === "string" ? parsed.motivo.trim() : "";
+          return NextResponse.json(
+            {
+              error: SIN_CAMPANA,
+              detalle: motivo || undefined,
+              sin_campana: true,
+            },
+            { status: 422 }
+          );
+        }
+
+        return NextResponse.json({ campana: parsed.campana ?? {}, anuncios });
+      } catch (e) {
+        console.error("importar campañas:", e);
         return NextResponse.json(
-          {
-            error: SIN_CAMPANA,
-            detalle: motivo || undefined,
-            sin_campana: true,
-          },
-          { status: 422 }
+          { error: "Se cayó el análisis. Vuelve a intentarlo; si sigue fallando, pega el brief como texto." },
+          { status: 500 }
         );
       }
-
-      return NextResponse.json({ campana: parsed.campana ?? {}, anuncios });
-    } catch (e) {
-      console.error("importar campañas:", e);
-      return NextResponse.json(
-        { error: "Se cayó el análisis. Vuelve a intentarlo; si sigue fallando, pega el brief como texto." },
-        { status: 500 }
-      );
-    }
-  }
-
-  /* ── Crear: inserta en la BD lo que el admin aprobó ─── */
-  if (accion === "crear") {
-    const anuncios = Array.isArray(body.anuncios) ? body.anuncios : [];
-    if (anuncios.length === 0) {
-      return NextResponse.json({ error: "No hay anuncios seleccionados." }, { status: 400 });
     }
 
-    let campanaId: number | null = body.campana_id ?? null;
-
-    // Sumar anuncios a una campaña existente, o crear una nueva (siempre en borrador)
-    if (campanaId) {
-      const { data: existe } = await sb.from("campanas").select("id").eq("id", campanaId).maybeSingle();
-      if (!existe) return NextResponse.json({ error: "La campaña destino no existe." }, { status: 404 });
-    } else {
-      const c = body.campana ?? {};
-      if (!c.nombre?.trim()) {
-        return NextResponse.json({ error: "La campaña necesita un nombre." }, { status: 400 });
+    /* ── Crear: inserta en la BD lo que el admin aprobó ─── */
+    if (accion === "crear") {
+      const anuncios = Array.isArray(body.anuncios) ? body.anuncios : [];
+      if (anuncios.length === 0) {
+        return NextResponse.json({ error: "No hay anuncios seleccionados." }, { status: 400 });
       }
-      const { data: nueva, error } = await sb
-        .from("campanas")
-        .insert({
-          nombre: c.nombre,
-          cliente_final: c.cliente_final || null,
-          plataforma: c.plataforma || "facebook",
-          tipo: c.tipo || "vacantes",
-          objetivo: c.objetivo || null,
-          publica_desde: c.publica_desde || null,
-          segmentacion: c.segmentacion ?? {},
-          presupuesto_texto: c.presupuesto_texto || null,
-          fecha_difusion: c.fecha_difusion || null,
-          fechas_reclutamiento: c.fechas_reclutamiento || null,
-          meta_texto: c.meta_texto || null,
-          sede_texto: c.sede_texto || null,
-          nota_interna: c.nota_interna || null,
-          modo: c.modo === "en_curso" ? "en_curso" : "revision",
-          publicado: false,
-        })
-        .select("id")
-        .single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      campanaId = nueva.id;
+
+      let campanaId: number | null = body.campana_id ?? null;
+
+      // Sumar anuncios a una campaña existente, o crear una nueva (siempre en borrador)
+      if (campanaId) {
+        const { data: existe } = await sb.from("campanas").select("id").eq("id", campanaId).maybeSingle();
+        if (!existe) return NextResponse.json({ error: "La campaña destino no existe." }, { status: 404 });
+      } else {
+        const c = body.campana ?? {};
+        if (!c.nombre?.trim()) {
+          return NextResponse.json({ error: "La campaña necesita un nombre." }, { status: 400 });
+        }
+        const { data: nueva, error } = await sb
+          .from("campanas")
+          .insert({
+            nombre: c.nombre,
+            cliente_final: c.cliente_final || null,
+            plataforma: c.plataforma || "facebook",
+            tipo: c.tipo || "vacantes",
+            objetivo: c.objetivo || null,
+            publica_desde: c.publica_desde || null,
+            segmentacion: c.segmentacion ?? {},
+            presupuesto_texto: c.presupuesto_texto || null,
+            fecha_difusion: c.fecha_difusion || null,
+            fechas_reclutamiento: c.fechas_reclutamiento || null,
+            meta_texto: c.meta_texto || null,
+            sede_texto: c.sede_texto || null,
+            nota_interna: c.nota_interna || null,
+            modo: c.modo === "en_curso" ? "en_curso" : "revision",
+            publicado: false,
+          })
+          .select("id")
+          .single();
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        campanaId = nueva.id;
+      }
+
+      // El orden continúa después de los anuncios que ya tiene la campaña
+      const { data: previos } = await sb
+        .from("campana_anuncios")
+        .select("orden")
+        .eq("campana_id", campanaId)
+        .order("orden", { ascending: false })
+        .limit(1);
+      const base = (previos?.[0]?.orden ?? -1) + 1;
+
+      const filas = anuncios.map((a: Record<string, unknown>, i: number) => ({
+        campana_id: campanaId,
+        puesto: (a.puesto as string) || `Anuncio ${base + i + 1}`,
+        imagen_url: (a.imagen_url as string) || null,
+        texto_principal: (a.texto_principal as string) || null,
+        titulo: (a.titulo as string) || null,
+        descripcion: (a.descripcion as string) || null,
+        cta: (a.cta as string) || "Registrarte",
+        formulario: a.formulario ?? { preguntas: [] },
+        orden: base + i,
+      }));
+
+      const { error: errAnuncios } = await sb.from("campana_anuncios").insert(filas);
+      if (errAnuncios) return NextResponse.json({ error: errAnuncios.message }, { status: 500 });
+
+      return NextResponse.json({ ok: true, campana_id: campanaId, creados: filas.length }, { status: 201 });
     }
 
-    // El orden continúa después de los anuncios que ya tiene la campaña
-    const { data: previos } = await sb
-      .from("campana_anuncios")
-      .select("orden")
-      .eq("campana_id", campanaId)
-      .order("orden", { ascending: false })
-      .limit(1);
-    const base = (previos?.[0]?.orden ?? -1) + 1;
-
-    const filas = anuncios.map((a: Record<string, unknown>, i: number) => ({
-      campana_id: campanaId,
-      puesto: (a.puesto as string) || `Anuncio ${base + i + 1}`,
-      imagen_url: (a.imagen_url as string) || null,
-      texto_principal: (a.texto_principal as string) || null,
-      titulo: (a.titulo as string) || null,
-      descripcion: (a.descripcion as string) || null,
-      cta: (a.cta as string) || "Registrarte",
-      formulario: a.formulario ?? { preguntas: [] },
-      orden: base + i,
-    }));
-
-    const { error: errAnuncios } = await sb.from("campana_anuncios").insert(filas);
-    if (errAnuncios) return NextResponse.json({ error: errAnuncios.message }, { status: 500 });
-
-    return NextResponse.json({ ok: true, campana_id: campanaId, creados: filas.length }, { status: 201 });
+    return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
-
-  return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
 }

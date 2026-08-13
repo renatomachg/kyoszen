@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/courses";
 import { logAdminClient } from "@/lib/admin-log-client";
 import { IconUI } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 const MODALIDADES = ["En vivo", "Online", "Hibrido"];
 const NIVELES = ["Basico", "Intermedio", "Avanzado"];
@@ -52,7 +54,7 @@ export default function CursoForm({ initial }: { initial?: Partial<CursoForm> })
     if (!rawText.trim()) return;
     setParsing(true);
     try {
-      const res = await fetch("/api/admin/parse-curso", {
+      const res = await fetchAdmin("/api/admin/parse-curso", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto: rawText }),

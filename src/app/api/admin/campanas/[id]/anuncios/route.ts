@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,34 +12,41 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const body = await req.json().catch(() => ({}));
+  try {
+    await exigirSeccion(req, "campanas");
+    const { id } = await params;
+    const body = await req.json().catch(() => ({}));
 
-  const { data: campana } = await sb.from("campanas").select("id").eq("id", id).maybeSingle();
-  if (!campana) return NextResponse.json({ error: "Campaña no encontrada" }, { status: 404 });
+    const { data: campana } = await sb.from("campanas").select("id").eq("id", id).maybeSingle();
+    if (!campana) return NextResponse.json({ error: "Campaña no encontrada" }, { status: 404 });
 
-  const { data: previos } = await sb
-    .from("campana_anuncios")
-    .select("orden")
-    .eq("campana_id", id)
-    .order("orden", { ascending: false })
-    .limit(1);
+    const { data: previos } = await sb
+      .from("campana_anuncios")
+      .select("orden")
+      .eq("campana_id", id)
+      .order("orden", { ascending: false })
+      .limit(1);
 
-  const { data, error } = await sb
-    .from("campana_anuncios")
-    .insert({
-      campana_id: id,
-      puesto: body.puesto?.trim() || "Anuncio nuevo",
-      texto_principal: body.texto_principal ?? null,
-      titulo: body.titulo ?? null,
-      descripcion: body.descripcion ?? null,
-      cta: body.cta || "Registrarte",
-      formulario: body.formulario ?? { preguntas: [] },
-      orden: (previos?.[0]?.orden ?? -1) + 1,
-    })
-    .select("id")
-    .single();
+    const { data, error } = await sb
+      .from("campana_anuncios")
+      .insert({
+        campana_id: id,
+        puesto: body.puesto?.trim() || "Anuncio nuevo",
+        texto_principal: body.texto_principal ?? null,
+        titulo: body.titulo ?? null,
+        descripcion: body.descripcion ?? null,
+        cta: body.cta || "Registrarte",
+        formulario: body.formulario ?? { preguntas: [] },
+        orden: (previos?.[0]?.orden ?? -1) + 1,
+      })
+      .select("id")
+      .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ id: data.id }, { status: 201 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ id: data.id }, { status: 201 });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
 }

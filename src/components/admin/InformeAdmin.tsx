@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { IconUI, type IconUIName } from "@/components/social/StoryboardView";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 interface Metricas {
   fuente: string;
@@ -53,7 +55,7 @@ export default function InformeAdmin() {
   const [edit, setEdit] = useState({ resumen: "", decisiones: "", propuestas: "" });
 
   const cargar = useCallback(async () => {
-    const r = await fetch("/api/admin/social/informe");
+    const r = await fetchAdmin("/api/admin/social/informe");
     const data = await r.json();
     setInformes(Array.isArray(data) ? data : []);
   }, []);
@@ -68,7 +70,7 @@ export default function InformeAdmin() {
 
   const generar = async () => {
     setGenerando(true); setMsg("");
-    const r = await fetch("/api/admin/social/informe", {
+    const r = await fetchAdmin("/api/admin/social/informe", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "generar", periodo }),
     });
@@ -83,7 +85,7 @@ export default function InformeAdmin() {
   const guardar = async () => {
     if (!actual) return;
     setGuardando(true); setMsg("");
-    await fetch("/api/admin/social/informe", {
+    await fetchAdmin("/api/admin/social/informe", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "guardar", id: actual.id, ...edit }),
     });
@@ -95,7 +97,7 @@ export default function InformeAdmin() {
   const togglePublicar = async () => {
     if (!actual) return;
     const action = actual.estado === "publicado" ? "despublicar" : "publicar";
-    await fetch("/api/admin/social/informe", {
+    await fetchAdmin("/api/admin/social/informe", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, id: actual.id }),
     });

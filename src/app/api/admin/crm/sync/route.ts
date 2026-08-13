@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -20,8 +21,9 @@ function textoONull(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
+    await exigirSeccion(req, "crm");
     const [
       { data: aplicaciones, error: aplicacionesError },
       { data: candidatos, error: candidatosError },
@@ -99,6 +101,7 @@ export async function POST() {
 
     return NextResponse.json({ creados, vinculados });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error
         ? error.message

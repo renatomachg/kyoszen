@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Espacio, TipoEspacio } from "@/lib/proyectos";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -50,51 +51,65 @@ async function agregarConteos(espacios: Espacio[]): Promise<EspacioConConteos[]>
   }));
 }
 
-export async function GET() {
-  const { data, error } = await sb
-    .from("proyecto_espacios")
-    .select(
-      "id, nombre, tipo, descripcion, icono, color, cuestionario_token, orden, publicado, created_at, updated_at"
-    )
-    .order("orden", { ascending: true });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
+export async function GET(req: NextRequest) {
   try {
-    return NextResponse.json({ espacios: await agregarConteos((data ?? []) as Espacio[]) });
-  } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "No se pudieron calcular los conteos";
-    return NextResponse.json({ error: message }, { status: 500 });
+    await exigirSeccion(req, "proyectos");
+    const { data, error } = await sb
+      .from("proyecto_espacios")
+      .select(
+        "id, nombre, tipo, descripcion, icono, color, cuestionario_token, orden, publicado, created_at, updated_at"
+      )
+      .order("orden", { ascending: true });
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    try {
+      return NextResponse.json({ espacios: await agregarConteos((data ?? []) as Espacio[]) });
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "No se pudieron calcular los conteos";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  let body: Record<string, unknown>;
   try {
-    body = (await req.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+    await exigirSeccion(req, "proyectos");
+    let body: Record<string, unknown>;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+    }
+
+    const nombre = typeof body.nombre === "string" ? body.nombre.trim() : "";
+    if (!nombre) return NextResponse.json({ error: "nombre es requerido" }, { status: 400 });
+    if (!esTipoEspacio(body.tipo)) {
+      return NextResponse.json({ error: "tipo de espacio inválido" }, { status: 400 });
+    }
+
+    const insert: Record<string, unknown> = { nombre, tipo: body.tipo };
+    if (typeof body.descripcion === "string") insert.descripcion = body.descripcion.trim() || null;
+    if (typeof body.icono === "string") insert.icono = body.icono.trim() || null;
+    if (typeof body.color === "string") insert.color = body.color.trim() || null;
+    if (typeof body.orden === "number" && Number.isInteger(body.orden)) insert.orden = body.orden;
+    if (typeof body.publicado === "boolean") insert.publicado = body.publicado;
+
+    const { data, error } = await sb
+      .from("proyecto_espacios")
+      .insert(insert)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
-
-  const nombre = typeof body.nombre === "string" ? body.nombre.trim() : "";
-  if (!nombre) return NextResponse.json({ error: "nombre es requerido" }, { status: 400 });
-  if (!esTipoEspacio(body.tipo)) {
-    return NextResponse.json({ error: "tipo de espacio inválido" }, { status: 400 });
-  }
-
-  const insert: Record<string, unknown> = { nombre, tipo: body.tipo };
-  if (typeof body.descripcion === "string") insert.descripcion = body.descripcion.trim() || null;
-  if (typeof body.icono === "string") insert.icono = body.icono.trim() || null;
-  if (typeof body.color === "string") insert.color = body.color.trim() || null;
-  if (typeof body.orden === "number" && Number.isInteger(body.orden)) insert.orden = body.orden;
-  if (typeof body.publicado === "boolean") insert.publicado = body.publicado;
-
-  const { data, error } = await sb
-    .from("proyecto_espacios")
-    .insert(insert)
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
 }

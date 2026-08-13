@@ -7,6 +7,8 @@ import type {
   EspacioComentario,
   EspacioTarjeta,
 } from "@/lib/proyectos";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 type ColumnaConTarjetas = EspacioColumna & { tarjetas: EspacioTarjeta[] };
 
@@ -185,7 +187,7 @@ function EditorTarjeta({
     setGuardando(true);
     setError("");
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/proyectos/espacios/${espacioId}/tarjetas/${tarjeta.id}`,
         {
           method: "PATCH",
@@ -213,7 +215,7 @@ function EditorTarjeta({
     setGuardando(true);
     setError("");
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/proyectos/espacios/${espacioId}/tarjetas/${tarjeta.id}`,
         { method: "DELETE" }
       );
@@ -345,7 +347,7 @@ export default function TableroAdmin({
     setCargando(true);
     setError("");
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/proyectos/espacios/${espacio.id}/columnas`
       );
       if (!response.ok) {
@@ -370,7 +372,7 @@ export default function TableroAdmin({
     setAccion(true);
     setError("");
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/proyectos/espacios/${espacio.id}/columnas`,
         {
           method: "POST",
@@ -394,7 +396,7 @@ export default function TableroAdmin({
     const limpio = nombre.trim();
     if (!limpio || limpio === columna.nombre) return;
     setError("");
-    const response = await fetch(
+    const response = await fetchAdmin(
       `/api/admin/proyectos/espacios/${espacio.id}/columnas/${columna.id}`,
       {
         method: "PATCH",
@@ -415,7 +417,7 @@ export default function TableroAdmin({
       : `¿Eliminar la columna “${columna.nombre}”?`;
     if (!confirm(aviso)) return;
     setError("");
-    const response = await fetch(
+    const response = await fetchAdmin(
       `/api/admin/proyectos/espacios/${espacio.id}/columnas/${columna.id}`,
       { method: "DELETE" }
     );
@@ -436,7 +438,7 @@ export default function TableroAdmin({
     setAccion(true);
     setError("");
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/proyectos/espacios/${espacio.id}/tarjetas`,
         {
           method: "POST",

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -44,8 +45,9 @@ async function tokenDisponible(base: string): Promise<string> {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    await exigirSeccion(req, "cuestionario");
     const { data, error } = await sb
       .from("cuestionario_respuestas")
       .select(
@@ -59,6 +61,7 @@ export async function GET() {
 
     return NextResponse.json({ invitaciones: data ?? [] });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudieron cargar las invitaciones.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -67,6 +70,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    await exigirSeccion(req, "cuestionario");
     const body = (await req.json()) as {
       invitado_nombre?: unknown;
       token?: unknown;
@@ -126,6 +130,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudo crear la invitación.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -134,6 +139,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    await exigirSeccion(req, "cuestionario");
     const body = (await req.json()) as { token?: unknown };
     const token = typeof body.token === "string" ? body.token.trim() : "";
 
@@ -155,6 +161,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudo borrar la invitación.";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { calcularMetricasSitio, detectarPatrones, periodoLabel, type MetricasInforme } from "@/lib/social-informe";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -73,58 +74,72 @@ Responde SOLO con un JSON válido (sin markdown, sin bloques de código) con est
   try { return JSON.parse(raw); } catch { return { resumen: "", decisiones: "", propuestas: "" }; }
 }
 
-export async function GET() {
-  const { data } = await sb.from("social_informes").select("*").order("periodo", { ascending: false });
-  return NextResponse.json(data ?? []);
+export async function GET(req: NextRequest) {
+  try {
+    await exigirSeccion(req, "redes-sociales");
+    const { data } = await sb.from("social_informes").select("*").order("periodo", { ascending: false });
+    return NextResponse.json(data ?? []);
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { action } = body;
+  try {
+    await exigirSeccion(req, "redes-sociales");
+    const body = await req.json();
+    const { action } = body;
 
-  // ── Generar borrador (calcula métricas + IA) ──
-  if (action === "generar") {
-    const periodo: string = body.periodo; // "2026-06"
-    if (!periodo) return NextResponse.json({ error: "Falta el período" }, { status: 400 });
-    const r = rangosMes(periodo);
+    // ── Generar borrador (calcula métricas + IA) ──
+    if (action === "generar") {
+      const periodo: string = body.periodo; // "2026-06"
+      if (!periodo) return NextResponse.json({ error: "Falta el período" }, { status: 400 });
+      const r = rangosMes(periodo);
 
-    const metricas = await calcularMetricasSitio(sb, r.desde, r.hasta, r.desdeAnt, r.hastaAnt);
-    const patrones = detectarPatrones(metricas);
+      const metricas = await calcularMetricasSitio(sb, r.desde, r.hasta, r.desdeAnt, r.hastaAnt);
+      const patrones = detectarPatrones(metricas);
 
-    let ia = { resumen: "", decisiones: "", propuestas: "" };
-    try { ia = await redactarConIA(metricas, patrones, r.label); }
-    catch (e) { console.error("IA informe error:", e); }
+      let ia = { resumen: "", decisiones: "", propuestas: "" };
+      try { ia = await redactarConIA(metricas, patrones, r.label); }
+      catch (e) { console.error("IA informe error:", e); }
 
-    // Guardar/actualizar como borrador
-    const { data, error } = await sb.from("social_informes").upsert({
-      periodo, periodo_label: r.label, desde: r.desde, hasta: r.hasta,
-      metricas, resumen: ia.resumen, decisiones: ia.decisiones, propuestas: ia.propuestas,
-      estado: "borrador", fuente: "sitio", updated_at: new Date().toISOString(),
-    }, { onConflict: "periodo" }).select().single();
+      // Guardar/actualizar como borrador
+      const { data, error } = await sb.from("social_informes").upsert({
+        periodo, periodo_label: r.label, desde: r.desde, hasta: r.hasta,
+        metricas, resumen: ia.resumen, decisiones: ia.decisiones, propuestas: ia.propuestas,
+        estado: "borrador", fuente: "sitio", updated_at: new Date().toISOString(),
+      }, { onConflict: "periodo" }).select().single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(data);
+    }
+
+    // ── Guardar edición del admin ──
+    if (action === "guardar") {
+      const { id, resumen, decisiones, propuestas } = body;
+      const { error } = await sb.from("social_informes")
+        .update({ resumen, decisiones, propuestas, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── Publicar / despublicar ──
+    if (action === "publicar" || action === "despublicar") {
+      const { id } = body;
+      const { error } = await sb.from("social_informes")
+        .update({ estado: action === "publicar" ? "publicado" : "borrador", updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true });
+    }
+
+    return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
-
-  // ── Guardar edición del admin ──
-  if (action === "guardar") {
-    const { id, resumen, decisiones, propuestas } = body;
-    const { error } = await sb.from("social_informes")
-      .update({ resumen, decisiones, propuestas, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
-  }
-
-  // ── Publicar / despublicar ──
-  if (action === "publicar" || action === "despublicar") {
-    const { id } = body;
-    const { error } = await sb.from("social_informes")
-      .update({ estado: action === "publicar" ? "publicado" : "borrador", updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
-  }
-
-  return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
 }

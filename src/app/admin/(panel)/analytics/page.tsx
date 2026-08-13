@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Dot, IconUI, type IconUIName } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 // Use service role on admin side for unrestricted read
 const sb = createClient(
@@ -132,7 +134,7 @@ export default function AdminAnalytics() {
   useEffect(() => {
     if (tab !== "reportes") return;
     setLoadingConfig(true);
-    fetch("/api/admin/resumen")
+    fetchAdmin("/api/admin/resumen")
       .then((r) => r.json())
       .then((d) => {
         setReporteEmail(d.email ?? "");
@@ -143,7 +145,7 @@ export default function AdminAnalytics() {
 
   const saveReporteConfig = async () => {
     setSavingConfig(true);
-    await fetch("/api/admin/resumen", {
+    await fetchAdmin("/api/admin/resumen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save_config", email: reporteEmail, periodicidad: reportePeriodicidad }),
@@ -156,7 +158,7 @@ export default function AdminAnalytics() {
   const downloadFile = async (action: "download" | "download_pdf", ext: "txt" | "pdf") => {
     const periodo = reportePeriodicidad === "desactivado" ? "mensual" : reportePeriodicidad;
     setReportMsg(action === "download_pdf" ? "Generando PDF..." : "");
-    const res = await fetch("/api/admin/resumen", {
+    const res = await fetchAdmin("/api/admin/resumen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, periodicidad: periodo }),
@@ -180,7 +182,7 @@ export default function AdminAnalytics() {
     const periodo = reportePeriodicidad === "desactivado" ? "mensual" : reportePeriodicidad;
     setSendingReport(true);
     setReportMsg("");
-    const res = await fetch("/api/admin/resumen", {
+    const res = await fetchAdmin("/api/admin/resumen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "send", email: reporteEmail, periodicidad: periodo }),

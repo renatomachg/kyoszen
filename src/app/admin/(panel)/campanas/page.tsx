@@ -22,6 +22,8 @@ import {
   type TipoPregunta,
 } from "@/lib/campanas";
 import type { EstadoToken } from "@/lib/meta-insights";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 const C = {
   navy: "#042E7B",
@@ -215,7 +217,7 @@ function AnuncioEditor({ anuncio, enCurso, onSaved }: { anuncio: CampanaAnuncio;
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/admin/social/upload", { method: "POST", body: fd });
+      const res = await fetchAdmin("/api/admin/social/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudo subir");
       set({ imagen_url: data.url });
@@ -231,7 +233,7 @@ function AnuncioEditor({ anuncio, enCurso, onSaved }: { anuncio: CampanaAnuncio;
     setGuardando(true);
     setAviso(null);
     try {
-      const res = await fetch(`/api/admin/campanas/anuncios/${anuncio.id}`, {
+      const res = await fetchAdmin(`/api/admin/campanas/anuncios/${anuncio.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -262,7 +264,7 @@ function AnuncioEditor({ anuncio, enCurso, onSaved }: { anuncio: CampanaAnuncio;
     if (!texto) return;
     setGuardando(true);
     try {
-      const res = await fetch(`/api/admin/campanas/anuncios/${anuncio.id}/comments`, {
+      const res = await fetchAdmin(`/api/admin/campanas/anuncios/${anuncio.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ autor_nombre: "Kyoszen", contenido: texto }),
@@ -280,7 +282,7 @@ function AnuncioEditor({ anuncio, enCurso, onSaved }: { anuncio: CampanaAnuncio;
   const eliminar = async () => {
     setBorrando(true);
     try {
-      const res = await fetch(`/api/admin/campanas/anuncios/${anuncio.id}`, { method: "DELETE" });
+      const res = await fetchAdmin(`/api/admin/campanas/anuncios/${anuncio.id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setAviso(data.error ?? "No se pudo eliminar");
@@ -468,7 +470,7 @@ function CampanaEditor({ campana, onSaved }: { campana: Campana; onSaved: () => 
     setGuardando(true);
     setAviso(null);
     try {
-      const res = await fetch(`/api/admin/campanas/${campana.id}`, {
+      const res = await fetchAdmin(`/api/admin/campanas/${campana.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -610,7 +612,7 @@ export default function CampanasAdminPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/campanas");
+      const res = await fetchAdmin("/api/admin/campanas");
       const data = await res.json();
       setCampanas(Array.isArray(data) ? data : []);
     } finally {
@@ -623,7 +625,7 @@ export default function CampanasAdminPage() {
   // ¿El servidor tiene el acceso a Meta, y le queda vida al token?
   useEffect(() => {
     let vigente = true;
-    fetch("/api/admin/campanas/0/sync-meta")
+    fetchAdmin("/api/admin/campanas/0/sync-meta")
       .then(r => r.json())
       .then((d: EstadoToken) => { if (vigente) setMeta(d); })
       .catch(() => { if (vigente) setMeta({ configurado: false }); });
@@ -640,7 +642,7 @@ export default function CampanasAdminPage() {
     setError(null);
     setAvisoSync(null);
     try {
-      const res = await fetch(`/api/admin/campanas/${c.id}/sync-meta`, { method: "POST" });
+      const res = await fetchAdmin(`/api/admin/campanas/${c.id}/sync-meta`, { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "No se pudo traer de Meta");
@@ -693,7 +695,7 @@ export default function CampanasAdminPage() {
   const aplicarPublicado = async (c: Campana, publicado: boolean) => {
     setPublicando(true);
     try {
-      const res = await fetch(`/api/admin/campanas/${c.id}`, {
+      const res = await fetchAdmin(`/api/admin/campanas/${c.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ publicado }),
@@ -721,7 +723,7 @@ export default function CampanasAdminPage() {
       onConfirmar: async puesto => {
         setPublicando(true);
         try {
-          const res = await fetch(`/api/admin/campanas/${campanaId}/anuncios`, {
+          const res = await fetchAdmin(`/api/admin/campanas/${campanaId}/anuncios`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ puesto }),
@@ -762,7 +764,7 @@ export default function CampanasAdminPage() {
       onConfirmar: async () => {
         setPublicando(true);
         try {
-          const res = await fetch(`/api/admin/campanas/${c.id}`, { method: "DELETE" });
+          const res = await fetchAdmin(`/api/admin/campanas/${c.id}`, { method: "DELETE" });
           if (!res.ok) {
             const data = await res.json().catch(() => ({}));
             setError(data.error ?? "No se pudo eliminar la campaña");

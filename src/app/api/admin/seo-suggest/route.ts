@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -41,49 +42,56 @@ const PAGE_CONTEXT: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
-  const { pagina } = await req.json();
+  try {
+    await exigirSeccion(req, "seo");
+    const { pagina } = await req.json();
 
-  if (!pagina || !PAGE_CONTEXT[pagina]) {
-    return NextResponse.json({ error: "Pagina no valida" }, { status: 400 });
+    if (!pagina || !PAGE_CONTEXT[pagina]) {
+      return NextResponse.json({ error: "Pagina no valida" }, { status: 400 });
+    }
+
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 512,
+      messages: [{
+        role: "user",
+        content: `Eres un experto en SEO para sitios web de empresas mexicanas de servicios B2B y B2C.
+
+  Contexto de la empresa:
+  ${KYOSZEN_CONTEXT}
+
+  Pagina a optimizar: ${pagina.toUpperCase()}
+  Descripcion de la pagina: ${PAGE_CONTEXT[pagina]}
+
+  Genera un titulo SEO y una meta description OPTIMIZADOS para esta pagina. Devuelve SOLO un JSON valido sin markdown:
+
+  {
+    "titulo": "string (maximo 60 caracteres, incluye keyword principal + nombre de marca al final)",
+    "descripcion": "string (entre 140-160 caracteres, incluye keyword, beneficio claro y CTA natural, sin puntos suspensivos al final)"
   }
 
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 512,
-    messages: [{
-      role: "user",
-      content: `Eres un experto en SEO para sitios web de empresas mexicanas de servicios B2B y B2C.
+  Reglas:
+  - Sin acentos en el texto (convencion del cliente)
+  - Lenguaje directo y profesional, espanol de Mexico
+  - El titulo debe incluir la keyword principal primero, luego " | Kyoszen" o " — Kyoszen"
+  - La descripcion debe responder: que es, para quien es, y por que contactar
+  - No uses frases genericas como "bienvenido a" o "somos una empresa"
+  - Enfocate en beneficios concretos y palabras que la gente realmente busca en Google`,
+      }],
+    });
 
-Contexto de la empresa:
-${KYOSZEN_CONTEXT}
+    const raw = (response.content[0] as Anthropic.TextBlock).text.trim();
+    const clean = raw.replace(/^```json?\n?/, "").replace(/\n?```$/, "");
 
-Pagina a optimizar: ${pagina.toUpperCase()}
-Descripcion de la pagina: ${PAGE_CONTEXT[pagina]}
-
-Genera un titulo SEO y una meta description OPTIMIZADOS para esta pagina. Devuelve SOLO un JSON valido sin markdown:
-
-{
-  "titulo": "string (maximo 60 caracteres, incluye keyword principal + nombre de marca al final)",
-  "descripcion": "string (entre 140-160 caracteres, incluye keyword, beneficio claro y CTA natural, sin puntos suspensivos al final)"
-}
-
-Reglas:
-- Sin acentos en el texto (convencion del cliente)
-- Lenguaje directo y profesional, espanol de Mexico
-- El titulo debe incluir la keyword principal primero, luego " | Kyoszen" o " — Kyoszen"
-- La descripcion debe responder: que es, para quien es, y por que contactar
-- No uses frases genericas como "bienvenido a" o "somos una empresa"
-- Enfocate en beneficios concretos y palabras que la gente realmente busca en Google`,
-    }],
-  });
-
-  const raw = (response.content[0] as Anthropic.TextBlock).text.trim();
-  const clean = raw.replace(/^```json?\n?/, "").replace(/\n?```$/, "");
-
-  try {
-    const data = JSON.parse(clean);
-    return NextResponse.json(data);
-  } catch {
-    return NextResponse.json({ error: "No se pudo generar la sugerencia", raw }, { status: 500 });
+    try {
+      const data = JSON.parse(clean);
+      return NextResponse.json(data);
+    } catch {
+      return NextResponse.json({ error: "No se pudo generar la sugerencia", raw }, { status: 500 });
+    }
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

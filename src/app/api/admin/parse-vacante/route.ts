@@ -1,56 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  const { texto } = await req.json();
-  if (!texto?.trim()) return NextResponse.json({ error: "Texto vacio" }, { status: 400 });
-
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 1024,
-    messages: [{
-      role: "user",
-      content: `Extrae la informacion de esta vacante de trabajo y devuelve SOLO un JSON valido sin explicaciones ni markdown.
-
-Texto:
-${texto}
-
-Devuelve este JSON con los campos que puedas inferir. Para campos no mencionados usa los defaults indicados:
-
-{
-  "titulo": "string (requerido)",
-  "empresa": "string (default: Kyoszen)",
-  "ubicacion": "Presencial | Remoto | Hibrido (inferir del texto, default: Presencial)",
-  "jornada": "Tiempo completo | Medio tiempo | Por proyecto (default: Tiempo completo)",
-  "contrato": "Indefinido | Temporal | Por honorarios (default: Indefinido)",
-  "salario": number (solo numero en MXN, sin signos, default: 0),
-  "salario_nota": "string corto con detalle del salario si se menciona: si es neto o bruto y la periodicidad de pago. Ej: 'Neto · pago semanal'. Vacio si no se menciona.",
-  "horario": "string con el horario laboral si se menciona, respetando los renglones con \\n. Ej: 'Lunes a sabado de 9:00 am a 6:00 pm\\nDomingo de 10:00 am a 4:00 pm'. Vacio si no se menciona.",
-  "categoria": "Operativo | Administrativo | Ventas | Recursos Humanos | Contabilidad | Tecnologia | Logistica (inferir del puesto)",
-  "badge": "Urgente | Nuevo | Destacado | (vacio si no aplica)",
-  "badge_class": "bg-red-100 text-red-700 si Urgente | bg-green-100 text-green-700 si Nuevo | bg-yellow text-black si Destacado | vacio si no aplica",
-  "descripcion": "string (resumen del puesto en 1-2 oraciones)",
-  "responsabilidades": ["array", "de", "strings"],
-  "requisitos": ["array de strings. INCLUYE aqui datos como Sexo, Edad, Escolaridad y Experiencia si se mencionan, ej: 'Sexo: Indistinto', 'Edad: 18 a 50 anos', 'Escolaridad: Secundaria concluida'"],
-  "beneficios": ["array de strings con prestaciones y beneficios si se mencionan, ej: 'Prestaciones de Ley', 'Bono de Temporada', 'Vales de despensa'. Vacio si no se mencionan"],
-  "tags": ["array", "de", "habilidades", "o", "palabras", "clave"]
-}`,
-    }],
-  });
-
-  const raw = (response.content[0] as Anthropic.TextBlock).text.trim();
-
-  // Limpiar markdown si viene con backticks
-  const clean = raw.replace(/^```json?\n?/, "").replace(/\n?```$/, "");
-
   try {
-    const data = JSON.parse(clean);
-    return NextResponse.json(data);
-  } catch {
-    return NextResponse.json({ error: "No se pudo parsear la respuesta de IA", raw }, { status: 500 });
+    await exigirSeccion(req, "vacantes");
+    const { texto } = await req.json();
+    if (!texto?.trim()) return NextResponse.json({ error: "Texto vacio" }, { status: 400 });
+
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 1024,
+      messages: [{
+        role: "user",
+        content: `Extrae la informacion de esta vacante de trabajo y devuelve SOLO un JSON valido sin explicaciones ni markdown.
+
+  Texto:
+  ${texto}
+
+  Devuelve este JSON con los campos que puedas inferir. Para campos no mencionados usa los defaults indicados:
+
+  {
+    "titulo": "string (requerido)",
+    "empresa": "string (default: Kyoszen)",
+    "ubicacion": "Presencial | Remoto | Hibrido (inferir del texto, default: Presencial)",
+    "jornada": "Tiempo completo | Medio tiempo | Por proyecto (default: Tiempo completo)",
+    "contrato": "Indefinido | Temporal | Por honorarios (default: Indefinido)",
+    "salario": number (solo numero en MXN, sin signos, default: 0),
+    "salario_nota": "string corto con detalle del salario si se menciona: si es neto o bruto y la periodicidad de pago. Ej: 'Neto · pago semanal'. Vacio si no se menciona.",
+    "horario": "string con el horario laboral si se menciona, respetando los renglones con \\n. Ej: 'Lunes a sabado de 9:00 am a 6:00 pm\\nDomingo de 10:00 am a 4:00 pm'. Vacio si no se menciona.",
+    "categoria": "Operativo | Administrativo | Ventas | Recursos Humanos | Contabilidad | Tecnologia | Logistica (inferir del puesto)",
+    "badge": "Urgente | Nuevo | Destacado | (vacio si no aplica)",
+    "badge_class": "bg-red-100 text-red-700 si Urgente | bg-green-100 text-green-700 si Nuevo | bg-yellow text-black si Destacado | vacio si no aplica",
+    "descripcion": "string (resumen del puesto en 1-2 oraciones)",
+    "responsabilidades": ["array", "de", "strings"],
+    "requisitos": ["array de strings. INCLUYE aqui datos como Sexo, Edad, Escolaridad y Experiencia si se mencionan, ej: 'Sexo: Indistinto', 'Edad: 18 a 50 anos', 'Escolaridad: Secundaria concluida'"],
+    "beneficios": ["array de strings con prestaciones y beneficios si se mencionan, ej: 'Prestaciones de Ley', 'Bono de Temporada', 'Vales de despensa'. Vacio si no se mencionan"],
+    "tags": ["array", "de", "habilidades", "o", "palabras", "clave"]
+  }`,
+      }],
+    });
+
+    const raw = (response.content[0] as Anthropic.TextBlock).text.trim();
+
+    // Limpiar markdown si viene con backticks
+    const clean = raw.replace(/^```json?\n?/, "").replace(/\n?```$/, "");
+
+    try {
+      const data = JSON.parse(clean);
+      return NextResponse.json(data);
+    } catch {
+      return NextResponse.json({ error: "No se pudo parsear la respuesta de IA", raw }, { status: 500 });
+    }
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

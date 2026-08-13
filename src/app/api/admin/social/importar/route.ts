@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -99,129 +100,136 @@ async function parsearLote(lote: string): Promise<Pieza[]> {
 }
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 503 });
-  }
-
-  let body: { action?: string; texto?: string; piezas?: Pieza[] };
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Body inválido" }, { status: 400 });
-  }
-
-  // ── ANALIZAR: parsear el plan con Claude ──
-  if (body.action === "analizar") {
-    const texto = (body.texto ?? "").trim();
-    if (texto.length < 30) {
-      return NextResponse.json({ error: "Pega el plan de contenido completo." }, { status: 400 });
+    await exigirSeccion(req, "redes-sociales");
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 503 });
     }
 
+    let body: { action?: string; texto?: string; piezas?: Pieza[] };
     try {
-      const textoLimpio = limpiarHtml(texto).slice(0, 60000);
-      const lotes = dividirEnLotes(textoLimpio);
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+    }
 
-      // Procesar todos los lotes (semanas) en paralelo
-      const resultados = await Promise.all(lotes.map((l) => parsearLote(l)));
-      let piezas = resultados.flat();
-
-      // Quitar fantasmas (sin título o caption) y duplicados, luego ordenar
-      const vistos = new Set<string>();
-      piezas = piezas
-        .filter((p) => p && p.fecha && (p.titulo_interno?.trim() || p.caption?.trim()))
-        .filter((p) => {
-          // dedup por día + red (una publicación por día/red en este flujo)
-          const k = `${p.fecha}|${p.red_social}`;
-          if (vistos.has(k)) return false;
-          vistos.add(k);
-          return true;
-        })
-        .sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
-
-      if (piezas.length === 0) {
-        return NextResponse.json({ error: "No se detectaron publicaciones en el plan." }, { status: 422 });
+    // ── ANALIZAR: parsear el plan con Claude ──
+    if (body.action === "analizar") {
+      const texto = (body.texto ?? "").trim();
+      if (texto.length < 30) {
+        return NextResponse.json({ error: "Pega el plan de contenido completo." }, { status: 400 });
       }
 
-      // Marcar las que ya existen en el calendario (mismo día + misma red)
+      try {
+        const textoLimpio = limpiarHtml(texto).slice(0, 60000);
+        const lotes = dividirEnLotes(textoLimpio);
+
+        // Procesar todos los lotes (semanas) en paralelo
+        const resultados = await Promise.all(lotes.map((l) => parsearLote(l)));
+        let piezas = resultados.flat();
+
+        // Quitar fantasmas (sin título o caption) y duplicados, luego ordenar
+        const vistos = new Set<string>();
+        piezas = piezas
+          .filter((p) => p && p.fecha && (p.titulo_interno?.trim() || p.caption?.trim()))
+          .filter((p) => {
+            // dedup por día + red (una publicación por día/red en este flujo)
+            const k = `${p.fecha}|${p.red_social}`;
+            if (vistos.has(k)) return false;
+            vistos.add(k);
+            return true;
+          })
+          .sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+
+        if (piezas.length === 0) {
+          return NextResponse.json({ error: "No se detectaron publicaciones en el plan." }, { status: 422 });
+        }
+
+        // Marcar las que ya existen en el calendario (mismo día + misma red)
+        const fechas = [...new Set(piezas.map((p) => p.fecha).filter(Boolean))];
+        const { data: existentes } = await sb
+          .from("social_posts")
+          .select("fecha_programada, red_social")
+          .in("fecha_programada", fechas);
+        const setExist = new Set((existentes ?? []).map((e) => `${e.fecha_programada}|${e.red_social}`));
+
+        const piezasMarcadas = piezas.map((p) => ({
+          ...p,
+          ya_existe: setExist.has(`${p.fecha}|${p.red_social || "facebook"}`),
+        }));
+
+        return NextResponse.json({ piezas: piezasMarcadas });
+      } catch (err) {
+        console.error("Importar/analizar error:", err);
+        return NextResponse.json({ error: "Error al analizar el plan. Intenta de nuevo." }, { status: 500 });
+      }
+    }
+
+    // ── CREAR: insertar las publicaciones confirmadas ──
+    if (body.action === "crear") {
+      const piezas = body.piezas ?? [];
+      if (!Array.isArray(piezas) || piezas.length === 0) {
+        return NextResponse.json({ error: "No hay publicaciones para crear." }, { status: 400 });
+      }
+
+      let creadas = 0;
+      let omitidas = 0;
+      const errores: string[] = [];
+      const hoy = new Date().toISOString().slice(0, 10);
+
+      // Doble seguridad: re-verificar contra lo que ya existe en el calendario
       const fechas = [...new Set(piezas.map((p) => p.fecha).filter(Boolean))];
       const { data: existentes } = await sb
         .from("social_posts")
         .select("fecha_programada, red_social")
-        .in("fecha_programada", fechas);
+        .in("fecha_programada", fechas.length ? fechas : ["0000-00-00"]);
       const setExist = new Set((existentes ?? []).map((e) => `${e.fecha_programada}|${e.red_social}`));
 
-      const piezasMarcadas = piezas.map((p) => ({
-        ...p,
-        ya_existe: setExist.has(`${p.fecha}|${p.red_social || "facebook"}`),
-      }));
+      for (const p of piezas) {
+        const clave = `${p.fecha}|${p.red_social || "facebook"}`;
+        // Bloqueo de fechas pasadas: no se crean publicaciones con fecha anterior a hoy
+        if (p.fecha && p.fecha < hoy) { omitidas++; continue; }
+        // Si ya hay una publicación ese día en esa red, se respeta lo existente
+        if (setExist.has(clave)) { omitidas++; continue; }
 
-      return NextResponse.json({ piezas: piezasMarcadas });
-    } catch (err) {
-      console.error("Importar/analizar error:", err);
-      return NextResponse.json({ error: "Error al analizar el plan. Intenta de nuevo." }, { status: 500 });
-    }
-  }
+        try {
+          const { data: post, error: postErr } = await sb
+            .from("social_posts")
+            .insert({
+              red_social: p.red_social || "facebook",
+              fecha_programada: p.fecha,
+              titulo_interno: p.titulo_interno || "",
+              publicado: false, // nace como borrador, solo el admin lo ve hasta publicar
+            })
+            .select()
+            .single();
 
-  // ── CREAR: insertar las publicaciones confirmadas ──
-  if (body.action === "crear") {
-    const piezas = body.piezas ?? [];
-    if (!Array.isArray(piezas) || piezas.length === 0) {
-      return NextResponse.json({ error: "No hay publicaciones para crear." }, { status: 400 });
-    }
+          if (postErr || !post) { errores.push(p.titulo_interno || p.fecha); continue; }
 
-    let creadas = 0;
-    let omitidas = 0;
-    const errores: string[] = [];
-    const hoy = new Date().toISOString().slice(0, 10);
+          const { error: vErr } = await sb.from("social_post_versions").insert({
+            post_id: post.id,
+            version_num: 1,
+            caption: p.caption || "",
+            imagenes: [],
+            nota_visual: p.nota_visual || "",
+            es_activa: true,
+          });
 
-    // Doble seguridad: re-verificar contra lo que ya existe en el calendario
-    const fechas = [...new Set(piezas.map((p) => p.fecha).filter(Boolean))];
-    const { data: existentes } = await sb
-      .from("social_posts")
-      .select("fecha_programada, red_social")
-      .in("fecha_programada", fechas.length ? fechas : ["0000-00-00"]);
-    const setExist = new Set((existentes ?? []).map((e) => `${e.fecha_programada}|${e.red_social}`));
-
-    for (const p of piezas) {
-      const clave = `${p.fecha}|${p.red_social || "facebook"}`;
-      // Bloqueo de fechas pasadas: no se crean publicaciones con fecha anterior a hoy
-      if (p.fecha && p.fecha < hoy) { omitidas++; continue; }
-      // Si ya hay una publicación ese día en esa red, se respeta lo existente
-      if (setExist.has(clave)) { omitidas++; continue; }
-
-      try {
-        const { data: post, error: postErr } = await sb
-          .from("social_posts")
-          .insert({
-            red_social: p.red_social || "facebook",
-            fecha_programada: p.fecha,
-            titulo_interno: p.titulo_interno || "",
-            publicado: false, // nace como borrador, solo el admin lo ve hasta publicar
-          })
-          .select()
-          .single();
-
-        if (postErr || !post) { errores.push(p.titulo_interno || p.fecha); continue; }
-
-        const { error: vErr } = await sb.from("social_post_versions").insert({
-          post_id: post.id,
-          version_num: 1,
-          caption: p.caption || "",
-          imagenes: [],
-          nota_visual: p.nota_visual || "",
-          es_activa: true,
-        });
-
-        if (vErr) { errores.push(p.titulo_interno || p.fecha); continue; }
-        setExist.add(clave); // evita duplicar dentro del mismo lote
-        creadas++;
-      } catch {
-        errores.push(p.titulo_interno || p.fecha);
+          if (vErr) { errores.push(p.titulo_interno || p.fecha); continue; }
+          setExist.add(clave); // evita duplicar dentro del mismo lote
+          creadas++;
+        } catch {
+          errores.push(p.titulo_interno || p.fecha);
+        }
       }
+
+      return NextResponse.json({ creadas, omitidas, total: piezas.length, errores });
     }
 
-    return NextResponse.json({ creadas, omitidas, total: piezas.length, errores });
+    return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
-
-  return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
 }

@@ -1016,15 +1016,16 @@ export default function RevisorPage() {
 
     const [postsRes, configRes, mesRes, todosRes] = await Promise.all([
       fetch(`/api/revisor/posts?desde=${desde}&hasta=${hasta}`),
-      fetch("/api/admin/social/config"),
+      fetch("/api/revisor/config"),
       fetch(`/api/revisor/posts?desde=${mesDesde}&hasta=${mesHasta}`),
       fetch(`/api/revisor/posts`), // todas (sin límite de fechas) para el modo filtro
     ]);
     const [postsData, configData, mesData, todosData] = await Promise.all([postsRes.json(), configRes.json(), mesRes.json(), todosRes.json()]);
     setPosts(Array.isArray(postsData) ? postsData : []);
     setPostsTodos(Array.isArray(todosData) ? todosData : []);
-    const fb = Array.isArray(configData) ? configData.find((c: { red_social: string }) => c.red_social === "facebook") : null;
-    if (fb) setConfig({ nombre_pagina: fb.nombre_pagina, avatar_url: fb.avatar_url });
+    if (configData && !configData.error) {
+      setConfig({ nombre_pagina: configData.nombre_pagina, avatar_url: configData.avatar_url });
+    }
     if (Array.isArray(mesData)) {
       setStatsMonth({
         aprobados: mesData.filter((p: Post) => p.estado === "aprobado").length,

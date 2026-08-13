@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -337,101 +338,115 @@ ${d.aplicaciones.map((a) => `  • ${a.nombre ?? "Sin nombre"} → ${a.vacante}`
 }
 
 // ─── GET — config actual ───────────────────────────────────
-export async function GET() {
-  const { data } = await sb
-    .from("site_config")
-    .select("key, value")
-    .in("key", ["resumen_email", "resumen_periodicidad"]);
-  const map: Record<string, string> = {};
-  for (const row of data ?? []) map[row.key] = row.value ?? "";
-  return NextResponse.json({ email: map.resumen_email ?? "", periodicidad: map.resumen_periodicidad ?? "desactivado" });
+export async function GET(req: NextRequest) {
+  try {
+    await exigirSeccion(req, "analytics");
+    const { data } = await sb
+      .from("site_config")
+      .select("key, value")
+      .in("key", ["resumen_email", "resumen_periodicidad"]);
+    const map: Record<string, string> = {};
+    for (const row of data ?? []) map[row.key] = row.value ?? "";
+    return NextResponse.json({ email: map.resumen_email ?? "", periodicidad: map.resumen_periodicidad ?? "desactivado" });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
 }
 
 // ─── POST — acciones ───────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { action, email, periodicidad } = body;
+  try {
+    await exigirSeccion(req, "analytics");
+    const body = await req.json();
+    const { action, email, periodicidad } = body;
 
-  if (action === "save_config") {
-    await Promise.all([
-      sb.from("site_config").upsert({ key: "resumen_email", value: email ?? "" }, { onConflict: "key" }),
-      sb.from("site_config").upsert({ key: "resumen_periodicidad", value: periodicidad ?? "desactivado" }, { onConflict: "key" }),
-    ]);
-    return NextResponse.json({ ok: true });
-  }
+    if (action === "save_config") {
+      await Promise.all([
+        sb.from("site_config").upsert({ key: "resumen_email", value: email ?? "" }, { onConflict: "key" }),
+        sb.from("site_config").upsert({ key: "resumen_periodicidad", value: periodicidad ?? "desactivado" }, { onConflict: "key" }),
+      ]);
+      return NextResponse.json({ ok: true });
+    }
 
-  const periodo: "semanal" | "mensual" = periodicidad === "semanal" ? "semanal" : "mensual";
-  const data = await fetchData(periodo);
+    const periodo: "semanal" | "mensual" = periodicidad === "semanal" ? "semanal" : "mensual";
+    const data = await fetchData(periodo);
 
-  // ── Descargar TXT ──
-  if (action === "download") {
-    const txt = buildTxt(data);
-    return new NextResponse(txt, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Content-Disposition": `attachment; filename="reporte-kyoszen-${new Date().toISOString().slice(0, 10)}.txt"`,
-      },
-    });
-  }
-
-  // ── Descargar PDF ──
-  if (action === "download_pdf") {
-    const html = buildPdfHtml(data);
-    // Lazy import para no bloquear el bundle en builds estáticos
-    const puppeteer = await import("puppeteer");
-    const browser = await puppeteer.default.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-    });
-    try {
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "load" });
-      const pdf = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: { top: "0", right: "0", bottom: "0", left: "0" },
-      });
-      return new NextResponse(Buffer.from(pdf), {
+    // ── Descargar TXT ──
+    if (action === "download") {
+      const txt = buildTxt(data);
+      return new NextResponse(txt, {
         headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="reporte-kyoszen-${new Date().toISOString().slice(0, 10)}.pdf"`,
+          "Content-Type": "text/plain; charset=utf-8",
+          "Content-Disposition": `attachment; filename="reporte-kyoszen-${new Date().toISOString().slice(0, 10)}.txt"`,
         },
       });
-    } finally {
-      await browser.close();
-    }
-  }
-
-  // ── Enviar por correo ──
-  if (action === "send") {
-    const destEmail = email || body.configEmail;
-    if (!destEmail) return NextResponse.json({ error: "Falta el correo de destino" }, { status: 400 });
-
-    const smtp = await getSmtpConfig();
-    if (!smtp.smtp_host || !smtp.smtp_user || !smtp.smtp_pass) {
-      return NextResponse.json({ error: "SMTP no configurado en site_config" }, { status: 400 });
     }
 
-    const transporter = nodemailer.createTransport({
-      host: smtp.smtp_host,
-      port: parseInt(smtp.smtp_port ?? "465"),
-      secure: parseInt(smtp.smtp_port ?? "465") === 465,
-      auth: { user: smtp.smtp_user, pass: smtp.smtp_pass },
-    });
+    // ── Descargar PDF ──
+    if (action === "download_pdf") {
+      const html = buildPdfHtml(data);
+      // Lazy import para no bloquear el bundle en builds estáticos
+      const puppeteer = await import("puppeteer");
+      const browser = await puppeteer.default.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      });
+      try {
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: "load" });
+        const pdf = await page.pdf({
+          format: "A4",
+          printBackground: true,
+          margin: { top: "0", right: "0", bottom: "0", left: "0" },
+        });
+        return new NextResponse(Buffer.from(pdf), {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="reporte-kyoszen-${new Date().toISOString().slice(0, 10)}.pdf"`,
+          },
+        });
+      } finally {
+        await browser.close();
+      }
+    }
 
-    const txt = buildTxt(data);
-    const html = buildPdfHtml(data);
+    // ── Enviar por correo ──
+    if (action === "send") {
+      const destEmail = email || body.configEmail;
+      if (!destEmail) return NextResponse.json({ error: "Falta el correo de destino" }, { status: 400 });
 
-    await transporter.sendMail({
-      from: `"Kyoszen Panel" <${smtp.smtp_from ?? smtp.smtp_user}>`,
-      to: destEmail,
-      subject: `Reporte ${periodo} Kyoszen — ${data.fecha}`,
-      text: txt,
-      html: html,
-    });
+      const smtp = await getSmtpConfig();
+      if (!smtp.smtp_host || !smtp.smtp_user || !smtp.smtp_pass) {
+        return NextResponse.json({ error: "SMTP no configurado en site_config" }, { status: 400 });
+      }
 
-    return NextResponse.json({ ok: true });
+      const transporter = nodemailer.createTransport({
+        host: smtp.smtp_host,
+        port: parseInt(smtp.smtp_port ?? "465"),
+        secure: parseInt(smtp.smtp_port ?? "465") === 465,
+        auth: { user: smtp.smtp_user, pass: smtp.smtp_pass },
+      });
+
+      const txt = buildTxt(data);
+      const html = buildPdfHtml(data);
+
+      await transporter.sendMail({
+        from: `"Kyoszen Panel" <${smtp.smtp_from ?? smtp.smtp_user}>`,
+        to: destEmail,
+        subject: `Reporte ${periodo} Kyoszen — ${data.fecha}`,
+        text: txt,
+        html: html,
+      });
+
+      return NextResponse.json({ ok: true });
+    }
+
+    return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
-
-  return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
 }

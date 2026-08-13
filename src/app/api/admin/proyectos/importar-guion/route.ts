@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { extractText, getDocumentProxy } from "unpdf";
 import { getPlantilla, type ModoEtapa, type TipoEtapa } from "@/lib/proyectos";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -239,66 +240,73 @@ async function crearProyecto(body: ImportarBody, datos: Record<string, unknown>)
 }
 
 export async function POST(req: NextRequest) {
-  let body: ImportarBody;
   try {
-    body = (await req.json()) as ImportarBody;
-  } catch {
-    return NextResponse.json({ error: "Body inválido" }, { status: 400 });
-  }
-
-  if (body.accion === "analizar") {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 503 });
-    }
+    await exigirSeccion(req, "proyectos");
+    let body: ImportarBody;
     try {
-      let texto = typeof body.texto === "string" ? body.texto.trim() : "";
-      if (!texto && typeof body.pdfBase64 === "string" && body.pdfBase64.trim()) {
-        texto = await textoDesdePdfBase64(body.pdfBase64);
-      }
-      if (texto.length < 20) {
-        return NextResponse.json(
-          { error: "Proporciona el texto del guion o un PDF con texto seleccionable" },
-          { status: 400 }
-        );
-      }
-      if (texto.length > 100000) {
-        return NextResponse.json(
-          { error: "El guion es demasiado largo para procesarse de una vez (más de 100k caracteres). Divídelo en partes." },
-          { status: 400 }
-        );
-      }
-
-      const respuesta = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 8192,
-        system: SYSTEM_PARSE,
-        messages: [{ role: "user", content: texto }],
-      });
-      const bloqueTexto = respuesta.content.find((bloque) => bloque.type === "text");
-      if (!bloqueTexto || bloqueTexto.type !== "text") {
-        throw new Error("Claude no devolvió texto");
-      }
-      return NextResponse.json(validarGuion(extraerObjetoJSON(bloqueTexto.text)));
-    } catch (error) {
-      console.error("importar-guion/analizar:", error);
-      const mensaje = error instanceof Error ? error.message : "No se pudo analizar el guion";
-      return NextResponse.json({ error: mensaje }, { status: 422 });
+      body = (await req.json()) as ImportarBody;
+    } catch {
+      return NextResponse.json({ error: "Body inválido" }, { status: 400 });
     }
-  }
 
-  if (body.accion === "crear") {
-    const datos = body.datosParsed && typeof body.datosParsed === "object" && !Array.isArray(body.datosParsed)
-      ? body.datosParsed as Record<string, unknown>
-      : {};
-    try {
-      const proyecto = await crearProyecto(body, datos);
-      return NextResponse.json(proyecto, { status: 201 });
-    } catch (error) {
-      const mensaje = error instanceof Error ? error.message : "No se pudo crear el proyecto";
-      const status = mensaje.includes("requer") || mensaje.includes("válid") || mensaje.includes("inválido") ? 400 : 500;
-      return NextResponse.json({ error: mensaje }, { status });
+    if (body.accion === "analizar") {
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return NextResponse.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 503 });
+      }
+      try {
+        let texto = typeof body.texto === "string" ? body.texto.trim() : "";
+        if (!texto && typeof body.pdfBase64 === "string" && body.pdfBase64.trim()) {
+          texto = await textoDesdePdfBase64(body.pdfBase64);
+        }
+        if (texto.length < 20) {
+          return NextResponse.json(
+            { error: "Proporciona el texto del guion o un PDF con texto seleccionable" },
+            { status: 400 }
+          );
+        }
+        if (texto.length > 100000) {
+          return NextResponse.json(
+            { error: "El guion es demasiado largo para procesarse de una vez (más de 100k caracteres). Divídelo en partes." },
+            { status: 400 }
+          );
+        }
+
+        const respuesta = await anthropic.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 8192,
+          system: SYSTEM_PARSE,
+          messages: [{ role: "user", content: texto }],
+        });
+        const bloqueTexto = respuesta.content.find((bloque) => bloque.type === "text");
+        if (!bloqueTexto || bloqueTexto.type !== "text") {
+          throw new Error("Claude no devolvió texto");
+        }
+        return NextResponse.json(validarGuion(extraerObjetoJSON(bloqueTexto.text)));
+      } catch (error) {
+        console.error("importar-guion/analizar:", error);
+        const mensaje = error instanceof Error ? error.message : "No se pudo analizar el guion";
+        return NextResponse.json({ error: mensaje }, { status: 422 });
+      }
     }
-  }
 
-  return NextResponse.json({ error: "accion debe ser 'analizar' o 'crear'" }, { status: 400 });
+    if (body.accion === "crear") {
+      const datos = body.datosParsed && typeof body.datosParsed === "object" && !Array.isArray(body.datosParsed)
+        ? body.datosParsed as Record<string, unknown>
+        : {};
+      try {
+        const proyecto = await crearProyecto(body, datos);
+        return NextResponse.json(proyecto, { status: 201 });
+      } catch (error) {
+        const mensaje = error instanceof Error ? error.message : "No se pudo crear el proyecto";
+        const status = mensaje.includes("requer") || mensaje.includes("válid") || mensaje.includes("inválido") ? 400 : 500;
+        return NextResponse.json({ error: mensaje }, { status });
+      }
+    }
+
+    return NextResponse.json({ error: "accion debe ser 'analizar' o 'crear'" }, { status: 400 });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
 }

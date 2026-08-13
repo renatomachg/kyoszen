@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Dot, IconUI } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 const PAGES = [
   { pagina: "home",      label: "Inicio",    ruta: "/" },
@@ -54,7 +56,7 @@ export default function AdminSeo() {
     setSuggesting(pagina);
     setErrors((e) => ({ ...e, [pagina]: "" }));
     try {
-      const res = await fetch("/api/admin/seo-suggest", {
+      const res = await fetchAdmin("/api/admin/seo-suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pagina }),

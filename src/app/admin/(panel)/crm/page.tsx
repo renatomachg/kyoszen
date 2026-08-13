@@ -10,6 +10,8 @@ import {
 } from "@/lib/crm";
 import MatchingPanel from "./MatchingPanel";
 import { Dot, IconUI } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 interface CandidatoLista extends Candidato {
   aplicaciones_count: number;
@@ -100,7 +102,7 @@ export default function AdminCRM() {
   const cargarLista = useCallback(async () => {
     try {
       setError("");
-      const response = await fetch("/api/admin/crm/candidatos", {
+      const response = await fetchAdmin("/api/admin/crm/candidatos", {
         cache: "no-store",
       });
       const data = await leerRespuesta<{ candidatos: CandidatoLista[] }>(
@@ -122,7 +124,7 @@ export default function AdminCRM() {
     setSelectedId(id);
     setLoadingDetalle(true);
     try {
-      const response = await fetch(`/api/admin/crm/candidatos/${id}`, {
+      const response = await fetchAdmin(`/api/admin/crm/candidatos/${id}`, {
         cache: "no-store",
       });
       const data = await leerRespuesta<DetalleCandidato>(response);
@@ -164,7 +166,7 @@ export default function AdminCRM() {
   const sincronizar = async () => {
     setSincronizando(true);
     try {
-      const response = await fetch("/api/admin/crm/sync", { method: "POST" });
+      const response = await fetchAdmin("/api/admin/crm/sync", { method: "POST" });
       const data = await leerRespuesta<{
         creados: number;
         vinculados: number;
@@ -187,7 +189,7 @@ export default function AdminCRM() {
     event.preventDefault();
     setCreando(true);
     try {
-      const response = await fetch("/api/admin/crm/candidatos", {
+      const response = await fetchAdmin("/api/admin/crm/candidatos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formulario),
@@ -229,7 +231,7 @@ export default function AdminCRM() {
     );
 
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/crm/candidatos/${detalle.candidato.id}`,
         {
           method: "PATCH",
@@ -270,7 +272,7 @@ export default function AdminCRM() {
 
     setGuardandoNota(true);
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/crm/candidatos/${detalle.candidato.id}/notas`,
         {
           method: "POST",
@@ -302,7 +304,7 @@ export default function AdminCRM() {
 
     setBorrando(true);
     try {
-      const response = await fetch(
+      const response = await fetchAdmin(
         `/api/admin/crm/candidatos/${detalle.candidato.id}`,
         { method: "DELETE" },
       );

@@ -6,6 +6,8 @@ import { getRedSocial, REDES_SOCIALES as REDES } from "@/lib/redes-sociales";
 import { RedLogo } from "@/components/RedLogo";
 import InformeAdmin from "@/components/admin/InformeAdmin";
 import StoryboardView, { PropuestaView, GuiaTecnicaView, IconUI, type IconUIName } from "@/components/social/StoryboardView";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 /* ─── Types ──────────────────────────────────────────── */
 interface Version {
@@ -103,7 +105,7 @@ const ESTADO: Record<string, { label: string; bg: string; color: string; dot: st
 async function uploadImage(file: File): Promise<string> {
   const fd = new FormData();
   fd.append("file", file);
-  const res = await fetch("/api/admin/social/upload", { method: "POST", body: fd });
+  const res = await fetchAdmin("/api/admin/social/upload", { method: "POST", body: fd });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error ?? "Upload failed");
@@ -178,20 +180,20 @@ function PostModal({
     if (fechaPasada) { alert("No puedes programar una publicacion en una fecha pasada. Elige hoy o un dia futuro."); return; }
     setSaving(true);
     if (isNew) {
-      await fetch("/api/admin/social/posts", {
+      await fetchAdmin("/api/admin/social/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fecha_programada: fecha, caption, imagenes: images, titulo_interno: titulo, red_social: redSocial }),
       });
     } else if (editMode) {
       // edicion en su lugar: actualiza la version activa + metadatos, sin crear version ni notificar al cliente
-      await fetch(`/api/admin/social/posts/${postId}/versions`, {
+      await fetchAdmin(`/api/admin/social/posts/${postId}/versions`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ caption, imagenes: images, titulo_interno: titulo, red_social: redSocial, fecha_programada: fecha }),
       });
     } else {
-      await fetch(`/api/admin/social/posts/${postId}/versions`, {
+      await fetchAdmin(`/api/admin/social/posts/${postId}/versions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ caption, imagenes: images }),
@@ -339,8 +341,8 @@ function PropuestaEditor({ post, version, onSaved, onCancel }: { post: Post; ver
     const headers = { "Content-Type": "application/json" };
     try {
       const res = avisar
-        ? await fetch(url, { method: "POST", headers, body: JSON.stringify({ caption: caption.trim(), imagenes: [], storyboard, titulo_interno: titulo.trim() }) })
-        : await fetch(url, { method: "PUT", headers, body: JSON.stringify({ caption: caption.trim(), titulo_interno: titulo.trim(), storyboard }) });
+        ? await fetchAdmin(url, { method: "POST", headers, body: JSON.stringify({ caption: caption.trim(), imagenes: [], storyboard, titulo_interno: titulo.trim() }) })
+        : await fetchAdmin(url, { method: "PUT", headers, body: JSON.stringify({ caption: caption.trim(), titulo_interno: titulo.trim(), storyboard }) });
       if (!res.ok) throw new Error();
       onSaved();
     } catch {
@@ -422,7 +424,7 @@ function StoryboardEditor({ post, version, onSaved, onCancel }: { post: Post; ve
       nota_produccion: notaProduccion.trim(),
     };
     try {
-      const res = await fetch(`/api/admin/social/posts/${post.id}/versions`, {
+      const res = await fetchAdmin(`/api/admin/social/posts/${post.id}/versions`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storyboard }),
@@ -530,7 +532,7 @@ function GuiaTecnicaEditor({ post, version, onSaved, onCancel }: { post: Post; v
       },
     };
     try {
-      const res = await fetch(`/api/admin/social/posts/${post.id}/versions`, {
+      const res = await fetchAdmin(`/api/admin/social/posts/${post.id}/versions`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storyboard }),
@@ -633,10 +635,10 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const up = await fetch("/api/admin/social/upload", { method: "POST", body: fd });
+      const up = await fetchAdmin("/api/admin/social/upload", { method: "POST", body: fd });
       const { url } = await up.json();
       if (!url) throw new Error("sin url");
-      await fetch(`/api/admin/social/posts/${post.id}`, {
+      await fetchAdmin(`/api/admin/social/posts/${post.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ video_url: url, fase: "video", estado: "pendiente" }),
@@ -652,7 +654,7 @@ function TikTokAdminBlock({ post, version, onUpdated }: { post: Post; version: V
     setConfirmarArchivo(false);
     setArchivando(true);
     try {
-      const r = await fetch(`/api/admin/social/posts/${post.id}/archivar-video`, { method: "POST" });
+      const r = await fetchAdmin(`/api/admin/social/posts/${post.id}/archivar-video`, { method: "POST" });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "error");
       onUpdated();
@@ -868,7 +870,7 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
     if (moveDate < hoyIsoDetail) { alert("No puedes mover una publicación a una fecha pasada."); return; }
     setMoving(true);
     try {
-      const res = await fetch(`/api/admin/social/posts/${post.id}/versions`, {
+      const res = await fetchAdmin(`/api/admin/social/posts/${post.id}/versions`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fecha_programada: moveDate }),
       });
@@ -889,7 +891,7 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
 
   const deletePost = async () => {
     if (!confirm("¿Eliminar esta publicación y todo su historial?")) return;
-    await fetch(`/api/admin/social/posts/${post.id}`, { method: "DELETE" });
+    await fetchAdmin(`/api/admin/social/posts/${post.id}`, { method: "DELETE" });
     onUpdated();
     onClose();
   };
@@ -900,7 +902,7 @@ function PostDetail({ post, config, onClose, onUpdated, onMoved }: { post: Post;
       if (!confirm("Esta publicación no tiene imagen todavía. ¿Aun así quieres mostrarla al cliente?")) return;
     }
     setTogglingPub(true);
-    await fetch(`/api/admin/social/posts/${post.id}`, {
+    await fetchAdmin(`/api/admin/social/posts/${post.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ publicado: !publicado }),
@@ -1132,7 +1134,7 @@ export default function RedesSocialesPage() {
     if (esPdf) {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/admin/social/extract-pdf", { method: "POST", body: fd });
+      const res = await fetchAdmin("/api/admin/social/extract-pdf", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudo leer el PDF.");
       return data.text ?? "";
@@ -1172,7 +1174,7 @@ export default function RedesSocialesPage() {
   const analizarSetTiktok = async () => {
     setImportLoading(true); setImportMsg(""); setTtPiezas(null);
     try {
-      const res = await fetch("/api/admin/social/importar-tiktok", {
+      const res = await fetchAdmin("/api/admin/social/importar-tiktok", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "analizar-set", propuesta: ttProp.texto, storyboard: ttStory.texto, tecnica: ttTec.texto }),
       });
@@ -1189,7 +1191,7 @@ export default function RedesSocialesPage() {
     if (sel.length === 0) { setImportMsg("No hay videos seleccionados."); return; }
     setImportCreando(true); setImportMsg("");
     try {
-      const res = await fetch("/api/admin/social/importar-tiktok", {
+      const res = await fetchAdmin("/api/admin/social/importar-tiktok", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "crear", piezas: sel }),
       });
@@ -1236,8 +1238,8 @@ export default function RedesSocialesPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     const [postsRes, cfgRes] = await Promise.all([
-      fetch(`/api/admin/social/posts?desde=${queryDesde}&hasta=${queryHasta}`),
-      fetch("/api/admin/social/config"),
+      fetchAdmin(`/api/admin/social/posts?desde=${queryDesde}&hasta=${queryHasta}`),
+      fetchAdmin("/api/admin/social/config"),
     ]);
     const [postsData, cfgData] = await Promise.all([postsRes.json(), cfgRes.json()]);
     const arr: Post[] = Array.isArray(postsData) ? postsData : [];
@@ -1266,7 +1268,7 @@ export default function RedesSocialesPage() {
     if (nuevaFecha < hoyIso) { alert("No puedes mover una publicacion a una fecha pasada."); return; }
     // update optimista
     setPosts((prev) => prev.map((x) => (x.id === postId ? { ...x, fecha_programada: nuevaFecha } : x)));
-    await fetch(`/api/admin/social/posts/${postId}/versions`, {
+    await fetchAdmin(`/api/admin/social/posts/${postId}/versions`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fecha_programada: nuevaFecha }),
     });
@@ -1283,8 +1285,8 @@ export default function RedesSocialesPage() {
     const fa = a.fecha_programada, fb = b.fecha_programada;
     setPosts((prev) => prev.map((x) => (x.id === aId ? { ...x, fecha_programada: fb } : x.id === bId ? { ...x, fecha_programada: fa } : x)));
     await Promise.all([
-      fetch(`/api/admin/social/posts/${aId}/versions`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fecha_programada: fb }) }),
-      fetch(`/api/admin/social/posts/${bId}/versions`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fecha_programada: fa }) }),
+      fetchAdmin(`/api/admin/social/posts/${aId}/versions`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fecha_programada: fb }) }),
+      fetchAdmin(`/api/admin/social/posts/${bId}/versions`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fecha_programada: fa }) }),
     ]);
     loadData();
   };
@@ -1307,7 +1309,7 @@ export default function RedesSocialesPage() {
     const nuevaIso = `${nueva.getFullYear()}-${pad(nueva.getMonth() + 1)}-${pad(nueva.getDate())}`;
     if (nuevaIso < hoyIso) { alert("No puedes mover una publicacion a una fecha pasada."); return; }
     setDragId(null); setDropTarget(null);
-    await fetch(`/api/admin/social/posts/${postId}/versions`, {
+    await fetchAdmin(`/api/admin/social/posts/${postId}/versions`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fecha_programada: nuevaIso }),
     });
@@ -1373,7 +1375,7 @@ export default function RedesSocialesPage() {
     setImportMsg("");
     setImportPiezas(null);
     try {
-      const res = await fetch("/api/admin/social/importar", {
+      const res = await fetchAdmin("/api/admin/social/importar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "analizar", texto: importTexto }),
@@ -1401,7 +1403,7 @@ export default function RedesSocialesPage() {
     setImportCreando(true);
     setImportMsg("");
     try {
-      const res = await fetch("/api/admin/social/importar", {
+      const res = await fetchAdmin("/api/admin/social/importar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "crear", piezas: nuevas }),
@@ -1441,7 +1443,7 @@ export default function RedesSocialesPage() {
         return;
       }
     }
-    const res = await fetch("/api/admin/social/config", {
+    const res = await fetchAdmin("/api/admin/social/config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ red_social: "facebook", nombre_pagina: configForm.nombre_pagina, avatar_url }),

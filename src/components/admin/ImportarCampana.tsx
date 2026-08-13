@@ -3,6 +3,8 @@
 import { useRef, useState, type DragEvent } from "react";
 import { IconUI } from "@/components/ui/IconUI";
 import { MODOS_CAMPANA, type Campana, type FormularioAnuncio, type ModoCampana, type Segmentacion } from "@/lib/campanas";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 const C = {
   navy: "#042E7B",
@@ -134,7 +136,7 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
       if (esPdf) {
         const fd = new FormData();
         fd.append("file", file);
-        const res = await fetch("/api/admin/social/extract-pdf", { method: "POST", body: fd });
+        const res = await fetchAdmin("/api/admin/social/extract-pdf", { method: "POST", body: fd });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "No se pudo leer el PDF");
         contenido = data.text ?? "";
@@ -170,7 +172,7 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
     setMsg(capturas.length > 0 ? "Leyendo las capturas..." : "Leyendo el brief...");
     setPropuesta(null); setAnuncios([]);
     try {
-      const res = await fetch("/api/admin/campanas/importar", {
+      const res = await fetchAdmin("/api/admin/campanas/importar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -209,7 +211,7 @@ export default function ImportarCampana({ campanas, onCreada, onCerrar }: {
     setCargando(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/campanas/importar", {
+      const res = await fetchAdmin("/api/admin/campanas/importar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

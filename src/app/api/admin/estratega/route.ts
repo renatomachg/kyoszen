@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -96,6 +97,7 @@ ${topValor("contacto_enviado", eventos30).join("\n") || "Sin datos"}
 
 export async function POST(req: NextRequest) {
   try {
+    await exigirSeccion(req, "estratega");
     const { messages } = await req.json();
 
     const contexto = await fetchContexto();
@@ -146,8 +148,9 @@ Cuando detectes algo en los datos (ej. alta tasa de abandono, mucho interés en 
     return new NextResponse(readable, {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
-  } catch (err) {
-    console.error("Estratega error:", err);
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error("Estratega error:", error);
     return NextResponse.json({ error: "Error al generar análisis" }, { status: 500 });
   }
 }

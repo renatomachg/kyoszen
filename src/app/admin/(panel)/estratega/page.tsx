@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Dot, IconUI, type IconUIName } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 interface Message {
   role: "user" | "assistant";
@@ -48,7 +50,7 @@ export default function EstrategaPage() {
 
   // Cargar chats desde Supabase al montar
   useEffect(() => {
-    fetch("/api/admin/estratega/chats")
+    fetchAdmin("/api/admin/estratega/chats")
       .then((r) => r.json())
       .then((data: Chat[]) => {
         if (Array.isArray(data)) setChats(data);
@@ -80,11 +82,11 @@ export default function EstrategaPage() {
     e.stopPropagation();
     setChats((prev) => prev.filter((c) => c.id !== id));
     if (activeChatId === id) setActiveChatId(null);
-    await fetch(`/api/admin/estratega/chats/${id}`, { method: "DELETE" });
+    await fetchAdmin(`/api/admin/estratega/chats/${id}`, { method: "DELETE" });
   }, [activeChatId]);
 
   const saveChat = async (chat: { id: string; title: string; messages: Message[] }) => {
-    await fetch("/api/admin/estratega/chats", {
+    await fetchAdmin("/api/admin/estratega/chats", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(chat),
@@ -127,7 +129,7 @@ export default function EstrategaPage() {
     setStreamText("");
 
     try {
-      const res = await fetch("/api/admin/estratega", {
+      const res = await fetchAdmin("/api/admin/estratega", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: newMessages }),

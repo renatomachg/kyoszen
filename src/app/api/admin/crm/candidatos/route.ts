@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -20,8 +21,9 @@ function textoOpcional(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    await exigirSeccion(req, "crm");
     const { data: candidatos, error } = await sb
       .from("crm_candidatos")
       .select("*")
@@ -60,6 +62,7 @@ export async function GET() {
       })),
     });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error
         ? error.message
@@ -70,6 +73,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    await exigirSeccion(req, "crm");
     const body = (await req.json()) as Record<string, unknown>;
     const nombre =
       typeof body.nombre === "string" ? body.nombre.trim() : "";
@@ -103,6 +107,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error
         ? error.message

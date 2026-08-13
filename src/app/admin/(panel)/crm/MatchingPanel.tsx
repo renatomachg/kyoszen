@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ESTADOS, type EstadoPipeline } from "@/lib/crm";
 import { supabase } from "@/lib/supabase";
 import { Dot, IconUI } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 interface VacanteOpcion {
   id: number;
@@ -108,7 +110,7 @@ export default function MatchingPanel({
       setRanking(null);
 
       try {
-        const response = await fetch(
+        const response = await fetchAdmin(
           `/api/admin/crm/match?vacante=${encodeURIComponent(vacanteId)}`,
           { cache: "no-store", signal: controller.signal },
         );

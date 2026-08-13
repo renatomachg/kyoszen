@@ -8,6 +8,8 @@ import {
 } from "@/lib/cuestionario";
 import type { Respuestas } from "@/lib/cuestionario/tipos";
 import { Dot, IconUI } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 type Invitacion = {
   token: string;
@@ -87,7 +89,7 @@ export default function AdminCuestionarios() {
   const cargar = useCallback(async () => {
     setError("");
     try {
-      const response = await fetch("/api/admin/cuestionario", {
+      const response = await fetchAdmin("/api/admin/cuestionario", {
         cache: "no-store",
       });
       const payload = (await response.json()) as {
@@ -143,7 +145,7 @@ export default function AdminCuestionarios() {
     setGuardando(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/cuestionario", {
+      const response = await fetchAdmin("/api/admin/cuestionario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -184,7 +186,7 @@ export default function AdminCuestionarios() {
     setBorrando(invitacion.token);
     setError("");
     try {
-      const response = await fetch("/api/admin/cuestionario", {
+      const response = await fetchAdmin("/api/admin/cuestionario", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: invitacion.token }),

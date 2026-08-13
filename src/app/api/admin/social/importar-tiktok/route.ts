@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const sb = createClient(
@@ -143,125 +144,132 @@ function proximosMartes(n: number): string[] {
 }
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 503 });
-  }
-
-  let body: { action?: string; texto?: string; propuesta?: string; storyboard?: string; tecnica?: string; piezas?: (PiezaTT & { fecha?: string })[] };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Body invalido" }, { status: 400 }); }
-
-  // ── ANALIZAR SET (3 documentos: propuesta cliente + storyboard + guia tecnica) ──
-  if (body.action === "analizar-set") {
-    const tStory = (body.storyboard ?? "").trim();
-    const tProp = (body.propuesta ?? "").trim();
-    const tTec = (body.tecnica ?? "").trim();
-    if (tStory.length < 40 && tProp.length < 40) {
-      return NextResponse.json({ error: "Sube al menos el Storyboard o la Propuesta del cliente." }, { status: 400 });
+  try {
+    await exigirSeccion(req, "redes-sociales");
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 503 });
     }
-    try {
-      const [story, prop, tec] = await Promise.all([
-        tStory.length >= 40 ? parseDoc<PiezaTT>(SYSTEM, tStory) : Promise.resolve([] as PiezaTT[]),
-        tProp.length >= 40 ? parseDoc<PropuestaTT>(SYSTEM_PROP, tProp) : Promise.resolve([] as PropuestaTT[]),
-        tTec.length >= 40 ? parseDoc<GuiaTecnicaTT>(SYSTEM_TEC, tTec) : Promise.resolve([] as GuiaTecnicaTT[]),
-      ]);
 
-      const n = Math.max(story.length, prop.length, tec.length);
-      if (n === 0) return NextResponse.json({ error: "No se detectaron videos en los documentos." }, { status: 422 });
+    let body: { action?: string; texto?: string; propuesta?: string; storyboard?: string; tecnica?: string; piezas?: (PiezaTT & { fecha?: string })[] };
+    try { body = await req.json(); } catch { return NextResponse.json({ error: "Body invalido" }, { status: 400 }); }
 
-      const fechas = proximosMartes(n);
-      const piezas = [];
-      for (let i = 0; i < n; i++) {
-        const s = story[i];
-        const p = prop[i] ?? null;
-        const t = tec[i] ?? null;
-        const sbBase: Storyboard = s?.storyboard ?? { frames: [] };
-        const titulo = p?.titulo || s?.titulo || t?.titulo || `Video ${i + 1}`;
-        const caption = s?.caption || p?.caption || "";
-        piezas.push({
-          titulo,
-          caption,
-          storyboard: { ...sbBase, propuesta: p, guia_tecnica: t },
-          fecha: fechas[i],
-          seleccionada: true,
-        });
+    // ── ANALIZAR SET (3 documentos: propuesta cliente + storyboard + guia tecnica) ──
+    if (body.action === "analizar-set") {
+      const tStory = (body.storyboard ?? "").trim();
+      const tProp = (body.propuesta ?? "").trim();
+      const tTec = (body.tecnica ?? "").trim();
+      if (tStory.length < 40 && tProp.length < 40) {
+        return NextResponse.json({ error: "Sube al menos el Storyboard o la Propuesta del cliente." }, { status: 400 });
       }
-      return NextResponse.json({ piezas, fuentes: { storyboard: story.length, propuesta: prop.length, tecnica: tec.length } });
-    } catch (err) {
-      console.error("importar-tiktok analizar-set:", err);
-      return NextResponse.json({ error: "Error al analizar los documentos." }, { status: 500 });
-    }
-  }
-
-  // ── ANALIZAR ──
-  if (body.action === "analizar") {
-    const texto = (body.texto ?? "").trim();
-    if (texto.length < 40) return NextResponse.json({ error: "Pega el storyboard completo (HTML o texto)." }, { status: 400 });
-    try {
-      const resp = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 8000,
-        system: SYSTEM,
-        messages: [{ role: "user", content: texto.slice(0, 80000) }],
-      });
-      const block = resp.content.find((b) => b.type === "text");
-      const raw = block && block.type === "text" ? block.text : "[]";
-      let piezas: PiezaTT[] = [];
-      try { piezas = extraerJSON(raw); } catch { return NextResponse.json({ error: "No se pudo interpretar el storyboard." }, { status: 422 }); }
-      piezas = piezas.filter((p) => p && (p.titulo?.trim() || (p.storyboard?.frames?.length ?? 0) > 0));
-      if (piezas.length === 0) return NextResponse.json({ error: "No se detectaron videos en el storyboard." }, { status: 422 });
-
-      // fechas sugeridas: martes consecutivos
-      const fechas = proximosMartes(piezas.length);
-      const conFecha = piezas.map((p, i) => ({ ...p, fecha: fechas[i], seleccionada: true }));
-      return NextResponse.json({ piezas: conFecha });
-    } catch (err) {
-      console.error("importar-tiktok analizar:", err);
-      return NextResponse.json({ error: "Error al analizar el storyboard." }, { status: 500 });
-    }
-  }
-
-  // ── CREAR ──
-  if (body.action === "crear") {
-    const piezas = body.piezas ?? [];
-    if (!Array.isArray(piezas) || piezas.length === 0) return NextResponse.json({ error: "No hay videos para crear." }, { status: 400 });
-
-    const hoy = new Date().toISOString().slice(0, 10);
-    let creadas = 0, omitidas = 0;
-    const errores: string[] = [];
-
-    for (const p of piezas) {
-      const fecha = p.fecha ?? "";
-      if (!fecha || fecha < hoy) { omitidas++; continue; } // no fechas pasadas
       try {
-        const { data: post, error: postErr } = await sb
-          .from("social_posts")
-          .insert({
-            red_social: "tiktok",
-            fecha_programada: fecha,
-            titulo_interno: p.titulo || "",
-            fase: "guion",        // nace para revisar el guion
-            publicado: false,     // borrador hasta publicar al cliente
-          })
-          .select()
-          .single();
-        if (postErr || !post) { errores.push(p.titulo || fecha); continue; }
+        const [story, prop, tec] = await Promise.all([
+          tStory.length >= 40 ? parseDoc<PiezaTT>(SYSTEM, tStory) : Promise.resolve([] as PiezaTT[]),
+          tProp.length >= 40 ? parseDoc<PropuestaTT>(SYSTEM_PROP, tProp) : Promise.resolve([] as PropuestaTT[]),
+          tTec.length >= 40 ? parseDoc<GuiaTecnicaTT>(SYSTEM_TEC, tTec) : Promise.resolve([] as GuiaTecnicaTT[]),
+        ]);
 
-        const { error: vErr } = await sb.from("social_post_versions").insert({
-          post_id: post.id,
-          version_num: 1,
-          caption: p.caption || "",
-          imagenes: [],
-          storyboard: p.storyboard ?? null,
-          es_activa: true,
-        });
-        if (vErr) { errores.push(p.titulo || fecha); continue; }
-        creadas++;
-      } catch {
-        errores.push(p.titulo || fecha);
+        const n = Math.max(story.length, prop.length, tec.length);
+        if (n === 0) return NextResponse.json({ error: "No se detectaron videos en los documentos." }, { status: 422 });
+
+        const fechas = proximosMartes(n);
+        const piezas = [];
+        for (let i = 0; i < n; i++) {
+          const s = story[i];
+          const p = prop[i] ?? null;
+          const t = tec[i] ?? null;
+          const sbBase: Storyboard = s?.storyboard ?? { frames: [] };
+          const titulo = p?.titulo || s?.titulo || t?.titulo || `Video ${i + 1}`;
+          const caption = s?.caption || p?.caption || "";
+          piezas.push({
+            titulo,
+            caption,
+            storyboard: { ...sbBase, propuesta: p, guia_tecnica: t },
+            fecha: fechas[i],
+            seleccionada: true,
+          });
+        }
+        return NextResponse.json({ piezas, fuentes: { storyboard: story.length, propuesta: prop.length, tecnica: tec.length } });
+      } catch (err) {
+        console.error("importar-tiktok analizar-set:", err);
+        return NextResponse.json({ error: "Error al analizar los documentos." }, { status: 500 });
       }
     }
-    return NextResponse.json({ creadas, omitidas, total: piezas.length, errores });
-  }
 
-  return NextResponse.json({ error: "Accion no reconocida" }, { status: 400 });
+    // ── ANALIZAR ──
+    if (body.action === "analizar") {
+      const texto = (body.texto ?? "").trim();
+      if (texto.length < 40) return NextResponse.json({ error: "Pega el storyboard completo (HTML o texto)." }, { status: 400 });
+      try {
+        const resp = await anthropic.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 8000,
+          system: SYSTEM,
+          messages: [{ role: "user", content: texto.slice(0, 80000) }],
+        });
+        const block = resp.content.find((b) => b.type === "text");
+        const raw = block && block.type === "text" ? block.text : "[]";
+        let piezas: PiezaTT[] = [];
+        try { piezas = extraerJSON(raw); } catch { return NextResponse.json({ error: "No se pudo interpretar el storyboard." }, { status: 422 }); }
+        piezas = piezas.filter((p) => p && (p.titulo?.trim() || (p.storyboard?.frames?.length ?? 0) > 0));
+        if (piezas.length === 0) return NextResponse.json({ error: "No se detectaron videos en el storyboard." }, { status: 422 });
+
+        // fechas sugeridas: martes consecutivos
+        const fechas = proximosMartes(piezas.length);
+        const conFecha = piezas.map((p, i) => ({ ...p, fecha: fechas[i], seleccionada: true }));
+        return NextResponse.json({ piezas: conFecha });
+      } catch (err) {
+        console.error("importar-tiktok analizar:", err);
+        return NextResponse.json({ error: "Error al analizar el storyboard." }, { status: 500 });
+      }
+    }
+
+    // ── CREAR ──
+    if (body.action === "crear") {
+      const piezas = body.piezas ?? [];
+      if (!Array.isArray(piezas) || piezas.length === 0) return NextResponse.json({ error: "No hay videos para crear." }, { status: 400 });
+
+      const hoy = new Date().toISOString().slice(0, 10);
+      let creadas = 0, omitidas = 0;
+      const errores: string[] = [];
+
+      for (const p of piezas) {
+        const fecha = p.fecha ?? "";
+        if (!fecha || fecha < hoy) { omitidas++; continue; } // no fechas pasadas
+        try {
+          const { data: post, error: postErr } = await sb
+            .from("social_posts")
+            .insert({
+              red_social: "tiktok",
+              fecha_programada: fecha,
+              titulo_interno: p.titulo || "",
+              fase: "guion",        // nace para revisar el guion
+              publicado: false,     // borrador hasta publicar al cliente
+            })
+            .select()
+            .single();
+          if (postErr || !post) { errores.push(p.titulo || fecha); continue; }
+
+          const { error: vErr } = await sb.from("social_post_versions").insert({
+            post_id: post.id,
+            version_num: 1,
+            caption: p.caption || "",
+            imagenes: [],
+            storyboard: p.storyboard ?? null,
+            es_activa: true,
+          });
+          if (vErr) { errores.push(p.titulo || fecha); continue; }
+          creadas++;
+        } catch {
+          errores.push(p.titulo || fecha);
+        }
+      }
+      return NextResponse.json({ creadas, omitidas, total: piezas.length, errores });
+    }
+
+    return NextResponse.json({ error: "Accion no reconocida" }, { status: 400 });
+  } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
+    console.error(error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
 }

@@ -29,6 +29,8 @@ import {
 import TableroAdmin from "@/components/admin/TableroAdmin";
 import { IconUI } from "@/components/ui/IconUI";
 import { supabase } from "@/lib/supabase";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 type Progreso = { total: number; aprobado: number; cambios: number; pendiente: number };
 type EtapaListado = ProyectoEtapa & { progreso: Progreso };
@@ -214,7 +216,7 @@ function ModalManual({ onClose, onCreated }: {
     setGuardando(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/proyectos", {
+      const response = await fetchAdmin("/api/admin/proyectos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -350,7 +352,7 @@ function ModalImportador({ onClose, onCreated }: {
     setError("");
     try {
       const pdfBase64 = pdf ? await leerBase64(pdf) : undefined;
-      const response = await fetch("/api/admin/proyectos/importar-guion", {
+      const response = await fetchAdmin("/api/admin/proyectos/importar-guion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ accion: "analizar", texto: texto.trim() || undefined, pdfBase64 }),
@@ -371,7 +373,7 @@ function ModalImportador({ onClose, onCreated }: {
     setProcesando(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/proyectos/importar-guion", {
+      const response = await fetchAdmin("/api/admin/proyectos/importar-guion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ accion: "crear", datosParsed: analizado, modos: { arte, video } }),
@@ -484,7 +486,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append("file", file);
-        const response = await fetch("/api/admin/social/upload", { method: "POST", body: formData });
+        const response = await fetchAdmin("/api/admin/social/upload", { method: "POST", body: formData });
         if (!response.ok) throw new Error(await mensajeError(response, `No se pudo subir ${file.name}.`));
         const data: unknown = await response.json();
         const url = data && typeof data === "object" && "url" in data && typeof (data as Record<string, unknown>).url === "string" ? (data as Record<string, unknown>).url as string : null;
@@ -504,7 +506,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
     setError("");
     try {
       const contenido = etapa.tipo === "guion" ? { ...bloque.contenido, locucion, en_pantalla: enPantalla } : bloque.contenido;
-      const response = await fetch(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}${avisar ? "/versions" : ""}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}${avisar ? "/versions" : ""}`, {
         method: avisar ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -535,7 +537,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
     setAccion("decidir");
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}/status`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevo }),
@@ -706,7 +708,7 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
     setCargando(true);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/${proyectoId}`);
+      const response = await fetchAdmin(`/api/admin/proyectos/${proyectoId}`);
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo cargar el proyecto."));
       const data = (await response.json()) as ProyectoDetalle;
       setProyecto(data);
@@ -737,7 +739,7 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
     if (!proyecto || !etapa) return;
     setEnviandoCliente(true); setError(""); setAvisoEnvio("");
     try {
-      const response = await fetch(`/api/admin/proyectos/${proyecto.id}/etapas/${etapa.id}/enviar-cliente`, { method: "POST" });
+      const response = await fetchAdmin(`/api/admin/proyectos/${proyecto.id}/etapas/${etapa.id}/enviar-cliente`, { method: "POST" });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo enviar al cliente."));
       const data = (await response.json()) as { enviados: number; notificado: boolean };
       setAvisoEnvio(
@@ -757,7 +759,7 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
     if (!proyecto) return;
     setActualizando(true); setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/${proyecto.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicado: !proyecto.publicado }) });
+      const response = await fetchAdmin(`/api/admin/proyectos/${proyecto.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicado: !proyecto.publicado }) });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo actualizar la publicación."));
       await cargar(etapaId);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo actualizar la publicación."); }
@@ -767,7 +769,7 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
     if (!proyecto || !confirm(`¿Eliminar el proyecto “${proyecto.titulo}”? Esta acción no se puede deshacer.`)) return;
     setActualizando(true); setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/${proyecto.id}`, { method: "DELETE" });
+      const response = await fetchAdmin(`/api/admin/proyectos/${proyecto.id}`, { method: "DELETE" });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo eliminar el proyecto."));
       onClose();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo eliminar el proyecto."); setActualizando(false); }
@@ -894,8 +896,8 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     try {
       const carpetaQuery = carpetaId ? encodeURIComponent(carpetaId) : "root";
       const [archivosResponse, carpetasResponse] = await Promise.all([
-        fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos?carpeta=${carpetaQuery}`),
-        fetch(`/api/admin/proyectos/espacios/${espacio.id}/carpetas`),
+        fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/archivos?carpeta=${carpetaQuery}`),
+        fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/carpetas`),
       ]);
       if (!archivosResponse.ok) {
         throw new Error(await mensajeError(archivosResponse, "No se pudieron cargar los archivos."));
@@ -952,7 +954,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     setAccion("crear-carpeta");
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/carpetas`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/carpetas`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre: nombre.trim(), parent_id: carpetaId }),
@@ -972,7 +974,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     setAccion(carpeta.id);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/carpetas/${carpeta.id}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/carpetas/${carpeta.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre: nombre.trim() }),
@@ -991,7 +993,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     setAccion(carpeta.id);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/carpetas/${carpeta.id}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/carpetas/${carpeta.id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo eliminar la carpeta."));
@@ -1014,7 +1016,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
         formData.append("file", file);
         if (carpetaId) formData.append("carpeta_id", carpetaId);
         formData.append("requiere_aprobacion", String(requiereAprobacionSubida));
-        const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos`, {
+        const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/archivos`, {
           method: "POST",
           body: formData,
         });
@@ -1032,7 +1034,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     setAccion(archivo.id);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nota }),
@@ -1051,7 +1053,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     setAccion(archivo.id);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo eliminar el archivo."));
@@ -1103,7 +1105,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     setAccion(archivo.id);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ carpeta_id: destino }),
@@ -1126,7 +1128,7 @@ function GestorArchivos({ espacio, onClose, onUpdated }: {
     setAccion(`aprobacion-${archivo.id}`);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}/archivos/${archivo.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ requiere_aprobacion: activo }),
@@ -1376,7 +1378,7 @@ function TarjetaEspacioAdmin({ espacio, invitaciones, cargandoInvitaciones, onUp
     setGuardando(true);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
@@ -1395,7 +1397,7 @@ function TarjetaEspacioAdmin({ espacio, invitaciones, cargandoInvitaciones, onUp
     setGuardando(true);
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/espacios/${espacio.id}`, { method: "DELETE" });
+      const response = await fetchAdmin(`/api/admin/proyectos/espacios/${espacio.id}`, { method: "DELETE" });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo eliminar el espacio."));
       await onUpdated();
     } catch (cause) {
@@ -1492,7 +1494,7 @@ function GestionEspacios({ espacios, onUpdated, onOpenArchivos, onOpenTablero }:
       setCargandoInvitaciones(true);
       setErrorInvitaciones("");
       try {
-        const response = await fetch("/api/admin/cuestionario");
+        const response = await fetchAdmin("/api/admin/cuestionario");
         if (!response.ok) {
           throw new Error(await mensajeError(response, "No se pudieron cargar los cuestionarios."));
         }
@@ -1522,7 +1524,7 @@ function GestionEspacios({ espacios, onUpdated, onOpenArchivos, onOpenTablero }:
     setGuardando(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/proyectos/espacios", {
+      const response = await fetchAdmin("/api/admin/proyectos/espacios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre: nombre.trim(), tipo, color, publicado }),
@@ -1679,9 +1681,9 @@ export default function ProyectosPage() {
     setCargando(true); setError("");
     try {
       const [proyectosResponse, pendientesResponse, espaciosResponse] = await Promise.all([
-        fetch("/api/admin/proyectos"),
-        fetch("/api/admin/proyectos/pendientes"),
-        fetch("/api/admin/proyectos/espacios"),
+        fetchAdmin("/api/admin/proyectos"),
+        fetchAdmin("/api/admin/proyectos/pendientes"),
+        fetchAdmin("/api/admin/proyectos/espacios"),
       ]);
       if (!proyectosResponse.ok) throw new Error(await mensajeError(proyectosResponse, "No se pudieron cargar los proyectos."));
       if (!pendientesResponse.ok) throw new Error(await mensajeError(pendientesResponse, "No se pudo cargar la bandeja de pendientes."));
@@ -1703,7 +1705,7 @@ export default function ProyectosPage() {
   const asignarEspacio = async (proyectoId: string, espacioId: string | null) => {
     setError("");
     try {
-      const response = await fetch(`/api/admin/proyectos/${proyectoId}`, {
+      const response = await fetchAdmin(`/api/admin/proyectos/${proyectoId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ espacio_id: espacioId }),

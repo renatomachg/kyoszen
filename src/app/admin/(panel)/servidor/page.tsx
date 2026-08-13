@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 interface HealthData {
   uptime: string;
@@ -28,7 +30,7 @@ export default function AdminServidor() {
   const fetchHealth = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/health");
+      const res = await fetchAdmin("/api/admin/health");
       const json = await res.json();
       setData(json);
       setLastChecked(new Date());

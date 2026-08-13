@@ -7,6 +7,7 @@ import {
   type CandidatoMatch,
   type VacanteMatch,
 } from "@/lib/crm";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,7 @@ function listaDeTextos(value: unknown): string[] {
 
 export async function GET(req: NextRequest) {
   try {
+    await exigirSeccion(req, "crm");
     const vacanteParam = req.nextUrl.searchParams.get("vacante")?.trim();
     const vacanteId = Number(vacanteParam);
 
@@ -170,6 +172,7 @@ export async function GET(req: NextRequest) {
       resultados,
     });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error
         ? error.message

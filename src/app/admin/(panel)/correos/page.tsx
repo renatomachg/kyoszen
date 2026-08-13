@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { logAdminClient } from "@/lib/admin-log-client";
 import { Dot, IconUI } from "@/components/ui/IconUI";
+import { fetchAdmin } from "@/lib/admin-fetch";
+
 
 const field =
   "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-blue transition-colors bg-white font-mono";
@@ -80,7 +82,7 @@ export default function AdminCorreos() {
 
   /* ── Load SMTP config ── */
   useEffect(() => {
-    fetch("/api/admin/smtp")
+    fetchAdmin("/api/admin/smtp")
       .then((r) => r.json())
       .then((data) => {
         const s: SmtpForm = {
@@ -133,7 +135,7 @@ export default function AdminCorreos() {
       return;
     }
     setSavingSmtp(true);
-    const res = await fetch("/api/admin/smtp", {
+    const res = await fetchAdmin("/api/admin/smtp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save", ...smtp }),
@@ -160,7 +162,7 @@ export default function AdminCorreos() {
       return;
     }
     setTestingSmtp(true);
-    const res = await fetch("/api/admin/smtp", {
+    const res = await fetchAdmin("/api/admin/smtp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "test", ...smtp }),

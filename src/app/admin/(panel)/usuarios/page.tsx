@@ -128,8 +128,8 @@ export default function AdminUsuarios() {
     setErrorProyectos("");
     try {
       const [proyectosResponse, espaciosResponse] = await Promise.all([
-        fetch("/api/admin/proyectos", { cache: "no-store" }),
-        fetch("/api/admin/proyectos/espacios", { cache: "no-store" }),
+        fetchAdmin("/api/admin/proyectos", { cache: "no-store" }),
+        fetchAdmin("/api/admin/proyectos/espacios", { cache: "no-store" }),
       ]);
       const proyectosPayload = (await proyectosResponse.json()) as
         | ProyectoAsignable[]

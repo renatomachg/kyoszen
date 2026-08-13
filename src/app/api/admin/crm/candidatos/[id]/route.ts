@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { ESTADOS, type EstadoPipeline } from "@/lib/crm";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -27,10 +28,11 @@ function textoEditable(value: unknown): string | null | undefined {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await exigirSeccion(req, "crm");
     const { id } = await params;
     const { data: candidato, error } = await sb
       .from("crm_candidatos")
@@ -77,6 +79,7 @@ export async function GET(
       notas: notas ?? [],
     });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error
         ? error.message
@@ -90,6 +93,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await exigirSeccion(req, "crm");
     const { id } = await params;
     const body = (await req.json()) as Record<string, unknown>;
     const cambios: Record<string, string | null> = {};
@@ -152,6 +156,7 @@ export async function PATCH(
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error
         ? error.message
@@ -161,10 +166,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await exigirSeccion(req, "crm");
     const { id } = await params;
     const { error: desvincularError } = await sb
       .from("aplicaciones")
@@ -185,6 +191,7 @@ export async function DELETE(
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error
         ? error.message

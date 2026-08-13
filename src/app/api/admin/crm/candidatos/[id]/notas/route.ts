@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await exigirSeccion(req, "crm");
     const { id } = await params;
     const body = (await req.json()) as {
       texto?: unknown;
@@ -46,6 +48,7 @@ export async function POST(
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
+    if (error instanceof SinPermiso) return error.respuesta;
     const message =
       error instanceof Error ? error.message : "No se pudo agregar la nota.";
     return NextResponse.json({ error: message }, { status: 500 });
