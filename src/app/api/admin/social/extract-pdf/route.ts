@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
-import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
+import { SinPermiso, identificar } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -8,7 +8,8 @@ export const maxDuration = 30;
 // Extrae el texto de un PDF subido (FormData con campo "file").
 export async function POST(req: NextRequest) {
   try {
-    await exigirSeccion(req, "redes-sociales");
+  // Utilidad compartida: la usan los importadores de Campañas y de Redes.
+    await identificar(req);
     let form: FormData;
     try {
       form = await req.formData();

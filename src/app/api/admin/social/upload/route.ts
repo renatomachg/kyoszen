@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { writeFile, readFile, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { SinPermiso, exigirSeccion } from "@/lib/admin-auth";
+import { SinPermiso, identificar } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // la compresión de video puede tardar
@@ -49,7 +49,9 @@ async function comprimirVideo(buffer: Buffer): Promise<Buffer | null> {
 
 export async function POST(req: NextRequest) {
   try {
-    await exigirSeccion(req, "redes-sociales");
+  // Subidor compartido: lo usan Proyectos (arte de escena), Campañas (arte del
+  // anuncio) y Redes. No es de una sección; basta con ser del panel.
+    await identificar(req);
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
