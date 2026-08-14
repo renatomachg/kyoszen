@@ -535,6 +535,8 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   // El arte lo aprueba Kyoszen. Un colaborador entrega, pero no aprueba lo suyo.
   const puedoAprobar = esAdmin && etapa.aprobador === "admin" && !soloLectura;
   const listoParaAprobar = tieneEntregable({ contenido: bloque.contenido, archivos }, etapa.tipo);
+  // Si ya hay comentarios en la escena, pedir cambios no obliga a repetirlos
+  const yaHayComentarios = bloque.proyecto_comentarios.length > 0;
 
   const decidir = async (nuevo: "aprobado" | "cambios", motivo?: string) => {
     setAccion("decidir");
@@ -715,10 +717,16 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
           {pidiendoCambios && (
             <div className="mt-3 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4">
               <p className="text-sm font-black text-[#B91C1C]">¿Qué hay que cambiar?</p>
-              <textarea autoFocus value={motivoCambios} onChange={(event) => setMotivoCambios(event.target.value)} rows={3} placeholder="Ej: el logo se ve muy chico, súbelo tantito y usa el azul de la marca." className={`${inputClass} mt-2`} />
+              {yaHayComentarios && (
+                <p className="mt-1 text-xs leading-relaxed text-[#B45454]">
+                  Esta escena ya tiene comentarios y los va a leer. Puedes mandarlo así,
+                  o escribir aquí algo más si quieres.
+                </p>
+              )}
+              <textarea autoFocus value={motivoCambios} onChange={(event) => setMotivoCambios(event.target.value)} rows={3} placeholder={yaHayComentarios ? "Opcional: agrega algo más…" : "Ej: el logo se ve muy chico, súbelo tantito y usa el azul de la marca."} className={`${inputClass} mt-2`} />
               <div className="mt-3 flex justify-end gap-2">
                 <button type="button" onClick={() => { setPidiendoCambios(false); setMotivoCambios(""); }} disabled={accion !== null} className="cursor-pointer rounded-xl px-4 py-2 text-sm font-bold text-slate-600 hover:bg-white/70 disabled:opacity-40">Cancelar</button>
-                <button type="button" onClick={() => void decidir("cambios", motivoCambios.trim())} disabled={accion !== null || !motivoCambios.trim()} className="cursor-pointer rounded-xl bg-[#B91C1C] px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">{accion === "decidir" ? "Enviando…" : "Enviar"}</button>
+                <button type="button" onClick={() => void decidir("cambios", motivoCambios.trim())} disabled={accion !== null || (!motivoCambios.trim() && !yaHayComentarios)} className="cursor-pointer rounded-xl bg-[#B91C1C] px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">{accion === "decidir" ? "Enviando…" : "Enviar"}</button>
               </div>
             </div>
           )}
