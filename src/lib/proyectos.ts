@@ -4,7 +4,7 @@ export type TipoEtapa = "guion" | "arte" | "video";
 export type ModoEtapa = "por_escena" | "entregable_unico";
 export type EstadoEtapa = "bloqueada" | "pendiente" | "aprobado" | "cambios";
 export type EstadoBloque = "pendiente" | "aprobado" | "cambios";
-export type RolAutor = "admin" | "cliente";
+export type RolAutor = "admin" | "cliente" | "colaborador";
 export type TipoEspacio = "aprobacion" | "archivos" | "tablero";
 
 export interface Archivo {

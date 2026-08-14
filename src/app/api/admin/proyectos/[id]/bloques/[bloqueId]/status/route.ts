@@ -34,7 +34,7 @@ export async function PATCH(
   try {
     const { id, bloqueId } = await params;
     await exigirProyecto(req, id);
-    await soloAdmin(req);
+    const identidad = await soloAdmin(req);
     let body: Record<string, unknown>;
     try {
       body = (await req.json()) as Record<string, unknown>;
@@ -46,6 +46,7 @@ export async function PATCH(
     if (estado !== "aprobado" && estado !== "cambios" && estado !== "pendiente") {
       return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
     }
+    const comentario = typeof body.comentario === "string" ? body.comentario.trim() : "";
 
     const { data, error } = await sb
       .from("proyecto_bloques")
@@ -95,10 +96,33 @@ export async function PATCH(
     const ahora = new Date().toISOString();
     const { error: errorEstado } = await sb
       .from("proyecto_bloques")
-      .update({ estado, updated_at: ahora })
+      .update({
+        estado,
+        updated_at: ahora,
+        ...(estado === "cambios" ? { entrega_estado: "ninguna" } : {}),
+      })
       .eq("id", bloqueId)
       .eq("es_activa", true);
     if (errorEstado) return NextResponse.json({ error: errorEstado.message }, { status: 500 });
+
+    if (comentario) {
+      const respaldoNombre = typeof body.autor_nombre === "string" ? body.autor_nombre.trim() : "";
+      const autorRol = identidad.rol === "admin" ? "admin" : "colaborador";
+      const autorNombre = identidad.rol === "admin"
+        ? "Kyoszen"
+        : identidad.nombre?.trim() || respaldoNombre || "Un colaborador";
+      const { error: comentarioError } = await sb
+        .from("proyecto_comentarios")
+        .insert({
+          bloque_id: bloqueId,
+          autor_nombre: autorNombre,
+          autor_rol: autorRol,
+          contenido: comentario,
+        });
+      if (comentarioError) {
+        return NextResponse.json({ error: comentarioError.message }, { status: 500 });
+      }
+    }
 
     // Rollup de la etapa con lo que ya está liberado
     const { data: hermanos } = await sb

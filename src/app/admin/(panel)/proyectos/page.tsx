@@ -465,9 +465,12 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   const [enPantalla, setEnPantalla] = useState(() => textoContenido(bloque.contenido, "en_pantalla"));
   const [nota, setNota] = useState(bloque.nota ?? "");
   const [archivos, setArchivos] = useState<Archivo[]>(bloque.archivos);
-  const [accion, setAccion] = useState<"guardar" | "avisar" | "subir" | "decidir" | null>(null);
+  const [accion, setAccion] = useState<"guardar" | "avisar" | "subir" | "decidir" | "comentar" | null>(null);
   const [arrastrando, setArrastrando] = useState(false);
   const [error, setError] = useState("");
+  const [comentario, setComentario] = useState("");
+  const [pidiendoCambios, setPidiendoCambios] = useState(false);
+  const [motivoCambios, setMotivoCambios] = useState("");
 
   useEffect(() => {
     setLocucion(textoContenido(bloque.contenido, "locucion"));
@@ -533,19 +536,42 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   const puedoAprobar = esAdmin && etapa.aprobador === "admin" && !soloLectura;
   const listoParaAprobar = tieneEntregable({ contenido: bloque.contenido, archivos }, etapa.tipo);
 
-  const decidir = async (nuevo: "aprobado" | "cambios") => {
+  const decidir = async (nuevo: "aprobado" | "cambios", motivo?: string) => {
     setAccion("decidir");
     setError("");
     try {
       const response = await fetchAdmin(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado: nuevo }),
+        body: JSON.stringify({ estado: nuevo, comentario: motivo }),
       });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo actualizar la escena."));
+      setPidiendoCambios(false);
+      setMotivoCambios("");
       await onSaved();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo actualizar la escena.");
+    } finally {
+      setAccion(null);
+    }
+  };
+
+  const comentar = async () => {
+    const contenido = comentario.trim();
+    if (!contenido) return;
+    setAccion("comentar");
+    setError("");
+    try {
+      const response = await fetchAdmin(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contenido, autor_nombre: autorNombre }),
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo enviar el comentario."));
+      setComentario("");
+      await onSaved();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo enviar el comentario.");
     } finally {
       setAccion(null);
     }
@@ -556,7 +582,12 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div><h4 className="font-black text-[#042E7B]">{escena ? `Escena ${escena.numero} · ${escena.titulo}` : "Entregable único"}</h4><p className="mt-0.5 text-[10px] font-bold text-slate-400">Versión {bloque.version_num}</p></div>
         <div className="flex flex-wrap items-center gap-2">
-          {entregado && (
+          {!esAdmin && bloque.estado === "cambios" && (
+            <span className="flex items-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1 text-[10px] font-extrabold text-[#B91C1C]">
+              <PuntoEstado color="#EF4444" />Te pidieron cambios · lee el comentario
+            </span>
+          )}
+          {(esAdmin || bloque.estado !== "cambios") && entregado && (
             <span className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-extrabold text-amber-700">
               <PuntoEstado color="#D97706" />
               {esAdmin
@@ -564,12 +595,12 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
                 : "Enviado a revisión · el cliente aún no lo ve"}
             </span>
           )}
-          {!entregado && !bloque.visible_cliente && (
+          {(esAdmin || bloque.estado !== "cambios") && !entregado && !bloque.visible_cliente && (
             <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-extrabold text-slate-500">
               <PuntoEstado color="#94A3B8" />Borrador · el cliente no lo ve
             </span>
           )}
-          {(esAdmin || !entregado) && (
+          {(esAdmin || (!entregado && bloque.estado !== "cambios")) && (
             <span className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-extrabold" style={{ color: ui.color }}><PuntoEstado color={ui.color} />{ui.label}</span>
           )}
         </div>
@@ -635,7 +666,31 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
           </div>
         </div>
       )}
-      <div className="mt-5"><h5 className="mb-2 text-xs font-black uppercase tracking-wider text-[#042E7B]">Comentarios</h5>{bloque.proyecto_comentarios.length ? <ul className="space-y-2">{bloque.proyecto_comentarios.map((comentario) => <li key={comentario.id} className="rounded-xl border border-slate-200 bg-white p-3"><div className="flex flex-wrap gap-2 text-[10px]"><strong className="text-[#042E7B]">{comentario.autor_nombre}</strong><span className="capitalize text-slate-400">{comentario.autor_rol}</span><time className="text-slate-400">{new Date(comentario.created_at).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}</time></div><p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{comentario.contenido}</p></li>)}</ul> : <p className="text-xs text-slate-400">Sin comentarios.</p>}</div>
+      <div className="mt-5">
+        <h5 className="mb-2 text-xs font-black uppercase tracking-wider text-[#042E7B]">Comentarios</h5>
+        {bloque.proyecto_comentarios.length ? (
+          <ul className="space-y-2">
+            {bloque.proyecto_comentarios.map((item) => (
+              <li key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                <div className="flex flex-wrap gap-2 text-[10px]">
+                  <strong className="text-[#042E7B]">{item.autor_rol === "admin" ? "Kyoszen" : item.autor_nombre}</strong>
+                  <span className="capitalize text-slate-400">{item.autor_rol}</span>
+                  <time className="text-slate-400">{new Date(item.created_at).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}</time>
+                </div>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{item.contenido}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-slate-400">Sin comentarios.</p>
+        )}
+        <div className="mt-3 space-y-2">
+          <textarea value={comentario} onChange={(event) => setComentario(event.target.value)} rows={3} placeholder="Escribe un comentario…" className={inputClass} />
+          <button type="button" onClick={() => void comentar()} disabled={accion !== null || !comentario.trim()} className="cursor-pointer rounded-xl bg-[#042E7B] px-4 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">
+            {accion === "comentar" ? "Enviando…" : "Enviar comentario"}
+          </button>
+        </div>
+      </div>
       {error && <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
       {/* El visto bueno del arte: lo das tú, no el cliente */}
       {puedoAprobar && (
@@ -651,12 +706,22 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">
               {bloque.estado === "aprobado" ? "Aprobada" : accion === "decidir" ? "Guardando…" : "Aprobar escena"}
             </button>
-            <button type="button" onClick={() => void decidir("cambios")}
+            <button type="button" onClick={() => setPidiendoCambios(true)}
               disabled={accion !== null || bloque.estado === "cambios"}
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-300 bg-white px-4 py-2.5 text-sm font-black text-red-600 disabled:opacity-40">
               {bloque.estado === "cambios" ? "Cambios pedidos" : "Pedir cambios a Rosita"}
             </button>
           </div>
+          {pidiendoCambios && (
+            <div className="mt-3 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4">
+              <p className="text-sm font-black text-[#B91C1C]">¿Qué hay que cambiar?</p>
+              <textarea autoFocus value={motivoCambios} onChange={(event) => setMotivoCambios(event.target.value)} rows={3} placeholder="Ej: el logo se ve muy chico, súbelo tantito y usa el azul de la marca." className={`${inputClass} mt-2`} />
+              <div className="mt-3 flex justify-end gap-2">
+                <button type="button" onClick={() => { setPidiendoCambios(false); setMotivoCambios(""); }} disabled={accion !== null} className="cursor-pointer rounded-xl px-4 py-2 text-sm font-bold text-slate-600 hover:bg-white/70 disabled:opacity-40">Cancelar</button>
+                <button type="button" onClick={() => void decidir("cambios", motivoCambios.trim())} disabled={accion !== null || !motivoCambios.trim()} className="cursor-pointer rounded-xl bg-[#B91C1C] px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">{accion === "decidir" ? "Enviando…" : "Enviar"}</button>
+              </div>
+            </div>
+          )}
           {!listoParaAprobar && (
             <p className="mt-2 text-[11px] font-semibold text-amber-700">
               No puedes aprobarla vacía: falta que se suba el archivo.
