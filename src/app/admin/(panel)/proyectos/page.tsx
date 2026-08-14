@@ -32,7 +32,7 @@ import { supabase } from "@/lib/supabase";
 import { fetchAdmin } from "@/lib/admin-fetch";
 
 
-type Progreso = { total: number; aprobado: number; cambios: number; pendiente: number };
+type Progreso = { total: number; aprobado: number; cambios: number; pendiente: number; conMaterial?: number };
 type EtapaListado = ProyectoEtapa & { progreso: Progreso };
 type ProyectoListado = Proyecto & {
   escenas_count: number;
@@ -164,7 +164,21 @@ function progresoDe(etapa: EtapaDetalle): Progreso {
     aprobado: progreso.aprobado + (bloque.estado === "aprobado" ? 1 : 0),
     cambios: progreso.cambios + (bloque.estado === "cambios" ? 1 : 0),
     pendiente: progreso.pendiente + (bloque.estado === "pendiente" ? 1 : 0),
-  }), { total: 0, aprobado: 0, cambios: 0, pendiente: 0 });
+    // Escenas que ya tienen algo entregado, aunque nadie las haya aprobado
+    conMaterial: (progreso.conMaterial ?? 0) + (tieneEntregable(bloque, etapa.tipo) ? 1 : 0),
+  }), { total: 0, aprobado: 0, cambios: 0, pendiente: 0, conMaterial: 0 });
+}
+
+/** Desglose en palabras de cómo va una etapa, para el encabezado. */
+function resumenEtapa(progreso: Progreso): string {
+  const material = progreso.conMaterial ?? 0;
+  const vacias = progreso.total - material;
+  const partes = [`${progreso.total} escena${progreso.total === 1 ? "" : "s"}`];
+  if (material > 0) partes.push(`${material} con material`);
+  if (progreso.aprobado > 0) partes.push(`${progreso.aprobado} aprobada${progreso.aprobado === 1 ? "" : "s"}`);
+  if (progreso.cambios > 0) partes.push(`${progreso.cambios} con cambios pedidos`);
+  if (vacias > 0) partes.push(`${vacias} sin empezar`);
+  return partes.join(" · ");
 }
 
 function ModalBase({ children, onClose, ancho = "max-w-3xl" }: {
@@ -852,7 +866,7 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
     <ModalBase onClose={onClose} ancho="max-w-6xl">
       {cargando && !proyecto ? <div className="flex min-h-72 items-center justify-center"><Spinner /></div> : <>
         <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-black text-[#042E7B]">{proyecto?.titulo ?? "Proyecto"}</h2>{proyecto?.folio && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">{proyecto.folio}</span>}{proyecto && <span className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold capitalize text-[#1883FF]"><PuntoEstado color="#1883FF" />{proyecto.estado}</span>}</div>{proyecto?.area && <p className="mt-1 text-sm text-slate-500">{proyecto.area}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{proyecto && <button type="button" onClick={() => void publicar()} disabled={actualizando} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FFCC00] px-3.5 py-2 text-xs font-black text-[#042E7B] disabled:opacity-50"><IconoLinea nombre="subir" className="h-4 w-4" />{proyecto.publicado ? "Ocultar" : "Publicar al cliente"}</button>}<button type="button" onClick={() => void eliminar()} disabled={actualizando || !proyecto} className="cursor-pointer rounded-xl border border-red-200 px-3.5 py-2 text-xs font-bold text-red-600 disabled:opacity-50">Eliminar</button><button type="button" onClick={onClose} className="cursor-pointer px-1 text-2xl text-slate-400" aria-label="Cerrar">×</button></div></div>
-        <div className="p-6">{error && <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}{proyecto && <div className="mb-6 flex gap-2 overflow-x-auto pb-1">{proyecto.proyecto_etapas.map((item) => { const ui = ESTADO_ETAPA_UI[item.estado]; const progreso = progresoDe(item); return <button key={item.id} type="button" onClick={() => setEtapaId(item.id)} className={`cursor-pointer whitespace-nowrap rounded-xl border px-3 py-2 text-left transition ${item.estado === "bloqueada" ? "opacity-55" : ""}`} style={{ color: ui.color, backgroundColor: ui.colorSuave, borderColor: item.id === etapaId ? ui.color : `${ui.color}44` }}><span className="flex items-center gap-1.5 text-xs font-black">{item.estado === "bloqueada" && <IconoLinea nombre="bloqueo" className="h-3.5 w-3.5" />}{item.nombre}</span><span className="text-[10px] font-bold">{progreso.total > 0 ? `${progreso.aprobado}/${progreso.total}` : ui.label}</span></button>; })}</div>}{etapa && <section><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-lg font-black text-[#042E7B]">{etapa.nombre}</h3><p className="text-xs text-slate-500">{etapa.modo === "por_escena" ? "Un entregable por escena" : "Un entregable para toda la etapa"}{etapa.estado === "bloqueada" ? " · Solo lectura" : ""}</p></div>
+        <div className="p-6">{error && <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}{proyecto && <div className="mb-6 flex gap-2 overflow-x-auto pb-1">{proyecto.proyecto_etapas.map((item) => { const ui = ESTADO_ETAPA_UI[item.estado]; const progreso = progresoDe(item); return <button key={item.id} type="button" onClick={() => setEtapaId(item.id)} className={`cursor-pointer whitespace-nowrap rounded-xl border px-3 py-2 text-left transition ${item.estado === "bloqueada" ? "opacity-55" : ""}`} style={{ color: ui.color, backgroundColor: ui.colorSuave, borderColor: item.id === etapaId ? ui.color : `${ui.color}44` }}><span className="flex items-center gap-1.5 text-xs font-black">{item.estado === "bloqueada" && <IconoLinea nombre="bloqueo" className="h-3.5 w-3.5" />}{item.nombre}</span><span className="text-[10px] font-bold">{progreso.total > 0 ? `${progreso.aprobado}/${progreso.total}` : ui.label}</span>{(progreso.conMaterial ?? 0) > 0 && <span className="block text-[9.5px] font-bold opacity-75">{progreso.conMaterial} con material</span>}</button>; })}</div>}{etapa && <section><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-lg font-black text-[#042E7B]">{etapa.nombre}</h3><p className="text-xs text-slate-500">{etapa.modo === "por_escena" ? "Un entregable por escena" : "Un entregable para toda la etapa"}{etapa.estado === "bloqueada" ? " · Solo lectura" : ""}</p>{progresoDe(etapa).total > 0 && <p className="mt-1 text-xs font-semibold text-[#042E7B]">{resumenEtapa(progresoDe(etapa))}</p>}</div>
           {esAdmin && porRevisar.length > 0 && (
             <button type="button" onClick={() => void enviarAlCliente()} disabled={enviandoCliente} className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50">
               <IconoLinea nombre="enviar" className="h-4 w-4" />
