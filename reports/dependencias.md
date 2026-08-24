@@ -1,46 +1,78 @@
 # Reporte de Dependencias — Kyoszen
-**Fecha:** 2026-08-17
+**Fecha:** 2026-08-24
+
+---
 
 ## Vulnerabilidades de Seguridad
 
-### 🔴 CRÍTICO / ALTA PRIORIDAD (paquetes directos)
+### 🔴 HIGH — `next` (directo)
+- **Rango afectado:** 9.3.4-canary.0 – 16.3.0-preview.10
+- **Versión actual:** 16.2.3 | **Fix disponible:** 16.3.2 (actualización menor, NO rompe API)
+- **Descripción:** Next.js Vulnerable to Denial of Service con Server Components
+- **Fix secundario incluido:** postcss (XSS via `</style>` en CSS Stringify) y sharp (CVEs en libvips: CVE-2026-33327, CVE-2026-33328)
+- **⚡ ACCIÓN RECOMENDADA: Actualizar next a 16.3.2 — es minor bump y corrige 3 vulnerabilidades HIGH.**
 
-| Paquete | Severidad | Problema | Fix disponible |
-|---------|-----------|----------|----------------|
-| `next` 16.2.3 | **Alta** | 22 CVEs: XSS, SSRF, DoS, cache poisoning, middleware bypass, Server Actions. Rango afectado: >=16.0.0 <16.2.11 / <16.3.1 | `npm install next@16.3.1` ✅ (no es major) |
-| `nodemailer` 6.x | **Alta** | Inyección de comandos SMTP (CRLF), email a dominio no intencionado. Rango: <8.0.4 | `npm install nodemailer@^9.0.5` ⚠️ (major: v6→v9) |
-| `puppeteer` 24.x | **Alta** | Path traversal en `extract-zip` vía `@puppeteer/browsers`. Rango: <=2.13.2 (browsers) | `npm install puppeteer@^25.8.0` ⚠️ (major) |
-| `@anthropic-ai/sdk` 0.89.0 | **Moderada** | Permisos inseguros en herramienta Local Filesystem Memory. Rango: >=0.79.0 <0.91.1 | `npm install @anthropic-ai/sdk@^0.117.1` ⚠️ (major) |
+### 🔴 HIGH — `nodemailer` (directo)
+- **Rango afectado:** ≤9.0.0
+- **Versión actual:** 6.9.0 | **Fix disponible:** 9.0.5 (major bump)
+- **Descripción:** Interpretación conflictiva de dominio puede enviar correos a dominio no intencionado
+- **Nota:** El salto es major (v6→v9); revisar cambios de API antes de actualizar.
 
-### 🟡 Vulnerabilidades Indirectas (transitivas)
+### 🔴 HIGH — `puppeteer` (directo, solo devDependency)
+- **Rango afectado:** 19.8.1 – 24.43.1
+- **Versión actual:** 24.43.1 | **Fix disponible:** 25.8.0 (major bump)
+- **Sub-dependencias afectadas:** `@puppeteer/browsers` (≤2.13.2) — path traversal en extract-zip
+- **Nota:** Puppeteer se usa solo para generar PDFs en el VPS. El riesgo es bajo en producción ya que no procesa archivos de usuarios.
 
-| Paquete | Severidad | Problema | Origen |
-|---------|-----------|----------|--------|
-| `brace-expansion` | Alta | DoS: expansión exponencial, out-of-memory. Múltiples CVEs | Transitivo (varios) |
-| `extract-zip` | Alta | Path traversal / symlink no validado | Puppeteer |
-| `ip-address` | Alta | SSRF: clasificación errónea de IPv4-mapped/NAT64, bypass de CIDR | Transitivo |
-| `js-yaml` | Alta | DoS cuadrático en merge keys y !!omap | Transitivo (Next.js/ESLint) |
-| `nanoid` | Alta | Loop infinito con size negativo o cero | Transitivo |
-| `@babel/core` | Baja | Lectura de archivos arbitrarios via sourceMappingURL | Transitivo (dev) |
-| `postcss`, `sharp`, `ws` | Alta | Varias | Transitivo (Next.js) |
+### 🔴 HIGH — `brace-expansion` (indirecta)
+- **Rango afectado:** ≤1.1.17 || 3.0.0–5.0.8
+- **Descripción:** Múltiples CVEs de DoS — expansión exponencial desborda memoria
+- **Fix:** Disponible vía actualización de dependencias padres.
+
+### 🔴 HIGH — `ws` (indirecta, vía next/puppeteer)
+- **Rango afectado:** 8.0.0–8.20.1
+- **Descripción:** Divulgación de memoria no inicializada
+- **Fix:** Disponible vía actualización de next.
+
+### 🔴 HIGH — `nanoid` (indirecta)
+- **Rango afectado:** ≤3.3.17
+- **Descripción:** Generadores no seguros pueden iterar indefinidamente con tamaño negativo
+- **Fix:** Disponible vía actualización de dependencias padres.
+
+### 🔴 HIGH — `js-yaml` (indirecta)
+- **Rango afectado:** 4.0.0–4.3.0
+- **Descripción:** DoS de complejidad cuadrática en merge key handling
+- **Fix:** Disponible.
+
+### 🔴 HIGH — `ip-address` (indirecta)
+- **Rango afectado:** ≤10.3.0
+- **Descripción:** Address4 decodifica octetos con cero al inicio como decimal; desacuerdo con resolvers DNS
+- **Fix:** Disponible.
+
+### 🟡 MODERATE — `@anthropic-ai/sdk` (directo)
+- **Rango afectado:** 0.79.0–0.91.0
+- **Versión actual:** 0.89.0 | **Fix disponible:** 0.120.0 (major bump)
+- **CVE:** GHSA-p7fg-763f-g4gf
+- **Descripción:** Permisos de archivo inseguros en la herramienta Local Filesystem Memory
+- **Nota:** El riesgo es bajo si no se usa la herramienta de sistema de archivos local del SDK (Kyoszen no la usa).
+
+### 🟢 LOW — `@babel/core` (indirecta)
+- **Rango afectado:** ≤7.29.0
+- **Descripción:** Lectura arbitraria de archivos vía comentario `sourceMappingURL` (solo en entornos de build)
+- **Fix:** Disponible vía actualización de dependencias padres.
 
 ---
 
 ## Paquetes Desactualizados
 
-| Paquete | Instalado | Última versión | Severidad | Notas |
-|---------|-----------|----------------|-----------|-------|
-| `next` | 16.2.3 | 16.3.1 | 🔴 **CRÍTICO** | 22+ CVEs de seguridad, actualizar urgente (no es major) |
-| `nodemailer` | ~6.9.0 | 9.0.5 | 🔴 **CRÍTICO** | Inyección SMTP, 3 versiones major de retraso |
-| `@anthropic-ai/sdk` | ~0.89.0 | 0.117.1 | 🟠 **ADVERTENCIA** | CVE moderado + muy desactualizado |
-| `framer-motion` | ~12.38.0 | 13.1.0 | 🟠 **ADVERTENCIA** | 1 versión major de retraso |
-| `puppeteer` | ~24.43.1 | 25.8.0 | 🟠 **ADVERTENCIA** | CVE alto + 1 versión major |
-| `react` | 19.2.4 | 19.2.8 | 🔵 Info | Parche menor |
-| `react-dom` | 19.2.4 | 19.2.8 | 🔵 Info | Parche menor |
-| `@supabase/supabase-js` | ~2.103.0 | 2.112.3 | 🔵 Info | Minor, sin CVEs |
-| `marked` | ~18.0.3 | 18.0.9 | 🔵 Info | Parche menor |
-| `lucide-react` | ~1.8.0 | 1.31.0 | 🟠 **ADVERTENCIA** | Múltiples minors de retraso |
-| `unpdf` | ~1.6.2 | 1.8.1 | 🔵 Info | Minor, sin CVEs |
+| Paquete | Actual | Última versión | Severidad |
+|---------|--------|----------------|-----------|
+| `next` | 16.2.3 | **16.3.2** | 🔴 HIGH (fix de seguridad) |
+| `nodemailer` | 6.9.0 | 9.0.5 | 🔴 HIGH (major bump) |
+| `puppeteer` | 24.43.1 | 25.8.0 | 🔴 HIGH (major bump, solo dev) |
+| `@anthropic-ai/sdk` | 0.89.0 | 0.120.0 | 🟡 MODERATE (major bump, +31 versiones) |
+| `framer-motion` | 12.43.0 | 13.1.1 | ⚠️ ADVERTENCIA (major bump) |
+| `react` + `react-dom` | 19.2.4 | 19.2.8 | ℹ️ INFO (patch, bug fixes) |
 
 ---
 
@@ -48,50 +80,42 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Total paquetes (incluyendo transitivos) | 531 |
-| Paquetes directos en producción | 41 |
-| Vulnerabilidades **críticas** | 0 |
-| Vulnerabilidades **altas** | 13 |
-| Vulnerabilidades **moderadas** | 1 |
-| Vulnerabilidades **bajas** | 1 |
-| **Total vulnerabilidades** | **15** |
+| Total paquetes instalados | 531 |
+| Paquetes de producción | 41 |
+| Paquetes de desarrollo | 455 |
+| Vulnerabilidades totales | 15 |
+| — Críticas | 0 |
+| — Altas (HIGH) | 13 |
+| — Moderadas | 1 |
+| — Bajas | 1 |
 | Paquetes directos desactualizados | 6 |
 
 ---
 
 ## Recomendaciones
 
-### ⚡ Acción inmediata (alta prioridad)
+### ⚡ Acción inmediata (esta semana)
 
-1. **Actualizar `next` a 16.3.1** — No es cambio major, resuelve 22 CVEs de golpe. Es la acción más urgente y de menor riesgo:
+1. **Actualizar `next` de 16.2.3 → 16.3.2** — es la única actualización minor segura que resuelve vulnerabilidades HIGH directas (DoS en Server Components, XSS en postcss, CVEs en sharp/libvips). Comando:
    ```bash
-   npm install next@16.3.1
+   npm install next@16.3.2
    ```
+   Probar con `npm run build` antes de hacer deploy.
 
-2. **Actualizar `nodemailer` a v9** — Requiere revisar la API (cambios breaking). En producción se usa IONOS SMTP, revisar compatibilidad antes de actualizar:
-   ```bash
-   npm install nodemailer@^9.0.5
-   ```
+### 📋 Acción a corto plazo (próxima sesión)
 
-### 🔶 Planificar para el siguiente sprint
+2. **Actualizar `@anthropic-ai/sdk` de 0.89.0 → última estable** (actualmente 0.120.0). Hay 31 versiones de diferencia. Revisar changelog por cambios de API que afecten el asistente Kyo y el Estratega. Luego del bump, correr las rutas `/api/assistant/chat` y `/admin/estratega` en local.
 
-3. **Actualizar `@anthropic-ai/sdk`** — El salto de 0.89 a 0.117 puede incluir cambios breaking en la API de tool-use (Kyo y el Estratega). Revisar el changelog antes:
-   ```bash
-   npm install @anthropic-ai/sdk@^0.117.1
-   ```
+3. **Evaluar actualización de `nodemailer` de 6.x → 9.x** — corrige vulnerabilidad HIGH de enrutamiento de correo. Hay cambios de API entre v6 y v9 (especialmente en `createTransport`). Probar SMTP con IONOS en local antes de subir a producción.
 
-4. **Actualizar `puppeteer`** — Solo se usa en el generador de PDFs/renders. Riesgo bajo pero requiere prueba local:
-   ```bash
-   npm install puppeteer@^25.8.0
-   ```
+### 🔍 Acción a mediano plazo
 
-5. **Actualizar `framer-motion` a v13** — Puede tener cambios breaking en animaciones. Probar en local antes.
+4. **Actualizar `puppeteer` de 24.x → 25.x** — solo afecta la generación de PDFs/reportes en devDependencies. Bajo riesgo en producción.
 
-### 🔵 Sin urgencia
+5. **`framer-motion` 12 → 13** — cambio major de animaciones. No urgente pero conviene actualizar para evitar deuda técnica acumulada.
 
-6. `react` / `react-dom` → esperar estabilización de 19.2.8.
-7. `@supabase/supabase-js`, `marked`, `unpdf` → sin CVEs, actualizar en la próxima ronda de mantenimiento.
+6. El resto de vulnerabilidades indirectas (brace-expansion, ws, nanoid, js-yaml, ip-address, @babel/core) se resolverán automáticamente al actualizar los paquetes directos mencionados arriba.
 
 ---
 
-> **Nota:** Las vulnerabilidades en paquetes transitivos (brace-expansion, js-yaml, nanoid, etc.) se resuelven al actualizar `next` y `puppeteer`, ya que son dependencias de esos paquetes. No requieren intervención directa.
+*Generado automáticamente por el agente de mantenimiento de dependencias.*
