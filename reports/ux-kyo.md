@@ -1,5 +1,5 @@
 # Análisis UX y Kyo — Kyoszen
-**Fecha:** 2026-08-23
+**Fecha:** 2026-08-24
 **Archivos examinados esta sesión:**
 - `src/lib/assistant/system-prompt.ts`
 - `src/lib/assistant/tools.ts`
@@ -12,145 +12,88 @@
 
 ## Cambios Recientes Detectados
 
-**Sin cambios de producto desde 2026-08-13 (10 días).** Los últimos 5 commits en trunk son solo reportes automatizados (`ux-kyo`, `dependencias`). El último bloque de código real fue el módulo de Proyectos. Todos los hallazgos previos siguen sin corregir — verificado esta sesión con lectura directa de archivos.
+**Sin cambios de producto desde 2026-08-13 (11 días).** Los últimos commits en trunk son solo reportes automatizados (`ux-kyo`, `dependencias`). El último bloque de código real fue el módulo de Proyectos y Campañas. Todos los hallazgos previos siguen sin corregir — verificado esta sesión con lectura directa de archivos.
 
 ---
 
-## Rastreador de sugerencias — estado actualizado al 2026-08-23
+## Rastreador de sugerencias — estado actualizado al 2026-08-24
 
 | # | Sugerencia | Prioridad | Estado | Días abierto |
 |---|---|---|---|---|
-| 1 | Kyo lee `jobs.ts` estático, no Supabase | **Alta** | ⏳ Pendiente | 11 días |
-| 2 | Memory leak en `rateLimitMap` sin limpieza | **Alta** | ⏳ Pendiente | 11 días |
-| 3 | `navigate_to` acepta cualquier ruta (riesgo seguridad) | **Alta** | ⏳ Pendiente | 11 días |
-| 4 | `route.ts` trunca contexto a últimos 20 mensajes | Media | ⏳ Pendiente | 11 días |
-| 5 | `localStorage` del chat sin TTL — flujo roto al volver | Media | ⏳ Pendiente | 11 días |
-| 6 | `max_tokens: 1024` puede truncar el Paso 5 | Media | ⏳ Pendiente | 11 días |
-| 7 | Panel de Kyo inutilizable en mobile con teclado virtual (`vh` → `dvh`) | Media | ⏳ Pendiente | 11 días |
-| 8 | Markdown de Kyo no se renderiza (asteriscos literales) | Media | ⏳ Pendiente | 11 días |
-| 9 | "Nueva conversacion" sin tilde en `ChatWidget.tsx:161` | Baja | ⏳ Pendiente | 11 días |
-| 10 | Campaña finalizada sin CTA de upsell en `/revisor` | Baja | ⏳ Pendiente | 8 días |
-| 11 | Comentarios de escena no notifican al colaborador por correo | Baja | ⏳ Pendiente | 8 días |
-| 12 | `sessionStorage` vs `localStorage` inconsistente en Kyo | **Alta** | ⏳ Pendiente | 4 días |
-| 13 | Navegación de Kyo sin transición visible al cerrar | Media | ⏳ Pendiente | 4 días |
-| 14 | Filtro `?marca=` del system-prompt con valores placeholder | Media | ⏳ Pendiente | 4 días |
-| 15 | `reset()` no borra el session_id — ensucia el log del admin | Media | ⏳ Pendiente | 4 días |
-| 16 | `saveConversation` fire-and-forget sin log de errores | Media | ⏳ Pendiente | 4 días |
-| 17 | Dos textareas yuxtapuestos en Proyectos confunden al admin | Media | ⏳ Pendiente | 4 días |
-| 18 | Desglose de etapa no cabe en mobile (texto corrido, overflow) | Baja | ⏳ Pendiente | 4 días |
-| 19 | `logEvent` graba el nombre y zona del candidato en `site_eventos` (PII) | **Alta** | ⏳ Pendiente | 1 día |
-| 20 | `setTimeout` de navegación sin cleanup — dispara aunque Kyo esté cerrado | Media | ⏳ Pendiente | 1 día |
-| 21 | Filtro de categoría en `search_jobs` falla con tildes ("Atención al cliente") | Media | ⏳ Pendiente | 1 día |
-| 22 | Error 429 no se distingue del error 500 — UX idéntica para dos causas distintas | Baja | ⏳ Pendiente | 1 día |
-| 23 | Saludo inicial de Kyo tiene "aqui" sin tilde en `useChat.ts:20` | Baja | 🆕 Nuevo | 0 días |
-| 24 | `logEvent("kyo_mensaje")` se dispara antes de confirmar que el API respondió | Media | 🆕 Nuevo | 0 días |
-| 25 | Mensajes de Kyo sin `aria-live` — invisibles para lectores de pantalla | Media | 🆕 Nuevo | 0 días |
-| 26 | Div de error sin `role="alert"` — no anunciado por lectores de pantalla | Baja | 🆕 Nuevo | 0 días |
+| 1 | Kyo lee `jobs.ts` estático, no Supabase | **Alta** | ⏳ Pendiente | 12 días |
+| 2 | Memory leak en `rateLimitMap` sin limpieza | **Alta** | ⏳ Pendiente | 12 días |
+| 3 | `navigate_to` acepta cualquier ruta (riesgo seguridad) | **Alta** | ⏳ Pendiente | 12 días |
+| 4 | `route.ts` trunca contexto a últimos 20 mensajes | Media | ⏳ Pendiente | 12 días |
+| 5 | `localStorage` del chat sin TTL — flujo roto al volver | Media | ⏳ Pendiente | 12 días |
+| 6 | `max_tokens: 1024` puede truncar el Paso 5 | Media | ⏳ Pendiente | 12 días |
+| 7 | Panel de Kyo inutilizable en mobile con teclado virtual (`vh` → `dvh`) | Media | ⏳ Pendiente | 12 días |
+| 8 | Markdown de Kyo no se renderiza (asteriscos literales) | Media | ⏳ Pendiente | 12 días |
+| 9 | "Nueva conversacion" sin tilde en `ChatWidget.tsx:161` | Baja | ⏳ Pendiente | 12 días |
+| 10 | Campaña finalizada sin CTA de upsell en `/revisor` | Baja | ⏳ Pendiente | 9 días |
+| 11 | Comentarios de escena no notifican al colaborador por correo | Baja | ⏳ Pendiente | 9 días |
+| 12 | `sessionStorage` vs `localStorage` inconsistente en Kyo | **Alta** | ⏳ Pendiente | 5 días |
+| 13 | Navegación de Kyo sin transición visible al cerrar | Media | ⏳ Pendiente | 5 días |
+| 14 | Filtro `?marca=` del system-prompt con valores placeholder | Media | ⏳ Pendiente | 5 días |
+| 15 | `reset()` no borra el session_id — ensucia el log del admin | Media | ⏳ Pendiente | 5 días |
+| 16 | `saveConversation` fire-and-forget sin log de errores | Media | ⏳ Pendiente | 5 días |
+| 17 | Dos textareas yuxtapuestos en Proyectos confunden al admin | Media | ⏳ Pendiente | 5 días |
+| 18 | Desglose de etapa no cabe en mobile (texto corrido, overflow) | Baja | ⏳ Pendiente | 5 días |
+| 19 | `logEvent` graba el nombre y zona del candidato en `site_eventos` (PII) | **Alta** | ⏳ Pendiente | 2 días |
+| 20 | `setTimeout` de navegación sin cleanup — dispara aunque Kyo esté cerrado | Media | ⏳ Pendiente | 2 días |
+| 21 | Filtro de categoría en `search_jobs` falla con tildes ("Atención al cliente") | Media | ⏳ Pendiente | 2 días |
+| 22 | Error 429 no se distingue del error 500 — UX idéntica para dos causas distintas | Baja | ⏳ Pendiente | 2 días |
+| 23 | Saludo inicial de Kyo tiene "aqui" sin tilde en `useChat.ts:20` | Baja | ⏳ Pendiente | 1 día |
+| 24 | `logEvent("kyo_mensaje")` se dispara antes de confirmar que el API respondió | Media | ⏳ Pendiente | 1 día |
+| 25 | Mensajes de Kyo sin `aria-live` — invisibles para lectores de pantalla | Media | ⏳ Pendiente | 1 día |
+| 26 | Div de error sin `role="alert"` — no anunciado por lectores de pantalla | Baja | ⏳ Pendiente | 1 día |
+| 27 | Fallback de Kyo con tildes faltantes en `route.ts:202` | Baja | 🆕 Nuevo | 0 días |
+| 28 | `kyo_faqs` de Supabase ignorada — ediciones en admin no llegan a Kyo | **Alta** | 🆕 Nuevo | 0 días |
 
 ---
 
 ## Nuevos hallazgos de esta sesión
 
-### #23 — Saludo inicial de Kyo tiene "aqui" sin tilde
-**Archivo:** `src/components/assistant/useChat.ts:20`
+### #27 — Fallback de Kyo tiene tildes faltantes
+**Archivo:** `src/app/api/assistant/chat/route.ts:202`
 **Prioridad:** Baja
 
 ```ts
-content: "Bienvenido a Kyoszen. Mi nombre es Kyo y estoy aqui para orientarte. ¿Me permite saber su nombre?",
+const replyContent = finalText || "Entendido, ¿en que mas te puedo ayudar?";
 ```
 
-La palabra "aqui" carece de acento. Es el primer mensaje que ve cada visitante y Kyoszen cuida la ortografía del español de México. Fix de una línea:
+El texto de respaldo que aparece cuando Claude no genera texto (solo llamadas a tools que no producen respuesta textual) carece de tildes en "qué" y "más". Este mensaje llega al candidato y rompe la consistencia ortográfica del sitio.
+
+**Fix de una línea:**
 
 ```ts
-content: "Bienvenido a Kyoszen. Mi nombre es Kyo y estoy aquí para orientarte. ¿Me permite saber su nombre?",
+const replyContent = finalText || "Entendido, ¿en qué más te puedo ayudar?";
 ```
 
 ---
 
-### #24 — `logEvent("kyo_mensaje")` se dispara antes de saber si el API respondió
-**Archivo:** `src/components/assistant/useChat.ts:81`
-**Prioridad:** Media
+### #28 — La tabla `kyo_faqs` de Supabase es invisible para Kyo
+**Archivo:** `src/lib/assistant/knowledge.ts:99-105`
+**Prioridad:** Alta
+
+El admin tiene un panel para editar FAQs (tabla `kyo_faqs` en Supabase), pero `knowledge.ts` carga las FAQs desde un array estático `COMPANY.faqs` hardcoded. El singleton `StaticKnowledgeProvider` nunca consulta `kyo_faqs`. Resultado: cualquier FAQ añadida o editada en el panel **no llega a las respuestas de Kyo**.
 
 ```ts
-// Línea 81 — ANTES del fetch
-logEvent("kyo_mensaje", trimmed.slice(0, 300));
-
-setError(null);
-// ...
-const res = await fetch("/api/assistant/chat", { ... });
+// knowledge.ts:99-105 — FAQs hardcoded, ignorando kyo_faqs en Supabase
+faqs: [
+  { q: "¿En cuanto tiempo presentan candidatos?", a: "En menos de 72 horas..." },
+  ...
+],
 ```
 
-El evento se registra antes de la llamada al API. Si el server responde 429 (rate limit), 500, o hay un error de red, el evento se registra de todas formas. Esto infla el contador de `kyo_mensaje` en Analytics con intentos fallidos. El dashboard muestra N mensajes "enviados" cuando solo N-k llegaron al modelo.
+Este es el mismo patrón del problema #1 (vacantes estáticas), pero aplicado a FAQs. La solución correcta es parte del `SupabaseKnowledgeProvider` pendiente, pero mientras tanto el admin debe saber que editar FAQs desde el panel no tiene efecto.
 
-Además combina con el problema #19 (graba PII): aunque se corrija #19 y se deje de guardar el texto, el evento en sí se graba aunque el mensaje nunca llegó a Claude.
+**Fix inmediato (sin SupabaseKnowledgeProvider):** En `route.ts`, al construir el system prompt, leer también `kyo_faqs` de Supabase y concatenarlos al bloque `# FAQs` del prompt. Similar a cómo ya se lee `kyo_config.instrucciones`.
 
-**Fix:** mover la llamada a `logEvent` a después de `res.ok`:
-
+**Fix completo:** Implementar `SupabaseKnowledgeProvider.getFAQs()` que llame a:
 ```ts
-const res = await fetch("/api/assistant/chat", { ... });
-if (!res.ok) {
-  // ...manejo de error
-  return;
-}
-// Solo aquí el mensaje llegó al servidor con éxito
-logEvent("kyo_mensaje"); // Sin PII — solo contar el turno
-const data = await res.json();
+supabase.from("kyo_faqs").select("pregunta, respuesta").order("orden")
 ```
-
----
-
-### #25 — Mensajes de Kyo sin `aria-live` — invisibles para lectores de pantalla
-**Archivo:** `src/components/assistant/ChatWidget.tsx:143`
-**Prioridad:** Media
-
-```tsx
-<div ref={scrollRef} className="flex-1 overflow-y-auto px-5 pb-3 space-y-4">
-  {messages.map((m) => (
-    <MessageBubble key={m.id} message={m} />
-  ))}
-```
-
-El contenedor de mensajes no tiene `aria-live`. Cuando Kyo responde, el contenido nuevo no se anuncia a usuarios con lectores de pantalla (VoiceOver / TalkBack). Para un asistente conversacional esto es un bloqueo de accesibilidad básico.
-
-**Fix:**
-
-```tsx
-<div
-  ref={scrollRef}
-  className="flex-1 overflow-y-auto px-5 pb-3 space-y-4"
-  aria-live="polite"
-  aria-atomic="false"
-  aria-label="Conversación con Kyo"
->
-```
-
-`aria-polite` anuncia cada mensaje nuevo al terminar el audio actual (sin interrumpir). `aria-atomic="false"` lee solo el bloque nuevo, no toda la conversación.
-
----
-
-### #26 — Div de error sin `role="alert"` — no anunciado por lectores de pantalla
-**Archivo:** `src/components/assistant/ChatWidget.tsx:149`
-**Prioridad:** Baja
-
-```tsx
-{error && (
-  <div className="bg-red-50 text-red-700 text-[12px] p-3 rounded-lg border border-red-200">
-    {error}
-  </div>
-)}
-```
-
-El error aparece visualmente pero no se anuncia con ningún rol semántico. Un usuario con lector de pantalla no se enteraría del error y seguiría intentando enviar mensajes sin saber por qué no responde Kyo.
-
-**Fix:** agregar `role="alert"` (se anuncia automáticamente cuando aparece en el DOM):
-
-```tsx
-{error && (
-  <div role="alert" className="bg-red-50 text-red-700 text-[12px] p-3 rounded-lg border border-red-200">
-    {error}
-  </div>
-)}
-```
+y reemplazar `company.faqs` en `buildSystemPrompt()`.
 
 ---
 
@@ -162,11 +105,13 @@ El error aparece visualmente pero no se anuncia con ningún rol semántico. Un u
 
 - **#2 — `rateLimitMap` crece sin límite.** `route.ts:68`. En producción con tráfico sostenido, el Map acumula una entrada por IP visitante y nunca se limpia. Fix: al inicio de `checkRateLimit`, con 1% de probabilidad barrer entradas cuyo `resetAt < Date.now()`.
 
-- **#3 — `navigate_to` sin lista blanca.** `tools.ts:105`. Kyo podría ser inducido (prompt injection) a navegar a rutas arbitrarias. Fix: validar `input.path` contra `RUTAS_PERMITIDAS` antes de aceptar la navegación. Rechazar cualquier ruta fuera de `["/" , "/servicios", "/cursos", "/vacantes", "/nosotros", "/contacto"]` y las formas con query (`/vacantes?*`, `/cursos/*`).
+- **#3 — `navigate_to` sin lista blanca.** `tools.ts:105`. Kyo podría ser inducido (prompt injection) a navegar a rutas arbitrarias. Fix: validar `input.path` contra `RUTAS_PERMITIDAS` antes de aceptar la navegación. Rechazar cualquier ruta fuera de `["/", "/servicios", "/cursos", "/vacantes", "/nosotros", "/contacto"]` y las formas con query (`/vacantes?*`, `/cursos/*`).
 
 - **#12 — `sessionStorage` para session ID vs `localStorage` para mensajes.** `useChat.ts:47-52`. El `session_id` se borra al cerrar la pestaña pero el historial persiste en localStorage. El admin ve conversaciones huérfanas en el log. Fix: mover el session_id a `localStorage` y borrarlo en `reset()`.
 
 - **#19 — `logEvent` registra PII del candidato.** `useChat.ts:81`. El texto del candidato (nombre, zona, experiencia) llega a `site_eventos.valor` visible en el dashboard. Fix: `logEvent("kyo_mensaje")` sin el contenido. Los datos reales ya van a `kyo_conversaciones` (tabla con acceso más restringido).
+
+- **#28 — `kyo_faqs` ignorada.** `knowledge.ts:99-105`. Ver hallazgo nuevo arriba.
 
 ### Media prioridad
 
@@ -186,16 +131,17 @@ El error aparece visualmente pero no se anuncia con ningún rol semántico. Un u
 
 - **#21 — Filtro de categoría con tildes.** `knowledge.ts:140`. `"Atencion al cliente"` no coincide con `"Atención al cliente"`. Fix: normalizar acentos antes de comparar con `normalize("NFD")`.
 
-- **#24 — `logEvent` antes de confirmar respuesta.** `useChat.ts:81`. Ver hallazgo nuevo arriba.
+- **#24 — `logEvent` antes de confirmar respuesta.** `useChat.ts:81`. El evento `kyo_mensaje` se registra antes del `await fetch(...)`. Si la API devuelve error, el evento ya está anotado. Fix: mover `logEvent("kyo_mensaje")` a después de `res.ok` (solo contar los mensajes que realmente llegaron al modelo).
 
-- **#25 — Sin `aria-live` en conversación.** `ChatWidget.tsx:143`. Ver hallazgo nuevo arriba.
+- **#25 — Sin `aria-live` en conversación.** `ChatWidget.tsx:143`. El contenedor de mensajes no anuncia a lectores de pantalla cuando Kyo responde. Fix: `aria-live="polite" aria-atomic="false" aria-label="Conversación con Kyo"` en el div `ref={scrollRef}`.
 
 ### Baja prioridad
 
 - **#9 — "Nueva conversacion" sin tilde.** `ChatWidget.tsx:161`. Cambiar a "Nueva conversación".
 - **#22 — Error 429 vs 500 idénticos.** `useChat.ts:129`. El 429 tiene solución inmediata (esperar); el 500 debería ofrecer WhatsApp como escape. Diferenciar en el `catch`.
-- **#23 — "aqui" sin tilde en saludo.** `useChat.ts:20`. Ver hallazgo nuevo arriba.
-- **#26 — Error sin `role="alert"`.** `ChatWidget.tsx:149`. Ver hallazgo nuevo arriba.
+- **#23 — "aqui" sin tilde en saludo.** `useChat.ts:20`. Cambiar a "aquí".
+- **#26 — Error sin `role="alert"`.** `ChatWidget.tsx:149`. Agregar `role="alert"` al div de error.
+- **#27 — Fallback sin tildes.** `route.ts:202`. Ver hallazgo nuevo arriba.
 
 ---
 
@@ -222,12 +168,13 @@ El error aparece visualmente pero no se anuncia con ningún rol semántico. Un u
 ### Problemas detectados (bugs)
 
 - **BUG #1 — Kyo muestra vacantes viejas.** `knowledge.ts:1-2` lee `JOBS` estático. Las vacantes de Supabase son invisibles para el asistente.
-- **BUG #2 — `saveHistory` corre con `messages = []` en el primer render.** `useChat.ts:70-73`. El segundo `useEffect` se ejecuta antes de que `setMessages(loadHistory())` actualize el estado, guardando brevemente un array vacío sobre el localStorage. Fix: flag `historyCargado` en `useRef` que se levanta después de cargar el historial.
+- **BUG #2 — `saveHistory` corre con `messages = []` en el primer render.** `useChat.ts:70-73`. El segundo `useEffect` se ejecuta antes de que `setMessages(loadHistory())` actualice el estado, guardando brevemente un array vacío sobre el localStorage.
 - **BUG #3 — `saveConversation` fire-and-forget sin log.** `route.ts:206`. Fallos silenciosos.
 - **BUG #4 — `sessionStorage` / `localStorage` desincronizados.** `useChat.ts:47-52`. Ver #12/#15.
 - **BUG #5 — `setTimeout` navega aunque el widget esté cerrado.** `useChat.ts:127`. Ver #20.
 - **BUG #6 — Filtro de categoría con tildes.** `knowledge.ts:140`. Ver #21.
 - **BUG #7 — `logEvent` dispara en mensajes fallidos.** `useChat.ts:81`. Ver #24.
+- **BUG #8 — `kyo_faqs` nunca se consulta.** `knowledge.ts:99`. Ver #28.
 
 ---
 
@@ -239,7 +186,9 @@ El error aparece visualmente pero no se anuncia con ningún rol semántico. Un u
 
 - **Actualizar valores de `?marca=` en system-prompt.** `system-prompt.ts:86`. Los valores "Grupo Corpora, Logistica Norte, Sigma Retail..." son placeholder. Reemplazar por las empresas reales activas en la tabla `vacantes`.
 
-- **Accesibilidad del widget completa.** Esta sesión detectó que el widget carece de `aria-live` en el área de mensajes y `role="alert"` en los errores (#25, #26). Para completar la accesibilidad básica, también agregar `aria-describedby` al input referenciando el último mensaje de Kyo, para que el lector de pantalla sugiera el contexto de respuesta.
+- **Accesibilidad del widget completa.** El widget carece de `aria-live` en el área de mensajes y `role="alert"` en los errores (#25, #26). Para completar la accesibilidad básica, también agregar `aria-describedby` al input referenciando el último mensaje de Kyo, para que el lector de pantalla sugiera el contexto de respuesta.
+
+- **FAQs editables deben ser efectivas.** Si el admin edita FAQs en el panel (`kyo_faqs`), espera que Kyo las use. Hoy no es así (#28). Comunicar esta limitación o resolverla.
 
 ---
 
@@ -261,6 +210,8 @@ El error aparece visualmente pero no se anuncia con ningún rol semántico. Un u
 | `logEvent("kyo_mensaje", trimmed)` | `useChat.ts` | 81 | #19 ✅ presente |
 | `setTimeout(router.push, 700)` sin cleanup | `useChat.ts` | 127 | #20 ✅ presente |
 | Categoría exact match sin normalizar | `knowledge.ts` | 140 | #21 ✅ presente |
-| `"aqui"` sin tilde | `useChat.ts` | 20 | #23 🆕 nuevo |
-| Sin `aria-live` en mensajes | `ChatWidget.tsx` | 143 | #25 🆕 nuevo |
-| Sin `role="alert"` en error | `ChatWidget.tsx` | 149 | #26 🆕 nuevo |
+| `"aqui"` sin tilde | `useChat.ts` | 20 | #23 ✅ presente |
+| Sin `aria-live` en mensajes | `ChatWidget.tsx` | 143 | #25 ✅ presente |
+| Sin `role="alert"` en error | `ChatWidget.tsx` | 149 | #26 ✅ presente |
+| Fallback con tildes faltantes | `route.ts` | 202 | #27 🆕 nuevo |
+| FAQs hardcoded, ignorando `kyo_faqs` | `knowledge.ts` | 99 | #28 🆕 nuevo |
