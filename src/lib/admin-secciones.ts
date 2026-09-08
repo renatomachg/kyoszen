@@ -17,6 +17,7 @@ export const ADMIN_SECCIONES = [
   { key: "correos", label: "Correos", href: "/admin/correos" },
   { key: "analytics", label: "Analytics", href: "/admin/analytics" },
   { key: "estratega", label: "Estratega", href: "/admin/estratega" },
+  { key: "usuarios", label: "Usuarios", href: "/admin/usuarios" },
   { key: "servidor", label: "Servidor", href: "/admin/servidor" },
   { key: "actividad", label: "Actividad", href: "/admin/actividad" },
 ] as const;

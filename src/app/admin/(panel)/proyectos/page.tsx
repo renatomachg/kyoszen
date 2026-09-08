@@ -727,7 +727,12 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
             <button type="button" onClick={() => setPidiendoCambios(true)}
               disabled={accion !== null || bloque.estado === "cambios"}
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-300 bg-white px-4 py-2.5 text-sm font-black text-red-600 disabled:opacity-40">
-              {bloque.estado === "cambios" ? "Cambios pedidos" : "Pedir cambios a Rosita"}
+              {/* El nombre sale de quien entregó, no de nadie fijo en el código */}
+              {bloque.estado === "cambios"
+                ? "Cambios pedidos"
+                : bloque.entrega_nombre
+                  ? `Pedir cambios a ${bloque.entrega_nombre}`
+                  : "Pedir cambios"}
             </button>
           </div>
           {pidiendoCambios && (

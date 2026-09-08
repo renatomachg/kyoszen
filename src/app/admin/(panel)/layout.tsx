@@ -38,6 +38,7 @@ const ICONOS: Record<AdminSeccionKey, IconUIName> = {
   correos: "mail",
   analytics: "chart",
   estratega: "lightbulb",
+  usuarios: "user",
   servidor: "archive",
   actividad: "clock",
 };
