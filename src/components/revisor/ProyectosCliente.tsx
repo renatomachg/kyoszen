@@ -368,6 +368,7 @@ function TarjetaBloque({
   onCancelarCambios,
   onAprobar,
   onCambios,
+  onComentar,
   vistaPrevia = false,
 }: {
   bloque: BloqueDetalle;
@@ -382,6 +383,7 @@ function TarjetaBloque({
   onCancelarCambios: () => void;
   onAprobar: (bloque: BloqueDetalle) => Promise<void>;
   onCambios: (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => Promise<void>;
+  onComentar: (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => Promise<void>;
   /** El admin lo está viendo para revisar: se muestra igual, pero no se decide nada. */
   vistaPrevia?: boolean;
 }) {
@@ -393,11 +395,14 @@ function TarjetaBloque({
     !laApruebaKyoszen &&
     etapa.estado !== "bloqueada" &&
     (bloque.estado === "pendiente" || bloque.estado === "cambios");
+  // Puede opinar aunque no decida: solo en las etapas que aprueba Kyoszen
+  const comentable = !vistaPrevia && laApruebaKyoszen && etapa.estado !== "bloqueada";
   const ocupada = accionId !== null;
   const titulo = escena
     ? `Escena ${escena.numero}${escena.titulo ? ` · ${escena.titulo}` : ""}`
     : "Entregable";
   const textareaId = `cambios-${proyectoId}-${bloque.id}`;
+  const comentarioId = `comentario-${proyectoId}-${bloque.id}`;
 
   return (
     <article style={{ border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: "18px", boxShadow: "0 3px 14px rgba(4, 46, 123, .045)" }}>
@@ -460,6 +465,35 @@ function TarjetaBloque({
       )}
 
       <Comentarios comentarios={bloque.proyecto_comentarios} />
+
+      {/* En las etapas que produce Kyoszen el cliente no decide, pero sí opina:
+          el comentario llega por correo y no mueve el estado de la escena. */}
+      {comentable && (
+        <form onSubmit={(event) => void onComentar(event, bloque)} style={{ marginTop: 14 }}>
+          <label htmlFor={comentarioId} style={{ display: "block", marginBottom: 7, color: C.navy, fontSize: 12, fontWeight: 800 }}>
+            ¿Ves algo que debamos ajustar?
+          </label>
+          <textarea
+            id={comentarioId}
+            rows={3}
+            value={comentario}
+            onChange={(event) => onComentario(event.target.value)}
+            /* Solo al entrar por primera vez: si no, borraría lo ya escrito */
+            onFocus={() => { if (cambioId !== bloque.id) onAbrirCambios(bloque.id); }}
+            placeholder="Escríbelo aquí y lo tomamos en cuenta…"
+            style={{ boxSizing: "border-box", width: "100%", resize: "vertical", border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 12px", color: C.ink, background: C.white, font: "inherit", fontSize: 13, lineHeight: 1.55, outlineColor: C.blue }}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 9 }}>
+            <button
+              type="submit"
+              disabled={ocupada || !comentario.trim()}
+              style={{ border: `1px solid ${C.navy}`, borderRadius: 12, background: C.navy, color: C.white, padding: "10px 15px", fontSize: 13, fontWeight: 800, cursor: ocupada || !comentario.trim() ? "not-allowed" : "pointer", opacity: ocupada || !comentario.trim() ? 0.55 : 1 }}
+            >
+              {accionId === bloque.id ? "Enviando…" : "Enviar comentario"}
+            </button>
+          </div>
+        </form>
+      )}
     </article>
   );
 }
@@ -567,6 +601,31 @@ export function DetalleProyecto({
       await recargarTodo();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo aprobar la escena.");
+    } finally {
+      setAccionId(null);
+    }
+  };
+
+  /** Comentario suelto, sin cambiar el estado de la escena. Es lo único que
+   *  puede hacer el cliente en las etapas que produce y aprueba Kyoszen. */
+  const comentarBloque = async (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => {
+    event.preventDefault();
+    const contenido = comentario.trim();
+    if (!contenido) return;
+    setAccionId(bloque.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/revisor/proyectos/${proyectoId}/bloques/${bloque.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autor_nombre: userName, autor_rol: "cliente", contenido }),
+      });
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo enviar el comentario."));
+      setCambioId(null);
+      setComentario("");
+      await recargarTodo();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo enviar el comentario.");
     } finally {
       setAccionId(null);
     }
@@ -761,6 +820,7 @@ export function DetalleProyecto({
                           }}
                           onAprobar={aprobarBloque}
                           onCambios={solicitarCambios}
+                          onComentar={comentarBloque}
                           vistaPrevia={vistaPrevia}
                         />
                       ))}

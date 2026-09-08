@@ -52,6 +52,34 @@ async function getSmtp() {
   return config;
 }
 
+/** De qué escena habla el comentario, en palabras y no en identificadores. */
+async function ubicarBloque(bloqueId: string) {
+  const { data } = await sb
+    .from("proyecto_bloques")
+    .select("escena_id, proyecto_etapas!inner(nombre, proyectos!inner(titulo))")
+    .eq("id", bloqueId)
+    .maybeSingle();
+
+  const etapa = data ? tomarUno(data.proyecto_etapas as unknown as { nombre: string; proyectos: unknown }) : null;
+  const proyecto = etapa ? tomarUno(etapa.proyectos as { titulo: string } | { titulo: string }[] | null) : null;
+
+  let escena: string | null = null;
+  if (data?.escena_id) {
+    const { data: fila } = await sb
+      .from("proyecto_escenas")
+      .select("numero, titulo")
+      .eq("id", data.escena_id)
+      .maybeSingle();
+    if (fila) escena = `Escena ${fila.numero} · ${fila.titulo}`;
+  }
+
+  return {
+    proyecto: proyecto?.titulo ?? "un proyecto",
+    etapa: etapa?.nombre ?? "una etapa",
+    escena: escena ?? "el entregable de la etapa",
+  };
+}
+
 async function notifyAdmin(bloqueId: string, autorNombre: string, contenido: string) {
   try {
     const smtp = await getSmtp();
@@ -63,11 +91,20 @@ async function notifyAdmin(bloqueId: string, autorNombre: string, contenido: str
       secure: puerto === 465,
       auth: { user: smtp.smtp_user, pass: smtp.smtp_pass },
     });
+
+    const donde = await ubicarBloque(bloqueId);
     await transport.sendMail({
       from: `"Kyoszen Revisor" <${smtp.smtp_from ?? smtp.smtp_user}>`,
       to: "renatomachg@gmail.com",
-      subject: `💬 Nuevo comentario en un proyecto · ${autorNombre}`,
-      text: `${autorNombre} comentó en el bloque ${bloqueId}:\n\n"${contenido}"\n\nRevisa en: https://kyoszen.com/admin/proyectos`,
+      subject: `💬 ${autorNombre} comentó en ${donde.escena} · ${donde.etapa} · ${donde.proyecto}`,
+      html:
+        `<p><strong>${autorNombre}</strong> dejó un comentario:</p>` +
+        `<blockquote style="margin:0 0 16px;padding:10px 14px;border-left:3px solid #1883FF;background:#F0F4FF">${contenido}</blockquote>` +
+        `<p style="margin:0 0 4px"><strong>Proyecto:</strong> ${donde.proyecto}</p>` +
+        `<p style="margin:0 0 4px"><strong>Etapa:</strong> ${donde.etapa}</p>` +
+        `<p style="margin:0 0 16px"><strong>${donde.escena}</strong></p>` +
+        `<p>Ábrela en el panel, en esa etapa, y contéstale ahí mismo para que quede el hilo completo.</p>` +
+        `<p><a href="https://kyoszen.com/admin/proyectos">Ir al proyecto</a></p>`,
     });
   } catch (error) {
     console.error("[notif proyecto bloque comments] error al enviar:", error);
