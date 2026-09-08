@@ -383,7 +383,16 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-08-11 (tarde) — **Importador de campañas: brief pegado, capturas de pantalla o PDF → campaña completa.**
+2026-09-07 — **Proyectos: reiniciar una etapa y "Ver como cliente".**
+- **`POST /api/admin/proyectos/[id]/etapas/[etapaId]/reiniciar`** (solo admin) borra el historial completo de una etapa: todas las versiones, archivos, comentarios, entregas y notas. Deja una versión 1 vacía por escena con `visible_cliente=false`, pone la etapa en `pendiente`, re-bloquea las etapas posteriores y regresa `proyectos.etapa_actual`. **No manda correos** — el material vuelve a salir con "Enviar al cliente". Acepta `{ conservar_notas: true }` si algún día se quiere guardar el brief.
+- **`GET /api/admin/proyectos/[id]/vista-cliente`** devuelve la misma forma que `/api/revisor/proyectos/[id]` pero **sin los filtros de `publicado` ni `visible_cliente`**, más `sin_liberar` (cuántas escenas no ha visto el cliente). Es lo que alimenta la vista previa.
+- **`DetalleProyecto` de `ProyectosCliente.tsx` ahora se exporta** y acepta `vistaPrevia`: usa `fetchAdmin` contra el endpoint de arriba, apaga aprobar/pedir cambios/aprobar todas, pone una franja navy arriba y marca en ámbar **"Todavía no la ve"** los bloques con `visible_cliente=false`. El admin abre esto con **"Ver como cliente"** en el encabezado del proyecto. Es el mismo componente que usa Rosy, no una copia: si cambia su vista, la previa cambia sola.
+- Botón **"Reiniciar etapa"** en la barra de la etapa abierta, con `ConfirmModal` que enumera lo que se borra.
+- **Probado** con un proyecto desechable y sesión real: 22 verificaciones (borra 6 versiones y deja 3 escenas limpias, no toca el Guion, re-bloquea Video, se lleva los comentarios, colaborador→403, sin sesión→401).
+- **OJO ramas:** esta sesión encontró la rama de trabajo **29 commits atrás de main**. Antes de tocar Proyectos hay que `git fetch` + ponerse al día: main ya traía entrega interna del colaborador, `aprobador` por etapa y el filtro `visible_cliente`. Construir sobre una rama vieja habría revertido todo eso.
+- **VPS:** el repo de `/home/kyoszen` no tenía estrategia de `pull` y el deploy moría con "Need to specify how to reconcile divergent branches". Se dejó `git config pull.ff only` en ese repo.
+
+2026-09-07 (tarde) — **Importador de campañas: brief pegado, capturas de pantalla o PDF → campaña completa.**
 - **Problema que resuelve:** capturar a mano una campaña (encabezado + 3 anuncios + 7 preguntas cada uno) es inviable. Ahora se pega el brief que sale de claude.ai, se arrastran capturas del administrador de anuncios, o se sube un PDF/HTML.
 - **`/api/admin/campanas/importar`** con 2 acciones, igual que el importador de planes: **`analizar`** (solo lee y propone, NO crea nada) → **`crear`** (inserta lo que el admin dejó seleccionado). Modelo: `claude-haiku-4-5-20251001` con texto, **`claude-opus-4-5` cuando hay capturas** (visión). ~15s en ambos casos.
 - **Lo probado:** reconstruye formularios descritos como *"iguales al anterior pero cambiando la pregunta 3"* (arma las 7 completas con el cambio aplicado), detecta que la confirmación de Ayudante General va SIN la línea de constancias, mete la aclaración entre paréntesis en `nota` y no en el texto de la pregunta, e infiere el tipo de cada pregunta (opcion/texto/telefono/numero). Con capturas extrajo texto, título, botón, las 6 preguntas y la pantalla de agradecimiento.
