@@ -553,11 +553,34 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   const listoParaAprobar = tieneEntregable({ contenido: bloque.contenido, archivos }, etapa.tipo);
   // Si ya hay comentarios en la escena, pedir cambios no obliga a repetirlos
   const yaHayComentarios = bloque.proyecto_comentarios.length > 0;
+  // Lo que se ve en pantalla pero todavía no está en la base
+  const hayCambiosSinGuardar =
+    JSON.stringify(archivos) !== JSON.stringify(bloque.archivos) ||
+    (nota || "") !== (bloque.nota ?? "") ||
+    (etapa.tipo === "guion" &&
+      (locucion !== textoContenido(bloque.contenido, "locucion") ||
+        enPantalla !== textoContenido(bloque.contenido, "en_pantalla")));
 
   const decidir = async (nuevo: "aprobado" | "cambios", motivo?: string) => {
     setAccion("decidir");
     setError("");
     try {
+      // Los archivos recién subidos viven en la pantalla hasta que se guardan.
+      // Sin esto, el servidor ve la escena vacía y rechaza la aprobación.
+      if (hayCambiosSinGuardar) {
+        const contenido = etapa.tipo === "guion"
+          ? { ...bloque.contenido, locucion, en_pantalla: enPantalla }
+          : bloque.contenido;
+        const guardado = await fetchAdmin(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contenido, nota: nota || null, archivos }),
+        });
+        if (!guardado.ok) {
+          throw new Error(await mensajeError(guardado, "No se pudo guardar lo que subiste antes de aprobar."));
+        }
+      }
+
       const response = await fetchAdmin(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
