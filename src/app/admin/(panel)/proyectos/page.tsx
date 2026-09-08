@@ -27,6 +27,8 @@ import {
   type TipoEspacio,
 } from "@/lib/proyectos";
 import TableroAdmin from "@/components/admin/TableroAdmin";
+import { DetalleProyecto } from "@/components/revisor/ProyectosCliente";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { IconUI } from "@/components/ui/IconUI";
 import { supabase } from "@/lib/supabase";
 import { fetchAdmin } from "@/lib/admin-fetch";
@@ -790,6 +792,9 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
   const [enviandoCliente, setEnviandoCliente] = useState(false);
   const [avisoEnvio, setAvisoEnvio] = useState("");
   const [error, setError] = useState("");
+  const [vistaPrevia, setVistaPrevia] = useState(false);
+  const [confirmarReinicio, setConfirmarReinicio] = useState(false);
+  const [reiniciando, setReiniciando] = useState(false);
 
   const cargar = useCallback(async (mantener?: string | null) => {
     setCargando(true);
@@ -842,6 +847,29 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
     }
   };
 
+  /** Borra el historial de la etapa y la deja lista para volver a empezar. */
+  const reiniciarEtapa = async () => {
+    if (!proyecto || !etapa) return;
+    setReiniciando(true); setError(""); setAvisoEnvio("");
+    try {
+      const response = await fetchAdmin(
+        `/api/admin/proyectos/${proyecto.id}/etapas/${etapa.id}/reiniciar`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }
+      );
+      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo reiniciar la etapa."));
+      const data = (await response.json()) as { borrados: number; creados: number };
+      setConfirmarReinicio(false);
+      setAvisoEnvio(
+        `${etapa.nombre} quedó en blanco: se borraron ${data.borrados} versiones y quedaron ${data.creados} escenas vacías. Sube el material nuevo y mándalo al cliente cuando esté listo.`
+      );
+      await cargar(etapa.id);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo reiniciar la etapa.");
+    } finally {
+      setReiniciando(false);
+    }
+  };
+
   const publicar = async () => {
     if (!proyecto) return;
     setActualizando(true); setError("");
@@ -865,14 +893,22 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
   return (
     <ModalBase onClose={onClose} ancho="max-w-6xl">
       {cargando && !proyecto ? <div className="flex min-h-72 items-center justify-center"><Spinner /></div> : <>
-        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-black text-[#042E7B]">{proyecto?.titulo ?? "Proyecto"}</h2>{proyecto?.folio && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">{proyecto.folio}</span>}{proyecto && <span className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold capitalize text-[#1883FF]"><PuntoEstado color="#1883FF" />{proyecto.estado}</span>}</div>{proyecto?.area && <p className="mt-1 text-sm text-slate-500">{proyecto.area}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{proyecto && <button type="button" onClick={() => void publicar()} disabled={actualizando} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FFCC00] px-3.5 py-2 text-xs font-black text-[#042E7B] disabled:opacity-50"><IconoLinea nombre="subir" className="h-4 w-4" />{proyecto.publicado ? "Ocultar" : "Publicar al cliente"}</button>}<button type="button" onClick={() => void eliminar()} disabled={actualizando || !proyecto} className="cursor-pointer rounded-xl border border-red-200 px-3.5 py-2 text-xs font-bold text-red-600 disabled:opacity-50">Eliminar</button><button type="button" onClick={onClose} className="cursor-pointer px-1 text-2xl text-slate-400" aria-label="Cerrar">×</button></div></div>
+        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-black text-[#042E7B]">{proyecto?.titulo ?? "Proyecto"}</h2>{proyecto?.folio && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">{proyecto.folio}</span>}{proyecto && <span className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold capitalize text-[#1883FF]"><PuntoEstado color="#1883FF" />{proyecto.estado}</span>}</div>{proyecto?.area && <p className="mt-1 text-sm text-slate-500">{proyecto.area}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{proyecto && <button type="button" onClick={() => setVistaPrevia(true)} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#1883FF]/40 bg-white px-3.5 py-2 text-xs font-black text-[#1883FF]"><IconUI name="eye" size={15} />Ver como cliente</button>}{proyecto && <button type="button" onClick={() => void publicar()} disabled={actualizando} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FFCC00] px-3.5 py-2 text-xs font-black text-[#042E7B] disabled:opacity-50"><IconoLinea nombre="subir" className="h-4 w-4" />{proyecto.publicado ? "Ocultar" : "Publicar al cliente"}</button>}<button type="button" onClick={() => void eliminar()} disabled={actualizando || !proyecto} className="cursor-pointer rounded-xl border border-red-200 px-3.5 py-2 text-xs font-bold text-red-600 disabled:opacity-50">Eliminar</button><button type="button" onClick={onClose} className="cursor-pointer px-1 text-2xl text-slate-400" aria-label="Cerrar">×</button></div></div>
         <div className="p-6">{error && <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}{proyecto && <div className="mb-6 flex gap-2 overflow-x-auto pb-1">{proyecto.proyecto_etapas.map((item) => { const ui = ESTADO_ETAPA_UI[item.estado]; const progreso = progresoDe(item); return <button key={item.id} type="button" onClick={() => setEtapaId(item.id)} className={`cursor-pointer whitespace-nowrap rounded-xl border px-3 py-2 text-left transition ${item.estado === "bloqueada" ? "opacity-55" : ""}`} style={{ color: ui.color, backgroundColor: ui.colorSuave, borderColor: item.id === etapaId ? ui.color : `${ui.color}44` }}><span className="flex items-center gap-1.5 text-xs font-black">{item.estado === "bloqueada" && <IconoLinea nombre="bloqueo" className="h-3.5 w-3.5" />}{item.nombre}</span><span className="text-[10px] font-bold">{progreso.total > 0 ? `${progreso.aprobado}/${progreso.total}` : ui.label}</span>{(progreso.conMaterial ?? 0) > 0 && <span className="block text-[9.5px] font-bold opacity-75">{progreso.conMaterial} con material</span>}</button>; })}</div>}{etapa && <section><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-lg font-black text-[#042E7B]">{etapa.nombre}</h3><p className="text-xs text-slate-500">{etapa.modo === "por_escena" ? "Un entregable por escena" : "Un entregable para toda la etapa"}{etapa.estado === "bloqueada" ? " · Solo lectura" : ""}</p>{progresoDe(etapa).total > 0 && <p className="mt-1 text-xs font-semibold text-[#042E7B]">{resumenEtapa(progresoDe(etapa))}</p>}</div>
-          {esAdmin && porRevisar.length > 0 && (
-            <button type="button" onClick={() => void enviarAlCliente()} disabled={enviandoCliente} className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50">
-              <IconoLinea nombre="enviar" className="h-4 w-4" />
-              {enviandoCliente ? "Enviando…" : `Enviar al cliente (${porRevisar.length})`}
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {esAdmin && (
+              <button type="button" onClick={() => setConfirmarReinicio(true)} disabled={reiniciando || enviandoCliente} className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3.5 py-2 text-xs font-bold text-red-600 disabled:opacity-50">
+                <IconUI name="trash" size={14} />
+                Reiniciar etapa
+              </button>
+            )}
+            {esAdmin && porRevisar.length > 0 && (
+              <button type="button" onClick={() => void enviarAlCliente()} disabled={enviandoCliente} className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50">
+                <IconoLinea nombre="enviar" className="h-4 w-4" />
+                {enviandoCliente ? "Enviando…" : `Enviar al cliente (${porRevisar.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Cómo funciona esto, para quien entrega */}
@@ -900,6 +936,39 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
 
         <div className="space-y-4">{bloques.map((bloque) => <TarjetaBloque key={bloque.id} bloque={bloque} etapa={etapa} escena={bloque.escena_id ? escenasPorId.get(bloque.escena_id) ?? null : null} proyectoId={proyectoId} soloLectura={etapa.estado === "bloqueada"} esAdmin={esAdmin} autorNombre={autorNombre} onSaved={() => cargar(etapa.id)} />)}{bloques.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">Esta etapa no tiene bloques activos.</p>}</div></section>}</div>
       </>}
+
+      {vistaPrevia && proyecto && (
+        <DetalleProyecto
+          proyectoId={proyecto.id}
+          userName="Vista previa"
+          vistaPrevia
+          onClose={() => setVistaPrevia(false)}
+          onUpdated={async () => {}}
+        />
+      )}
+
+      <ConfirmModal
+        abierto={confirmarReinicio}
+        tono="peligro"
+        titulo={`Reiniciar la etapa ${etapa?.nombre ?? ""}`}
+        descripcion="Se borra todo lo que hay en esta etapa y queda en blanco para volver a empezar."
+        puntos={[
+          "Todas las versiones y los archivos que se hayan subido",
+          "Los comentarios y las solicitudes de cambio de esta etapa",
+          "Las notas de diseño de cada escena",
+          "Las etapas siguientes se vuelven a bloquear",
+        ]}
+        aviso={
+          proyecto?.publicado
+            ? "El cliente deja de ver esta etapa hasta que subas material nuevo y lo mandes con “Enviar al cliente”."
+            : undefined
+        }
+        nota="Esto no se puede deshacer. El guion y las demás etapas no se tocan."
+        confirmarLabel="Reiniciar etapa"
+        cargando={reiniciando}
+        onConfirmar={reiniciarEtapa}
+        onCancelar={() => setConfirmarReinicio(false)}
+      />
     </ModalBase>
   );
 }

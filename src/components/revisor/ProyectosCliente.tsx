@@ -25,6 +25,7 @@ import {
   type ProyectoEtapa,
 } from "@/lib/proyectos";
 import TableroCliente from "@/components/revisor/TableroCliente";
+import { fetchAdmin } from "@/lib/admin-fetch";
 
 type Progreso = {
   total: number;
@@ -367,6 +368,7 @@ function TarjetaBloque({
   onCancelarCambios,
   onAprobar,
   onCambios,
+  vistaPrevia = false,
 }: {
   bloque: BloqueDetalle;
   etapa: EtapaDetalle;
@@ -380,11 +382,14 @@ function TarjetaBloque({
   onCancelarCambios: () => void;
   onAprobar: (bloque: BloqueDetalle) => Promise<void>;
   onCambios: (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => Promise<void>;
+  /** El admin lo está viendo para revisar: se muestra igual, pero no se decide nada. */
+  vistaPrevia?: boolean;
 }) {
   const ui = ESTADO_BLOQUE_UI[bloque.estado];
   // El arte lo aprueba Kyoszen: el cliente lo ve como avance, sin decidir
   const laApruebaKyoszen = etapa.aprobador === "admin";
   const revisable =
+    !vistaPrevia &&
     !laApruebaKyoszen &&
     etapa.estado !== "bloqueada" &&
     (bloque.estado === "pendiente" || bloque.estado === "cambios");
@@ -398,11 +403,18 @@ function TarjetaBloque({
     <article style={{ border: `1px solid ${C.border}`, borderRadius: 14, background: C.white, padding: "18px", boxShadow: "0 3px 14px rgba(4, 46, 123, .045)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <h4 style={{ margin: 0, color: C.navy, fontSize: 15.5, fontWeight: 900, lineHeight: 1.35 }}>{titulo}</h4>
-        <span style={{ display: "inline-flex", padding: "5px 10px", border: `1px solid ${ui.color}55`, borderRadius: 999, background: ui.colorSuave, color: ui.color, fontSize: 10.5, fontWeight: 850 }}>
-          {laApruebaKyoszen
-            ? (bloque.estado === "aprobado" ? "Listo" : "En proceso")
-            : bloque.estado === "aprobado" ? "✅ Aprobado" : ui.label}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+          {vistaPrevia && !bloque.visible_cliente && (
+            <span style={{ display: "inline-flex", padding: "5px 10px", border: "1px solid #FDE68A", borderRadius: 999, background: "#FFFBEB", color: "#92400E", fontSize: 10.5, fontWeight: 850 }}>
+              Todavía no la ve
+            </span>
+          )}
+          <span style={{ display: "inline-flex", padding: "5px 10px", border: `1px solid ${ui.color}55`, borderRadius: 999, background: ui.colorSuave, color: ui.color, fontSize: 10.5, fontWeight: 850 }}>
+            {laApruebaKyoszen
+              ? (bloque.estado === "aprobado" ? "Listo" : "En proceso")
+              : bloque.estado === "aprobado" ? "✅ Aprobado" : ui.label}
+          </span>
+        </div>
       </div>
 
       <ContenidoBloque bloque={bloque} etapa={etapa} />
@@ -452,16 +464,20 @@ function TarjetaBloque({
   );
 }
 
-function DetalleProyecto({
+export function DetalleProyecto({
   proyectoId,
   userName,
   onClose,
   onUpdated,
+  vistaPrevia = false,
 }: {
   proyectoId: string;
   userName: string;
   onClose: () => void;
   onUpdated: () => Promise<void>;
+  /** Modo espejo para el admin: se ve igual que para el cliente, pero sin decidir
+   *  nada y mostrando también lo que todavía no se ha liberado. */
+  vistaPrevia?: boolean;
 }) {
   const [proyecto, setProyecto] = useState<ProyectoDetalle | null>(null);
   const [etapaId, setEtapaId] = useState<string | null>(null);
@@ -475,7 +491,10 @@ function DetalleProyecto({
   const cargarDetalle = useCallback(async () => {
     setCargando(true);
     try {
-      const response = await fetch(`/api/revisor/proyectos/${proyectoId}`);
+      // La vista previa pega a /api/admin/*, que exige la sesión del panel
+      const response = vistaPrevia
+        ? await fetchAdmin(`/api/admin/proyectos/${proyectoId}/vista-cliente`)
+        : await fetch(`/api/revisor/proyectos/${proyectoId}`);
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo cargar el proyecto."));
       const data = (await response.json()) as ProyectoDetalle;
       setProyecto(data);
@@ -495,7 +514,7 @@ function DetalleProyecto({
     } finally {
       setCargando(false);
     }
-  }, [proyectoId]);
+  }, [proyectoId, vistaPrevia]);
 
   useEffect(() => {
     void cargarDetalle();
@@ -612,7 +631,19 @@ function DetalleProyecto({
         onMouseDown={(event) => event.stopPropagation()}
         style={{ width: "100%", maxWidth: 1040, maxHeight: "92vh", overflowY: "auto", border: `1px solid ${C.border}`, borderRadius: 16, background: C.white, boxShadow: "0 24px 70px rgba(4, 46, 123, .22)" }}
       >
-        <header style={{ position: "sticky", top: 0, zIndex: 3, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, borderBottom: `1px solid ${C.border}`, background: C.white, padding: "20px 24px" }}>
+        {vistaPrevia && (
+          <div style={{ position: "sticky", top: 0, zIndex: 4, background: "#042E7B", color: "#fff", padding: "10px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <p style={{ margin: 0, fontSize: 12.5, fontWeight: 800 }}>
+              Vista previa — así lo va a ver el cliente
+            </p>
+            <p style={{ margin: 0, fontSize: 11.5, color: "rgba(255,255,255,.72)" }}>
+              {proyecto && !proyecto.publicado
+                ? "El proyecto está en borrador: todavía no lo ve nadie."
+                : "Lo marcado en ámbar aún no se le ha enviado."}
+            </p>
+          </div>
+        )}
+        <header style={{ position: "sticky", top: vistaPrevia ? 41 : 0, zIndex: 3, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, borderBottom: `1px solid ${C.border}`, background: C.white, padding: "20px 24px" }}>
           <div style={{ minWidth: 0 }}>
             <p style={{ margin: "0 0 5px", color: C.blue, fontSize: 10.5, fontWeight: 850, letterSpacing: "1.3px", textTransform: "uppercase" }}>Centro de Proyectos</p>
             <h2 style={{ margin: 0, color: C.navy, fontSize: 21, fontWeight: 900, lineHeight: 1.2 }}>{proyecto?.titulo ?? "Proyecto"}</h2>
@@ -689,7 +720,7 @@ function DetalleProyecto({
                           </p>
                         )}
                       </div>
-                      {etapa.aprobador !== "admin" && progreso && progreso.pendiente > 0 && (
+                      {!vistaPrevia && etapa.aprobador !== "admin" && progreso && progreso.pendiente > 0 && (
                         <Boton onClick={() => void aprobarPendientes()} disabled={aprobandoTodas || accionId !== null}>
                           ✅ {aprobandoTodas ? "Aprobando…" : "Aprobar todas las pendientes"}
                         </Boton>
@@ -730,6 +761,7 @@ function DetalleProyecto({
                           }}
                           onAprobar={aprobarBloque}
                           onCambios={solicitarCambios}
+                          vistaPrevia={vistaPrevia}
                         />
                       ))}
                       {bloques.length === 0 && (
