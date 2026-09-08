@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import {
+  apruebaElAdmin,
   rollupEtapa,
+  type Aprobador,
   type EstadoBloque,
   type EstadoProyecto,
   type ProyectoBloque,
@@ -18,17 +20,19 @@ type EtapaRelacion = {
   proyecto_id: string;
   orden: number;
   estado: string;
+  aprobador: Aprobador;
   proyectos: { titulo: string; estado: EstadoProyecto } | { titulo: string; estado: EstadoProyecto }[] | null;
 } | {
   proyecto_id: string;
   orden: number;
   estado: string;
+  aprobador: Aprobador;
   proyectos: { titulo: string; estado: EstadoProyecto } | { titulo: string; estado: EstadoProyecto }[] | null;
 }[] | null;
 
 type BloqueVersion = Pick<
   ProyectoBloque,
-  "id" | "etapa_id" | "escena_id" | "contenido" | "archivos" | "nota"
+  "id" | "etapa_id" | "escena_id" | "contenido" | "archivos" | "nota" | "estado"
 > & { proyecto_etapas: EtapaRelacion };
 
 function tomarEtapa(relacion: EtapaRelacion) {
@@ -144,7 +148,7 @@ export async function POST(
 
     const { data, error: bloqueError } = await sb
       .from("proyecto_bloques")
-      .select("id, etapa_id, escena_id, contenido, archivos, nota, proyecto_etapas!inner(proyecto_id, orden, estado, proyectos!inner(titulo, estado))")
+      .select("id, etapa_id, escena_id, contenido, archivos, nota, estado, proyecto_etapas!inner(proyecto_id, orden, estado, aprobador, proyectos!inner(titulo, estado))")
       .eq("id", bloqueId)
       .maybeSingle();
     if (bloqueError) return NextResponse.json({ error: bloqueError.message }, { status: 500 });
@@ -196,7 +200,12 @@ export async function POST(
       .insert({
         etapa_id: bloque.etapa_id,
         escena_id: bloque.escena_id,
-        estado: "pendiente",
+        // En las etapas que aprueba Kyoszen, mandarle el material al cliente no
+        // deshace el visto bueno del admin: es él mismo quien lo está enviando.
+        estado:
+          !interno && apruebaElAdmin(etapa) && bloque.estado === "aprobado"
+            ? "aprobado"
+            : "pendiente",
         contenido: body.contenido ?? bloque.contenido,
         archivos: body.archivos ?? bloque.archivos,
         nota: body.nota !== undefined ? body.nota : bloque.nota,

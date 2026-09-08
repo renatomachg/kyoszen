@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-import { rollupEtapa, type EstadoBloque } from "@/lib/proyectos";
+import { rollupEtapa, tieneEntregable, type EstadoBloque } from "@/lib/proyectos";
 import { SinPermiso, exigirProyecto } from "@/lib/admin-auth";
 
 const sb = createClient(
@@ -73,7 +73,7 @@ export async function POST(
 
     const { data: etapa, error: etapaError } = await sb
       .from("proyecto_etapas")
-      .select("id, nombre, proyecto_id, estado, proyectos!inner(titulo, publicado)")
+      .select("id, nombre, tipo, proyecto_id, estado, proyectos!inner(titulo, publicado)")
       .eq("id", etapaId)
       .maybeSingle();
 
@@ -86,20 +86,26 @@ export async function POST(
       | { titulo: string; publicado: boolean }
       | undefined;
 
-    // Los bloques entregados por un colaborador y todavía ocultos al cliente
-    const { data: entregados, error: entregadosError } = await sb
+    // Todo lo que ya tiene material y el cliente todavía no ve: da igual si lo
+    // entregó un colaborador o si lo subió el propio admin.
+    const { data: candidatos, error: candidatosError } = await sb
       .from("proyecto_bloques")
-      .select("id, escena_id")
+      .select("id, escena_id, contenido, archivos, entrega_estado")
       .eq("etapa_id", etapaId)
       .eq("es_activa", true)
-      .eq("entrega_estado", "entregado");
+      .eq("visible_cliente", false);
 
-    if (entregadosError) {
-      return NextResponse.json({ error: entregadosError.message }, { status: 500 });
+    if (candidatosError) {
+      return NextResponse.json({ error: candidatosError.message }, { status: 500 });
     }
-    if (!entregados?.length) {
+
+    const entregados = (candidatos ?? []).filter(bloque =>
+      tieneEntregable({ contenido: bloque.contenido, archivos: bloque.archivos }, etapa.tipo)
+    );
+
+    if (!entregados.length) {
       return NextResponse.json(
-        { error: "No hay entregas pendientes de mandar en esta etapa." },
+        { error: "No hay nada nuevo que mandar: o ya lo vio el cliente, o las escenas están vacías." },
         { status: 400 }
       );
     }

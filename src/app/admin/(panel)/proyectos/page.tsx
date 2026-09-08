@@ -855,6 +855,18 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
     [bloques]
   );
 
+  // Todo lo que ya tiene material y el cliente todavía no ve: lo que entregó un
+  // colaborador y también lo que subió el propio admin.
+  const porEnviar = useMemo(
+    () =>
+      etapa
+        ? bloques.filter(
+            (bloque) => !bloque.visible_cliente && tieneEntregable(bloque, etapa.tipo)
+          )
+        : [],
+    [bloques, etapa]
+  );
+
   const enviarAlCliente = async () => {
     if (!proyecto || !etapa) return;
     setEnviandoCliente(true); setError(""); setAvisoEnvio("");
@@ -930,10 +942,10 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
                 Reiniciar etapa
               </button>
             )}
-            {esAdmin && porRevisar.length > 0 && (
+            {esAdmin && porEnviar.length > 0 && (
               <button type="button" onClick={() => void enviarAlCliente()} disabled={enviandoCliente} className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50">
                 <IconoLinea nombre="enviar" className="h-4 w-4" />
-                {enviandoCliente ? "Enviando…" : `Enviar al cliente (${porRevisar.length})`}
+                {enviandoCliente ? "Enviando…" : `Enviar al cliente (${porEnviar.length})`}
               </button>
             )}
           </div>
@@ -958,6 +970,11 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
         {esAdmin && porRevisar.length > 0 && (
           <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
             {porRevisar[0].entrega_nombre ?? "Un colaborador"} entregó {porRevisar.length} escena{porRevisar.length === 1 ? "" : "s"} y está esperando tu revisión. El cliente todavía no las ve.
+          </p>
+        )}
+        {esAdmin && porRevisar.length === 0 && porEnviar.length > 0 && (
+          <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+            Tienes {porEnviar.length} escena{porEnviar.length === 1 ? "" : "s"} con material que el cliente todavía no ve. Usa “Enviar al cliente” cuando quieras mostrárselas.
           </p>
         )}
         {avisoEnvio && <p className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">{avisoEnvio}</p>}
