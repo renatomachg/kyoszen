@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -13,6 +14,10 @@ import {
 import {
   ESTADO_BLOQUE_UI,
   ESTADO_ETAPA_UI,
+  conMarcaTiempo,
+  esVideoCompleto,
+  formatearTiempo,
+  leerMarcaTiempo,
   type Archivo,
   type Espacio,
   type EspacioArchivo,
@@ -355,6 +360,172 @@ function ContenidoBloque({ bloque, etapa }: { bloque: BloqueDetalle; etapa: Etap
   );
 }
 
+/** Minuto de un comentario: al tocarlo, el video salta a ese punto. */
+function ChipMinuto({ segundo, onIr }: { segundo: number; onIr: (segundo: number) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onIr(segundo)}
+      title="Ir a este minuto del video"
+      style={{ display: "inline-flex", alignItems: "center", gap: 5, marginRight: 7, border: `1px solid ${C.blue}55`, borderRadius: 999, background: "#EFF6FF", color: C.blue, padding: "2px 9px 2px 7px", fontSize: 11, fontWeight: 850, cursor: "pointer", verticalAlign: "1px", fontVariantNumeric: "tabular-nums" }}
+    >
+      <svg aria-hidden="true" width="9" height="9" viewBox="0 0 10 10"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>
+      {formatearTiempo(segundo)}
+    </button>
+  );
+}
+
+/** Etapa Video: un solo video completo. Se pausa donde se ve algo y se comenta;
+ *  el minuto se guarda solo y cada comentario lleva el video a ese punto. */
+function VideoCompleto({
+  bloque,
+  puedeComentar,
+  ocupada,
+  enviando,
+  onComentar,
+}: {
+  bloque: BloqueDetalle;
+  puedeComentar: boolean;
+  ocupada: boolean;
+  enviando: boolean;
+  onComentar: (contenido: string) => Promise<boolean>;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [texto, setTexto] = useState("");
+  const [marca, setMarca] = useState<number | null>(null);
+  const video = bloque.archivos.find((archivo) => archivo.tipo.startsWith("video/")) ?? bloque.archivos[0] ?? null;
+  const campoId = `video-${bloque.id}`;
+
+  const irA = (segundo: number) => {
+    const reproductor = videoRef.current;
+    if (!reproductor) return;
+    reproductor.currentTime = segundo;
+    reproductor.scrollIntoView({ block: "center", behavior: "smooth" });
+    void reproductor.play().catch(() => {});
+  };
+
+  /** Pausa el video y toma el minuto donde va. */
+  const tomarMinuto = () => {
+    const reproductor = videoRef.current;
+    if (!reproductor) return;
+    reproductor.pause();
+    setMarca(reproductor.currentTime);
+  };
+
+  const enviar = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!texto.trim()) return;
+    const listo = await onComentar(conMarcaTiempo(marca, texto));
+    if (listo) {
+      setTexto("");
+      setMarca(null);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {bloque.nota && (
+        <div style={{ borderLeft: `4px solid ${C.blue}`, borderRadius: "0 10px 10px 0", background: "#EFF6FF", padding: "13px 15px" }}>
+          <p style={{ margin: 0, color: C.body, fontSize: 13, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{bloque.nota}</p>
+        </div>
+      )}
+
+      {video ? (
+        <video
+          ref={videoRef}
+          src={video.url}
+          controls
+          playsInline
+          preload="metadata"
+          style={{ width: "100%", maxHeight: 520, display: "block", borderRadius: 12, background: C.ink }}
+        />
+      ) : (
+        <p style={{ margin: 0, border: `1px dashed ${C.border}`, borderRadius: 12, padding: "34px 18px", color: C.muted, fontSize: 13, textAlign: "center" }}>
+          Estamos terminando el video. Te avisamos en cuanto esté listo para revisarlo.
+        </p>
+      )}
+
+      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
+        <h5 style={{ margin: "0 0 10px", color: C.navy, fontSize: 12.5, fontWeight: 850 }}>
+          Comentarios ({bloque.proyecto_comentarios.length})
+        </h5>
+        {bloque.proyecto_comentarios.length === 0 ? (
+          <p style={{ margin: 0, color: C.faint, fontSize: 12.5 }}>Aún no hay comentarios en el video.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {bloque.proyecto_comentarios.map((item) => {
+              const { segundo, texto: cuerpo } = leerMarcaTiempo(item.contenido);
+              return (
+                <article key={item.id} style={{ border: `1px solid ${C.border}`, borderRadius: 12, background: C.surface, padding: "12px 14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <p style={{ margin: 0, color: C.navy, fontSize: 12, fontWeight: 800 }}>
+                      {item.autor_nombre}
+                      <span style={{ marginLeft: 7, color: item.autor_rol === "cliente" ? C.blue : C.muted, fontSize: 10, textTransform: "capitalize" }}>
+                        {item.autor_rol}
+                      </span>
+                    </p>
+                    <time style={{ color: C.faint, fontSize: 10.5 }}>{fechaComentario(item.created_at)}</time>
+                  </div>
+                  <p style={{ margin: "7px 0 0", color: C.body, fontSize: 12.5, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                    {segundo !== null && video && <ChipMinuto segundo={segundo} onIr={irA} />}
+                    {segundo !== null && !video ? item.contenido : cuerpo}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {puedeComentar && video && (
+        <form onSubmit={(event) => void enviar(event)} style={{ border: `1px solid ${C.border}`, borderRadius: 12, background: C.surface, padding: 14 }}>
+          <label htmlFor={campoId} style={{ display: "block", marginBottom: 4, color: C.navy, fontSize: 12.5, fontWeight: 850 }}>
+            Comenta en el minuto exacto
+          </label>
+          <p style={{ margin: "0 0 10px", color: C.muted, fontSize: 12, lineHeight: 1.5 }}>
+            Pausa el video donde veas algo y escribe. El minuto se guarda solo.
+          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 9 }}>
+            {marca !== null ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 7, border: `1px solid ${C.blue}55`, borderRadius: 999, background: "#EFF6FF", color: C.blue, padding: "4px 6px 4px 11px", fontSize: 12, fontWeight: 850, fontVariantNumeric: "tabular-nums" }}>
+                En el minuto {formatearTiempo(marca)}
+                <button type="button" onClick={() => setMarca(null)} aria-label="Quitar el minuto" style={{ border: 0, borderRadius: 999, background: "transparent", color: C.blue, padding: "0 5px", fontSize: 15, lineHeight: 1, cursor: "pointer" }}>×</button>
+              </span>
+            ) : (
+              <span style={{ color: C.faint, fontSize: 12 }}>Comentario general, sin minuto</span>
+            )}
+            <button type="button" onClick={tomarMinuto} style={{ border: `1px solid ${C.border}`, borderRadius: 999, background: C.white, color: C.navy, padding: "5px 12px", fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>
+              {marca === null ? "Marcar el minuto actual" : "Tomar otro minuto"}
+            </button>
+          </div>
+          <textarea
+            id={campoId}
+            rows={3}
+            value={texto}
+            onChange={(event) => setTexto(event.target.value)}
+            onFocus={() => {
+              // Si ya empezó a verlo, el minuto se toma solo al ponerse a escribir
+              const reproductor = videoRef.current;
+              if (marca === null && reproductor && reproductor.currentTime > 0) tomarMinuto();
+            }}
+            placeholder="Ej: aquí el logo se ve muy chico…"
+            style={{ boxSizing: "border-box", width: "100%", resize: "vertical", border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 12px", color: C.ink, background: C.white, font: "inherit", fontSize: 13, lineHeight: 1.55, outlineColor: C.blue }}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 9 }}>
+            <button
+              type="submit"
+              disabled={ocupada || !texto.trim()}
+              style={{ border: `1px solid ${C.navy}`, borderRadius: 12, background: C.navy, color: C.white, padding: "10px 15px", fontSize: 13, fontWeight: 800, cursor: ocupada || !texto.trim() ? "not-allowed" : "pointer", opacity: ocupada || !texto.trim() ? 0.55 : 1 }}
+            >
+              {enviando ? "Enviando…" : "Enviar comentario"}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
 function TarjetaBloque({
   bloque,
   etapa,
@@ -383,11 +554,13 @@ function TarjetaBloque({
   onCancelarCambios: () => void;
   onAprobar: (bloque: BloqueDetalle) => Promise<void>;
   onCambios: (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => Promise<void>;
-  onComentar: (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => Promise<void>;
+  /** Devuelve true si el comentario quedó guardado. */
+  onComentar: (bloque: BloqueDetalle, contenido: string) => Promise<boolean>;
   /** El admin lo está viendo para revisar: se muestra igual, pero no se decide nada. */
   vistaPrevia?: boolean;
 }) {
   const ui = ESTADO_BLOQUE_UI[bloque.estado];
+  const videoCompleto = esVideoCompleto(etapa, bloque);
   // El arte lo aprueba Kyoszen: el cliente lo ve como avance, sin decidir
   const laApruebaKyoszen = etapa.aprobador === "admin";
   const revisable =
@@ -395,12 +568,17 @@ function TarjetaBloque({
     !laApruebaKyoszen &&
     etapa.estado !== "bloqueada" &&
     (bloque.estado === "pendiente" || bloque.estado === "cambios");
-  // Puede opinar aunque no decida: solo en las etapas que aprueba Kyoszen
-  const comentable = !vistaPrevia && laApruebaKyoszen && etapa.estado !== "bloqueada";
+  // Puede opinar aunque no decida: solo en las etapas que aprueba Kyoszen.
+  // El video completo trae su propia caja, con minuto.
+  const comentable = !vistaPrevia && laApruebaKyoszen && etapa.estado !== "bloqueada" && !videoCompleto;
+  // Si ya dejó comentarios, pedir cambios no le obliga a repetirlos
+  const yaHayComentarios = bloque.proyecto_comentarios.length > 0;
   const ocupada = accionId !== null;
-  const titulo = escena
-    ? `Escena ${escena.numero}${escena.titulo ? ` · ${escena.titulo}` : ""}`
-    : "Entregable";
+  const titulo = videoCompleto
+    ? "Video completo"
+    : escena
+      ? `Escena ${escena.numero}${escena.titulo ? ` · ${escena.titulo}` : ""}`
+      : "Entregable";
   const textareaId = `cambios-${proyectoId}-${bloque.id}`;
   const comentarioId = `comentario-${proyectoId}-${bloque.id}`;
 
@@ -422,7 +600,17 @@ function TarjetaBloque({
         </div>
       </div>
 
-      <ContenidoBloque bloque={bloque} etapa={etapa} />
+      {videoCompleto ? (
+        <VideoCompleto
+          bloque={bloque}
+          puedeComentar={!vistaPrevia && etapa.estado !== "bloqueada"}
+          ocupada={ocupada}
+          enviando={accionId === bloque.id}
+          onComentar={(contenido) => onComentar(bloque, contenido)}
+        />
+      ) : (
+        <ContenidoBloque bloque={bloque} etapa={etapa} />
+      )}
 
       {revisable && (
         <div style={{ marginTop: 18 }}>
@@ -438,23 +626,28 @@ function TarjetaBloque({
           {cambioId === bloque.id && (
             <form onSubmit={(event) => void onCambios(event, bloque)} style={{ marginTop: 13, border: `1px solid ${C.border}`, borderRadius: 12, background: C.surface, padding: 14 }}>
               <label htmlFor={textareaId} style={{ display: "block", marginBottom: 7, color: C.navy, fontSize: 12, fontWeight: 800 }}>
-                Cuéntanos qué debemos ajustar
+                {yaHayComentarios ? "¿Algo más que agregar? (opcional)" : "Cuéntanos qué debemos ajustar"}
               </label>
+              {yaHayComentarios && (
+                <p style={{ margin: "0 0 8px", color: C.muted, fontSize: 12, lineHeight: 1.5 }}>
+                  Los comentarios que ya dejaste nos llegan. Puedes mandarlo así o agregar algo más.
+                </p>
+              )}
               <textarea
                 id={textareaId}
-                required
+                required={!yaHayComentarios}
                 rows={4}
                 value={comentario}
                 onChange={(event) => onComentario(event.target.value)}
-                placeholder="Describe los cambios que necesitas…"
+                placeholder={yaHayComentarios ? "Opcional…" : "Describe los cambios que necesitas…"}
                 style={{ boxSizing: "border-box", width: "100%", resize: "vertical", border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 12px", color: C.ink, background: C.white, font: "inherit", fontSize: 13, lineHeight: 1.55, outlineColor: C.blue }}
               />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, marginTop: 10, flexWrap: "wrap" }}>
                 <Boton onClick={onCancelarCambios} disabled={ocupada} secundario>Cancelar</Boton>
                 <button
                   type="submit"
-                  disabled={ocupada || !comentario.trim()}
-                  style={{ border: `1px solid ${C.navy}`, borderRadius: 12, background: C.navy, color: C.white, padding: "10px 15px", fontSize: 13, fontWeight: 800, cursor: ocupada || !comentario.trim() ? "not-allowed" : "pointer", opacity: ocupada || !comentario.trim() ? 0.55 : 1 }}
+                  disabled={ocupada || (!comentario.trim() && !yaHayComentarios)}
+                  style={{ border: `1px solid ${C.navy}`, borderRadius: 12, background: C.navy, color: C.white, padding: "10px 15px", fontSize: 13, fontWeight: 800, cursor: ocupada || (!comentario.trim() && !yaHayComentarios) ? "not-allowed" : "pointer", opacity: ocupada || (!comentario.trim() && !yaHayComentarios) ? 0.55 : 1 }}
                 >
                   {accionId === bloque.id ? "Enviando…" : "Enviar solicitud"}
                 </button>
@@ -464,12 +657,12 @@ function TarjetaBloque({
         </div>
       )}
 
-      <Comentarios comentarios={bloque.proyecto_comentarios} />
+      {!videoCompleto && <Comentarios comentarios={bloque.proyecto_comentarios} />}
 
       {/* En las etapas que produce Kyoszen el cliente no decide, pero sí opina:
           el comentario llega por correo y no mueve el estado de la escena. */}
       {comentable && (
-        <form onSubmit={(event) => void onComentar(event, bloque)} style={{ marginTop: 14 }}>
+        <form onSubmit={(event) => { event.preventDefault(); void onComentar(bloque, comentario); }} style={{ marginTop: 14 }}>
           <label htmlFor={comentarioId} style={{ display: "block", marginBottom: 7, color: C.navy, fontSize: 12, fontWeight: 800 }}>
             ¿Ves algo que debamos ajustar?
           </label>
@@ -606,12 +799,12 @@ export function DetalleProyecto({
     }
   };
 
-  /** Comentario suelto, sin cambiar el estado de la escena. Es lo único que
-   *  puede hacer el cliente en las etapas que produce y aprueba Kyoszen. */
-  const comentarBloque = async (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => {
-    event.preventDefault();
-    const contenido = comentario.trim();
-    if (!contenido) return;
+  /** Comentario suelto, sin cambiar el estado de la escena: el que deja el
+   *  cliente en las etapas que produce Kyoszen y en el video (con minuto).
+   *  Devuelve true si quedó guardado. */
+  const comentarBloque = async (bloque: BloqueDetalle, texto: string): Promise<boolean> => {
+    const contenido = texto.trim();
+    if (!contenido) return false;
     setAccionId(bloque.id);
     setError("");
     try {
@@ -624,8 +817,10 @@ export function DetalleProyecto({
       setCambioId(null);
       setComentario("");
       await recargarTodo();
+      return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo enviar el comentario.");
+      return false;
     } finally {
       setAccionId(null);
     }
@@ -634,16 +829,19 @@ export function DetalleProyecto({
   const solicitarCambios = async (event: FormEvent<HTMLFormElement>, bloque: BloqueDetalle) => {
     event.preventDefault();
     const contenido = comentario.trim();
-    if (!contenido) return;
+    // Si ya dejó comentarios (p. ej. en el video, por minuto) basta con pedir el cambio
+    if (!contenido && bloque.proyecto_comentarios.length === 0) return;
     setAccionId(bloque.id);
     setError("");
     try {
-      const response = await fetch(`/api/revisor/proyectos/${proyectoId}/bloques/${bloque.id}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autor_nombre: userName, autor_rol: "cliente", contenido }),
-      });
-      if (!response.ok) throw new Error(await mensajeError(response, "No se pudo guardar el comentario."));
+      if (contenido) {
+        const response = await fetch(`/api/revisor/proyectos/${proyectoId}/bloques/${bloque.id}/comments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ autor_nombre: userName, autor_rol: "cliente", contenido }),
+        });
+        if (!response.ok) throw new Error(await mensajeError(response, "No se pudo guardar el comentario."));
+      }
       await patchEstado(bloque.id, "cambios");
       setCambioId(null);
       setComentario("");
@@ -779,7 +977,8 @@ export function DetalleProyecto({
                           </p>
                         )}
                       </div>
-                      {!vistaPrevia && etapa.aprobador !== "admin" && progreso && progreso.pendiente > 0 && (
+                      {/* Con un solo entregable (el video completo) "aprobar todas" sobra: la tarjeta trae su botón */}
+                      {!vistaPrevia && etapa.aprobador !== "admin" && etapa.modo !== "entregable_unico" && progreso && progreso.pendiente > 0 && (
                         <Boton onClick={() => void aprobarPendientes()} disabled={aprobandoTodas || accionId !== null}>
                           ✅ {aprobandoTodas ? "Aprobando…" : "Aprobar todas las pendientes"}
                         </Boton>

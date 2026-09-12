@@ -197,7 +197,8 @@ export const PLANTILLAS: Record<TipoProyecto, PlantillaEtapa[]> = {
   video_induccion: [
     { tipo: "guion", nombre: "Guion", orden: 1, modo: "por_escena" },
     { tipo: "arte", nombre: "Arte", orden: 2, modo: "por_escena" },
-    { tipo: "video", nombre: "Video", orden: 3, modo: "por_escena" },
+    // El video se entrega completo, ya montado: un solo archivo para toda la etapa
+    { tipo: "video", nombre: "Video", orden: 3, modo: "entregable_unico" },
   ],
 };
 
@@ -235,4 +236,42 @@ export function rollupEtapa(
     return "aprobado";
   }
   return "pendiente";
+}
+
+/** La etapa Video se entrega como un solo video completo, no escena por escena. */
+export function esVideoCompleto(
+  etapa: Pick<ProyectoEtapa, "tipo">,
+  bloque: Pick<ProyectoBloque, "escena_id">,
+): boolean {
+  return etapa.tipo === "video" && bloque.escena_id === null;
+}
+
+/* Minuto de un comentario de video. Va al inicio del texto —"[1:23] el logo se
+   ve chico"— para no tocar el esquema y para que el minuto viaje solo en los
+   correos. Acepta m:ss y h:mm:ss. */
+const MARCA_TIEMPO = /^\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]\s*/;
+
+export function formatearTiempo(segundos: number): string {
+  const total = Math.max(0, Math.floor(segundos));
+  const horas = Math.floor(total / 3600);
+  const minutos = Math.floor((total % 3600) / 60);
+  const seg = String(total % 60).padStart(2, "0");
+  return horas > 0 ? `${horas}:${String(minutos).padStart(2, "0")}:${seg}` : `${minutos}:${seg}`;
+}
+
+/** Texto listo para guardar: con el minuto al frente si lo hay. */
+export function conMarcaTiempo(segundos: number | null, texto: string): string {
+  const limpio = texto.trim();
+  return segundos === null ? limpio : `[${formatearTiempo(segundos)}] ${limpio}`;
+}
+
+/** Separa el minuto del texto de un comentario ya guardado. */
+export function leerMarcaTiempo(contenido: string): { segundo: number | null; texto: string } {
+  const coincidencia = MARCA_TIEMPO.exec(contenido);
+  if (!coincidencia) return { segundo: null, texto: contenido };
+  const [completo, a, b, c] = coincidencia;
+  const segundo = c !== undefined
+    ? Number(a) * 3600 + Number(b) * 60 + Number(c)
+    : Number(a) * 60 + Number(b);
+  return { segundo, texto: contenido.slice(completo.length) };
 }

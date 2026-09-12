@@ -56,11 +56,13 @@ async function getSmtp() {
 async function ubicarBloque(bloqueId: string) {
   const { data } = await sb
     .from("proyecto_bloques")
-    .select("escena_id, proyecto_etapas!inner(nombre, proyectos!inner(titulo))")
+    .select("escena_id, proyecto_etapas!inner(nombre, tipo, proyectos!inner(titulo))")
     .eq("id", bloqueId)
     .maybeSingle();
 
-  const etapa = data ? tomarUno(data.proyecto_etapas as unknown as { nombre: string; proyectos: unknown }) : null;
+  const etapa = data
+    ? tomarUno(data.proyecto_etapas as unknown as { nombre: string; tipo: string; proyectos: unknown })
+    : null;
   const proyecto = etapa ? tomarUno(etapa.proyectos as { titulo: string } | { titulo: string }[] | null) : null;
 
   let escena: string | null = null;
@@ -76,7 +78,7 @@ async function ubicarBloque(bloqueId: string) {
   return {
     proyecto: proyecto?.titulo ?? "un proyecto",
     etapa: etapa?.nombre ?? "una etapa",
-    escena: escena ?? "el entregable de la etapa",
+    escena: escena ?? (etapa?.tipo === "video" ? "el video completo" : "el entregable de la etapa"),
   };
 }
 

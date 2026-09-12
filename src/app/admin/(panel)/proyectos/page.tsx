@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type DragEvent,
   type FormEvent,
@@ -12,6 +13,10 @@ import {
 import {
   ESTADO_BLOQUE_UI,
   ESTADO_ETAPA_UI,
+  conMarcaTiempo,
+  esVideoCompleto,
+  formatearTiempo,
+  leerMarcaTiempo,
   tieneEntregable,
   type Archivo,
   type Espacio,
@@ -466,6 +471,22 @@ function VistaArchivo({ archivo }: { archivo: Archivo }) {
   return <a href={archivo.url} target="_blank" rel="noreferrer" className="max-w-48 truncate text-xs font-bold text-[#1883FF] hover:underline">{archivo.nombre}</a>;
 }
 
+/** Acepta el archivo como video aunque el navegador no mande el tipo (pasa con .mov). */
+function esArchivoVideo(file: File | undefined) {
+  if (!file) return false;
+  return file.type.startsWith("video/") || /\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(file.name);
+}
+
+/** Minuto de un comentario del video: al tocarlo, el reproductor salta a ese punto. */
+function ChipMinutoAdmin({ segundo, onIr }: { segundo: number; onIr: (segundo: number) => void }) {
+  return (
+    <button type="button" onClick={() => onIr(segundo)} title="Ir a este minuto del video" className="mr-1.5 inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#1883FF]/40 bg-[#EFF6FF] py-0.5 pl-1.5 pr-2 align-[1px] text-[11px] font-black tabular-nums text-[#1883FF] hover:bg-[#DCEBFF]">
+      <svg aria-hidden="true" width="9" height="9" viewBox="0 0 10 10"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>
+      {formatearTiempo(segundo)}
+    </button>
+  );
+}
+
 function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin, autorNombre, onSaved }: {
   bloque: BloqueDetalle;
   etapa: EtapaDetalle;
@@ -487,6 +508,27 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   const [comentario, setComentario] = useState("");
   const [pidiendoCambios, setPidiendoCambios] = useState(false);
   const [motivoCambios, setMotivoCambios] = useState("");
+  // Etapa Video: un solo video completo, con comentarios en el minuto exacto
+  const videoCompleto = esVideoCompleto(etapa, bloque);
+  const videoActual = archivos.find((archivo) => archivo.tipo.startsWith("video/")) ?? archivos[0] ?? null;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [marca, setMarca] = useState<number | null>(null);
+
+  const irA = (segundo: number) => {
+    const reproductor = videoRef.current;
+    if (!reproductor) return;
+    reproductor.currentTime = segundo;
+    reproductor.scrollIntoView({ block: "center", behavior: "smooth" });
+    void reproductor.play().catch(() => {});
+  };
+
+  /** Pausa el video y toma el minuto donde va. */
+  const tomarMinuto = () => {
+    const reproductor = videoRef.current;
+    if (!reproductor) return;
+    reproductor.pause();
+    setMarca(reproductor.currentTime);
+  };
 
   useEffect(() => {
     setLocucion(textoContenido(bloque.contenido, "locucion"));
@@ -498,11 +540,17 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
 
   const subir = async (files: FileList | null) => {
     if (!files?.length) return;
+    // En el video completo cabe un solo archivo, y tiene que ser video
+    const lista = videoCompleto ? Array.from(files).slice(0, 1) : Array.from(files);
+    if (videoCompleto && !esArchivoVideo(lista[0])) {
+      setError("Aquí va un solo archivo de video (MP4, MOV o WEBM).");
+      return;
+    }
     setAccion("subir");
     setError("");
     try {
       const nuevos: Archivo[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of lista) {
         const formData = new FormData();
         formData.append("file", file);
         const response = await fetchAdmin("/api/admin/social/upload", { method: "POST", body: formData });
@@ -510,9 +558,12 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
         const data: unknown = await response.json();
         const url = data && typeof data === "object" && "url" in data && typeof (data as Record<string, unknown>).url === "string" ? (data as Record<string, unknown>).url as string : null;
         if (!url) throw new Error(`La carga de ${file.name} no devolvió una URL.`);
-        nuevos.push({ url, nombre: file.name, tipo: file.type, peso: file.size });
+        // El servidor convierte los videos a MP4: se guarda el tipo real, no el original
+        const tipo = esArchivoVideo(file) && /\.mp4$/i.test(url) ? "video/mp4" : file.type || "application/octet-stream";
+        nuevos.push({ url, nombre: file.name, tipo, peso: file.size });
       }
-      setArchivos((actuales) => [...actuales, ...nuevos]);
+      // El video completo se reemplaza; en las demás etapas los archivos se suman
+      setArchivos((actuales) => (videoCompleto ? nuevos : [...actuales, ...nuevos]));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudieron subir los archivos.");
     } finally {
@@ -598,8 +649,9 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   };
 
   const comentar = async () => {
-    const contenido = comentario.trim();
-    if (!contenido) return;
+    if (!comentario.trim()) return;
+    // En el video, el minuto marcado va al frente del comentario
+    const contenido = videoCompleto ? conMarcaTiempo(marca, comentario) : comentario.trim();
     setAccion("comentar");
     setError("");
     try {
@@ -610,6 +662,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
       });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo enviar el comentario."));
       setComentario("");
+      setMarca(null);
       await onSaved();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo enviar el comentario.");
@@ -621,7 +674,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   return (
     <article className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div><h4 className="font-black text-[#042E7B]">{escena ? `Escena ${escena.numero} · ${escena.titulo}` : "Entregable único"}</h4><p className="mt-0.5 text-[10px] font-bold text-slate-400">Versión {bloque.version_num}</p></div>
+        <div><h4 className="font-black text-[#042E7B]">{videoCompleto ? "Video completo" : escena ? `Escena ${escena.numero} · ${escena.titulo}` : "Entregable único"}</h4><p className="mt-0.5 text-[10px] font-bold text-slate-400">Versión {bloque.version_num}</p></div>
         <div className="flex flex-wrap items-center gap-2">
           {!esAdmin && bloque.estado === "cambios" && (
             <span className="flex items-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1 text-[10px] font-extrabold text-[#B91C1C]">
@@ -646,8 +699,57 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
           )}
         </div>
       </div>
-      {etapa.tipo === "guion" ? <div className="grid gap-4 lg:grid-cols-2"><label><Etiqueta texto="Locución" /><textarea disabled={soloLectura} value={locucion} onChange={(event) => setLocucion(event.target.value)} rows={7} className={inputClass} /></label><label><Etiqueta texto="En pantalla" /><textarea disabled={soloLectura} value={enPantalla} onChange={(event) => setEnPantalla(event.target.value)} rows={7} className={inputClass} /></label></div> : <label><Etiqueta texto={etapa.tipo === "arte" ? "Nota / brief" : "Nota"} /><textarea disabled={soloLectura} value={nota} onChange={(event) => setNota(event.target.value)} rows={5} className={inputClass} /></label>}
-      {etapa.tipo !== "guion" && (
+      {etapa.tipo === "guion" ? <div className="grid gap-4 lg:grid-cols-2"><label><Etiqueta texto="Locución" /><textarea disabled={soloLectura} value={locucion} onChange={(event) => setLocucion(event.target.value)} rows={7} className={inputClass} /></label><label><Etiqueta texto="En pantalla" /><textarea disabled={soloLectura} value={enPantalla} onChange={(event) => setEnPantalla(event.target.value)} rows={7} className={inputClass} /></label></div> : <label><Etiqueta texto={videoCompleto ? "Nota para el cliente (opcional)" : etapa.tipo === "arte" ? "Nota / brief" : "Nota"} /><textarea disabled={soloLectura} value={nota} onChange={(event) => setNota(event.target.value)} rows={videoCompleto ? 2 : 5} className={inputClass} /></label>}
+      {videoCompleto && (
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h5 className="text-xs font-black uppercase tracking-wider text-[#042E7B]">Video completo</h5>
+            {!soloLectura && (
+              <label className="cursor-pointer rounded-lg border border-[#1883FF]/30 bg-white px-3 py-2 text-xs font-bold text-[#1883FF] hover:bg-blue-50">
+                {accion === "subir" ? "Subiendo…" : videoActual ? "Reemplazar video" : "+ Subir video"}
+                <input type="file" accept="video/*,.mp4,.mov,.m4v,.webm" disabled={accion !== null} className="hidden" onChange={(event) => { void subir(event.target.files); event.currentTarget.value = ""; }} />
+              </label>
+            )}
+          </div>
+          <div
+            onDragOver={soloLectura ? undefined : (event) => { event.preventDefault(); }}
+            onDragEnter={soloLectura ? undefined : (event) => { event.preventDefault(); setArrastrando(true); }}
+            onDragLeave={soloLectura ? undefined : (event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setArrastrando(false);
+            }}
+            onDrop={soloLectura ? undefined : (event) => {
+              event.preventDefault();
+              setArrastrando(false);
+              void subir(event.dataTransfer.files);
+            }}
+            className={`rounded-xl border-2 border-dashed p-3 transition ${arrastrando ? "border-[#1883FF] bg-[#EAF2FF]" : "border-slate-200 bg-white"}`}
+          >
+            {videoActual ? (
+              <video ref={videoRef} src={videoActual.url} controls playsInline preload="metadata" className="block max-h-[460px] w-full rounded-lg bg-slate-950" />
+            ) : (
+              <p className="py-8 text-center text-xs font-semibold text-slate-400">
+                {soloLectura
+                  ? "Todavía no hay video."
+                  : arrastrando
+                    ? "Suelta aquí el video"
+                    : "Arrastra aquí el video completo, o usa “+ Subir video”."}
+              </p>
+            )}
+            {accion === "subir" && (
+              <p className="pt-2 text-center text-[11px] font-bold text-[#1883FF]">
+                Subiendo y comprimiendo… si el video es largo tarda unos minutos. No cierres esta ventana.
+              </p>
+            )}
+          </div>
+          {videoActual && !soloLectura && (
+            <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-400">
+              <span className="truncate">{videoActual.nombre}</span>
+              <button type="button" onClick={() => setArchivos([])} className="shrink-0 cursor-pointer font-bold text-red-500 hover:underline">Quitar video</button>
+            </div>
+          )}
+        </div>
+      )}
+      {etapa.tipo !== "guion" && !videoCompleto && (
         <div className="mt-5">
           <div className="mb-2 flex items-center justify-between gap-2">
             <h5 className="text-xs font-black uppercase tracking-wider text-[#042E7B]">Archivos</h5>
@@ -711,22 +813,57 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
         <h5 className="mb-2 text-xs font-black uppercase tracking-wider text-[#042E7B]">Comentarios</h5>
         {bloque.proyecto_comentarios.length ? (
           <ul className="space-y-2">
-            {bloque.proyecto_comentarios.map((item) => (
-              <li key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
-                <div className="flex flex-wrap gap-2 text-[10px]">
-                  <strong className="text-[#042E7B]">{item.autor_rol === "admin" ? "Kyoszen" : item.autor_nombre}</strong>
-                  <span className="capitalize text-slate-400">{item.autor_rol}</span>
-                  <time className="text-slate-400">{new Date(item.created_at).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}</time>
-                </div>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{item.contenido}</p>
-              </li>
-            ))}
+            {bloque.proyecto_comentarios.map((item) => {
+              // En el video, el minuto al frente se vuelve un botón que lleva ahí
+              const { segundo, texto: cuerpo } = videoCompleto
+                ? leerMarcaTiempo(item.contenido)
+                : { segundo: null, texto: item.contenido };
+              return (
+                <li key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="flex flex-wrap gap-2 text-[10px]">
+                    <strong className="text-[#042E7B]">{item.autor_rol === "admin" ? "Kyoszen" : item.autor_nombre}</strong>
+                    <span className="capitalize text-slate-400">{item.autor_rol}</span>
+                    <time className="text-slate-400">{new Date(item.created_at).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}</time>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">
+                    {segundo !== null && videoActual && <ChipMinutoAdmin segundo={segundo} onIr={irA} />}
+                    {segundo !== null && !videoActual ? item.contenido : cuerpo}
+                  </p>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-xs text-slate-400">Sin comentarios.</p>
         )}
         <div className="mt-3 space-y-2">
-          <textarea value={comentario} onChange={(event) => setComentario(event.target.value)} rows={3} placeholder="Escribe un comentario…" className={inputClass} />
+          {videoCompleto && videoActual && (
+            <div className="flex flex-wrap items-center gap-2">
+              {marca !== null ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1883FF]/40 bg-[#EFF6FF] py-1 pl-3 pr-1.5 text-xs font-black tabular-nums text-[#1883FF]">
+                  En el minuto {formatearTiempo(marca)}
+                  <button type="button" onClick={() => setMarca(null)} aria-label="Quitar el minuto" className="cursor-pointer px-1 text-base leading-none">×</button>
+                </span>
+              ) : (
+                <span className="text-xs text-slate-400">Comentario general, sin minuto</span>
+              )}
+              <button type="button" onClick={tomarMinuto} className="cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold text-[#042E7B] hover:bg-slate-50">
+                {marca === null ? "Marcar el minuto actual" : "Tomar otro minuto"}
+              </button>
+            </div>
+          )}
+          <textarea
+            value={comentario}
+            onChange={(event) => setComentario(event.target.value)}
+            onFocus={() => {
+              // Si el video ya avanzó, el minuto se toma solo al ponerse a escribir
+              const reproductor = videoRef.current;
+              if (videoCompleto && marca === null && reproductor && reproductor.currentTime > 0) tomarMinuto();
+            }}
+            rows={3}
+            placeholder={videoCompleto && videoActual ? "Pausa el video y escribe: el minuto se guarda solo…" : "Escribe un comentario…"}
+            className={inputClass}
+          />
           <button type="button" onClick={() => void comentar()} disabled={accion !== null || !comentario.trim()} className="cursor-pointer rounded-xl bg-[#042E7B] px-4 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">
             {accion === "comentar" ? "Enviando…" : "Enviar comentario"}
           </button>
