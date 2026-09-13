@@ -36,7 +36,7 @@ import { DetalleProyecto } from "@/components/revisor/ProyectosCliente";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { IconUI } from "@/components/ui/IconUI";
 import { supabase } from "@/lib/supabase";
-import { fetchAdmin } from "@/lib/admin-fetch";
+import { fetchAdmin, subirArchivoAdmin, type ProgresoSubida } from "@/lib/admin-fetch";
 
 
 type Progreso = { total: number; aprobado: number; cambios: number; pendiente: number; conMaterial?: number };
@@ -513,6 +513,8 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   const videoActual = archivos.find((archivo) => archivo.tipo.startsWith("video/")) ?? archivos[0] ?? null;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [marca, setMarca] = useState<number | null>(null);
+  // Avance de la carga: un video completo puede tardar minutos en subir y comprimirse
+  const [progreso, setProgreso] = useState<ProgresoSubida | null>(null);
 
   const irA = (segundo: number) => {
     const reproductor = videoRef.current;
@@ -551,13 +553,8 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
     try {
       const nuevos: Archivo[] = [];
       for (const file of lista) {
-        const formData = new FormData();
-        formData.append("file", file);
-        const response = await fetchAdmin("/api/admin/social/upload", { method: "POST", body: formData });
-        if (!response.ok) throw new Error(await mensajeError(response, `No se pudo subir ${file.name}.`));
-        const data: unknown = await response.json();
-        const url = data && typeof data === "object" && "url" in data && typeof (data as Record<string, unknown>).url === "string" ? (data as Record<string, unknown>).url as string : null;
-        if (!url) throw new Error(`La carga de ${file.name} no devolvió una URL.`);
+        setProgreso({ fase: "subiendo", porcentaje: 0 });
+        const url = await subirArchivoAdmin(file, setProgreso);
         // El servidor convierte los videos a MP4: se guarda el tipo real, no el original
         const tipo = esArchivoVideo(file) && /\.mp4$/i.test(url) ? "video/mp4" : file.type || "application/octet-stream";
         nuevos.push({ url, nombre: file.name, tipo, peso: file.size });
@@ -567,6 +564,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudieron subir los archivos.");
     } finally {
+      setProgreso(null);
       setAccion(null);
     }
   };
@@ -736,9 +734,19 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
               </p>
             )}
             {accion === "subir" && (
-              <p className="pt-2 text-center text-[11px] font-bold text-[#1883FF]">
-                Subiendo y comprimiendo… si el video es largo tarda unos minutos. No cierres esta ventana.
-              </p>
+              <div className="px-2 pt-3">
+                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={`h-full rounded-full bg-[#1883FF] transition-[width] duration-300 ${progreso?.fase === "procesando" ? "animate-pulse" : ""}`}
+                    style={{ width: `${progreso?.porcentaje ?? 0}%` }}
+                  />
+                </div>
+                <p className="pt-2 text-center text-[11px] font-bold text-[#1883FF]">
+                  {progreso?.fase === "procesando"
+                    ? "Ya subió. Comprimiendo el video en el servidor… si es largo tarda unos minutos. No cierres esta ventana."
+                    : `Subiendo ${progreso?.porcentaje ?? 0} %… no cierres esta ventana.`}
+                </p>
+              </div>
             )}
           </div>
           {videoActual && !soloLectura && (
@@ -804,7 +812,9 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
               </p>
             )}
             {accion === "subir" && (
-              <p className="pt-2 text-center text-[11px] font-bold text-[#1883FF]">Subiendo…</p>
+              <p className="pt-2 text-center text-[11px] font-bold text-[#1883FF]">
+                {progreso?.fase === "procesando" ? "Guardando…" : `Subiendo ${progreso?.porcentaje ?? 0} %…`}
+              </p>
             )}
           </div>
         </div>

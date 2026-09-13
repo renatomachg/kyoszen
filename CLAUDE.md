@@ -383,6 +383,14 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
+2026-09-13 — **Carga de videos grandes: compresión a la medida para caber en 50 MB + barra de progreso.**
+- **Síntoma:** el video final de Operador de caja (247 MB) no subía y el panel decía "No se pudo subir…" genérico. **Causa:** Nginx tenía `client_max_body_size 200M` y respondía 413 en HTML, que `mensajeError` no sabe leer. Se subió a **1024M** (editado en `sites-available`, respaldo en `/root/nginx-kyoszen.bak.*`).
+- **`/api/admin/social/upload`:** el video se escribe a disco en streaming (antes vivía dos veces en memoria), `ffprobe` mide duración y tamaño, y `planDeCompresion` calcula los kbps que caben en **45 MB** (margen bajo el tope de 50 MB del bucket `media`, que es el máximo del plan). Resolución por kbps: ≥1800k → 1080p, ≥900k → 720p, si no 540p; limita el lado corto (sirve para horizontal y vertical, nunca agranda). `-crf 26` con `-maxrate`/`-bufsize`, audio AAC 96k; `superfast` si dura más de 4 min (1 CPU). Si la primera vuelta se pasa de 50 MB, una segunda al 75 %. Si aun así no cabe → 413 con mensaje claro ("exporta a 720p o recórtalo"). **Todo ffmpeg lleva `-nostdin`**: sin eso, ffmpeg se come la entrada estándar (en un heredoc de SSH se tragó el resto del script).
+- **Medido en el VPS (1 CPU, peor caso con ruido):** 1080p veryfast ≈ 0.95 s por segundo de video, 720p veryfast ≈ 0.55 s, 720p superfast ≈ 0.40 s. Cabe en el `proxy_read_timeout` de 600 s hasta videos de ~10 min.
+- **Probado:** video sintético de 240 MB (3 min 1080p) → 45.0 MB, 1080p, 180 s intactos; imágenes sin cambios; sin sesión → 401.
+- **Panel:** `subirArchivoAdmin(file, onProgreso)` en `src/lib/admin-fetch.ts` (XMLHttpRequest, porque fetch no reporta avance de subida) con fases "subiendo N %" → "procesando", tope previo de 1 GB y errores por código (413, 502/504, corte de red). La usa el cargador de Proyectos; los demás subidores siguen con `fetchAdmin` y pueden migrarse igual.
+- **OJO hook:** `.claude/update-fecha.py` corre tras cada Bash con la ruta relativa a la carpeta actual: si se hace `cd` a otro lado falla. Es el origen del "date-bump espurio" de este archivo.
+
 2026-09-12 — **Proyectos: la etapa Video es un solo video completo, con comentarios por minuto.**
 - **La etapa Video pasa a `modo='entregable_unico'`**: un solo bloque con `escena_id=null` en vez de uno por escena. `PLANTILLAS` ya la crea así en proyectos nuevos; los 2 proyectos existentes se convirtieron con un script que **se niega si la etapa tiene archivos, notas o comentarios** (estaban vacías). `esVideoCompleto(etapa, bloque)` en `src/lib/proyectos.ts` es la condición única que usan las dos pantallas.
 - **Admin:** tarjeta "Video completo" con cargador de UN video (`accept=video/*`, reemplaza en vez de sumar, valida extensión aunque el navegador no mande el tipo, guarda `video/mp4` si el servidor lo comprimió), reproductor y "Quitar video". Nota para el cliente opcional.
