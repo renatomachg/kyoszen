@@ -383,7 +383,14 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
-2026-09-13 — **Carga de videos grandes: compresión a la medida para caber en 50 MB + barra de progreso.**
+2026-09-12 (noche) — **Proyectos: aprobar a nombre del cliente + candado contra avisos repetidos.**
+- **Aprobar a nombre del cliente (solo admin):** en las etapas que aprueba el cliente (Guion, Video), recuadro "¿El cliente ya lo aprobó por fuera?" → `ConfirmModal` que exige escribir cómo lo confirmó. `PATCH .../bloques/[bloqueId]/status` acepta `a_nombre_del_cliente: true` (solo `aprobado`, comentario obligatorio; sin la bandera sigue en 409). Deja `visible_cliente=true` y el comentario "Aprobado a nombre del cliente · …" en el hilo como Kyoszen. No manda correo al cliente. La ruta es `soloAdmin`: colaborador → 403.
+- **Fix de paso:** aprobar la última etapa desde el admin ahora deja el proyecto en `completado` (antes solo lo hacía el portal del cliente).
+- **Doble "Guardar y avisar" (creaba v2, v3 y 2 correos):** en el panel, el botón pasa a "Enviado al cliente ✓" desactivado cuando no hay cambios y el cliente ya tiene esa versión (o "Enviado a revisión" si es colaborador). En el servidor, `POST .../versions` compara contenido/archivos/nota con `mismoValor` (JSON con llaves ordenadas) y responde 409 `sin_cambios` si es lo mismo que ya está visible/entregado: no crea versión ni correo.
+- Con el proyecto oculto (`publicado=false`), la nueva versión ya no le manda correo al cliente y el aviso en pantalla lo dice. El correo de "Enviar al cliente" de un entregable único ya no dice "Son 0 escenas".
+- **Probado:** 18 verificaciones con proyecto y usuarios desechables (borrados al final, sin correos reales).
+
+2026-09-12 — **Carga de videos grandes: compresión a la medida para caber en 50 MB + barra de progreso.**
 - **Síntoma:** el video final de Operador de caja (247 MB) no subía y el panel decía "No se pudo subir…" genérico. **Causa:** Nginx tenía `client_max_body_size 200M` y respondía 413 en HTML, que `mensajeError` no sabe leer. Se subió a **1024M** (editado en `sites-available`, respaldo en `/root/nginx-kyoszen.bak.*`).
 - **`/api/admin/social/upload`:** el video se escribe a disco en streaming (antes vivía dos veces en memoria), `ffprobe` mide duración y tamaño, y `planDeCompresion` calcula los kbps que caben en **45 MB** (margen bajo el tope de 50 MB del bucket `media`, que es el máximo del plan). Resolución por kbps: ≥1800k → 1080p, ≥900k → 720p, si no 540p; limita el lado corto (sirve para horizontal y vertical, nunca agranda). `-crf 26` con `-maxrate`/`-bufsize`, audio AAC 96k; `superfast` si dura más de 4 min (1 CPU). Si la primera vuelta se pasa de 50 MB, una segunda al 75 %. Si aun así no cabe → 413 con mensaje claro ("exporta a 720p o recórtalo"). **Todo ffmpeg lleva `-nostdin`**: sin eso, ffmpeg se come la entrada estándar (en un heredoc de SSH se tragó el resto del script).
 - **Medido en el VPS (1 CPU, peor caso con ruido):** 1080p veryfast ≈ 0.95 s por segundo de video, 720p veryfast ≈ 0.55 s, 720p superfast ≈ 0.40 s. Cabe en el `proxy_read_timeout` de 600 s hasta videos de ~10 min.

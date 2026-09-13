@@ -50,10 +50,13 @@ async function notificarRevisores(titulo: string, etapa: string, escenas: string
         html:
           `<p>Hola ${revisor.nombre || ""},</p>` +
           `<p>Ya está listo para que lo revises: <strong>${etapa}</strong> de <strong>${titulo || "un proyecto"}</strong>.</p>` +
-          (escenas.length === 1
-            ? `<p>Es 1 escena:</p>${lista}`
-            : `<p>Son ${escenas.length} escenas:</p>${lista}`) +
-          `<p>Puedes aprobarlas una por una o pedir cambios en la que quieras.</p>` +
+          // Un entregable único (el video completo) no tiene escenas: nada de "Son 0 escenas"
+          (escenas.length === 0
+            ? `<p>Puedes aprobarlo o pedir cambios desde tu portal.</p>`
+            : (escenas.length === 1
+                ? `<p>Es 1 escena:</p>${lista}`
+                : `<p>Son ${escenas.length} escenas:</p>${lista}`) +
+              `<p>Puedes aprobarlas una por una o pedir cambios en la que quieras.</p>`) +
           `<p><a href="https://kyoszen.com/revisor">Revisar ahora</a></p>`,
       }))
     );

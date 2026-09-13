@@ -21,27 +21,25 @@ type EtapaRelacion = {
   orden: number;
   estado: string;
   aprobador: Aprobador;
-  proyectos: { titulo: string; estado: EstadoProyecto } | { titulo: string; estado: EstadoProyecto }[] | null;
+  proyectos: { titulo: string; estado: EstadoProyecto; publicado: boolean } | { titulo: string; estado: EstadoProyecto; publicado: boolean }[] | null;
 } | {
   proyecto_id: string;
   orden: number;
   estado: string;
   aprobador: Aprobador;
-  proyectos: { titulo: string; estado: EstadoProyecto } | { titulo: string; estado: EstadoProyecto }[] | null;
+  proyectos: { titulo: string; estado: EstadoProyecto; publicado: boolean } | { titulo: string; estado: EstadoProyecto; publicado: boolean }[] | null;
 }[] | null;
 
 type BloqueVersion = Pick<
   ProyectoBloque,
-  "id" | "etapa_id" | "escena_id" | "contenido" | "archivos" | "nota" | "estado"
+  "id" | "etapa_id" | "escena_id" | "contenido" | "archivos" | "nota" | "estado" | "visible_cliente" | "entrega_estado"
 > & { proyecto_etapas: EtapaRelacion };
 
 function tomarEtapa(relacion: EtapaRelacion) {
   return Array.isArray(relacion) ? relacion[0] : relacion;
 }
 
-function tomarProyecto(
-  relacion: { titulo: string; estado: EstadoProyecto } | { titulo: string; estado: EstadoProyecto }[] | null
-) {
+function tomarProyecto<T>(relacion: T | T[] | null) {
   return Array.isArray(relacion) ? relacion[0] : relacion;
 }
 
@@ -126,6 +124,21 @@ async function notificarRevisores(titulo: string) {
   }
 }
 
+/** Compara valores JSON sin importar el orden de las llaves: jsonb las reordena. */
+function mismoValor(a: unknown, b: unknown): boolean {
+  const ordenar = (valor: unknown): unknown =>
+    Array.isArray(valor)
+      ? valor.map(ordenar)
+      : valor && typeof valor === "object"
+        ? Object.fromEntries(
+            Object.keys(valor as Record<string, unknown>)
+              .sort()
+              .map((llave) => [llave, ordenar((valor as Record<string, unknown>)[llave])])
+          )
+        : valor;
+  return JSON.stringify(ordenar(a ?? null)) === JSON.stringify(ordenar(b ?? null));
+}
+
 function consultaCelda(etapaId: string, escenaId: string | null) {
   const query = sb.from("proyecto_bloques").select("version_num").eq("etapa_id", etapaId);
   return escenaId === null ? query.is("escena_id", null) : query.eq("escena_id", escenaId);
@@ -148,7 +161,7 @@ export async function POST(
 
     const { data, error: bloqueError } = await sb
       .from("proyecto_bloques")
-      .select("id, etapa_id, escena_id, contenido, archivos, nota, estado, proyecto_etapas!inner(proyecto_id, orden, estado, aprobador, proyectos!inner(titulo, estado))")
+      .select("id, etapa_id, escena_id, contenido, archivos, nota, estado, visible_cliente, entrega_estado, proyecto_etapas!inner(proyecto_id, orden, estado, aprobador, proyectos!inner(titulo, estado, publicado))")
       .eq("id", bloqueId)
       .maybeSingle();
     if (bloqueError) return NextResponse.json({ error: bloqueError.message }, { status: 500 });
@@ -168,6 +181,25 @@ export async function POST(
     }
     if (body.nota !== undefined && typeof body.nota !== "string" && body.nota !== null) {
       return NextResponse.json({ error: "nota debe ser texto o null" }, { status: 400 });
+    }
+
+    // Mandar otra vez exactamente lo mismo solo duplica el correo (al cliente, o
+    // al admin si es un colaborador): no se crea otra versión.
+    const esInterno = body.destino === "interno";
+    const mismoContenido =
+      mismoValor(body.contenido ?? bloque.contenido, bloque.contenido) &&
+      mismoValor(body.archivos ?? bloque.archivos, bloque.archivos) &&
+      mismoValor(body.nota !== undefined ? body.nota : bloque.nota, bloque.nota);
+    if (mismoContenido && (esInterno ? bloque.entrega_estado === "entregado" : bloque.visible_cliente)) {
+      return NextResponse.json(
+        {
+          error: esInterno
+            ? "Esto ya está en revisión: no se volvió a mandar el aviso. Si cambias algo, podrás enviarlo de nuevo."
+            : "El cliente ya tiene esta misma versión: no se le volvió a avisar. Si cambias algo, podrás mandársela de nuevo.",
+          sin_cambios: true,
+        },
+        { status: 409 }
+      );
     }
 
     const { data: ultima, error: ultimaError } = await consultaCelda(bloque.etapa_id, bloque.escena_id)
@@ -287,7 +319,8 @@ export async function POST(
           nombreEscena,
           autor
         );
-      } else {
+      } else if (proyecto.publicado) {
+        // Un proyecto oculto no se le anuncia al cliente: no lo puede ver
         await notificarRevisores(tomarTitulo(etapa.proyectos) ?? "");
       }
     } catch (error) {

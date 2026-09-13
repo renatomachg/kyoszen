@@ -487,7 +487,7 @@ function ChipMinutoAdmin({ segundo, onIr }: { segundo: number; onIr: (segundo: n
   );
 }
 
-function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin, autorNombre, onSaved }: {
+function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin, autorNombre, onSaved, onAvisado }: {
   bloque: BloqueDetalle;
   etapa: EtapaDetalle;
   escena: ProyectoEscena | null;
@@ -497,6 +497,8 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   esAdmin: boolean;
   autorNombre: string;
   onSaved: () => Promise<void>;
+  /** Confirmación que sobrevive a la recarga: la tarjeta se vuelve a montar con la versión nueva. */
+  onAvisado?: (mensaje: string) => void;
 }) {
   const [locucion, setLocucion] = useState(() => textoContenido(bloque.contenido, "locucion"));
   const [enPantalla, setEnPantalla] = useState(() => textoContenido(bloque.contenido, "en_pantalla"));
@@ -515,6 +517,7 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
   const [marca, setMarca] = useState<number | null>(null);
   // Avance de la carga: un video completo puede tardar minutos en subir y comprimirse
   const [progreso, setProgreso] = useState<ProgresoSubida | null>(null);
+  const [confirmarPorCliente, setConfirmarPorCliente] = useState(false);
 
   const irA = (segundo: number) => {
     const reproductor = videoRef.current;
@@ -588,6 +591,13 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
       });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo guardar el bloque."));
       await onSaved();
+      if (avisar) {
+        onAvisado?.(
+          esAdmin
+            ? "Listo: ya se lo mandamos al cliente y le avisamos por correo."
+            : "Listo: se envió a revisión y ya le avisamos a Renato."
+        );
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo guardar el bloque.");
     } finally {
@@ -609,8 +619,13 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
     (etapa.tipo === "guion" &&
       (locucion !== textoContenido(bloque.contenido, "locucion") ||
         enPantalla !== textoContenido(bloque.contenido, "en_pantalla")));
+  // Lo que ya salió y no ha cambiado no se vuelve a mandar: evita el correo repetido
+  const yaEnviado = !hayCambiosSinGuardar && (esAdmin ? bloque.visible_cliente : entregado);
+  const fechaVersion = new Date(bloque.created_at).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" });
+  // Aprobar a nombre del cliente: solo el admin, solo en las etapas que aprueba el cliente
+  const puedeAprobarPorCliente = esAdmin && !soloLectura && etapa.aprobador === "cliente" && bloque.estado !== "aprobado";
 
-  const decidir = async (nuevo: "aprobado" | "cambios", motivo?: string) => {
+  const decidir = async (nuevo: "aprobado" | "cambios", motivo?: string, porElCliente = false) => {
     setAccion("decidir");
     setError("");
     try {
@@ -633,11 +648,12 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
       const response = await fetchAdmin(`/api/admin/proyectos/${proyectoId}/bloques/${bloque.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado: nuevo, comentario: motivo }),
+        body: JSON.stringify({ estado: nuevo, comentario: motivo, a_nombre_del_cliente: porElCliente || undefined }),
       });
       if (!response.ok) throw new Error(await mensajeError(response, "No se pudo actualizar la escena."));
       setPidiendoCambios(false);
       setMotivoCambios("");
+      setConfirmarPorCliente(false);
       await onSaved();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo actualizar la escena.");
@@ -936,11 +952,39 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
               {accion === "guardar" ? "Guardando…" : esAdmin ? "Guardar" : "Guardar sin enviar"}
             </button>
           )}
-          <button type="button" onClick={() => void guardar(true)} disabled={accion !== null} className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:opacity-50 sm:w-auto">
-            <IconoLinea nombre="enviar" className="h-4 w-4" />
+          <button type="button" onClick={() => void guardar(true)} disabled={accion !== null || yaEnviado} title={yaEnviado ? "Cambia algo para volver a mandarlo" : undefined} className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FFCC00] px-4 py-2.5 text-sm font-black text-[#042E7B] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+            {yaEnviado ? <IconUI name="check" size={16} /> : <IconoLinea nombre="enviar" className="h-4 w-4" />}
             {accion === "avisar"
               ? "Enviando…"
-              : esAdmin ? "Guardar y avisar al cliente" : "Enviar a revisión"}
+              : yaEnviado
+                ? (esAdmin ? "Enviado al cliente" : "Enviado a revisión")
+                : esAdmin ? "Guardar y avisar al cliente" : "Enviar a revisión"}
+          </button>
+        </div>
+      )}
+      {!soloLectura && yaEnviado && (
+        <p className="mt-2 text-right text-[11px] leading-relaxed text-slate-500">
+          {esAdmin
+            ? `El cliente ya tiene esta versión desde el ${fechaVersion}.`
+            : `Enviaste esta versión a revisión el ${fechaVersion}.`}{" "}
+          Si cambias algo, el botón se vuelve a activar.
+        </p>
+      )}
+      {/* Solo el admin: el cliente lo aprobó por fuera del portal (WhatsApp, llamada) */}
+      {puedeAprobarPorCliente && (
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs leading-relaxed text-slate-500">
+            <strong className="text-slate-700">¿El cliente ya lo aprobó por fuera?</strong>{" "}
+            Por WhatsApp, llamada o en persona: márcalo tú y queda registrado en el hilo.
+          </p>
+          <button
+            type="button"
+            onClick={() => setConfirmarPorCliente(true)}
+            disabled={accion !== null || !listoParaAprobar}
+            title={!listoParaAprobar ? "Primero sube el material" : undefined}
+            className="shrink-0 cursor-pointer rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-black text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Aprobar a nombre del cliente
           </button>
         </div>
       )}
@@ -949,6 +993,26 @@ function TarjetaBloque({ bloque, etapa, escena, proyectoId, soloLectura, esAdmin
           <strong className="text-slate-600">Guardar sin enviar</strong>: sigues trabajando, nadie recibe aviso.{" "}
           <strong className="text-slate-600">Enviar a revisión</strong>: le avisa a Renato para que lo revise. El cliente no lo ve hasta que él lo apruebe.
         </p>
+      )}
+      {puedeAprobarPorCliente && (
+        <ConfirmModal
+          abierto={confirmarPorCliente}
+          tono="primario"
+          icono="check"
+          titulo="Aprobar a nombre del cliente"
+          descripcion="Úsalo cuando el cliente ya te lo aprobó por fuera del portal. Cuenta igual que si lo hubiera aprobado él."
+          puntos={[
+            etapa.tipo === "video" ? "El video queda aprobado" : "La escena queda aprobada",
+            "Si era lo último pendiente, se desbloquea la siguiente etapa o el proyecto queda completado",
+            "Queda en el hilo, a la vista del cliente: «Aprobado a nombre del cliente · …»",
+          ]}
+          input={{ label: "¿Cómo te lo confirmó?", placeholder: "Ej: por WhatsApp, hoy a las 10:30" }}
+          nota="Al cliente no le llega correo por esto."
+          confirmarLabel="Aprobar a nombre del cliente"
+          cargando={accion === "decidir"}
+          onConfirmar={(como) => void decidir("aprobado", como, true)}
+          onCancelar={() => setConfirmarPorCliente(false)}
+        />
       )}
     </article>
   );
@@ -1126,7 +1190,12 @@ function ModalDetalle({ proyectoId, esAdmin, autorNombre, onClose }: {
         )}
         {avisoEnvio && <p className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">{avisoEnvio}</p>}
 
-        <div className="space-y-4">{bloques.map((bloque) => <TarjetaBloque key={bloque.id} bloque={bloque} etapa={etapa} escena={bloque.escena_id ? escenasPorId.get(bloque.escena_id) ?? null : null} proyectoId={proyectoId} soloLectura={etapa.estado === "bloqueada"} esAdmin={esAdmin} autorNombre={autorNombre} onSaved={() => cargar(etapa.id)} />)}{bloques.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">Esta etapa no tiene bloques activos.</p>}</div></section>}</div>
+        <div className="space-y-4">{bloques.map((bloque) => <TarjetaBloque key={bloque.id} bloque={bloque} etapa={etapa} escena={bloque.escena_id ? escenasPorId.get(bloque.escena_id) ?? null : null} proyectoId={proyectoId} soloLectura={etapa.estado === "bloqueada"} esAdmin={esAdmin} autorNombre={autorNombre} onSaved={() => cargar(etapa.id)} onAvisado={(mensaje) => setAvisoEnvio(
+            // Con el proyecto oculto el cliente no recibe correo: que el aviso no diga lo contrario
+            esAdmin && proyecto && !proyecto.publicado
+              ? "Listo: ya quedó para el cliente. El proyecto está oculto, así que no se le mandó correo."
+              : mensaje
+          )} />)}{bloques.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">Esta etapa no tiene bloques activos.</p>}</div></section>}</div>
       </>}
 
       {vistaPrevia && proyecto && (

@@ -26,7 +26,12 @@ type EtapaRel = {
   aprobador: Aprobador;
 };
 
-/** PATCH — el admin aprueba o pide cambios en un bloque de una etapa suya (arte). */
+/** PATCH — el admin aprueba o pide cambios en un bloque de una etapa suya (arte).
+ *
+ *  Con `a_nombre_del_cliente: true` también puede aprobar una etapa del cliente
+ *  (guion, video) cuando el cliente lo confirmó por fuera del portal: queda
+ *  asentado en el hilo con quién y cómo, y cuenta igual que si lo hubiera
+ *  aprobado él. Solo el administrador; un colaborador no llega aquí. */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; bloqueId: string }> }
@@ -63,7 +68,22 @@ export async function PATCH(
     if (!etapa || etapa.proyecto_id !== id) {
       return NextResponse.json({ error: "Bloque no encontrado" }, { status: 404 });
     }
-    if (etapa.aprobador !== "admin") {
+
+    // Aprobar a nombre del cliente: solo eso, solo en sus etapas
+    const porElCliente = body.a_nombre_del_cliente === true && etapa.aprobador === "cliente";
+    if (porElCliente && estado !== "aprobado") {
+      return NextResponse.json(
+        { error: "A nombre del cliente solo se puede aprobar." },
+        { status: 400 }
+      );
+    }
+    if (porElCliente && !comentario) {
+      return NextResponse.json(
+        { error: "Escribe cómo te lo confirmó el cliente; queda en el hilo." },
+        { status: 400 }
+      );
+    }
+    if (etapa.aprobador !== "admin" && !porElCliente) {
       return NextResponse.json(
         { error: "Esta etapa la aprueba el cliente desde su portal." },
         { status: 409 }
@@ -100,6 +120,8 @@ export async function PATCH(
         estado,
         updated_at: ahora,
         ...(estado === "cambios" ? { entrega_estado: "ninguna" } : {}),
+        // Lo que el cliente aprobó tiene que poder verlo aprobado en su portal
+        ...(porElCliente ? { visible_cliente: true } : {}),
       })
       .eq("id", bloqueId)
       .eq("es_activa", true);
@@ -117,7 +139,7 @@ export async function PATCH(
           bloque_id: bloqueId,
           autor_nombre: autorNombre,
           autor_rol: autorRol,
-          contenido: comentario,
+          contenido: porElCliente ? `Aprobado a nombre del cliente · ${comentario}` : comentario,
         });
       if (comentarioError) {
         return NextResponse.json({ error: comentarioError.message }, { status: 500 });
@@ -137,18 +159,33 @@ export async function PATCH(
       .update({ estado: estadoEtapa, updated_at: ahora })
       .eq("id", etapa.id);
 
-    // Aprobar la etapa completa desbloquea la siguiente; reabrirla la vuelve a bloquear
+    // Aprobar la etapa completa desbloquea la siguiente; si era la última, el
+    // proyecto queda completado (igual que cuando aprueba el cliente). Reabrirla
+    // vuelve a bloquear las que siguen.
     if (estadoEtapa === "aprobado") {
-      await sb
+      const { data: siguiente } = await sb
         .from("proyecto_etapas")
-        .update({ estado: "pendiente", updated_at: ahora })
+        .select("id, estado")
         .eq("proyecto_id", etapa.proyecto_id)
         .eq("orden", etapa.orden + 1)
-        .eq("estado", "bloqueada");
-      await sb
-        .from("proyectos")
-        .update({ etapa_actual: etapa.orden + 1, updated_at: ahora })
-        .eq("id", etapa.proyecto_id);
+        .maybeSingle();
+      if (!siguiente) {
+        await sb
+          .from("proyectos")
+          .update({ estado: "completado", updated_at: ahora })
+          .eq("id", etapa.proyecto_id);
+      } else {
+        if (siguiente.estado === "bloqueada") {
+          await sb
+            .from("proyecto_etapas")
+            .update({ estado: "pendiente", updated_at: ahora })
+            .eq("id", siguiente.id);
+        }
+        await sb
+          .from("proyectos")
+          .update({ etapa_actual: etapa.orden + 1, updated_at: ahora })
+          .eq("id", etapa.proyecto_id);
+      }
     } else {
       await sb
         .from("proyecto_etapas")
