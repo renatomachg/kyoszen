@@ -383,6 +383,13 @@ Semana 1 lanzamiento (Mayo 18-24):
 
 ## Última actualización
 
+2026-09-14 — **Switch de WhatsApp en el panel + `site_config` cerrada al público.**
+- **WhatsApp apagable sin código:** fila `site_content.whatsapp_visible` ("true"/"false"). `useWhatsappVisible()` en `src/lib/sitio-config.ts` (una consulta por visita, arranca oculto y solo se muestra si la fila dice "true") controla el botón del menú (`Navbar`, escritorio y celular) y la caja de WhatsApp en `/contacto`. Switch en **/admin/contenido → "Botón de WhatsApp"**, se guarda al moverlo. Quedó **apagado**. **No cubre** el botón "Consultar por WhatsApp" de cada vacante ni lo que dice Kyo. Los campos "WhatsApp (número)"/"Texto botón" de Contenido no están conectados a nada del sitio.
+- **Hueco de seguridad cerrado:** `site_config` tenía políticas `USING(true)` para `public` → cualquier visitante con la anon key (va en el JS) podía **leer la contraseña SMTP y reescribir** los correos de destino y el SMTP. Se borraron las 3 políticas y se hizo `revoke all ... from anon, authenticated`: ahora solo la service_role (rutas del servidor) la toca. La sección Correos del panel pasó a `GET/PUT /api/admin/correos` (`exigirSeccion("correos")`). **Regla:** nunca leer `site_config` desde el navegador; lo público va en `site_content`.
+- **PENDIENTE (usuario):** cambiar la contraseña del correo IONOS (estuvo expuesta) y escribirla en /admin/correos → Servidor SMTP.
+- **PENDIENTE (seguridad):** un visitante sin sesión aún lee `crm_candidatos`, `social_reviewers`, `admin_perfiles`, `cuestionario_respuestas`, `proyecto_comentarios`, `social_comments`, `campanas`, `proyectos`. `site_content` deja escribir a cualquier autenticado (incluye revisores). Ojo al cerrarlas: el layout del admin lee `admin_perfiles` desde el navegador.
+- El MCP `supabase-kyoszen` pide token; el conector `mcp__7f010f9a-…` con `project_id: xwzggymwdrvxpwvuefqf` sí funciona para SQL y migraciones.
+
 2026-09-12 (noche) — **Proyectos: aprobar a nombre del cliente + candado contra avisos repetidos.**
 - **Aprobar a nombre del cliente (solo admin):** en las etapas que aprueba el cliente (Guion, Video), recuadro "¿El cliente ya lo aprobó por fuera?" → `ConfirmModal` que exige escribir cómo lo confirmó. `PATCH .../bloques/[bloqueId]/status` acepta `a_nombre_del_cliente: true` (solo `aprobado`, comentario obligatorio; sin la bandera sigue en 409). Deja `visible_cliente=true` y el comentario "Aprobado a nombre del cliente · …" en el hilo como Kyoszen. No manda correo al cliente. La ruta es `soloAdmin`: colaborador → 403.
 - **Fix de paso:** aprobar la última etapa desde el admin ahora deja el proyecto en `completado` (antes solo lo hacía el portal del cliente).

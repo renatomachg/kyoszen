@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Dot, IconUI } from "@/components/ui/IconUI";
+import { logAdminClient } from "@/lib/admin-log-client";
+import { CLAVE_WHATSAPP } from "@/lib/sitio-config";
 
 interface ContentField {
   key: string;
@@ -35,6 +37,9 @@ export default function AdminContenido() {
   const [saving, setSaving] = useState(false);
   const [ok, setOk] = useState(false);
   const [error, setError] = useState("");
+  const [whatsapp, setWhatsapp] = useState(false);
+  const [guardandoWa, setGuardandoWa] = useState(false);
+  const [errorWa, setErrorWa] = useState("");
 
   useEffect(() => {
     supabase.from("site_content").select("key, value").then(({ data }) => {
@@ -45,9 +50,26 @@ export default function AdminContenido() {
       (data ?? []).forEach((r: { key: string; value: string }) => { map[r.key] = r.value; });
       setValues(map);
       setSaved({ ...map });
+      setWhatsapp(map[CLAVE_WHATSAPP] === "true");
       setLoading(false);
     });
   }, []);
+
+  /* El switch se guarda solo, sin pasar por "Guardar contenido" */
+  const cambiarWhatsapp = async () => {
+    const nuevo = !whatsapp;
+    setWhatsapp(nuevo); setGuardandoWa(true); setErrorWa("");
+    const { error: err } = await supabase.from("site_content").upsert({
+      key: CLAVE_WHATSAPP,
+      value: nuevo ? "true" : "false",
+      label: "Mostrar WhatsApp en el sitio",
+      grupo: "Visibilidad",
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "key" });
+    setGuardandoWa(false);
+    if (err) { setWhatsapp(!nuevo); setErrorWa(`No se pudo guardar: ${err.message}`); return; }
+    logAdminClient(nuevo ? "WhatsApp visible en el sitio" : "WhatsApp oculto en el sitio");
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +101,28 @@ export default function AdminContenido() {
       {loading ? (
         <div className="flex justify-center py-16"><div className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" /></div>
       ) : (
+        <>
+        <div className="bg-white border border-border rounded-2xl p-6 mb-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-[13px] font-black text-navy mb-1">Botón de WhatsApp</h2>
+              <p className="text-[12.5px] text-muted leading-relaxed">
+                Muestra u oculta el botón verde del menú y la caja de WhatsApp en la página de Contacto. Se guarda en cuanto lo cambias.
+              </p>
+            </div>
+            <button type="button" role="switch" aria-checked={whatsapp} aria-label="Mostrar WhatsApp en el sitio"
+              onClick={cambiarWhatsapp} disabled={guardandoWa}
+              className={`relative shrink-0 w-12 h-7 rounded-full transition-colors disabled:opacity-60 ${whatsapp ? "bg-wa" : "bg-gray-300"}`}>
+              <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${whatsapp ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+          <p className={`mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold ${whatsapp ? "text-green-700" : "text-muted"}`}>
+            <Dot color={whatsapp ? "#16A34A" : "#94A3B8"} size={6} />
+            {guardandoWa ? "Guardando..." : whatsapp ? "Visible en el sitio" : "Oculto: no aparece en el sitio"}
+          </p>
+          {errorWa && <p className="text-red-600 text-sm mt-2">{errorWa}</p>}
+        </div>
+
         <form onSubmit={handleSave} className="space-y-5">
           {GROUPS.map((grupo) => (
             <div key={grupo} className="bg-white border border-border rounded-2xl p-6">
@@ -115,6 +159,7 @@ export default function AdminContenido() {
             Los cambios se aplican en el sitio en tiempo real. Algunas secciones pueden tardar hasta 60 segundos en reflejar los cambios por el cache del servidor.
           </p>
         </form>
+        </>
       )}
     </div>
   );

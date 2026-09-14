@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { logAdminClient } from "@/lib/admin-log-client";
 import { Dot, IconUI } from "@/components/ui/IconUI";
 import { fetchAdmin } from "@/lib/admin-fetch";
@@ -58,26 +57,23 @@ export default function AdminCorreos() {
   const [smtpError, setSmtpError] = useState("");
   const [showPass, setShowPass] = useState(false);
 
-  /* ── Load correos de destino ── */
+  /* ── Load correos de destino (por el servidor: site_config no se lee desde el navegador) ── */
   useEffect(() => {
-    supabase
-      .from("site_config")
-      .select("key, value")
-      .in("key", ["contact_email", "courses_email", "aplicaciones_email"])
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          const map: Record<string, string> = {};
-          data.forEach((r) => { map[r.key] = r.value; });
-          const merged: EmailConfig = {
-            contact_email: map.contact_email ?? EMAIL_DEFAULTS.contact_email,
-            courses_email: map.courses_email ?? EMAIL_DEFAULTS.courses_email,
-            aplicaciones_email: map.aplicaciones_email ?? EMAIL_DEFAULTS.aplicaciones_email,
-          };
-          setConfig(merged);
-          setSavedConfig(merged);
-        }
-        setLoadingEmails(false);
-      });
+    fetchAdmin("/api/admin/correos")
+      .then((r) => r.json())
+      .then((data: { correos?: Record<string, string>; error?: string }) => {
+        if (data.error) { setEmailsError(data.error); return; }
+        const map = data.correos ?? {};
+        const merged: EmailConfig = {
+          contact_email: map.contact_email ?? EMAIL_DEFAULTS.contact_email,
+          courses_email: map.courses_email ?? EMAIL_DEFAULTS.courses_email,
+          aplicaciones_email: map.aplicaciones_email ?? EMAIL_DEFAULTS.aplicaciones_email,
+        };
+        setConfig(merged);
+        setSavedConfig(merged);
+      })
+      .catch(() => setEmailsError("No se pudieron cargar los correos."))
+      .finally(() => setLoadingEmails(false));
   }, []);
 
   /* ── Load SMTP config ── */
@@ -110,12 +106,20 @@ export default function AdminCorreos() {
       }
     }
     setSavingEmails(true);
-    const rows = Object.entries(config).map(([key, value]) => ({
-      key, value, updated_at: new Date().toISOString(),
-    }));
-    const { error } = await supabase.from("site_config").upsert(rows, { onConflict: "key" });
+    let error = "";
+    try {
+      const res = await fetchAdmin("/api/admin/correos", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) error = data.error ?? "No se pudieron guardar los correos.";
+    } catch {
+      error = "No se pudieron guardar los correos.";
+    }
     setSavingEmails(false);
-    if (error) { setEmailsError(error.message); return; }
+    if (error) { setEmailsError(error); return; }
     setSavedConfig({ ...config });
     logAdminClient("Correos de destino actualizados");
     setEmailsOk(true);

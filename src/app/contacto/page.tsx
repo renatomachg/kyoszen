@@ -4,6 +4,7 @@ import { useState } from "react";
 import { logEvent } from "@/lib/analytics";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import PageHero from "@/components/ui/PageHero";
+import { useWhatsappVisible } from "@/lib/sitio-config";
 
 const contactInfo = [
   { icon: <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--color-blue)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>, title: "Oficina", value: "CDMX, México" },
@@ -17,6 +18,9 @@ export default function ContactoPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "", privacy: false });
+  // La caja de WhatsApp se prende/apaga desde /admin/contenido
+  const whatsappVisible = useWhatsappVisible();
+  const datosContacto = contactInfo.filter((item) => whatsappVisible || item.title !== "WhatsApp");
 
   const handleSubmit = async () => {
     if (!form.name || !form.email || !form.subject || !form.message) {
@@ -44,7 +48,11 @@ export default function ContactoPage() {
       setSubmitted(true);
       logEvent("contacto_enviado", form.subject);
     } catch {
-      setError("Ocurrió un error al enviar el mensaje. Inténtalo de nuevo o escríbenos por WhatsApp.");
+      setError(
+        whatsappVisible
+          ? "Ocurrió un error al enviar el mensaje. Inténtalo de nuevo o escríbenos por WhatsApp."
+          : "Ocurrió un error al enviar el mensaje. Inténtalo de nuevo o escríbenos a rsalazar@kyoszen.com.mx."
+      );
     } finally {
       setSending(false);
     }
@@ -137,7 +145,7 @@ export default function ContactoPage() {
                 <p className="text-[13px] text-muted leading-relaxed">Estamos disponibles para resolver tus dudas sobre vacantes, reclutamiento, cursos o cualquier servicio de capital humano.</p>
               </div>
               <div className="flex flex-col gap-3">
-                {contactInfo.map((item) => (
+                {datosContacto.map((item) => (
                   <div key={item.title} className="bg-white rounded-xl p-4 flex items-center gap-4 border border-border">
                     <div className="w-10 h-10 rounded-xl bg-blue-soft flex items-center justify-center shrink-0">{item.icon}</div>
                     <div>
